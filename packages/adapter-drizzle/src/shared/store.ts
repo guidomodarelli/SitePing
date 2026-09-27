@@ -1,0 +1,214 @@
+import {
+  buildFeedbackRecord,
+  clampPagination,
+  type FeedbackCreateInput,
+  type FeedbackPage,
+  type FeedbackQuery,
+  type FeedbackRecord,
+  type FeedbackUpdateInput,
+  type ScreenshotStorage,
+  type SitepingStore,
+  StoreNotFoundError,
+} from "@siteping/core";
+import type { AnnotationRow, FeedbackFilter, FeedbackRow, SitepingSqlGateway } from "./gateway.js";
+
+/** MIME type the widget encodes screenshots with. */
+const SCREENSHOT_MIME_TYPE = "image/jpeg";
+
+/** The store returned by the dialect factories — the full contract, including the ownership check. */
+export type DrizzleStore = SitepingStore & Required<Pick<SitepingStore, "verifyProjectOwnership">>;
+
+/** Where the store reports degraded-but-non-fatal situations. Defaults to `console.warn`. */
+export interface DrizzleStoreLogger {
+  warn(message: string, context: Record<string, unknown>): void;
+}
+
+export interface DrizzleStoreOptions {
+  /**
+   * Upload screenshots to external storage (S3, R2, Cloudflare Images…) and
+   * persist only the returned URL. Without it, the base64 data URL is stored
+   * inline (warned once) — fine for development, heavy for production.
+   */
+  screenshotStorage?: ScreenshotStorage | undefined;
+  /** Degraded-path reporting (failed uploads/cleanups, inline screenshots). */
+  logger?: DrizzleStoreLogger | undefined;
+}
+
+const defaultLogger: DrizzleStoreLogger = {
+  warn(message, context) {
+    console.warn(message, context);
+  },
+};
+
+/** Whether a stored `screenshotUrl` points at an object the storage owns (inline data URLs were never uploaded). */
+function isUploadedScreenshotUrl(url: string | null | undefined): url is string {
+  return typeof url === "string" && url.length > 0 && !url.startsWith("data:");
+}
+
+/**
+ * `SitepingStore` over a dialect gateway: ids, timestamps, clientId
+ * idempotency, screenshot upload/cleanup and the error contract live here,
+ * SQL lives in the gateway.
+ * @internal
+ */
+export class DrizzleSitepingStore implements DrizzleStore {
+  private readonly screenshotStorage: ScreenshotStorage | undefined;
+  private readonly logger: DrizzleStoreLogger;
+  private inlineScreenshotWarned = false;
+  /** Last issued `createdAt`, kept strictly increasing so "newest first" is stable within one millisecond. */
+  private lastCreatedAtMs = 0;
+
+  constructor(
+    private readonly gateway: SitepingSqlGateway,
+    options: DrizzleStoreOptions = {},
+  ) {
+    this.screenshotStorage = options.screenshotStorage;
+    this.logger = options.logger ?? defaultLogger;
+  }
+
+  async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {
+    const existing = await this.findByClientId(data.clientId);
+    if (existing) return existing;
+
+    const screenshotUrl = await this.persistScreenshot(data.screenshotDataUrl, data.clientId);
+    const { annotations, ...feedback } = buildFeedbackRecord(data, {
+      id: crypto.randomUUID(),
+      annotationId: () => crypto.randomUUID(),
+      now: this.nextCreatedAt(),
+    });
+    const row: FeedbackRow = { ...feedback, screenshotUrl };
+
+    if (await this.gateway.insertFeedback(row, annotations)) {
+      return { ...row, annotations };
+    }
+
+    // Lost a race against the same clientId: the stored row keeps its own
+    // screenshot, so the one just uploaded is an orphan.
+    await this.discardScreenshots([screenshotUrl]);
+    const winner = await this.findByClientId(data.clientId);
+    if (!winner) {
+      throw new Error(
+        `[siteping] DrizzleStore.createFeedback: clientId ${data.clientId} conflicted but no row was found`,
+      );
+    }
+    return winner;
+  }
+
+  async getFeedbacks(query: FeedbackQuery): Promise<FeedbackPage> {
+    const { limit, skip } = clampPagination(query);
+    const filter: FeedbackFilter = { projectName: query.projectName };
+    if (query.type) filter.type = query.type;
+    // A non-empty `statuses` bucket wins over the exact `status` filter.
+    if (query.statuses && query.statuses.length > 0) filter.statuses = query.statuses;
+    else if (query.status) filter.statuses = [query.status];
+    if (query.url) filter.url = query.url;
+    if (query.urlPattern) filter.urlPattern = query.urlPattern;
+    if (query.search) filter.search = query.search;
+
+    const { rows, total } = await this.gateway.findFeedbacks(filter, { limit, offset: skip });
+    return { feedbacks: await this.withAnnotations(rows), total };
+  }
+
+  async findByClientId(clientId: string): Promise<FeedbackRecord | null> {
+    const row = await this.gateway.findByClientId(clientId);
+    return row ? ((await this.withAnnotations([row]))[0] ?? null) : null;
+  }
+
+  async updateFeedback(id: string, data: FeedbackUpdateInput): Promise<FeedbackRecord> {
+    const row = await this.gateway.updateStatus(id, {
+      status: data.status,
+      resolvedAt: data.resolvedAt,
+      updatedAt: new Date(),
+    });
+    if (!row) throw new StoreNotFoundError();
+    const [record] = await this.withAnnotations([row]);
+    return record as FeedbackRecord;
+  }
+
+  async deleteFeedback(id: string): Promise<void> {
+    const deleted = await this.gateway.deleteById(id);
+    if (!deleted) throw new StoreNotFoundError();
+    await this.discardScreenshots([deleted.screenshotUrl]);
+  }
+
+  async deleteAllFeedbacks(projectName: string): Promise<void> {
+    // Rows first, storage second: orphaned objects are acceptable, rows
+    // pointing at deleted screenshots are not.
+    await this.discardScreenshots(await this.gateway.deleteByProject(projectName));
+  }
+
+  async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> {
+    const row = await this.gateway.findById(id);
+    return row !== null && row.projectName === projectName;
+  }
+
+  private nextCreatedAt(): Date {
+    this.lastCreatedAtMs = Math.max(Date.now(), this.lastCreatedAtMs + 1);
+    return new Date(this.lastCreatedAtMs);
+  }
+
+  private async withAnnotations(rows: readonly FeedbackRow[]): Promise<FeedbackRecord[]> {
+    if (rows.length === 0) return [];
+    const annotations = await this.gateway.findAnnotations(rows.map((row) => row.id));
+    const byFeedback = new Map<string, AnnotationRow[]>();
+    for (const annotation of annotations) {
+      const siblings = byFeedback.get(annotation.feedbackId);
+      if (siblings) siblings.push(annotation);
+      else byFeedback.set(annotation.feedbackId, [annotation]);
+    }
+    return rows.map((row) => ({ ...row, annotations: byFeedback.get(row.id) ?? [] }));
+  }
+
+  /**
+   * Value to persist on `screenshotUrl`: the storage URL, `null` when the
+   * upload fails (an inline fallback would bloat the database unnoticed
+   * during a storage outage), or the inline data URL without storage.
+   */
+  private async persistScreenshot(dataUrl: string | null | undefined, clientId: string): Promise<string | null> {
+    if (!dataUrl) return null;
+    if (this.screenshotStorage) {
+      try {
+        // The row id does not exist yet; clientId is unique and stable, but
+        // client-supplied — storages must sanitize it before building paths.
+        const { url } = await this.screenshotStorage.upload(dataUrl, {
+          feedbackId: clientId,
+          mimeType: SCREENSHOT_MIME_TYPE,
+        });
+        return url;
+      } catch (error) {
+        this.logger.warn(
+          "[siteping] DrizzleStore: screenshotStorage.upload failed — feedback saved without screenshot",
+          {
+            clientId,
+            error,
+          },
+        );
+        return null;
+      }
+    }
+    if (!this.inlineScreenshotWarned) {
+      this.inlineScreenshotWarned = true;
+      this.logger.warn(
+        "[siteping] DrizzleStore: no screenshotStorage configured — screenshots are stored inline as base64. Configure a ScreenshotStorage for production.",
+        {},
+      );
+    }
+    return dataUrl;
+  }
+
+  /** Best-effort cleanup through `ScreenshotStorage.delete`; failures are logged, never thrown. */
+  private async discardScreenshots(urls: ReadonlyArray<string | null | undefined>): Promise<void> {
+    const remove = this.screenshotStorage?.delete?.bind(this.screenshotStorage);
+    if (!remove) return;
+    const uploaded = urls.filter(isUploadedScreenshotUrl);
+    const results = await Promise.allSettled(uploaded.map((url) => remove(url)));
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        this.logger.warn("[siteping] DrizzleStore: screenshotStorage.delete failed — object left in place", {
+          screenshotUrl: uploaded[index],
+          error: result.reason,
+        });
+      }
+    });
+  }
+}

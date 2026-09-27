@@ -1,7 +1,7 @@
 {
-  "name": "@siteping/adapter-prisma",
-  "version": "0.6.6",
-  "description": "Prisma adapter for Siteping — server-side request handlers",
+  "name": "@siteping/server",
+  "version": "0.0.0",
+  "description": "Framework- and database-agnostic HTTP API for Siteping — pluggable auth, lifecycle hooks and any SitepingStore",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -29,13 +29,10 @@
   },
   "keywords": [
     "siteping",
-    "prisma",
-    "adapter",
+    "server",
+    "handler",
     "feedback",
-    "api-handler",
-    "nextjs",
-    "feedback-api",
-    "self-hosted",
+    "fetch-api",
     "typescript"
   ],
   "author": "neosianexus",
@@ -44,7 +41,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/NeosiaNexus/SitePing.git",
-    "directory": "packages/adapter-prisma"
+    "directory": "packages/server"
   },
   "bugs": {
     "url": "https://github.com/NeosiaNexus/SitePing/issues"
@@ -59,10 +56,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@siteping/core": "workspace:*",
-    "@siteping/server": "workspace:*"
-  },
-  "peerDependencies": {
-    "@prisma/client": "^5.0.0 || ^6.0.0 || ^7.0.0"
+    "@siteping/adapter-memory": "workspace:*",
+    "@siteping/core": "workspace:*"
   }
 }

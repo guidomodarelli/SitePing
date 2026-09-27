@@ -5,5 +5,5 @@
  * - `@siteping/adapter-drizzle/libsql` — Turso / libSQL
  */
 export type { FeedbackRecord, ScreenshotStorage, SitepingStore } from "@siteping/core";
+export { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "./constants/table-names.js";
 export type { DrizzleStore, DrizzleStoreLogger, DrizzleStoreOptions } from "./shared/store.js";
-export { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "./shared/table-names.js";

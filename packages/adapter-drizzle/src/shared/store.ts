@@ -10,10 +10,8 @@ import {
   type SitepingStore,
   StoreNotFoundError,
 } from "@siteping/core";
+import { INLINE_SCREENSHOT_URL_PREFIX, SCREENSHOT_MIME_TYPE } from "../constants/screenshots.js";
 import type { AnnotationRow, FeedbackFilter, FeedbackRow, SitepingSqlGateway } from "./gateway.js";
-
-/** MIME type the widget encodes screenshots with. */
-const SCREENSHOT_MIME_TYPE = "image/jpeg";
 
 /** The store returned by the dialect factories — the full contract, including the ownership check. */
 export type DrizzleStore = SitepingStore & Required<Pick<SitepingStore, "verifyProjectOwnership">>;
@@ -42,7 +40,7 @@ const defaultLogger: DrizzleStoreLogger = {
 
 /** Whether a stored `screenshotUrl` points at an object the storage owns (inline data URLs were never uploaded). */
 function isUploadedScreenshotUrl(url: string | null | undefined): url is string {
-  return typeof url === "string" && url.length > 0 && !url.startsWith("data:");
+  return typeof url === "string" && url.length > 0 && !url.startsWith(INLINE_SCREENSHOT_URL_PREFIX);
 }
 
 /**

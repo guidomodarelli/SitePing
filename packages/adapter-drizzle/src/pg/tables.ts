@@ -1,6 +1,6 @@
 import type { DiagnosticsSnapshot, FeedbackStatus, FeedbackType, ScreenshotRegion } from "@siteping/core";
 import { doublePrecision, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../shared/table-names.js";
+import { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../constants/table-names.js";
 
 /**
  * Build the SitePing tables for PostgreSQL. Export them from your Drizzle

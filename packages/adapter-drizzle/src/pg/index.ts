@@ -1,14 +1,15 @@
-import { and, count, desc, eq, inArray, type SQL, sql } from "drizzle-orm";
+import { count, desc, eq, inArray } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
+import { CASE_INSENSITIVE_LIKE_OPERATOR } from "../constants/search.js";
+import { buildFeedbackWhere } from "../shared/filters.js";
 import type { FeedbackFilter, FeedbackRow, SitepingSqlGateway } from "../shared/gateway.js";
-import { toContainsPattern } from "../shared/gateway.js";
 import { DrizzleSitepingStore, type DrizzleStore, type DrizzleStoreOptions } from "../shared/store.js";
 import { createSitepingPgTables, type SitepingPgTables } from "./tables.js";
 
 export type { FeedbackRecord, ScreenshotStorage, SitepingStore } from "@siteping/core";
 export { StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@siteping/core";
+export { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../constants/table-names.js";
 export type { DrizzleStore, DrizzleStoreLogger, DrizzleStoreOptions } from "../shared/store.js";
-export { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../shared/table-names.js";
 export { createSitepingPgTables, type SitepingPgTables } from "./tables.js";
 
 /**
@@ -27,17 +28,8 @@ function createPgGateway(
   db: AnyPgDatabase,
   { sitepingFeedbacks, sitepingAnnotations }: SitepingPgTables,
 ): SitepingSqlGateway {
-  const whereClause = (filter: FeedbackFilter): SQL | undefined => {
-    const conditions: SQL[] = [eq(sitepingFeedbacks.projectName, filter.projectName)];
-    if (filter.type) conditions.push(eq(sitepingFeedbacks.type, filter.type));
-    if (filter.statuses) conditions.push(inArray(sitepingFeedbacks.status, [...filter.statuses]));
-    if (filter.url) conditions.push(eq(sitepingFeedbacks.url, filter.url));
-    if (filter.urlPattern) conditions.push(eq(sitepingFeedbacks.urlPattern, filter.urlPattern));
-    if (filter.search) {
-      conditions.push(sql`${sitepingFeedbacks.message} ILIKE ${toContainsPattern(filter.search)} ESCAPE '\\'`);
-    }
-    return and(...conditions);
-  };
+  const whereClause = (filter: FeedbackFilter) =>
+    buildFeedbackWhere(sitepingFeedbacks, filter, CASE_INSENSITIVE_LIKE_OPERATOR.postgres);
 
   return {
     async insertFeedback(feedback, annotations) {

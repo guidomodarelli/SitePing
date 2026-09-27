@@ -1,9 +1,9 @@
 import type { FeedbackCreateInput, ScreenshotStorage } from "@siteping/core";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import type { SitepingTableNames } from "../src/constants/table-names.js";
 import { createLibSQLSitepingStore, createSitepingSqliteTables } from "../src/libsql/index.js";
 import { createPgSitepingStore, createSitepingPgTables } from "../src/pg/index.js";
 import type { DrizzleStore, DrizzleStoreOptions } from "../src/shared/store.js";
-import type { SitepingTableNames } from "../src/shared/table-names.js";
 import { createLibSQLTestDatabase, createPgTestDatabase } from "./databases.js";
 
 const SCREENSHOT_DATA_URL = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";

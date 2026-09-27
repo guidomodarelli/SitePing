@@ -44,8 +44,3 @@ export interface SitepingSqlGateway {
   /** Delete every row of a project; returns their stored screenshot URLs. */
   deleteByProject(projectName: string): Promise<Array<string | null>>;
 }
-
-/** Escape LIKE wildcards so `search` matches literally (used with `ESCAPE '\'`). */
-export function toContainsPattern(search: string): string {
-  return `%${search.replace(/[\\%_]/g, (character) => `\\${character}`)}%`;
-}

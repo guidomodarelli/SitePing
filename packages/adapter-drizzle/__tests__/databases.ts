@@ -7,9 +7,9 @@ import { pushSchema, pushSQLiteSchema } from "drizzle-kit/api";
 import { sql } from "drizzle-orm";
 import { drizzle as drizzleLibSQL } from "drizzle-orm/libsql";
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
+import type { SitepingTableNames } from "../src/constants/table-names.js";
 import { type AnyLibSQLDatabase, createSitepingSqliteTables } from "../src/libsql/index.js";
 import { type AnyPgDatabase, createSitepingPgTables } from "../src/pg/index.js";
-import type { SitepingTableNames } from "../src/shared/table-names.js";
 
 /**
  * Real database engines for the tests — no mocks: PGlite is PostgreSQL

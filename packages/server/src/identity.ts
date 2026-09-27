@@ -1,4 +1,5 @@
 import type { SitepingAccessControl } from "./access.js";
+import { IDENTITY_CACHE_CONTROL } from "./constants/http.js";
 import { buildCorsHeaders, withCors } from "./cors.js";
 
 /** Reviewer identity the widget pre-fills (`SitepingConfig.identity`). */
@@ -53,7 +54,7 @@ export function createSitepingIdentityHandler<Principal>({
 }: SitepingIdentityHandlerOptions<Principal>): { GET: (request: Request) => Promise<Response> } {
   const respond = (request: Request, body: SitepingIdentityResponse): Response =>
     withCors(
-      Response.json(body, { headers: { "Cache-Control": "no-store" } }),
+      Response.json(body, { headers: { "Cache-Control": IDENTITY_CACHE_CONTROL } }),
       buildCorsHeaders(request, allowedOrigins),
     );
   const disabled = (request: Request) => respond(request, { enabled: false, identity: null, projectName });

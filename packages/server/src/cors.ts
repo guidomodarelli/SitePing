@@ -1,3 +1,5 @@
+import { CORS_ALLOWED_HEADERS, CORS_ALLOWED_METHODS, CORS_MAX_AGE_SECONDS } from "./constants/http.js";
+
 export type CorsHeaders = Readonly<Record<string, string>>;
 
 /**
@@ -11,10 +13,10 @@ export function buildCorsHeaders(request: Request, allowedOrigins: ReadonlyArray
   if (!origin || !allowedOrigins.includes(origin)) return {};
   return {
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Methods": CORS_ALLOWED_METHODS,
+    "Access-Control-Allow-Headers": CORS_ALLOWED_HEADERS,
     "Access-Control-Allow-Credentials": "true",
-    "Access-Control-Max-Age": "86400",
+    "Access-Control-Max-Age": String(CORS_MAX_AGE_SECONDS),
     Vary: "Origin",
   };
 }

@@ -1,3 +1,4 @@
+import { SITEPING_ERROR_MESSAGES } from "./constants/error-messages.js";
 /** HTTP methods served by `createSitepingHandler`. */
 export type SitepingHttpMethod = "GET" | "POST" | "PATCH" | "DELETE" | "OPTIONS";
 
@@ -57,7 +58,7 @@ export function accessGateFromControl<Principal>(access: SitepingAccessControl<P
   return {
     async authenticate(request) {
       const principal = await access.authenticate(request);
-      if (principal === null) return { ok: false, status: 401, error: "Unauthorized" };
+      if (principal === null) return { ok: false, status: 401, error: SITEPING_ERROR_MESSAGES.unauthorized };
       return { ok: true, principal, canReadAuthorEmail: access.canReadAuthorEmail?.(principal) ?? true };
     },
     async authorize(context) {

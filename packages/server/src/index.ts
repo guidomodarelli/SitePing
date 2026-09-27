@@ -7,6 +7,10 @@ export type {
   SitepingRequestContext,
 } from "./access.js";
 export type { ApiKeyAccessOptions } from "./api-key-access.js";
+export { SITEPING_ERROR_MESSAGES } from "./constants/error-messages.js";
+export { createSitepingHandler } from "./handler.js";
+export type { SitepingIdentity, SitepingIdentityHandlerOptions, SitepingIdentityResponse } from "./identity.js";
+export { createSitepingIdentityHandler } from "./identity.js";
 export type {
   SitepingAccessHandlerOptions,
   SitepingApiKeyHandlerOptions,
@@ -15,10 +19,7 @@ export type {
   SitepingHandlerOptions,
   SitepingLifecycleHooks,
   SitepingLogger,
-} from "./handler.js";
-export { createSitepingHandler } from "./handler.js";
-export type { SitepingIdentity, SitepingIdentityHandlerOptions, SitepingIdentityResponse } from "./identity.js";
-export { createSitepingIdentityHandler } from "./identity.js";
+} from "./options.js";
 export type { FeedbackDeleteInput, FeedbackPatchInput, GetQueryInput } from "./validation.js";
 export {
   feedbackCreateSchema,

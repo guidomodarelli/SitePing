@@ -1,4 +1,5 @@
 import type { AccessGate, SitepingHttpMethod } from "./access.js";
+import { SITEPING_ERROR_MESSAGES } from "./constants/error-messages.js";
 
 /** Options of the built-in shared-secret policy (the historical `adapter-prisma` behavior). */
 export interface ApiKeyAccessOptions {
@@ -84,14 +85,14 @@ export function createApiKeyGate({
       if (!apiKey) {
         // GET/POST/OPTIONS stay open by default so the widget works in dev without config.
         if (requireAuthForDestructive && (method === "DELETE" || method === "PATCH")) {
-          return { ok: false, status: 401, error: "apiKey required for destructive operations" };
+          return { ok: false, status: 401, error: SITEPING_ERROR_MESSAGES.apiKeyRequiredForDestructive };
         }
         return { ok: true, principal: null, canReadAuthorEmail };
       }
       if (publicMethods?.has(method) || isBearerAuthenticated(request)) {
         return { ok: true, principal: null, canReadAuthorEmail };
       }
-      return { ok: false, status: 401, error: "Unauthorized" };
+      return { ok: false, status: 401, error: SITEPING_ERROR_MESSAGES.unauthorized };
     },
     async authorize() {
       return true;

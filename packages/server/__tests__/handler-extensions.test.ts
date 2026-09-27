@@ -190,6 +190,21 @@ describe("createSitepingHandler — lifecycle hooks", () => {
     expect(onCreated.mock.calls[0]?.[1]).toMatchObject({ principal: ADMIN });
   });
 
+  it("keeps `this` for hooks implemented as class methods", async () => {
+    class IssueTrackerHooks {
+      readonly createdIds: string[] = [];
+      onCreated(feedback: FeedbackRecord): void {
+        this.createdIds.push(feedback.id);
+      }
+    }
+    const tracker = new IssueTrackerHooks();
+    const handler = createSitepingHandler({ store: new MemoryStore(), access: sessionAccess(), hooks: tracker });
+
+    const feedback = await createFeedback(handler);
+
+    expect(tracker.createdIds).toEqual([feedback.id]);
+  });
+
   it("logs a failing onCreated hook without failing the request", async () => {
     const logger = silentLogger();
     const hookError = new Error("issue tracker down");

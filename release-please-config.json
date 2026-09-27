@@ -48,6 +48,11 @@
       "component": "cli",
       "bump-minor-pre-major": true,
       "extra-files": ["src/index.ts"]
+    },
+    "packages/screenshot-storage": {
+      "release-type": "node",
+      "component": "screenshot-storage",
+      "bump-minor-pre-major": true
     }
   }
 }

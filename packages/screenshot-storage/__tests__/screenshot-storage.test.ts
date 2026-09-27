@@ -1,8 +1,11 @@
 import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { createCloudflareImagesObjectStore } from "../src/cloudflare-images/index.js";
+import { createLibSQLScreenshotObjectStore } from "../src/drizzle-libsql/index.js";
+import { createPgScreenshotObjectStore } from "../src/drizzle-pg/index.js";
 import { createFilesystemObjectStore } from "../src/filesystem/index.js";
 import {
   createScreenshotServeHandler,
@@ -14,6 +17,7 @@ import {
 } from "../src/index.js";
 import { createMemoryObjectStore } from "../src/memory/index.js";
 import { createS3ObjectStore } from "../src/s3/index.js";
+import { createLibSQLScreenshotsDatabase, createPgScreenshotsDatabase } from "./databases.js";
 import { createFakeCloudflareImages, createFakeS3, type FakeBackend } from "./fake-backends.js";
 
 /** A real 1×1 JPEG. */
@@ -27,7 +31,11 @@ const silentLogger = () => ({ warn: vi.fn() });
 
 interface BackendUnderTest {
   name: string;
-  open(): {
+  /** Whether the fake behind the backend can simulate failed uploads. */
+  injectsFailures?: true;
+  /** Whether the backend implements `get`, so the app can serve its screenshots. */
+  servedByApp?: true;
+  open(): Promise<{
     objectStore: ScreenshotObjectStore;
     /** Bytes currently stored under `key`, read without going through the store. */
     storedBytes(key: string): Promise<Uint8Array | null>;
@@ -35,8 +43,7 @@ interface BackendUnderTest {
     failUploadsUncertainly?(): void;
     /** Make uploads fail with a definitive rejection. */
     rejectUploads?(): void;
-    cleanup?(): void;
-  };
+  }>;
 }
 
 const temporaryDirectories: string[] = [];
@@ -44,17 +51,28 @@ afterEach(() => {
   for (const directory of temporaryDirectories.splice(0)) rmSync(directory, { recursive: true, force: true });
 });
 
+// One engine per database backend for the whole file (starting PGlite and
+// pushing the schema per test is slow); every test starts from an empty table.
+const pgDatabase = createPgScreenshotsDatabase();
+const libsqlDatabase = createLibSQLScreenshotsDatabase();
+afterAll(async () => {
+  await (await pgDatabase).close();
+  (await libsqlDatabase).close();
+});
+
 const backends: BackendUnderTest[] = [
   {
     name: "memory",
-    open() {
+    servedByApp: true,
+    async open() {
       const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
       return { objectStore, storedBytes: async (key) => (await objectStore.get?.(key))?.bytes ?? null };
     },
   },
   {
     name: "filesystem",
-    open() {
+    servedByApp: true,
+    async open() {
       const directory = mkdtempSync(join(tmpdir(), "siteping-screenshots-"));
       temporaryDirectories.push(directory);
       const objectStore = createFilesystemObjectStore({ directory, publicBaseUrl: PUBLIC_BASE_URL });
@@ -66,8 +84,33 @@ const backends: BackendUnderTest[] = [
     },
   },
   {
+    name: "PostgreSQL (Drizzle)",
+    servedByApp: true,
+    async open() {
+      const { db, table } = await pgDatabase;
+      await db.delete(table);
+      return {
+        objectStore: createPgScreenshotObjectStore(db, { publicBaseUrl: PUBLIC_BASE_URL, table }),
+        storedBytes: async (key) => (await db.select().from(table).where(eq(table.key, key)))[0]?.bytes ?? null,
+      };
+    },
+  },
+  {
+    name: "libSQL (Drizzle)",
+    servedByApp: true,
+    async open() {
+      const { db, table } = await libsqlDatabase;
+      await db.delete(table);
+      return {
+        objectStore: createLibSQLScreenshotObjectStore(db, { publicBaseUrl: PUBLIC_BASE_URL, table }),
+        storedBytes: async (key) => (await db.select().from(table).where(eq(table.key, key)))[0]?.bytes ?? null,
+      };
+    },
+  },
+  {
     name: "Cloudflare Images",
-    open() {
+    injectsFailures: true,
+    async open() {
       const fake: FakeBackend = createFakeCloudflareImages({ accountId: "account-1", apiToken: "cf-token" });
       const objectStore = createCloudflareImagesObjectStore({
         accountId: "account-1",
@@ -85,7 +128,9 @@ const backends: BackendUnderTest[] = [
   },
   {
     name: "S3-compatible",
-    open() {
+    servedByApp: true,
+    injectsFailures: true,
+    async open() {
       const credentials = { accessKeyId: "AKIDEXAMPLE", secretAccessKey: "s3-secret" };
       const fake = createFakeS3({ bucket: "screens", region: "auto", ...credentials });
       const objectStore = createS3ObjectStore({
@@ -108,7 +153,7 @@ const backends: BackendUnderTest[] = [
 for (const backend of backends) {
   describe(`createScreenshotStorage — ${backend.name}`, () => {
     it("stores the decoded image under a random key and returns a URL it can delete", async () => {
-      const { objectStore, storedBytes } = backend.open();
+      const { objectStore, storedBytes } = await backend.open();
       const storage = createScreenshotStorage(objectStore, { logger: silentLogger() });
 
       const { url } = await storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
@@ -123,7 +168,7 @@ for (const backend of backends) {
     });
 
     it("never reuses a key, even for the same client id", async () => {
-      const { objectStore } = backend.open();
+      const { objectStore } = await backend.open();
       const storage = createScreenshotStorage(objectStore, { logger: silentLogger() });
 
       const first = await storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
@@ -133,7 +178,7 @@ for (const backend of backends) {
     });
 
     it("ignores URLs it does not own and already-deleted objects on delete", async () => {
-      const { objectStore } = backend.open();
+      const { objectStore } = await backend.open();
       const storage = createScreenshotStorage(objectStore, { logger: silentLogger() });
       const { url } = await storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
       await storage.delete?.(url);
@@ -143,9 +188,23 @@ for (const backend of backends) {
       await expect(storage.delete?.("https://elsewhere.example.com/siteping-x.jpg")).resolves.toBeUndefined();
     });
 
-    if (backend.name !== "memory" && backend.name !== "filesystem") {
+    it.runIf(backend.servedByApp)("serves stored screenshots through createScreenshotServeHandler", async () => {
+      const { objectStore } = await backend.open();
+      const storage = createScreenshotStorage(objectStore, { logger: silentLogger() });
+      const { url } = await storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
+
+      const response = await createScreenshotServeHandler(objectStore).GET(
+        new Request(`${PUBLIC_BASE_URL}/${objectStore.keyFromUrl(url)}`),
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("image/jpeg");
+      expect(new Uint8Array(await response.arrayBuffer())).toEqual(JPEG_BYTES);
+    });
+
+    if (backend.injectsFailures) {
       it("reclaims an upload whose outcome is unknown, then reports the failure", async () => {
-        const { objectStore, storedBytes, failUploadsUncertainly } = backend.open();
+        const { objectStore, storedBytes, failUploadsUncertainly } = await backend.open();
         failUploadsUncertainly?.();
         const putKeys: string[] = [];
         const storage = createScreenshotStorage(
@@ -165,7 +224,7 @@ for (const backend of backends) {
       });
 
       it("reports a definitive rejection without trying to reclaim", async () => {
-        const { objectStore, rejectUploads } = backend.open();
+        const { objectStore, rejectUploads } = await backend.open();
         rejectUploads?.();
         const remove = vi.spyOn(objectStore, "remove");
         const storage = createScreenshotStorage(objectStore, { logger: silentLogger() });

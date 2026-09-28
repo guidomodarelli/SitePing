@@ -234,19 +234,29 @@ export class DrizzleSitepingStore implements DrizzleStore {
     return row ? ((await this.withAnnotations([row]))[0] ?? null) : null;
   }
 
+  /**
+   * Update a feedback's status. Annotations never change after the insert, so
+   * they are read before the update: once the update commits, no database
+   * call is left that could fail and make the caller retry an applied update.
+   *
+   * @throws `StoreNotFoundError` when no row has that id.
+   * @throws `StorePersistenceError` when reading the annotations or the update
+   *   fails — a failed annotation read leaves the row untouched.
+   */
   async updateFeedback(id: string, data: FeedbackUpdateInput): Promise<FeedbackRecord> {
-    // The gateway clamps updatedAt to the row's createdAt, which another
-    // process whose clock runs ahead may have stamped later than this clock.
-    const row = await persistMutation("updateFeedback", { id }, () =>
-      this.gateway.updateStatus(id, {
+    const { annotations, row } = await persistMutation("updateFeedback", { id }, async () => {
+      const annotations = await this.gateway.findAnnotations([id]);
+      // The gateway clamps updatedAt to the row's createdAt, which another
+      // process whose clock runs ahead may have stamped later than this clock.
+      const row = await this.gateway.updateStatus(id, {
         status: data.status,
         resolvedAt: data.resolvedAt,
         updatedAt: this.now(),
-      }),
-    );
+      });
+      return { annotations, row };
+    });
     if (!row) throw new StoreNotFoundError();
-    const [record] = await this.withAnnotations([row]);
-    return record as FeedbackRecord;
+    return { ...row, annotations };
   }
 
   async deleteFeedback(id: string): Promise<void> {

@@ -186,6 +186,7 @@ Faites ce remplissage en JavaScript, pas avec le `lower()` de SQL : le `lower()`
 ## Erreurs
 
 - Un échec de la base pendant une écriture (base en lecture seule ou pleine, connexion perdue, requête rejetée…) remonte en `StorePersistenceError`, avec l'erreur du driver en `cause`. Détectez-la avec `isStorePersistence`.
+- `updateFeedback` lit les annotations (immuables) avant de mettre la ligne à jour : aucun appel à la base ne suit la validation de la mise à jour. Une lecture des annotations en échec laisse la ligne intacte, et une mise à jour appliquée n'est jamais signalée en échec à cause d'une lecture qui la suit.
 - `updateFeedback` et `deleteFeedback` sur un id inconnu lèvent `StoreNotFoundError`.
 
 Les deux entrées réexportent `StorePersistenceError`, `isStorePersistence`, `StoreNotFoundError` et `StoreDuplicateError`, pour les attraper sans autre import.

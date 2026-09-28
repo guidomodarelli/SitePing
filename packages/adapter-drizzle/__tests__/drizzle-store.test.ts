@@ -88,6 +88,19 @@ function isFeedbackDelete(statementSql: string): boolean {
   return statementSql.toLowerCase().includes(`delete from "${DEFAULT_SITEPING_TABLE_NAMES.feedbacks}"`);
 }
 
+/** Whether a driver call reads annotation rows. */
+function isAnnotationRead(statementSql: string): boolean {
+  const normalizedSql = statementSql.toLowerCase();
+  return (
+    normalizedSql.startsWith("select") && normalizedSql.includes(`from "${DEFAULT_SITEPING_TABLE_NAMES.annotations}"`)
+  );
+}
+
+/** Whether a driver call updates feedback rows. */
+function isFeedbackUpdate(statementSql: string): boolean {
+  return statementSql.toLowerCase().includes(`update "${DEFAULT_SITEPING_TABLE_NAMES.feedbacks}"`);
+}
+
 /** Rows per insert of a bulk application import — keeps each statement below SQLite's bound-parameter limit. */
 const APPLICATION_INSERT_BATCH_SIZE = 200;
 /** Response cap of the size-limited driver in the bulk-delete tests — one delete chunk fits, a whole test project does not. */
@@ -671,6 +684,46 @@ for (const dialect of dialects) {
       await store.deleteAllFeedbacks("bulk");
 
       expect(await database.countAnnotations()).toBe(1);
+    });
+
+    describe("when updateFeedback meets a database failure", () => {
+      it("leaves the row untouched and reports a StorePersistenceError when reading the annotations fails", async () => {
+        const stored = await database.createStore({ logger }).createFeedback(feedbackInput());
+        const readFailure = new Error("connection lost while reading the annotations");
+        const store = database.createStoreWithDriverInterceptor(
+          (statementSql, run) => (isAnnotationRead(statementSql) ? Promise.reject(readFailure) : run()),
+          { logger },
+        );
+
+        const failure = await store.updateFeedback(stored.id, { status: "in_progress", resolvedAt: null }).then(
+          () => null,
+          (error: unknown) => error,
+        );
+
+        expect(isStorePersistence(failure)).toBe(true);
+        expect(causeChain(failure)).toContain(readFailure);
+        const [unchanged] = (await database.createStore({ logger }).getFeedbacks({ projectName: "site" })).feedbacks;
+        expect(unchanged).toMatchObject({ id: stored.id, status: "open", updatedAt: stored.updatedAt });
+      });
+
+      it("returns the updated record without querying the database once the update has committed", async () => {
+        const stored = await database.createStore({ logger }).createFeedback(feedbackInput());
+        let updateCommitted = false;
+        const store = database.createStoreWithDriverInterceptor(
+          async (statementSql, run) => {
+            if (updateCommitted) throw new Error(`unexpected query after the update committed: ${statementSql}`);
+            const result = await run();
+            if (isFeedbackUpdate(statementSql)) updateCommitted = true;
+            return result;
+          },
+          { logger },
+        );
+
+        const updated = await store.updateFeedback(stored.id, { status: "in_progress", resolvedAt: null });
+
+        expect(updateCommitted).toBe(true);
+        expect(updated).toMatchObject({ id: stored.id, status: "in_progress", annotations: stored.annotations });
+      });
     });
 
     describe("when deleteAllFeedbacks frees more screenshots than one driver response can carry", () => {

@@ -86,6 +86,12 @@ interface DialectUnderTest {
     writeAsApplication(): Promise<void>;
     /** Re-insert every annotation row in reverse physical order, as a dump/restore or a table rewrite may. */
     reverseAnnotationStorageOrder(): Promise<void>;
+    /**
+     * Make the database's own case folding of `message` ASCII-only, as a PostgreSQL database
+     * created with `LC_CTYPE = 'C'` does; resolves to the undo. SQLite's LIKE already folds
+     * only ASCII case, so libSQL needs no change.
+     */
+    foldMessageCaseAsciiOnly(): Promise<() => Promise<void>>;
     /** Make the database reject writes to the feedback table; resolves to the undo. */
     rejectFeedbackWrites(): Promise<() => Promise<void>>;
     reset(): Promise<void>;
@@ -112,6 +118,16 @@ const dialects: DialectUnderTest[] = [
           const rows = await database.db.select().from(tables.sitepingAnnotations);
           await database.db.delete(tables.sitepingAnnotations);
           for (const row of rows.reverse()) await database.db.insert(tables.sitepingAnnotations).values(row);
+        },
+        async foldMessageCaseAsciiOnly() {
+          const alterMessageCollation = (collation: string) =>
+            database.db.execute(
+              sql`ALTER TABLE ${tables.sitepingFeedbacks} ALTER COLUMN ${sql.identifier(tables.sitepingFeedbacks.message.name)} TYPE text COLLATE ${sql.identifier(collation)}`,
+            );
+          await alterMessageCollation("C");
+          return async () => {
+            await alterMessageCollation("default");
+          };
         },
         async rejectFeedbackWrites() {
           // PGlite is a single session: every later statement runs read-only.
@@ -143,6 +159,9 @@ const dialects: DialectUnderTest[] = [
           const rows = await database.db.select().from(tables.sitepingAnnotations);
           await database.db.delete(tables.sitepingAnnotations);
           for (const row of rows.reverse()) await database.db.insert(tables.sitepingAnnotations).values(row);
+        },
+        async foldMessageCaseAsciiOnly() {
+          return async () => {};
         },
         async rejectFeedbackWrites() {
           const feedbackTable = sql.identifier(getTableName(tables.sitepingFeedbacks));
@@ -551,6 +570,29 @@ for (const dialect of dialects) {
         "Échec du paiement",
         "échec de connexion",
       ]);
+    });
+
+    it("folds non-ASCII case in search even when the database folds case only in ASCII", async () => {
+      const restoreFolding = await database.foldMessageCaseAsciiOnly();
+      try {
+        const store = database.createStore({ logger });
+        const created = [];
+        for (const message of ["Échec du paiement", "Größe ÄÖÜ falsch", "Checkout button is broken"]) {
+          created.push(await store.createFeedback(feedbackInput({ message })));
+        }
+
+        for (const search of ["échec", "äöü", "ÉCHEC", "checkout"]) {
+          const found = await store.getFeedbacks({ projectName: "site", search });
+          const expected = applyFeedbackFilters(created, { projectName: "site", search });
+          expect(
+            found.feedbacks.map((feedback) => feedback.message),
+            search,
+          ).toEqual(expected.feedbacks.map((feedback) => feedback.message));
+          expect(found.total, search).toBe(1);
+        }
+      } finally {
+        await restoreFolding();
+      }
     });
 
     it("searches feedbacks the host application wrote without the store", async () => {

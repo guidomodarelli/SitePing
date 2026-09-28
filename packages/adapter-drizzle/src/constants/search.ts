@@ -10,16 +10,25 @@ export const LIKE_ESCAPE_CHARACTER = "\\";
  */
 export const LIKE_SPECIAL_CHARACTERS = /[\\%_]/g;
 
+/** A SQL substring-match operator. */
+export type LikeOperator = "ILIKE" | "LIKE";
+
 /**
- * Substring operator per dialect. PostgreSQL's LIKE is case-sensitive, so it
- * needs ILIKE, which folds case with the database's `LC_CTYPE` (Unicode-aware
- * under a UTF-8 locale). SQLite's LIKE folds only ASCII case, so the libSQL
- * store matches the lowercased search against the `message_search` column,
- * which holds the message already lowercased in JavaScript.
+ * Operator matching the lowercased search against the `message_search` column.
+ * Both operands are already lowercased in JavaScript, so a plain LIKE compares
+ * them without any database case folding — identical on every dialect, locale
+ * and collation.
+ */
+export const FOLDED_TEXT_LIKE_OPERATOR = "LIKE" satisfies LikeOperator;
+
+/**
+ * Case-insensitive substring operator per dialect, used only as the fallback
+ * for rows without `message_search` (written before the column existed, or by
+ * the host application). PostgreSQL's LIKE is case-sensitive, so it needs
+ * ILIKE, which folds case with the column's collation / the database's
+ * `LC_CTYPE` (ASCII-only under `C`). SQLite's LIKE folds only ASCII case.
  */
 export const CASE_INSENSITIVE_LIKE_OPERATOR = {
   postgres: "ILIKE",
   sqlite: "LIKE",
-} as const satisfies Record<string, string>;
-
-export type CaseInsensitiveLikeOperator = "ILIKE" | "LIKE";
+} as const satisfies Record<string, LikeOperator>;

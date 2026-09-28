@@ -1,10 +1,11 @@
-import { and, type Column, eq, inArray, type SQL, sql } from "drizzle-orm";
+import { and, type Column, eq, inArray, isNull, type SQL, sql } from "drizzle-orm";
 import {
-  type CaseInsensitiveLikeOperator,
+  FOLDED_TEXT_LIKE_OPERATOR,
   LIKE_ESCAPE_CHARACTER,
   LIKE_SPECIAL_CHARACTERS,
+  type LikeOperator,
 } from "../constants/search.js";
-import type { FeedbackFilter } from "./gateway.js";
+import type { FeedbackFilter, FeedbackRow } from "./gateway.js";
 
 /** Feedback columns the list filters read — satisfied by both dialects' tables. */
 export interface FeedbackFilterColumns {
@@ -14,10 +15,9 @@ export interface FeedbackFilterColumns {
   url: Column;
   urlPattern: Column;
   message: Column;
+  /** The message lowercased in JavaScript on insert; `NULL` on rows the store did not write. */
+  messageSearch: Column;
 }
-
-/** Builds the condition matching the rows whose message contains `search`, case-insensitively. */
-export type MessageSearchCondition = (search: string) => SQL;
 
 /** `%search%` with LIKE wildcards escaped, so the search matches literally. */
 export function toContainsPattern(search: string): string {
@@ -44,28 +44,58 @@ export function toSearchableText(text: string): string {
  * @param likeOperator - The dialect's LIKE operator.
  * @param search - The search term, matched literally.
  */
-export function containsCondition(
-  target: Column | SQL,
-  likeOperator: CaseInsensitiveLikeOperator,
-  search: string,
-): SQL {
+export function containsCondition(target: Column | SQL, likeOperator: LikeOperator, search: string): SQL {
   return sql`${target} ${sql.raw(likeOperator)} ${toContainsPattern(search)} ESCAPE ${LIKE_ESCAPE_CHARACTER}`;
 }
 
 /**
+ * The feedback row as inserted: the record plus its `messageSearch`, so the
+ * text search never depends on the database's case folding.
+ *
+ * @param feedback - The feedback row the store builds.
+ */
+export function withSearchableMessage<Row extends FeedbackRow>(feedback: Row): Row & { messageSearch: string } {
+  return { ...feedback, messageSearch: toSearchableText(feedback.message) };
+}
+
+/**
+ * Case-insensitive message search, folded like the standard store filter on
+ * every dialect: the lowercased search is matched with a plain LIKE against
+ * `message_search` (lowercased in JavaScript on insert), so neither SQLite's
+ * ASCII-only LIKE nor a PostgreSQL `C` collation / `LC_CTYPE` changes the
+ * result. Rows without `message_search` fall back to the raw message under the
+ * dialect's case-insensitive operator, whose folding may be ASCII-only.
+ *
+ * @param columns - `message` and `messageSearch` of the feedback table.
+ * @param fallbackLikeOperator - The dialect's case-insensitive LIKE operator.
+ * @param search - The search term, matched literally.
+ */
+export function messageContainsCondition(
+  columns: Pick<FeedbackFilterColumns, "message" | "messageSearch">,
+  fallbackLikeOperator: LikeOperator,
+  search: string,
+): SQL {
+  const foldedSearch = toSearchableText(search);
+  const foldedMatch = containsCondition(columns.messageSearch, FOLDED_TEXT_LIKE_OPERATOR, foldedSearch);
+  const fallbackMatch = containsCondition(columns.message, fallbackLikeOperator, foldedSearch);
+  return sql`(${foldedMatch} OR (${isNull(columns.messageSearch)} AND ${fallbackMatch}))`;
+}
+
+/**
  * WHERE clause of `getFeedbacks`, built only from dialect-agnostic Drizzle
- * operators; the dialect supplies its columns and how it matches the text search.
+ * operators; the dialect supplies its columns and the case-insensitive LIKE
+ * operator of the text-search fallback (see {@link messageContainsCondition}).
  */
 export function buildFeedbackWhere(
   columns: FeedbackFilterColumns,
   filter: FeedbackFilter,
-  messageSearchCondition: MessageSearchCondition,
+  fallbackLikeOperator: LikeOperator,
 ): SQL | undefined {
   const conditions: SQL[] = [eq(columns.projectName, filter.projectName)];
   if (filter.type) conditions.push(eq(columns.type, filter.type));
   if (filter.statuses) conditions.push(inArray(columns.status, [...filter.statuses]));
   if (filter.url) conditions.push(eq(columns.url, filter.url));
   if (filter.urlPattern) conditions.push(eq(columns.urlPattern, filter.urlPattern));
-  if (filter.search) conditions.push(messageSearchCondition(filter.search));
+  if (filter.search) conditions.push(messageContainsCondition(columns, fallbackLikeOperator, filter.search));
   return and(...conditions);
 }

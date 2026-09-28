@@ -47,6 +47,13 @@ export function createSitepingPgTables(names: SitepingTableNames = DEFAULT_SITEP
       // same millisecond by different store instances or processes, so "newest first" and
       // offset pages stay stable. Internal — never part of the feedback record.
       creationSequence: bigint("creation_sequence", { mode: "number" }).generatedAlwaysAsIdentity(),
+      // `message` lowercased in JavaScript (`String.prototype.toLowerCase`, Unicode-aware), the
+      // column the text search reads: `ILIKE` folds case with the collation / `LC_CTYPE`, so under
+      // `C` `Échec` would not match `échec`. The store fills it on insert (a feedback's message
+      // never changes); rows written before this column existed, or by the host application,
+      // stay NULL and the search falls back to `message ILIKE`. Internal — never part of the
+      // feedback record.
+      messageSearch: text("message_search"),
     },
     (table) => [
       uniqueIndex(`${names.feedbacks}_client_id_key`).on(table.clientId),

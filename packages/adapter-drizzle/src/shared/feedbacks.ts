@@ -8,12 +8,12 @@ export interface FeedbackOrderingColumns {
 
 /**
  * Internal feedback columns that are never part of the feedback record: the
- * `creationSequence` ordinal (drives the ordering) and, on libSQL, the
- * `messageSearch` normalized copy of the message (drives the text search).
+ * `creationSequence` ordinal (drives the ordering) and the `messageSearch`
+ * normalized copy of the message (drives the text search).
  */
 export interface InternalFeedbackColumns {
   creationSequence: Column;
-  messageSearch?: Column;
+  messageSearch: Column;
 }
 
 /**

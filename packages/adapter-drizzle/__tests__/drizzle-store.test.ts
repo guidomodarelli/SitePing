@@ -7,6 +7,7 @@ import {
 } from "@siteping/core";
 import { getTableName, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { SCREENSHOT_DELETE_CONCURRENCY } from "../src/constants/screenshots.js";
 import type { SitepingTableNames } from "../src/constants/table-names.js";
 import { createLibSQLSitepingStore, createSitepingSqliteTables } from "../src/libsql/index.js";
 import { createPgSitepingStore, createSitepingPgTables } from "../src/pg/index.js";
@@ -489,6 +490,34 @@ for (const dialect of dialects) {
           error: cleanupError,
         });
       }
+    });
+
+    it("keeps at most the concurrency limit of storage deletions in flight when a project delete frees many screenshots", async () => {
+      const screenshotCount = 50;
+      let inFlight = 0;
+      let peakInFlight = 0;
+      const { storage, deletions } = recordingStorage();
+      const recordDeletion = storage.delete?.bind(storage);
+      storage.delete = async (url) => {
+        inFlight += 1;
+        peakInFlight = Math.max(peakInFlight, inFlight);
+        // Keep each deletion pending across a macrotask so concurrent calls overlap.
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        inFlight -= 1;
+        await recordDeletion?.(url);
+      };
+      const store = database.createStore({ screenshotStorage: storage, logger });
+      const created = await Promise.all(
+        Array.from({ length: screenshotCount }, () =>
+          store.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL })),
+        ),
+      );
+
+      await store.deleteAllFeedbacks("site");
+
+      expect(peakInFlight).toBe(SCREENSHOT_DELETE_CONCURRENCY);
+      expect([...deletions].sort()).toEqual(created.map((feedback) => feedback.screenshotUrl).sort());
+      expect(logger.warn).not.toHaveBeenCalled();
     });
 
     it("removes the annotations of deleted feedbacks", async () => {

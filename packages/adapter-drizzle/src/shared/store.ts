@@ -16,7 +16,12 @@ import {
   StorePersistenceError,
 } from "@siteping/core";
 import { DRIZZLE_STORE_MESSAGE_PREFIX, type DrizzleStoreMutation } from "../constants/errors.js";
-import { INLINE_SCREENSHOT_URL_PREFIX, SCREENSHOT_REFERENCE_LOOKUP_BATCH_SIZE } from "../constants/screenshots.js";
+import {
+  INLINE_SCREENSHOT_URL_PREFIX,
+  SCREENSHOT_DELETE_CONCURRENCY,
+  SCREENSHOT_REFERENCE_LOOKUP_BATCH_SIZE,
+} from "../constants/screenshots.js";
+import { settleWithConcurrencyLimit } from "./concurrency.js";
 import type {
   AnnotationRow,
   DeleteFeedbacksOptions,
@@ -326,9 +331,12 @@ export class DrizzleSitepingStore implements DrizzleStore {
    * fails, every object is kept (an orphan is acceptable, a row pointing at a
    * deleted screenshot is not).
    *
-   * Failures are logged, never thrown. Each delete runs inside its own
-   * promise, so a hook that throws synchronously is settled like a rejection:
-   * it neither fails an already committed delete nor skips the remaining objects.
+   * Deletes run through a pool of at most {@link SCREENSHOT_DELETE_CONCURRENCY}
+   * concurrent calls, so a project delete freeing thousands of objects does not
+   * flood the storage. Failures are logged, never thrown. Each delete runs
+   * inside its own promise, so a hook that throws synchronously is settled like
+   * a rejection: it neither fails an already committed delete nor skips the
+   * remaining objects.
    *
    * @param urls - `screenshotUrl` values of removed rows or of a discarded upload.
    * @param context - Identifiers added to the log lines (never payload data).
@@ -353,7 +361,9 @@ export class DrizzleSitepingStore implements DrizzleStore {
       return;
     }
     const unreferenced = candidates.filter((url) => !referenced.has(url));
-    const results = await Promise.allSettled(unreferenced.map(async (url) => remove(url)));
+    const results = await settleWithConcurrencyLimit(unreferenced, SCREENSHOT_DELETE_CONCURRENCY, async (url) =>
+      remove(url),
+    );
     results.forEach((result, index) => {
       if (result.status === "rejected") {
         this.logger.warn(`${DRIZZLE_STORE_MESSAGE_PREFIX}: screenshotStorage.delete failed — object left in place`, {

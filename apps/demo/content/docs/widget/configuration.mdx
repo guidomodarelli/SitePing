@@ -18,10 +18,11 @@ initSiteping({ projectName: "x" });                                   // ✗ no 
 | Option | Type | Default | What it does |
 |---|---|---|---|
 | `endpoint` | `string` | — | **HTTP mode.** URL of your SitePing API (e.g. `/api/siteping`) |
-| `store` | `SitepingStore` | — | **Store mode.** Write to a store in the browser instead of HTTP — excludes `endpoint`, `apiKey` and `headers` |
+| `store` | `SitepingStore` | — | **Store mode.** Write to a store in the browser instead of HTTP — excludes `endpoint`, `apiKey`, `headers` and `credentials` |
 | `projectName` | `string` | — | Required in both modes. Scopes everything the widget reads and writes |
 | `apiKey` | `string` | — | HTTP mode only. Sent as `Authorization: Bearer <key>` on every request |
 | `headers` | object or function | — | HTTP mode only. Extra headers, static or computed per request (sync or async). Merged last, so an explicit `Authorization` here beats `apiKey` |
+| `credentials` | `"omit" \| "same-origin" \| "include"` | `"same-origin"` | HTTP mode only. `fetch` cookie policy for every request, including the offline retry-queue replay. Set `"include"` when `endpoint` is on another origin and authenticates with a session cookie. Any other value logs an error and the widget does not load |
 
 The two halves are exported as `SitepingHttpConfig` and `SitepingStoreConfig`, which is what you want when a wrapper component takes the config as a prop and only supports one mode:
 
@@ -32,6 +33,20 @@ function mountFeedback(config: SitepingHttpConfig) { /* endpoint guaranteed */ }
 ```
 
 > `apiKey` ships in your client bundle — every visitor can read it. Use it for internal tools already behind a login; on public sites prefer `headers` with a function that returns a short-lived token.
+
+### Cookie sessions on another origin
+
+By default the browser only attaches cookies when `endpoint` shares the page's origin. If your API lives elsewhere (`https://api.example.com` serving a widget on `https://client-site.com`) and authenticates with a session cookie, opt in with `credentials: "include"` — otherwise the cookie is never sent and every request comes back `401`:
+
+```ts
+initSiteping({
+  endpoint: "https://api.example.com/api/siteping",
+  projectName: "x",
+  credentials: "include",
+});
+```
+
+The server must answer with credentialed CORS for that exact origin (`Access-Control-Allow-Origin: https://client-site.com` plus `Access-Control-Allow-Credentials: true` — a `*` origin never works with cookies); `@siteping/server` does this when the origin is listed in `allowedOrigins`. The session cookie itself must be sent cross-site (`SameSite=None; Secure`). The default stays `"same-origin"` on purpose: only include credentials for an API you control, since cookie-authenticated cross-origin requests rely on the server's origin allowlist for CSRF protection.
 
 ## Visibility
 

@@ -56,7 +56,7 @@ function insertByCreatedAtDesc(list: FeedbackRecord[], record: FeedbackRecord): 
  *   `onError` callback.
  */
 export function useSitepingInbox(options: UseSitepingInboxOptions): InboxState {
-  const { source, store, endpoint, apiKey, onStatusChange, onDelete, onError } = options;
+  const { source, store, endpoint, apiKey, credentials, onStatusChange, onDelete, onError } = options;
 
   const projects = useMemo<readonly string[]>(
     () => (typeof options.projects === "string" ? [options.projects] : [...options.projects]),
@@ -82,6 +82,7 @@ export function useSitepingInbox(options: UseSitepingInboxOptions): InboxState {
       return createEndpointSource({
         endpoint,
         apiKey,
+        credentials,
         headers: () => {
           const h = headersRef.current;
           return typeof h === "function" ? h() : (h ?? {});
@@ -89,7 +90,7 @@ export function useSitepingInbox(options: UseSitepingInboxOptions): InboxState {
       });
     }
     throw new Error("[siteping] useSitepingInbox requires one of `source`, `store` or `endpoint`.");
-  }, [source, store, endpoint, apiKey]);
+  }, [source, store, endpoint, apiKey, credentials]);
 
   // -------------------------------------------------------------------------
   // State

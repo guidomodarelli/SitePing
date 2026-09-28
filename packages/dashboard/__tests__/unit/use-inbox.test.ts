@@ -456,6 +456,21 @@ describe("useSitepingInbox — source selection", () => {
     expect((init.headers as Record<string, string>)["X-Team"]).toBe("acme");
     fetchSpy.mockRestore();
   });
+
+  it("builds an endpoint source that forwards the credentials mode to fetch", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async () => new Response(JSON.stringify({ feedbacks: [], total: 0 }), { status: 200 }));
+
+    const { result } = renderHook(() =>
+      useSitepingInbox({ projects: "demo", endpoint: "https://api.example/siteping", credentials: "include" }),
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(fetchSpy).toHaveBeenCalled();
+    for (const [, init] of fetchSpy.mock.calls) expect(init?.credentials).toBe("include");
+    fetchSpy.mockRestore();
+  });
 });
 
 describe("useSitepingInbox — resilience & drawer survival", () => {

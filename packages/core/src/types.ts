@@ -57,6 +57,60 @@ export type SitepingHeadersOption =
   | (() => Record<string, string> | Promise<Record<string, string>>);
 
 /**
+ * Cookie policy for HTTP-mode requests — forwarded verbatim as the
+ * `credentials` option of every `fetch` the widget (or the dashboard's
+ * endpoint source) makes. Mirrors the DOM `RequestCredentials` union,
+ * declared here so core stays free of DOM lib types.
+ *
+ * - `"same-origin"` (default): cookies only when the endpoint shares the
+ *   page's origin — the browser's own default.
+ * - `"include"`: also send cookies to a cross-origin endpoint. Required when a
+ *   server on another origin authenticates with a session cookie; the server
+ *   must answer with credentialed CORS (the page's exact origin plus
+ *   `Access-Control-Allow-Credentials: true`, e.g. `@siteping/server`'s
+ *   `allowedOrigins`).
+ * - `"omit"`: never send cookies, even same-origin.
+ */
+export type SitepingRequestCredentials = "omit" | "same-origin" | "include";
+
+/** Every accepted {@link SitepingRequestCredentials} value — runtime guard source for untyped (script-tag) consumers. */
+export const REQUEST_CREDENTIALS_MODES = [
+  "omit",
+  "same-origin",
+  "include",
+] as const satisfies readonly SitepingRequestCredentials[];
+
+/**
+ * Credentials mode used when none is configured — the browser's own `fetch`
+ * default, so leaving the option unset never changes cookie behavior (and
+ * never opts a cross-origin endpoint into cookie-carrying, CSRF-prone requests).
+ */
+export const DEFAULT_REQUEST_CREDENTIALS = "same-origin" satisfies SitepingRequestCredentials;
+
+/**
+ * Narrow an untyped config value to a {@link SitepingRequestCredentials} mode.
+ *
+ * @param value - Raw `credentials` option (may come from an untyped script-tag config).
+ * @returns `true` when `value` is one of {@link REQUEST_CREDENTIALS_MODES}.
+ */
+export function isRequestCredentials(value: unknown): value is SitepingRequestCredentials {
+  return typeof value === "string" && (REQUEST_CREDENTIALS_MODES as readonly string[]).includes(value);
+}
+
+/**
+ * Actionable description of a rejected `credentials` option — shared by the
+ * widget init guard and the dashboard's endpoint source so both report the
+ * same wording.
+ *
+ * @param value - The rejected raw value (a config value, never user content).
+ * @returns e.g. `invalid \`credentials\` "all". Expected one of "omit", "same-origin", "include".`
+ */
+export function describeInvalidRequestCredentials(value: unknown): string {
+  const accepted = REQUEST_CREDENTIALS_MODES.map((mode) => `"${mode}"`).join(", ");
+  return `invalid \`credentials\` ${String(JSON.stringify(value))}. Expected one of ${accepted}.`;
+}
+
+/**
  * Options shared by both widget modes (HTTP and direct store).
  *
  * Do not use this type directly — use {@link SitepingConfig}, the
@@ -307,6 +361,25 @@ export interface SitepingHttpConfig extends SitepingBaseConfig {
    * fails the request like a network error.
    */
   headers?: SitepingHeadersOption | undefined;
+  /**
+   * Cookie policy for every HTTP-mode request (submit, list, update, delete
+   * and the offline retry-queue replay). Defaults to `"same-origin"` — the
+   * browser default, so existing setups are unchanged.
+   *
+   * Set `"include"` when `endpoint` lives on **another origin** and the
+   * server authenticates with a session cookie (e.g. a custom
+   * `access.authenticate` in `@siteping/server`): without it the browser
+   * never attaches the cookie and every request is rejected as
+   * unauthenticated. The server must allow the page's origin explicitly with
+   * credentialed CORS (`allowedOrigins`) — a wildcard origin never works
+   * with cookies. Only opt in for origins you trust: cookie-authenticated
+   * cross-origin requests rely on the server's CSRF defenses (strict origin
+   * allowlist, `SameSite` cookies).
+   *
+   * An unknown value (untyped script-tag config) is rejected at init: the
+   * widget logs an error and does not load.
+   */
+  credentials?: SitepingRequestCredentials | undefined;
   /** Not available in HTTP mode — use either `endpoint` or `store`, never both. */
   store?: never;
 }
@@ -324,13 +397,15 @@ export interface SitepingStoreConfig extends SitepingBaseConfig {
   apiKey?: never;
   /** HTTP-mode only — meaningless without an `endpoint`. */
   headers?: never;
+  /** HTTP-mode only — meaningless without an `endpoint`. */
+  credentials?: never;
 }
 
 /**
  * Configuration options for the Siteping widget.
  *
  * A discriminated union over the two transport modes: pass `endpoint`
- * (HTTP mode, optionally with `apiKey`/`headers`) **or** `store` (direct
+ * (HTTP mode, optionally with `apiKey`/`headers`/`credentials`) **or** `store` (direct
  * client-side mode) — never both, never neither. Invalid combinations are
  * compile errors instead of runtime warnings.
  */
@@ -693,18 +768,32 @@ function hasErrorCode<C extends string>(error: unknown, code: C): error is Coded
   return hasOwn(error, "code") && error.code === code;
 }
 
-/** Type guard — works for `StoreNotFoundError` and ORM-specific equivalents (e.g. Prisma P2025). */
-export function isStoreNotFound(error: unknown): error is StoreNotFoundError | CodedError<"P2025"> {
+/**
+ * Type guard — works for `StoreNotFoundError` and ORM-specific equivalents
+ * (e.g. Prisma P2025). Matches the stable `STORE_NOT_FOUND` code as well as
+ * `instanceof`: every consumer package bundles its own copy of core (tsup
+ * `noExternal`), so an adapter's instance fails `instanceof` against the
+ * server's class identity.
+ */
+export function isStoreNotFound(
+  error: unknown,
+): error is StoreNotFoundError | CodedError<"STORE_NOT_FOUND"> | CodedError<"P2025"> {
   if (error instanceof StoreNotFoundError) return true;
   // Backwards compat: Prisma's P2025
-  return hasErrorCode(error, "P2025");
+  return hasErrorCode(error, "STORE_NOT_FOUND") || hasErrorCode(error, "P2025");
 }
 
-/** Type guard — works for `StoreDuplicateError` and ORM-specific equivalents (e.g. Prisma P2002). */
-export function isStoreDuplicate(error: unknown): error is StoreDuplicateError | CodedError<"P2002"> {
+/**
+ * Type guard — works for `StoreDuplicateError` and ORM-specific equivalents
+ * (e.g. Prisma P2002). Matches the stable `STORE_DUPLICATE` code as well as
+ * `instanceof`, for the same cross-bundle reason as {@link isStoreNotFound}.
+ */
+export function isStoreDuplicate(
+  error: unknown,
+): error is StoreDuplicateError | CodedError<"STORE_DUPLICATE"> | CodedError<"P2002"> {
   if (error instanceof StoreDuplicateError) return true;
   // Backwards compat: Prisma's P2002
-  return hasErrorCode(error, "P2002");
+  return hasErrorCode(error, "STORE_DUPLICATE") || hasErrorCode(error, "P2002");
 }
 
 /**
@@ -751,6 +840,20 @@ export function flattenAnnotation(ann: AnnotationPayload): AnnotationCreateInput
 // Abstract Store — adapter pattern
 // ---------------------------------------------------------------------------
 
+/**
+ * Outcome of `SitepingStore.createFeedbackIfAbsent` — the record plus whether
+ * this very call inserted it.
+ */
+export interface FeedbackCreateOutcome {
+  feedback: FeedbackRecord;
+  /**
+   * `true` when this call inserted the record, `false` when a record with the
+   * same `clientId` already existed and is returned instead (a replay, or a
+   * concurrent request that won the race).
+   */
+  created: boolean;
+}
+
 /** Paginated result returned by `SitepingStore.getFeedbacks`. */
 export interface FeedbackPage {
   feedbacks: FeedbackRecord[];
@@ -770,7 +873,10 @@ export interface FeedbackPage {
  *   the record does not exist.
  * - **`createFeedback`**: either return the existing record on duplicate
  *   `clientId` (idempotent) or throw `StoreDuplicateError`. The handler
- *   handles both patterns.
+ *   handles both patterns — but only a throw, or the optional
+ *   `createFeedbackIfAbsent`, tells it the record was not inserted by this
+ *   call; stores that return the existing record should implement
+ *   `createFeedbackIfAbsent` so creation side effects never run twice.
  * - **All mutations**: when a write is accepted but cannot be persisted
  *   (e.g. storage quota), throw `StorePersistenceError` instead of reporting
  *   a phantom success. Detect it with `isStorePersistence`.
@@ -794,10 +900,30 @@ export interface SitepingStore {
    * `projectName`, `false` otherwise (including when it does not exist).
    *
    * HTTP handlers use this to reject cross-project PATCH/DELETE requests.
-   * Implement it whenever your store serves multiple projects; when absent,
-   * handlers skip the ownership check and rely on `id` alone.
+   * Implement it whenever your store serves multiple projects. When absent,
+   * handlers rely on `id` alone — so `createSitepingHandler` refuses to start
+   * with a custom `access.authorize` (which may scope callers to projects)
+   * over a store that lacks it.
    */
   verifyProjectOwnership?(id: string, projectName: string): Promise<boolean>;
+  /**
+   * Optional — `createFeedback` that reports whether this call inserted the
+   * record (`created: true`) or found an existing one with the same
+   * `clientId` (`created: false`). The dedup check and the insert must be
+   * atomic, like `createFeedback`'s: of N concurrent calls with the same
+   * `clientId`, exactly one may report `created: true`, and all must return
+   * that same record. `createCollectionStore` guarantees this within one
+   * store instance by serializing its mutations; stores shared across
+   * processes need an atomic backend primitive (unique constraint,
+   * transaction, compare-and-set).
+   *
+   * HTTP handlers prefer it over `createFeedback` to fire creation side
+   * effects (webhooks, `onCreated`) exactly once when concurrent requests
+   * race on the same `clientId`. Stores whose `createFeedback` throws
+   * `StoreDuplicateError` on a duplicate already give that signal and may
+   * leave it out.
+   */
+  createFeedbackIfAbsent?(data: FeedbackCreateInput): Promise<FeedbackCreateOutcome>;
 }
 
 /** Payload sent from the widget to the server when submitting feedback. */

@@ -5,6 +5,7 @@ import type {
   FeedbackStatus,
   FeedbackType,
   SitepingLocale,
+  SitepingRequestCredentials,
   SitepingStore,
 } from "@siteping/core";
 import type { ReactNode } from "react";
@@ -46,6 +47,14 @@ export interface EndpointSourceOptions {
    * here takes precedence over `apiKey`.
    */
   headers?: Record<string, string> | (() => Record<string, string> | Promise<Record<string, string>>) | undefined;
+  /**
+   * `fetch` credentials mode (cookie policy) for every request. Defaults to
+   * `"same-origin"` — the browser default. Use `"include"` when the endpoint
+   * lives on another origin and authenticates with a session cookie; the
+   * server must then allow this origin with credentialed CORS. An unknown
+   * value throws when the source is created.
+   */
+  credentials?: SitepingRequestCredentials | undefined;
   /** Test seam — defaults to `globalThis.fetch`. */
   fetchFn?: typeof fetch | undefined;
 }
@@ -86,6 +95,8 @@ export interface InboxCustomSourceOptions extends InboxSharedOptions {
   apiKey?: never;
   /** Endpoint mode only. */
   headers?: never;
+  /** Endpoint mode only. */
+  credentials?: never;
 }
 
 /** Store mode — direct `SitepingStore` access, no server round-trip. */
@@ -100,6 +111,8 @@ export interface InboxStoreOptions extends InboxSharedOptions {
   apiKey?: never;
   /** Endpoint mode only. */
   headers?: never;
+  /** Endpoint mode only. */
+  credentials?: never;
 }
 
 /** Endpoint mode — HTTP against the Siteping request handlers. */
@@ -110,6 +123,8 @@ export interface InboxEndpointOptions extends InboxSharedOptions {
   apiKey?: string | undefined;
   /** Extra request headers — see `EndpointSourceOptions.headers`. */
   headers?: EndpointSourceOptions["headers"];
+  /** Cookie policy for every request — see `EndpointSourceOptions.credentials`. */
+  credentials?: EndpointSourceOptions["credentials"];
   /** Use exactly one of `source`, `store`, `endpoint`. */
   source?: never;
   /** Use exactly one of `source`, `store`, `endpoint`. */
@@ -119,7 +134,7 @@ export interface InboxEndpointOptions extends InboxSharedOptions {
 /**
  * Options accepted by `useSitepingInbox` (and, by extension,
  * `<SitepingInbox />`) — a union over the three source modes. Supplying no
- * source, several sources, or endpoint-only options (`apiKey`/`headers`)
+ * source, several sources, or endpoint-only options (`apiKey`/`headers`/`credentials`)
  * alongside `store`/`source` is a compile error instead of a runtime throw
  * or a silently ignored option.
  */

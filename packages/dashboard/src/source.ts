@@ -1,4 +1,6 @@
 import {
+  DEFAULT_REQUEST_CREDENTIALS,
+  describeInvalidRequestCredentials,
   errorFromResponse,
   type FeedbackPage,
   type FeedbackQuery,
@@ -7,6 +9,7 @@ import {
   type FeedbackResponseList,
   type FeedbackStatus,
   feedbackQueryToSearchParams,
+  isRequestCredentials,
   networkErrorFromException,
   type SitepingStore,
   toFeedbackUpdate,
@@ -49,9 +52,20 @@ async function parseJsonAs<T>(response: Response): Promise<T> {
  * Auth: `apiKey` becomes `Authorization: Bearer <apiKey>`; `headers` (static
  * or per-request function, sync or async) are merged on top, so an explicit
  * `Authorization` header wins over `apiKey`.
+ *
+ * Cookies: `credentials` (default `"same-origin"`) is forwarded to every
+ * `fetch` — set `"include"` for a cross-origin, cookie-authenticated endpoint.
+ *
+ * @throws {TypeError} When `credentials` is not `"omit"`, `"same-origin"` or `"include"`.
  */
 export function createEndpointSource(options: EndpointSourceOptions): InboxSource {
   const { endpoint, apiKey, headers, fetchFn } = options;
+  // Untyped callers can pass anything — an unknown mode would make every
+  // `fetch` throw as an opaque network error, so reject it up front.
+  if (options.credentials !== undefined && !isRequestCredentials(options.credentials)) {
+    throw new TypeError(`[siteping] createEndpointSource: ${describeInvalidRequestCredentials(options.credentials)}`);
+  }
+  const credentials = options.credentials ?? DEFAULT_REQUEST_CREDENTIALS;
   // Wrap the global to keep `fetch` bound to globalThis (avoids "Illegal invocation").
   const doFetch: typeof fetch = fetchFn ?? ((input, init) => globalThis.fetch(input, init));
 
@@ -67,7 +81,7 @@ export function createEndpointSource(options: EndpointSourceOptions): InboxSourc
   async function request(label: string, url: string, init: RequestInit): Promise<Response> {
     let response: Response;
     try {
-      response = await doFetch(url, init);
+      response = await doFetch(url, { ...init, credentials });
     } catch (error) {
       throw networkErrorFromException(error, label);
     }

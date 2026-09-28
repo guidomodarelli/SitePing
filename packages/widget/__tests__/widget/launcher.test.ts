@@ -548,6 +548,25 @@ describe("launch", () => {
       expect(widget).toBeNull();
       instance.destroy();
     });
+
+    it("returns no-op and reports the accepted values when credentials is unknown", () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const instance = launch(defaultConfig({ credentials: "always" as unknown as SitepingHttpConfig["credentials"] }));
+
+      expect(document.querySelector("siteping-widget")).toBeNull();
+      expect(errorSpy).toHaveBeenCalledWith(
+        '[siteping] Widget not loaded: invalid `credentials` "always". Expected one of "omit", "same-origin", "include".',
+      );
+      instance.destroy();
+      errorSpy.mockRestore();
+    });
+
+    it("mounts when credentials is a supported mode", () => {
+      const instance = launch(defaultConfig({ credentials: "include" }));
+
+      expect(document.querySelector("siteping-widget")).not.toBeNull();
+      instance.destroy();
+    });
   });
 
   // -------------------------------------------------------------------------

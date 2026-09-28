@@ -13,6 +13,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const name = process.argv[2];
 if (!name || !/^[a-z][a-z0-9-]*$/.test(name)) {
@@ -25,7 +26,7 @@ if (!["node", "browser", "neutral"].includes(platform)) {
   process.exit(1);
 }
 
-const root = new URL("..", import.meta.url).pathname;
+const root = fileURLToPath(new URL("..", import.meta.url));
 const pkgDir = `packages/adapter-${name}`;
 const abs = (p) => join(root, p);
 
@@ -166,7 +167,7 @@ writeFileSync(
   `import { testSitepingStore } from "@siteping/core/testing";
 import { ${className} } from "../src/index.js";
 
-// The shared conformance suite (~44 tests) verifies the full SitepingStore
+// The shared conformance suite (~47 tests) verifies the full SitepingStore
 // contract. Options: { duplicateBehavior: "return" | "throw",
 // caseInsensitiveSearch: boolean } for backends whose contract legitimately
 // varies.

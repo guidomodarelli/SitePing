@@ -129,11 +129,15 @@ describe("ApiClient", () => {
    * Node test env has no persistent localStorage — back it with a Map so
    * queueForRetry's fire-and-forget write is observable.
    */
-  function stubLocalStorage(): Map<string, string> {
+  function stubLocalStorage(quotaChars = Number.POSITIVE_INFINITY): Map<string, string> {
     const store = new Map<string, string>();
     vi.stubGlobal("localStorage", {
       getItem: (k: string) => store.get(k) ?? null,
-      setItem: (k: string, v: string) => void store.set(k, v),
+      setItem: (k: string, v: string) => {
+        // Browsers throw QuotaExceededError instead of storing an oversized value.
+        if (v.length > quotaChars) throw new DOMException("quota exceeded", "QuotaExceededError");
+        store.set(k, v);
+      },
       removeItem: (k: string) => void store.delete(k),
       clear: () => store.clear(),
     });
@@ -173,6 +177,58 @@ describe("ApiClient", () => {
     vi.useRealTimers();
 
     expect(readQueue(store)).toHaveLength(1);
+
+    vi.unstubAllGlobals();
+  });
+
+  async function failWithNetworkError(payload: typeof basePayload & Record<string, unknown>): Promise<void> {
+    vi.useFakeTimers();
+    vi.mocked(fetch).mockRejectedValue(new TypeError("Failed to fetch"));
+    const promise = client.sendFeedback(payload).catch((error: Error) => error);
+    await drainRetryBackoff();
+    await promise;
+    vi.useRealTimers();
+  }
+
+  const screenshotPayload = {
+    ...basePayload,
+    screenshotDataUrl: `data:image/jpeg;base64,${"A".repeat(4_000)}`,
+    screenshotRegion: { xPct: 0.1, yPct: 0.1, wPct: 0.5, hPct: 0.5 },
+  };
+
+  it("keeps queued feedbacks without their screenshots when the quota is exceeded", async () => {
+    const store = stubLocalStorage(6_000);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await failWithNetworkError({ ...screenshotPayload, message: "first" });
+    expect(readQueue(store)[0]!.payload.screenshotDataUrl).toBe(screenshotPayload.screenshotDataUrl);
+
+    await failWithNetworkError({ ...screenshotPayload, message: "second" });
+
+    const queue = readQueue(store);
+    expect(queue.map((entry) => entry.payload.message)).toEqual(["first", "second"]);
+    for (const entry of queue) {
+      expect("screenshotDataUrl" in entry.payload).toBe(false);
+      expect("screenshotRegion" in entry.payload).toBe(false);
+      expect(entry.payload.annotations).toEqual(basePayload.annotations);
+    }
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("without their screenshots"));
+
+    vi.unstubAllGlobals();
+  });
+
+  it("drops the oldest queued feedbacks when even the screenshot-free queue exceeds the quota", async () => {
+    const store = stubLocalStorage(Number.POSITIVE_INFINITY);
+    await failWithNetworkError({ ...basePayload, message: "oldest" });
+    const singleEntryLength = store.get("siteping_retry_queue")!.length;
+
+    const quotaStore = stubLocalStorage(singleEntryLength + 50);
+    quotaStore.set("siteping_retry_queue", store.get("siteping_retry_queue")!);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await failWithNetworkError({ ...screenshotPayload, message: "newest" });
+
+    expect(readQueue(quotaStore).map((entry) => entry.payload.message)).toEqual(["newest"]);
 
     vi.unstubAllGlobals();
   });
@@ -720,6 +776,80 @@ describe("ApiClient — auth & headers", () => {
 });
 
 // ---------------------------------------------------------------------------
+// credentials — cookie policy forwarded to every fetch
+// ---------------------------------------------------------------------------
+
+describe("ApiClient — credentials", () => {
+  const endpoint = "https://api.example.com/api/siteping";
+
+  const payload = {
+    projectName: "test",
+    type: "bug" as const,
+    message: "x",
+    url: "https://x.com",
+    viewport: "1x1",
+    userAgent: "t",
+    authorName: "A",
+    authorEmail: "a@b.com",
+    annotations: [],
+    clientId: "u",
+  };
+
+  beforeEach(() => {
+    // Fresh Response per call — every test fires several requests.
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response("{}", { status: 200 }));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  /** Fire one request of every kind the widget makes against the endpoint. */
+  async function callEveryMethod(client: ApiClient): Promise<void> {
+    await client.sendFeedback(payload);
+    await client.getFeedbacks("test");
+    await client.resolveFeedback("fb-1", true);
+    await client.deleteFeedback("fb-1");
+    await client.deleteAllFeedbacks("test");
+  }
+
+  function credentialsPerCall(): Array<RequestCredentials | undefined> {
+    return vi.mocked(fetch).mock.calls.map(([, init]) => init?.credentials);
+  }
+
+  it('defaults every request to "same-origin" (the browser default)', async () => {
+    await callEveryMethod(new ApiClient(endpoint, "test"));
+
+    expect(credentialsPerCall()).toEqual(Array(5).fill("same-origin"));
+  });
+
+  it('sends "include" on every request when configured (cross-origin cookie auth)', async () => {
+    await callEveryMethod(new ApiClient(endpoint, "test", { credentials: "include" }));
+
+    expect(credentialsPerCall()).toEqual(Array(5).fill("include"));
+  });
+
+  it('sends "omit" on every request when configured', async () => {
+    await callEveryMethod(new ApiClient(endpoint, "test", { credentials: "omit" }));
+
+    expect(credentialsPerCall()).toEqual(Array(5).fill("omit"));
+  });
+
+  it("keeps the configured mode on every retry attempt after a 5xx", async () => {
+    vi.useFakeTimers();
+    vi.mocked(fetch).mockImplementation(async () => new Response("Server error", { status: 500 }));
+    const client = new ApiClient(endpoint, "test", { credentials: "include" });
+
+    const promise = client.getFeedbacks("test").catch((error: unknown) => error);
+    await drainRetryBackoff();
+    await promise;
+    vi.useRealTimers();
+
+    expect(credentialsPerCall()).toEqual(Array(4).fill("include"));
+  });
+});
+
+// ---------------------------------------------------------------------------
 // flushRetryQueue
 // ---------------------------------------------------------------------------
 
@@ -850,6 +980,39 @@ describe("flushRetryQueue", () => {
     });
     expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
   });
+
+  it.each([
+    { configured: undefined, expected: "same-origin" },
+    { configured: "include", expected: "include" },
+  ] as const)(
+    "replays queued POSTs with credentials $expected (configured: $configured)",
+    async ({ configured, expected }) => {
+      const payload = {
+        projectName: "test",
+        type: "bug" as const,
+        message: "retry with cookies",
+        url: "https://example.com",
+        viewport: "1x1",
+        userAgent: "t",
+        authorName: "A",
+        authorEmail: "a@b.com",
+        annotations: [],
+        clientId: "cookie-1",
+      };
+      vi.mocked(localStorage.getItem).mockReturnValue(
+        JSON.stringify([
+          { endpoint, payload },
+          { endpoint, payload: { ...payload, clientId: "cookie-2" } },
+        ]),
+      );
+      vi.mocked(fetch).mockImplementation(async () => new Response("", { status: 201 }));
+
+      await flushRetryQueue(endpoint, null, configured === undefined ? {} : { credentials: configured });
+
+      const credentials = vi.mocked(fetch).mock.calls.map(([, init]) => init?.credentials);
+      expect(credentials).toEqual([expected, expected]);
+    },
+  );
 
   it("preserves legacy replay behavior when current identity is omitted", async () => {
     const payload1 = {

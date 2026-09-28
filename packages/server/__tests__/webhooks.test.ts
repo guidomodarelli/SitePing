@@ -1,3 +1,4 @@
+import { MemoryStore } from "@siteping/adapter-memory";
 import { createCollectionStore, type FeedbackRecord } from "@siteping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createSitepingHandler } from "../src/index.js";
@@ -294,29 +295,15 @@ describe("dispatchWebhooks", () => {
 // Handler integration — webhook fires after successful POST
 // ---------------------------------------------------------------------------
 
-function mockPrisma() {
-  const fbRecord = { ...FEEDBACK, createdAt: new Date(), updatedAt: new Date() };
-  return {
-    sitepingFeedback: {
-      create: vi.fn().mockResolvedValue(fbRecord),
-      findMany: vi.fn().mockResolvedValue([]),
-      findUnique: vi.fn().mockResolvedValue(null),
-      update: vi.fn().mockResolvedValue(fbRecord),
-      delete: vi.fn().mockResolvedValue({ id: fbRecord.id }),
-      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
-      count: vi.fn().mockResolvedValue(0),
-    },
-  };
-}
-
 describe("createSitepingHandler — webhooks option", () => {
   it("dispatches a single webhook after a successful POST", async () => {
-    const prisma = mockPrisma();
+    const store = new MemoryStore();
     const webhook: WebhookConfig = { url: "https://hooks.example.com" };
-    const handler = createSitepingHandler({ prisma, webhooks: webhook });
+    const handler = createSitepingHandler({ store, webhooks: webhook });
 
     const req = new Request("http://localhost/api/siteping", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(validPayloadNoAnnotations),
     });
     const res = await handler.POST(req);
@@ -327,9 +314,9 @@ describe("createSitepingHandler — webhooks option", () => {
   });
 
   it("dispatches every webhook in an array config", async () => {
-    const prisma = mockPrisma();
+    const store = new MemoryStore();
     const handler = createSitepingHandler({
-      prisma,
+      store,
       webhooks: [
         { url: "https://slack.example.com", type: "slack" },
         { url: "https://discord.example.com", type: "discord" },
@@ -338,6 +325,7 @@ describe("createSitepingHandler — webhooks option", () => {
 
     const req = new Request("http://localhost/api/siteping", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(validPayloadNoAnnotations),
     });
     await handler.POST(req);
@@ -349,14 +337,15 @@ describe("createSitepingHandler — webhooks option", () => {
   });
 
   it("does not fire webhooks when POST fails validation", async () => {
-    const prisma = mockPrisma();
+    const store = new MemoryStore();
     const handler = createSitepingHandler({
-      prisma,
+      store,
       webhooks: { url: "https://hooks.example.com" },
     });
 
     const req = new Request("http://localhost/api/siteping", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "bug" }), // missing required fields
     });
     const res = await handler.POST(req);
@@ -390,6 +379,7 @@ describe("createSitepingHandler — webhooks on clientId replays", () => {
       handler.POST(
         new Request("http://localhost/api/siteping", {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...validPayloadNoAnnotations, clientId: "replayed-once" }),
         }),
       );

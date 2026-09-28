@@ -43,8 +43,8 @@ export function createScreenshotServeHandler(
   return {
     async GET(request) {
       if (authorize && !(await authorize(request))) return new Response(null, { status: 403 });
-      const key = decodeURIComponent(new URL(request.url).pathname.split("/").pop() ?? "");
-      if (!GENERATED_KEY_PATTERN.test(key)) return new Response(null, { status: 404 });
+      const key = keyFromRequestUrl(request.url);
+      if (key === null || !GENERATED_KEY_PATTERN.test(key)) return new Response(null, { status: 404 });
       const object = await read(key);
       if (!object) return new Response(null, { status: 404 });
       return new Response(object.bytes, {
@@ -56,4 +56,19 @@ export function createScreenshotServeHandler(
       });
     },
   };
+}
+
+/**
+ * Decoded last path segment of `requestUrl`, or `null` when its percent-encoding
+ * is malformed (`%`, `%ZZ`, a truncated UTF-8 sequence) — client input that is
+ * simply not a key, answered like any other invalid key.
+ */
+function keyFromRequestUrl(requestUrl: string): string | null {
+  const lastSegment = new URL(requestUrl).pathname.split("/").pop() ?? "";
+  try {
+    return decodeURIComponent(lastSegment);
+  } catch (error) {
+    if (error instanceof URIError) return null;
+    throw error;
+  }
 }

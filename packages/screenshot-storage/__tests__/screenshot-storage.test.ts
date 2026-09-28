@@ -309,6 +309,16 @@ describe("createScreenshotServeHandler", () => {
     }
   });
 
+  it("answers 404 for keys with malformed percent-encoding", async () => {
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+    await createScreenshotStorage(objectStore).upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
+    const handler = createScreenshotServeHandler(objectStore);
+
+    for (const malformedSegment of ["%", "%ZZ", "%E0%A4%A"]) {
+      expect((await handler.GET(new Request(`${PUBLIC_BASE_URL}/${malformedSegment}`))).status).toBe(404);
+    }
+  });
+
   it("applies the authorize callback", async () => {
     const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
     const { url } = await createScreenshotStorage(objectStore).upload(JPEG_DATA_URL, UPLOAD_CONTEXT);

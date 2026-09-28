@@ -1,10 +1,16 @@
-import { GENERATED_KEY_PATTERN, SERVED_SCREENSHOT_CACHE_CONTROL } from "../constants/screenshots.js";
+import {
+  AUTHORIZED_SERVED_SCREENSHOT_CACHE_CONTROL,
+  GENERATED_KEY_PATTERN,
+  SERVED_SCREENSHOT_CACHE_CONTROL,
+} from "../constants/screenshots.js";
 import type { ScreenshotObjectStore } from "./object-store.js";
 
 export interface ScreenshotServeHandlerOptions {
   /**
    * Decide whether the request may read screenshots (e.g. same session check
-   * as the feedback API). Defaults to public — keys are unguessable.
+   * as the feedback API). Defaults to public — keys are unguessable. When set,
+   * responses are marked `Cache-Control: private` so shared caches (CDN, proxy)
+   * never serve an authorized screenshot to a request that skipped this check.
    */
   authorize?: (request: Request) => boolean | Promise<boolean>;
 }
@@ -32,6 +38,7 @@ export function createScreenshotServeHandler(
       `[siteping] createScreenshotServeHandler: ${objectStore.name} has no get() — it serves screenshots from its own URLs`,
     );
   }
+  const cacheControl = authorize ? AUTHORIZED_SERVED_SCREENSHOT_CACHE_CONTROL : SERVED_SCREENSHOT_CACHE_CONTROL;
 
   return {
     async GET(request) {
@@ -43,7 +50,7 @@ export function createScreenshotServeHandler(
       return new Response(object.bytes, {
         headers: {
           "Content-Type": object.contentType,
-          "Cache-Control": SERVED_SCREENSHOT_CACHE_CONTROL,
+          "Cache-Control": cacheControl,
           "X-Content-Type-Options": "nosniff",
         },
       });

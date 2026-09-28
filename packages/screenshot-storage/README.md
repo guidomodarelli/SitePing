@@ -38,4 +38,6 @@ Backends without a public URL are served from your app:
 export const { GET } = createScreenshotServeHandler(objectStore, { authorize: (request) => hasSession(request) });
 ```
 
+Responses are `Cache-Control: public, max-age=31536000, immutable` (keys are unguessable and never reused). With `authorize`, they are `private` instead, so a CDN or proxy never hands an authorized screenshot to a request that skipped the check.
+
 MIT

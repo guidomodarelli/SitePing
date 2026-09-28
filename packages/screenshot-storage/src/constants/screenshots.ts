@@ -27,8 +27,18 @@ export const CONTENT_TYPE_EXTENSIONS: Readonly<Record<string, string>> = {
   "image/vnd.microsoft.icon": "ico",
 };
 
-/** `Cache-Control` of served screenshots — objects are immutable (a new key per upload). */
+/**
+ * `Cache-Control` of screenshots served without an `authorize` callback —
+ * objects are immutable (a new key per upload), so any cache may keep them.
+ */
 export const SERVED_SCREENSHOT_CACHE_CONTROL = "public, max-age=31536000, immutable";
+
+/**
+ * `Cache-Control` of screenshots served behind an `authorize` callback: only the
+ * requesting browser may keep them. A shared cache (CDN, proxy) storing an
+ * authorized response would hand it to later requests without running the check.
+ */
+export const AUTHORIZED_SERVED_SCREENSHOT_CACHE_CONTROL = "private, max-age=31536000, immutable";
 
 // Building blocks of a generated key `<prefix><hex>.<extension>` — the single
 // source every key check below is derived from, so keys `createScreenshotStorage`

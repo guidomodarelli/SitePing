@@ -265,7 +265,7 @@ describe("createScreenshotServeHandler", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("image/jpeg");
-    expect(response.headers.get("cache-control")).toContain("immutable");
+    expect(response.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(JPEG_BYTES);
   });
 
@@ -318,6 +318,17 @@ describe("createScreenshotServeHandler", () => {
 
     expect((await handler.GET(new Request(url))).status).toBe(403);
     expect((await handler.GET(new Request(url, { headers: { cookie: "session=ok" } }))).status).toBe(200);
+  });
+
+  it("keeps screenshots behind an authorize callback out of shared caches", async () => {
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+    const { url } = await createScreenshotStorage(objectStore).upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
+    const handler = createScreenshotServeHandler(objectStore, { authorize: () => true });
+
+    const response = await handler.GET(new Request(url));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("private, max-age=31536000, immutable");
   });
 
   it("refuses backends that serve their own URLs", () => {

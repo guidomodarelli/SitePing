@@ -1,6 +1,14 @@
 /** Image types accepted by default — what the widget captures, plus common lossless/modern formats. */
 export const DEFAULT_ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
+/**
+ * Image types that are active documents rather than inert pixels: an SVG opened
+ * directly runs its scripts with the origin that serves it. `createScreenshotStorage`
+ * refuses them in `allowedContentTypes` — `X-Content-Type-Options: nosniff`
+ * cannot help, since the declared type is already the active one.
+ */
+export const ACTIVE_IMAGE_CONTENT_TYPES: readonly string[] = ["image/svg+xml"];
+
 /** Largest decoded screenshot accepted by default, in bytes (matches the server's payload cap). */
 export const DEFAULT_MAX_SCREENSHOT_BYTES = 1_500_000;
 
@@ -22,10 +30,18 @@ export const CONTENT_TYPE_EXTENSIONS: Readonly<Record<string, string>> = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
-  "image/svg+xml": "svg",
   "image/x-icon": "ico",
   "image/vnd.microsoft.icon": "ico",
 };
+
+/**
+ * `Content-Security-Policy` of every served screenshot: no subresource, no
+ * script, and a sandbox (opaque origin) — so even an active object that
+ * reached the backend by another path (a legacy import, a shared bucket)
+ * cannot act as a document of the application's origin when opened directly.
+ * Images rendered by an `<img>` are unaffected.
+ */
+export const SERVED_SCREENSHOT_CONTENT_SECURITY_POLICY = "default-src 'none'; sandbox";
 
 /**
  * `Cache-Control` of screenshots served without an `authorize` callback —

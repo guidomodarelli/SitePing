@@ -240,6 +240,14 @@ describe("createScreenshotStorage — validation", () => {
     ).toThrow(/image\/vnd\.adobe\.photoshop.*vndadobephotoshop/);
   });
 
+  it.each(["image/svg+xml", "IMAGE/SVG+XML"])("refuses the active format %s in allowedContentTypes", (contentType) => {
+    expect(() =>
+      createScreenshotStorage(createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL }), {
+        allowedContentTypes: ["image/png", contentType],
+      }),
+    ).toThrow(/active format/);
+  });
+
   it("gives custom content types keys the serve handler accepts", async () => {
     const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
     const storage = createScreenshotStorage(objectStore, {
@@ -282,6 +290,23 @@ describe("createScreenshotServeHandler", () => {
 
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toBe("image/gif");
+    });
+  }
+
+  for (const backend of backends.filter(({ name }) => name === "memory" || name === "filesystem")) {
+    it(`sandboxes whatever ${backend.name} serves, even an SVG that reached the backend directly`, async () => {
+      const { objectStore } = backend.open();
+      const legacyKey = `siteping-${"b".repeat(32)}.svg`;
+      const svgBytes = new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+      );
+      await objectStore.put({ key: legacyKey, bytes: svgBytes, contentType: "image/svg+xml" });
+
+      const response = await createScreenshotServeHandler(objectStore).GET(new Request(objectStore.urlFor(legacyKey)));
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-security-policy")).toBe("default-src 'none'; sandbox");
+      expect(response.headers.get("x-content-type-options")).toBe("nosniff");
     });
   }
 

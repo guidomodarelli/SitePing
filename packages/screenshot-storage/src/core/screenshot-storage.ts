@@ -6,6 +6,7 @@ import {
   KEY_PREFIX_PATTERN,
   UNCERTAIN_UPLOAD_RECLAIM_DELAYS_MS,
 } from "../constants/screenshots.js";
+import { assertInertContentTypes } from "./active-content.js";
 import { decodeImageDataUrl } from "./data-url.js";
 import { assertKeyableContentTypes, generateKey, isGeneratedKey } from "./generated-key.js";
 import { isScreenshotUploadRejected, type ScreenshotObjectStore } from "./object-store.js";
@@ -24,7 +25,8 @@ export interface ScreenshotStorageOptions {
   /**
    * Image types accepted. Defaults to JPEG, PNG and WebP. Each type must map to
    * a key extension of 1–10 lowercase letters or digits (`image/gif` → `gif`,
-   * `image/svg+xml` → `svg`); `createScreenshotStorage` throws otherwise.
+   * `image/x-icon` → `ico`), and active formats (`image/svg+xml`, which can run
+   * scripts when opened directly) are refused; `createScreenshotStorage` throws otherwise.
    */
   allowedContentTypes?: readonly string[];
   /** Largest decoded image accepted, in bytes. Defaults to 1.5 MB. */
@@ -108,6 +110,7 @@ export function createScreenshotStorage(
   if (!KEY_PREFIX_PATTERN.test(keyPrefix)) {
     throw new Error(`[siteping] createScreenshotStorage: keyPrefix "${keyPrefix}" must match [a-z0-9_-]{0,64}`);
   }
+  assertInertContentTypes(allowedContentTypes);
   assertKeyableContentTypes(allowedContentTypes);
   assertReclaimDelays(uncertainUploadReclaimDelaysMs);
   const reclaimUncertainUpload = createUncertainUploadReclaimer({

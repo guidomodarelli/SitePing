@@ -3,6 +3,7 @@ import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { CASE_INSENSITIVE_LIKE_OPERATOR } from "../constants/search.js";
 import { GREATEST_VALUE_FUNCTION } from "../constants/sql.js";
 import { annotationRecordColumns, selectAnnotationValues } from "../shared/annotations.js";
+import { deletedFeedbackColumns, toDeletedFeedbacks } from "../shared/deletes.js";
 import { feedbackRecordColumns, newestFeedbackFirst } from "../shared/feedbacks.js";
 import { buildFeedbackWhere } from "../shared/filters.js";
 import type { FeedbackFilter, SitepingSqlGateway } from "../shared/gateway.js";
@@ -110,28 +111,36 @@ function createLibSQLGateway(
         .returning(recordColumns);
       return row ?? null;
     },
-    async deleteById(id) {
+    async deleteById(id, options) {
       // Annotations cascade only with `PRAGMA foreign_keys = ON`, which libSQL
       // does not guarantee — delete them explicitly in the same batch.
       const [, deleted] = await db.batch([
         db.delete(sitepingAnnotations).where(eq(sitepingAnnotations.feedbackId, id)),
-        db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).returning(recordColumns),
+        db
+          .delete(sitepingFeedbacks)
+          .where(eq(sitepingFeedbacks.id, id))
+          .returning(deletedFeedbackColumns(sitepingFeedbacks, options)),
       ]);
-      return deleted[0] ?? null;
+      return deleted.length > 0 ? toDeletedFeedbacks(deleted) : null;
     },
-    async deleteByProject(projectName) {
+    async deleteByProject(projectName, options) {
       const projectFeedbackIds = db
         .select({ id: sitepingFeedbacks.id })
         .from(sitepingFeedbacks)
         .where(eq(sitepingFeedbacks.projectName, projectName));
+      const deleteAnnotations = db
+        .delete(sitepingAnnotations)
+        .where(inArray(sitepingAnnotations.feedbackId, projectFeedbackIds));
+      const deleteFeedbacks = db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.projectName, projectName));
+      if (!options.collectScreenshotUrls) {
+        await db.batch([deleteAnnotations, deleteFeedbacks]);
+        return { screenshotUrls: [] };
+      }
       const [, deleted] = await db.batch([
-        db.delete(sitepingAnnotations).where(inArray(sitepingAnnotations.feedbackId, projectFeedbackIds)),
-        db
-          .delete(sitepingFeedbacks)
-          .where(eq(sitepingFeedbacks.projectName, projectName))
-          .returning({ screenshotUrl: sitepingFeedbacks.screenshotUrl }),
+        deleteAnnotations,
+        deleteFeedbacks.returning(deletedFeedbackColumns(sitepingFeedbacks, options)),
       ]);
-      return deleted.map((row) => row.screenshotUrl);
+      return toDeletedFeedbacks(deleted);
     },
   };
 }

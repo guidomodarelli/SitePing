@@ -17,7 +17,13 @@ import {
 } from "@siteping/core";
 import { DRIZZLE_STORE_MESSAGE_PREFIX, type DrizzleStoreMutation } from "../constants/errors.js";
 import { INLINE_SCREENSHOT_URL_PREFIX, SCREENSHOT_MIME_TYPE } from "../constants/screenshots.js";
-import type { AnnotationRow, FeedbackFilter, FeedbackRow, SitepingSqlGateway } from "./gateway.js";
+import type {
+  AnnotationRow,
+  DeleteFeedbacksOptions,
+  FeedbackFilter,
+  FeedbackRow,
+  SitepingSqlGateway,
+} from "./gateway.js";
 
 /**
  * The store returned by the dialect factories — the full contract, including
@@ -191,23 +197,35 @@ export class DrizzleSitepingStore implements DrizzleStore {
   }
 
   async deleteFeedback(id: string): Promise<void> {
-    const deleted = await persistMutation("deleteFeedback", { id }, () => this.gateway.deleteById(id));
+    const deleted = await persistMutation("deleteFeedback", { id }, () =>
+      this.gateway.deleteById(id, this.deleteOptions()),
+    );
     if (!deleted) throw new StoreNotFoundError();
-    await this.discardScreenshots([deleted.screenshotUrl]);
+    await this.discardScreenshots(deleted.screenshotUrls);
   }
 
   async deleteAllFeedbacks(projectName: string): Promise<void> {
     // Rows first, storage second: orphaned objects are acceptable, rows
     // pointing at deleted screenshots are not.
-    const screenshotUrls = await persistMutation("deleteAllFeedbacks", { projectName }, () =>
-      this.gateway.deleteByProject(projectName),
+    const deleted = await persistMutation("deleteAllFeedbacks", { projectName }, () =>
+      this.gateway.deleteByProject(projectName, this.deleteOptions()),
     );
-    await this.discardScreenshots(screenshotUrls);
+    await this.discardScreenshots(deleted.screenshotUrls);
   }
 
   async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> {
     const row = await this.gateway.findById(id);
     return row !== null && row.projectName === projectName;
+  }
+
+  /**
+   * Deletes read the removed screenshot URLs back only when a
+   * `ScreenshotStorage.delete` hook can clean them up: without one there is
+   * nothing to do with them, and inline data URLs would be materialized for
+   * every deleted row.
+   */
+  private deleteOptions(): DeleteFeedbacksOptions {
+    return { collectScreenshotUrls: typeof this.screenshotStorage?.delete === "function" };
   }
 
   private nextCreatedAt(): Date {

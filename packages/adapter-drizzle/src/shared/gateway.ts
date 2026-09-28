@@ -52,8 +52,27 @@ export interface SitepingSqlGateway {
     id: string,
     update: { status: FeedbackStatus; resolvedAt: Date | null; updatedAt: Date },
   ): Promise<FeedbackRow | null>;
-  /** Delete one row (annotations cascade); returns the deleted row, or `null` when missing. */
-  deleteById(id: string): Promise<FeedbackRow | null>;
-  /** Delete every row of a project; returns their stored screenshot URLs. */
-  deleteByProject(projectName: string): Promise<Array<string | null>>;
+  /** Delete one row and its annotations; `null` when no row has that id. */
+  deleteById(id: string, options: DeleteFeedbacksOptions): Promise<DeletedFeedbacks | null>;
+  /**
+   * Delete every row of a project and their annotations. Without
+   * `collectScreenshotUrls` the statement reads nothing back, however many
+   * (possibly inline, megabyte-sized) screenshots the rows hold.
+   */
+  deleteByProject(projectName: string, options: DeleteFeedbacksOptions): Promise<DeletedFeedbacks>;
+}
+
+/** What a feedback delete reads back from the removed rows. */
+export interface DeleteFeedbacksOptions {
+  /**
+   * Read back the removed rows' `screenshotUrl` — only worth it when a
+   * `ScreenshotStorage.delete` hook will clean them up.
+   */
+  collectScreenshotUrls: boolean;
+}
+
+/** Outcome of a feedback delete. */
+export interface DeletedFeedbacks {
+  /** Stored screenshot URLs of the removed rows; empty unless `collectScreenshotUrls`. */
+  screenshotUrls: Array<string | null>;
 }

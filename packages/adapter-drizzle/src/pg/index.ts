@@ -7,9 +7,10 @@ import {
   INSERTED_FEEDBACK_CTE_ALIAS,
 } from "../constants/sql.js";
 import { annotationRecordColumns, selectAnnotationValues } from "../shared/annotations.js";
+import { deletedFeedbackColumns, toDeletedFeedbacks } from "../shared/deletes.js";
 import { feedbackRecordColumns, newestFeedbackFirst } from "../shared/feedbacks.js";
 import { buildFeedbackWhere } from "../shared/filters.js";
-import type { FeedbackFilter, FeedbackRow, SitepingSqlGateway } from "../shared/gateway.js";
+import type { FeedbackFilter, SitepingSqlGateway } from "../shared/gateway.js";
 import { DrizzleSitepingStore, type DrizzleStore, type DrizzleStoreOptions } from "../shared/store.js";
 import { monotonicUpdatedAt } from "../shared/timestamps.js";
 import { createSitepingPgTables, type SitepingPgTables } from "./tables.js";
@@ -137,16 +138,20 @@ function createPgGateway(
         .returning(recordColumns);
       return row ?? null;
     },
-    async deleteById(id) {
-      const [row] = await db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).returning(recordColumns);
-      return (row as FeedbackRow | undefined) ?? null;
-    },
-    async deleteByProject(projectName) {
+    async deleteById(id, options) {
       const rows = await db
         .delete(sitepingFeedbacks)
-        .where(eq(sitepingFeedbacks.projectName, projectName))
-        .returning({ screenshotUrl: sitepingFeedbacks.screenshotUrl });
-      return rows.map((row) => row.screenshotUrl);
+        .where(eq(sitepingFeedbacks.id, id))
+        .returning(deletedFeedbackColumns(sitepingFeedbacks, options));
+      return rows.length > 0 ? toDeletedFeedbacks(rows) : null;
+    },
+    async deleteByProject(projectName, options) {
+      const deleteProject = db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.projectName, projectName));
+      if (!options.collectScreenshotUrls) {
+        await deleteProject;
+        return { screenshotUrls: [] };
+      }
+      return toDeletedFeedbacks(await deleteProject.returning(deletedFeedbackColumns(sitepingFeedbacks, options)));
     },
   };
 }

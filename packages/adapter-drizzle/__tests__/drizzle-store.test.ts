@@ -13,6 +13,8 @@ import type { DrizzleStore, DrizzleStoreOptions } from "../src/shared/store.js";
 import { createLibSQLTestDatabase, createPgTestDatabase } from "./databases.js";
 
 const SCREENSHOT_DATA_URL = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
+/** Response cap of the size-limited driver — smaller than one inline screenshot in the tests using it. */
+const RESPONSE_SIZE_LIMIT_BYTES = 16 * 1024;
 const CUSTOM_TABLE_NAMES: SitepingTableNames = { feedbacks: "review_feedbacks", annotations: "review_annotations" };
 
 function feedbackInput(overrides: Partial<FeedbackCreateInput> = {}): FeedbackCreateInput {
@@ -74,6 +76,8 @@ interface DialectUnderTest {
   name: string;
   open(names?: SitepingTableNames): Promise<{
     createStore(options?: DrizzleStoreOptions): DrizzleStore;
+    /** A store on the same database, reached through a driver that caps response size. */
+    createStoreBehindResponseSizeLimit(maxResponseBytes: number, options?: DrizzleStoreOptions): DrizzleStore;
     countAnnotations(): Promise<number>;
     /** Write through the same `db` as the host application would — an insert and a bulk update, outside the store. */
     writeAsApplication(): Promise<void>;
@@ -94,6 +98,8 @@ const dialects: DialectUnderTest[] = [
       const tables = createSitepingPgTables(names);
       return {
         createStore: (options) => createPgSitepingStore(database.db, { ...options, tables }),
+        createStoreBehindResponseSizeLimit: (maxResponseBytes, options) =>
+          createPgSitepingStore(database.withResponseSizeLimit(maxResponseBytes), { ...options, tables }),
         countAnnotations: async () => (await database.db.select().from(tables.sitepingAnnotations)).length,
         async writeAsApplication() {
           await database.db.insert(tables.sitepingFeedbacks).values(applicationFeedbackRow());
@@ -123,6 +129,8 @@ const dialects: DialectUnderTest[] = [
       const tables = createSitepingSqliteTables(names);
       return {
         createStore: (options) => createLibSQLSitepingStore(database.db, { ...options, tables }),
+        createStoreBehindResponseSizeLimit: (maxResponseBytes, options) =>
+          createLibSQLSitepingStore(database.withResponseSizeLimit(maxResponseBytes), { ...options, tables }),
         countAnnotations: async () => (await database.db.select().from(tables.sitepingAnnotations)).length,
         async writeAsApplication() {
           await database.db.insert(tables.sitepingFeedbacks).values(applicationFeedbackRow());
@@ -314,6 +322,29 @@ for (const dialect of dialects) {
       await store.deleteAllFeedbacks("bulk");
 
       expect(await database.countAnnotations()).toBe(1);
+    });
+
+    it("deletes feedbacks with inline screenshots through a size-capped driver when no cleanup hook exists", async () => {
+      // Each inline screenshot alone is larger than the driver accepts in a response.
+      const inlineScreenshot = `${SCREENSHOT_DATA_URL}${"A".repeat(RESPONSE_SIZE_LIMIT_BYTES)}`;
+      const writer = database.createStore({ logger });
+      const single = await writer.createFeedback(feedbackInput({ screenshotDataUrl: inlineScreenshot }));
+      await writer.createFeedback(feedbackInput({ screenshotDataUrl: inlineScreenshot }));
+      await writer.createFeedback(feedbackInput({ screenshotDataUrl: inlineScreenshot }));
+      const uploadOnlyStorage: ScreenshotStorage = { upload: recordingStorage().storage.upload };
+      const stores = [
+        database.createStoreBehindResponseSizeLimit(RESPONSE_SIZE_LIMIT_BYTES, { logger }),
+        database.createStoreBehindResponseSizeLimit(RESPONSE_SIZE_LIMIT_BYTES, {
+          screenshotStorage: uploadOnlyStorage,
+          logger,
+        }),
+      ];
+
+      await stores[0]?.deleteFeedback(single.id);
+      await stores[1]?.deleteAllFeedbacks("site");
+
+      expect((await stores[0]?.getFeedbacks({ projectName: "site" }))?.total).toBe(0);
+      expect(await database.countAnnotations()).toBe(0);
     });
 
     it("matches LIKE wildcards in search literally", async () => {

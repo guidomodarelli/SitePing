@@ -4,6 +4,7 @@ import {
   BASE64_LINE_BREAK_LENGTH,
   BASE64_LINE_LENGTH,
   DATA_URL_HEADER_MAX_LENGTH,
+  IMAGE_CONTENT_TYPE_PATTERN,
   IMAGE_DATA_URL_PATTERN,
 } from "../constants/screenshots.js";
 
@@ -53,6 +54,27 @@ export function assertMaxBytes(maxBytes: number): void {
  */
 export function normalizeContentTypes(allowedContentTypes: readonly string[]): readonly string[] {
   return Object.freeze(allowedContentTypes.map((contentType) => contentType.trim().toLowerCase()));
+}
+
+/**
+ * Refuse, at configuration time, any allowed content type the data URL parser
+ * could never produce: {@link IMAGE_DATA_URL_PATTERN} only accepts
+ * `image/<subtype>`, so an entry such as `text/png` would pass the key checks
+ * yet every matching upload would be rejected as "not a base64 image data URL".
+ * Both checks share the grammar of {@link IMAGE_CONTENT_TYPE_PATTERN}.
+ *
+ * @param allowedContentTypes - Allowed content types, normalized by {@link normalizeContentTypes}.
+ * @throws Error naming the offending content type and the expected grammar.
+ */
+export function assertParsableContentTypes(allowedContentTypes: readonly string[]): void {
+  for (const contentType of allowedContentTypes) {
+    if (!IMAGE_CONTENT_TYPE_PATTERN.test(contentType)) {
+      throw new Error(
+        `[siteping] createScreenshotStorage: allowed content type "${contentType}" does not match ${IMAGE_CONTENT_TYPE_PATTERN.source}: ` +
+          "no image data URL can carry it — drop it from allowedContentTypes",
+      );
+    }
+  }
 }
 
 /**

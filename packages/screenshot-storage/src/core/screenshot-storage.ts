@@ -6,7 +6,7 @@ import {
   UNCERTAIN_UPLOAD_RECLAIM_DELAYS_MS,
 } from "../constants/screenshots.js";
 import { assertInertContentTypes } from "./active-content.js";
-import { assertMaxBytes, decodeImageDataUrl, normalizeContentTypes } from "./data-url.js";
+import { assertMaxBytes, assertParsableContentTypes, decodeImageDataUrl, normalizeContentTypes } from "./data-url.js";
 import { assertKeyableContentTypes, assertKeyPrefix, generateKey, isGeneratedKey } from "./generated-key.js";
 import { isScreenshotUploadRejected, type ScreenshotObjectStore } from "./object-store.js";
 import {
@@ -123,6 +123,7 @@ export function createScreenshotStorage(
   // Validate and keep private snapshots of the caller's arrays: validating the
   // live references would let a later mutation bypass these checks.
   const normalizedContentTypes = normalizeContentTypes(allowedContentTypes);
+  assertParsableContentTypes(normalizedContentTypes);
   assertInertContentTypes(normalizedContentTypes);
   assertKeyableContentTypes(normalizedContentTypes);
   const reclaimDelaysMs: readonly number[] = Object.freeze([...uncertainUploadReclaimDelaysMs]);

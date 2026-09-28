@@ -39,8 +39,18 @@ export const BASE64_LINE_LENGTH = 76;
 /** Characters of the line break (CR LF) budgeted after each wrapped base64 line. */
 export const BASE64_LINE_BREAK_LENGTH = 2;
 
+/**
+ * Grammar of an image MIME type (`image/<subtype>`) — the single source shared
+ * by the data URL parser and the `allowedContentTypes` check, so every
+ * configured type is one an upload can actually carry.
+ */
+const IMAGE_CONTENT_TYPE_SOURCE = "image/[a-z0-9.+-]+";
+
+/** A whole image MIME type, e.g. `image/png` (case-insensitive, like MIME types). */
+export const IMAGE_CONTENT_TYPE_PATTERN = new RegExp(`^${IMAGE_CONTENT_TYPE_SOURCE}$`, "i");
+
 /** Base64 image data URL: `data:<type>;base64,<payload>`. */
-export const IMAGE_DATA_URL_PATTERN = /^data:(image\/[a-z0-9.+-]+);base64,([a-z0-9+/=\s]+)$/i;
+export const IMAGE_DATA_URL_PATTERN = new RegExp(`^data:(${IMAGE_CONTENT_TYPE_SOURCE});base64,([a-z0-9+/=\\s]+)$`, "i");
 
 /**
  * Conventional file extension per content type, where it differs from (or is

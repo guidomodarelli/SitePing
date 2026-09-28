@@ -287,6 +287,17 @@ describe("createScreenshotStorage — validation", () => {
     ).toThrow(/image\/vnd\.adobe\.photoshop.*vndadobephotoshop/);
   });
 
+  it.each(["text/png", "application/jpeg", "image/", "image/png;charset=utf-8"])(
+    "refuses the allowed content type %s that no image data URL can carry",
+    (contentType) => {
+      expect(() =>
+        createScreenshotStorage(createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL }), {
+          allowedContentTypes: ["image/png", contentType],
+        }),
+      ).toThrow(/no image data URL can carry it/);
+    },
+  );
+
   it.each(["image/svg+xml", "IMAGE/SVG+XML"])("refuses the active format %s in allowedContentTypes", (contentType) => {
     expect(() =>
       createScreenshotStorage(createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL }), {

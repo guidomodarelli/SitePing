@@ -14,8 +14,9 @@
  */
 export type { ScreenshotStorage } from "@siteping/core";
 export { InvalidScreenshotError } from "./core/data-url.js";
-export { ObjectStoreRequestError } from "./core/http.js";
+export { isObjectStoreRequestError, ObjectStoreRequestError } from "./core/http.js";
 export {
+  isScreenshotUploadRejected,
   type ScreenshotObject,
   type ScreenshotObjectStore,
   ScreenshotUploadRejectedError,

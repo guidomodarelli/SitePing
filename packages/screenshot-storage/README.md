@@ -27,6 +27,8 @@ Without any storage, stores keep screenshots inline in the database as base64 �
 
 Options: `allowedContentTypes` (default JPEG, PNG, WebP — each type must map to a 1–10 character key extension such as `image/gif` → `gif`, checked when the storage is created), `maxBytes`, `keyPrefix` (default `siteping-`), `logger`.
 
+Match errors with `isScreenshotUploadRejected(error)` and `isObjectStoreRequestError(error)` (stable `code` checks) rather than `instanceof`: in CommonJS each entry point (`@siteping/screenshot-storage`, `/s3`…) bundles its own copy of the error classes.
+
 Backends without a public URL are served from your app:
 
 ```ts

@@ -1,3 +1,6 @@
+import { SCREENSHOT_UPLOAD_REJECTED_CODE } from "../constants/errors.js";
+import { hasErrorCode } from "./error-code.js";
+
 /** A stored screenshot. */
 export interface ScreenshotObject {
   key: string;
@@ -37,10 +40,26 @@ export interface ScreenshotObjectStore {
  * Thrown by `put` when the backend definitively refused the upload (bad
  * credentials, validation error): nothing was stored, so there is nothing to
  * reclaim. Any other error is treated as an unknown outcome.
+ *
+ * Custom backends may throw this class or any error whose `code` is
+ * `"SCREENSHOT_UPLOAD_REJECTED"`; match it with {@link isScreenshotUploadRejected}.
  */
 export class ScreenshotUploadRejectedError extends Error {
+  readonly code = SCREENSHOT_UPLOAD_REJECTED_CODE;
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, options);
     this.name = "ScreenshotUploadRejectedError";
   }
+}
+
+/**
+ * Whether `error` is a definitive upload rejection. Matches on the stable
+ * `code`, not `instanceof`: in CommonJS each entry point (`index`, `s3`…)
+ * bundles its own copy of the class, so a backend's instance is not an
+ * instance of the class the consumer imported.
+ *
+ * @param error - Any thrown value.
+ */
+export function isScreenshotUploadRejected(error: unknown): error is ScreenshotUploadRejectedError {
+  return hasErrorCode(error, SCREENSHOT_UPLOAD_REJECTED_CODE);
 }

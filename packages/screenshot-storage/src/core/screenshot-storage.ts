@@ -7,7 +7,7 @@ import {
 } from "../constants/screenshots.js";
 import { decodeImageDataUrl } from "./data-url.js";
 import { assertKeyableContentTypes, generateKey, isGeneratedKey } from "./generated-key.js";
-import { type ScreenshotObjectStore, ScreenshotUploadRejectedError } from "./object-store.js";
+import { isScreenshotUploadRejected, type ScreenshotObjectStore } from "./object-store.js";
 
 /** Reports degraded-but-handled situations (failed reclaim of an uncertain upload, refused delete). */
 export interface ScreenshotStorageLogger {
@@ -88,7 +88,7 @@ export function createScreenshotStorage(
       try {
         await objectStore.put({ key, bytes: image.bytes, contentType: image.contentType });
       } catch (error) {
-        if (!(error instanceof ScreenshotUploadRejectedError)) {
+        if (!isScreenshotUploadRejected(error)) {
           // The upload may still land after we gave up — remove it so no
           // object outlives the feedback that never referenced it.
           await objectStore.remove(key).catch((reclaimError: unknown) => {

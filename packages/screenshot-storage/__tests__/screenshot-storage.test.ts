@@ -8,6 +8,8 @@ import {
   createScreenshotServeHandler,
   createScreenshotStorage,
   InvalidScreenshotError,
+  isObjectStoreRequestError,
+  isScreenshotUploadRejected,
   ObjectStoreRequestError,
   type ScreenshotObjectStore,
   ScreenshotUploadRejectedError,
@@ -321,5 +323,58 @@ describe("createScreenshotServeHandler", () => {
   it("refuses backends that serve their own URLs", () => {
     const objectStore = createCloudflareImagesObjectStore({ accountId: "a", apiToken: "t", accountHash: "h" });
     expect(() => createScreenshotServeHandler(objectStore)).toThrow(/serves screenshots from its own URLs/);
+  });
+});
+
+/**
+ * What a backend subpath's CommonJS bundle throws: same name and code as the
+ * classes the consumer imported from the package root, but another class.
+ */
+class ScreenshotUploadRejectedErrorFromAnotherBundle extends Error {
+  readonly code = "SCREENSHOT_UPLOAD_REJECTED";
+  override name = "ScreenshotUploadRejectedError";
+}
+class ObjectStoreRequestErrorFromAnotherBundle extends Error {
+  readonly code = "OBJECT_STORE_REQUEST_FAILED";
+  override name = "ObjectStoreRequestError";
+}
+
+describe("error identity across bundles", () => {
+  it("recognizes upload rejections by their stable code, not their class", () => {
+    expect(isScreenshotUploadRejected(new ScreenshotUploadRejectedError("refused"))).toBe(true);
+    expect(isScreenshotUploadRejected(new ScreenshotUploadRejectedErrorFromAnotherBundle("refused"))).toBe(true);
+    expect(isScreenshotUploadRejected(new ObjectStoreRequestError("S3", "PUT", "/k", 503))).toBe(false);
+    expect(isScreenshotUploadRejected(new Error("refused"))).toBe(false);
+    expect(isScreenshotUploadRejected(null)).toBe(false);
+    expect(isScreenshotUploadRejected("SCREENSHOT_UPLOAD_REJECTED")).toBe(false);
+  });
+
+  it("recognizes failed backend requests by their stable code, not their class", () => {
+    expect(isObjectStoreRequestError(new ObjectStoreRequestError("S3", "PUT", "/k", 503))).toBe(true);
+    expect(isObjectStoreRequestError(new ObjectStoreRequestErrorFromAnotherBundle("failed"))).toBe(true);
+    expect(isObjectStoreRequestError(new ScreenshotUploadRejectedError("refused"))).toBe(false);
+    expect(isObjectStoreRequestError(undefined)).toBe(false);
+  });
+
+  it("does not reclaim after a rejection thrown by another bundle's copy of the class", async () => {
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+    const rejection = new ScreenshotUploadRejectedErrorFromAnotherBundle("S3 PUT failed with status 403");
+    const removedKeys: string[] = [];
+    const storage = createScreenshotStorage(
+      {
+        ...objectStore,
+        put: async () => {
+          throw rejection;
+        },
+        remove: async (key) => {
+          removedKeys.push(key);
+          await objectStore.remove(key);
+        },
+      },
+      { logger: silentLogger() },
+    );
+
+    await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).rejects.toBe(rejection);
+    expect(removedKeys).toEqual([]);
   });
 });

@@ -28,6 +28,18 @@ export const identity = createSitepingIdentityHandler({
 });
 ```
 
+## Cross-origin widgets
+
+Set `allowedOrigins` (exact-match allowlist) on both factories to serve a widget hosted on another origin. Browsers may send `Content-Type` and `Authorization`; when `access.authenticate` reads another header (a custom session or proxy identity header), declare it with `allowedHeaders` so the CORS preflight lets it through:
+
+```ts
+const cors = { allowedOrigins: ["https://client-site.com"], allowedHeaders: ["X-Session"] };
+
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ store, access, ...cors });
+```
+
+`allowedHeaders` extends the defaults (case-insensitive, deduplicated) and throws at startup on an invalid header name; the preflight's requested headers are never reflected.
+
 Without `access`, the handler keeps the shared-secret policy of `@siteping/adapter-prisma` (`apiKey`, `publicEndpoints`, `requireAuthForDestructive`, `redactUnauthenticatedEmails`).
 
 MIT

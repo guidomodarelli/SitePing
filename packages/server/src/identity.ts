@@ -1,6 +1,6 @@
 import type { SitepingAccessControl } from "./access.js";
-import { IDENTITY_CACHE_CONTROL } from "./constants/http.js";
-import { buildCorsHeaders, withCors } from "./cors.js";
+import { CORS_ALLOWED_METHODS, IDENTITY_CACHE_CONTROL } from "./constants/http.js";
+import { buildCorsHeaders, createCorsPolicy, withCors } from "./cors.js";
 
 /** Reviewer identity the widget pre-fills (`SitepingConfig.identity`). */
 export interface SitepingIdentity {
@@ -37,6 +37,11 @@ export interface SitepingIdentityHandlerOptions<Principal> {
   enabled?: boolean | ((principal: Principal) => boolean | Promise<boolean>);
   /** Allowed CORS origins, as in `createSitepingHandler`. */
   allowedOrigins?: ReadonlyArray<string> | undefined;
+  /**
+   * Extra request headers cross-origin callers may send, as in
+   * `createSitepingHandler` — list the headers `access.authenticate` reads.
+   */
+  allowedHeaders?: ReadonlyArray<string> | undefined;
 }
 
 /**
@@ -44,6 +49,8 @@ export interface SitepingIdentityHandlerOptions<Principal> {
  * feedback, and as whom. Anonymous or disabled visitors get
  * `{ enabled: false, identity: null }` with 200 — the page simply does not
  * mount the widget. Responses are `no-store`: they depend on the session.
+ *
+ * @throws Error when `allowedHeaders` contains an invalid header name.
  */
 export function createSitepingIdentityHandler<Principal>({
   access,
@@ -51,11 +58,13 @@ export function createSitepingIdentityHandler<Principal>({
   projectName,
   enabled = true,
   allowedOrigins,
+  allowedHeaders,
 }: SitepingIdentityHandlerOptions<Principal>): { GET: (request: Request) => Promise<Response> } {
+  const corsPolicy = createCorsPolicy({ allowedOrigins, allowedHeaders, allowedMethods: CORS_ALLOWED_METHODS });
   const respond = (request: Request, body: SitepingIdentityResponse): Response =>
     withCors(
       Response.json(body, { headers: { "Cache-Control": IDENTITY_CACHE_CONTROL } }),
-      buildCorsHeaders(request, allowedOrigins),
+      buildCorsHeaders(request, corsPolicy),
     );
   const disabled = (request: Request) => respond(request, { enabled: false, identity: null, projectName });
 

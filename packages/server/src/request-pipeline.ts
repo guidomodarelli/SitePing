@@ -1,7 +1,7 @@
 import type { FeedbackRecord } from "@siteping/core";
 import type { AccessGate, SitepingAuthorizationContext, SitepingHttpMethod, SitepingRequestContext } from "./access.js";
 import { SITEPING_ERROR_MESSAGES } from "./constants/error-messages.js";
-import { buildCorsHeaders, type CorsHeaders, withCors } from "./cors.js";
+import { buildCorsHeaders, type CorsHeaders, type CorsPolicy, withCors } from "./cors.js";
 import type { SitepingLogger } from "./options.js";
 import { formatValidationErrors } from "./validation.js";
 
@@ -24,7 +24,7 @@ interface ParseableSchema<Output> {
 
 export interface RequestPipelineDependencies<Principal> {
   gate: AccessGate<Principal>;
-  allowedOrigins: ReadonlyArray<string> | undefined;
+  corsPolicy: CorsPolicy;
   logger: SitepingLogger;
   describeError: ((error: unknown) => string | undefined) | undefined;
   presentFeedback:
@@ -49,7 +49,7 @@ function toWireFeedback(feedback: FeedbackRecord, includeEmail: boolean): Omit<F
  */
 export function createRequestPipeline<Principal>({
   gate,
-  allowedOrigins,
+  corsPolicy,
   logger,
   describeError,
   presentFeedback,
@@ -79,7 +79,7 @@ export function createRequestPipeline<Principal>({
       request: Request,
       method: SitepingHttpMethod,
     ): Promise<PipelineStep<AuthenticatedRequest<Principal>>> {
-      const corsHeaders = buildCorsHeaders(request, allowedOrigins);
+      const corsHeaders = buildCorsHeaders(request, corsPolicy);
       const outcome = await gate.authenticate(request, method);
       if (!outcome.ok) return { ok: false, response: error({ corsHeaders }, outcome.status, outcome.error) };
       return {

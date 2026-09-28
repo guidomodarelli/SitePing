@@ -25,4 +25,6 @@ export const SITEPING_CONFIGURATION_ERROR_MESSAGES = {
     "[siteping] createSitepingHandler: `access.authorize` needs a store implementing `verifyProjectOwnership`. " +
     "Without it, a caller authorized for one project could PATCH or DELETE another project's feedback by id. " +
     "Implement `verifyProjectOwnership` on the store (createCollectionStore and PrismaStore already do).",
+  invalidAllowedHeader:
+    "[siteping] allowedHeaders: every entry must be a valid HTTP header name (letters, digits and !#$%&'*+-.^_`|~, no spaces or commas). Invalid entry:",
 } as const satisfies Record<string, string>;

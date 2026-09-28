@@ -38,6 +38,14 @@ export interface SitepingHandlerBaseOptions<Principal> {
   /** Allowed CORS origins — when set, only those origins are reflected. */
   allowedOrigins?: ReadonlyArray<string> | undefined;
   /**
+   * Extra request headers cross-origin callers may send, on top of
+   * `Content-Type` and `Authorization` — e.g. a custom session or proxy
+   * identity header read by `access.authenticate`. Merged case-insensitively;
+   * an invalid header name throws at startup. The preflight's
+   * `Access-Control-Request-Headers` is never reflected.
+   */
+  allowedHeaders?: ReadonlyArray<string> | undefined;
+  /**
    * Rewrite the validated create input before it is stored: impose the
    * project or author from the session, redact secrets from free text,
    * drop fields you do not keep. Runs before the authorization check, so

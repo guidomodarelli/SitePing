@@ -16,11 +16,21 @@ export const PRINCIPAL_SCOPED_LIST_CACHE_CONTROL = "no-store";
 /** `Cache-Control` of the identity endpoint — depends on the session, never cached. */
 export const IDENTITY_CACHE_CONTROL = "no-store";
 
-/** Methods announced in CORS preflight responses. */
+/** Methods announced in CORS preflight responses of the feedback endpoint. */
 export const CORS_ALLOWED_METHODS = "GET, POST, PATCH, DELETE, OPTIONS";
 
-/** Request headers the widget sends cross-origin. */
-export const CORS_ALLOWED_HEADERS = "Content-Type, Authorization";
+/**
+ * Request headers the widget sends cross-origin — always allowed. The
+ * `allowedHeaders` option extends this list (e.g. a custom session header
+ * read by `access.authenticate`), never replaces it.
+ */
+export const CORS_DEFAULT_ALLOWED_HEADERS: ReadonlyArray<string> = ["Content-Type", "Authorization"];
+
+/**
+ * Valid HTTP header field name (RFC 9110 `token`). Guards `allowedHeaders`
+ * so a typo cannot inject separators into `Access-Control-Allow-Headers`.
+ */
+export const HTTP_HEADER_NAME_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
 
 /** How long browsers may cache a preflight answer, in seconds (24 h). */
 export const CORS_MAX_AGE_SECONDS = 86_400;

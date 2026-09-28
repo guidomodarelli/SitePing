@@ -1,7 +1,8 @@
 import { type AccessGate, accessGateFromControl } from "./access.js";
 import { createApiKeyGate } from "./api-key-access.js";
 import { SITEPING_CONFIGURATION_ERROR_MESSAGES } from "./constants/error-messages.js";
-import { buildCorsHeaders } from "./cors.js";
+import { CORS_ALLOWED_METHODS } from "./constants/http.js";
+import { createCorsPolicy, preflightResponse } from "./cors.js";
 import { createFeedbackOperation } from "./operations/create-feedback.js";
 import { deleteFeedbackOperation } from "./operations/delete-feedback.js";
 import { listFeedbacksOperation } from "./operations/list-feedbacks.js";
@@ -35,6 +36,7 @@ function toWebhookList(webhooks: SitepingHandlerBaseOptions<unknown>["webhooks"]
  *
  * Rate limiting is not handled here; apply it at the framework or proxy level.
  *
+ * @throws Error when `allowedHeaders` contains an invalid header name.
  * @throws Error when `access.authorize` is set and the store lacks
  * `verifyProjectOwnership` — per-record PATCH/DELETE could otherwise target
  * a record of a project the caller is not authorized for.
@@ -58,6 +60,7 @@ export function createSitepingHandler<Principal>(options: SitepingHandlerOptions
   const {
     store,
     allowedOrigins,
+    allowedHeaders,
     beforeCreate,
     presentFeedback,
     hooks = {},
@@ -74,15 +77,15 @@ export function createSitepingHandler<Principal>(options: SitepingHandlerOptions
   if (options.access?.authorize && !store.verifyProjectOwnership) {
     throw new Error(SITEPING_CONFIGURATION_ERROR_MESSAGES.ownershipVerificationRequired);
   }
+  const corsPolicy = createCorsPolicy({ allowedOrigins, allowedHeaders, allowedMethods: CORS_ALLOWED_METHODS });
   const gate: AccessGate<Principal> = options.access
     ? accessGateFromControl(options.access)
     : (createApiKeyGate(options) as AccessGate<Principal>);
-  const pipeline = createRequestPipeline<Principal>({ gate, allowedOrigins, logger, describeError, presentFeedback });
+  const pipeline = createRequestPipeline<Principal>({ gate, corsPolicy, logger, describeError, presentFeedback });
 
   return {
-    /** CORS preflight. Configure `allowedOrigins` for cross-origin widgets. */
-    OPTIONS: (request: Request): Response =>
-      new Response(null, { status: 204, headers: buildCorsHeaders(request, allowedOrigins) }),
+    /** CORS preflight. Configure `allowedOrigins` (and `allowedHeaders`) for cross-origin widgets. */
+    OPTIONS: (request: Request): Response => preflightResponse(request, corsPolicy),
     POST: createFeedbackOperation({
       store,
       pipeline,

@@ -157,13 +157,22 @@ function createPgGateway(
         .returning(deletedFeedbackColumns(sitepingFeedbacks, options));
       return rows.length > 0 ? toDeletedFeedbacks(rows) : null;
     },
-    async deleteByProject(projectName, options) {
-      const deleteProject = db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.projectName, projectName));
-      if (!options.collectScreenshotUrls) {
-        await deleteProject;
-        return { screenshotUrls: [] };
-      }
-      return toDeletedFeedbacks(await deleteProject.returning(deletedFeedbackColumns(sitepingFeedbacks, options)));
+    // Annotations follow their feedback through the `ON DELETE CASCADE` foreign key.
+    async deleteByProject(projectName) {
+      await db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.projectName, projectName));
+    },
+    async deleteProjectChunk(projectName, chunkSize) {
+      const chunkIds = db
+        .select({ id: sitepingFeedbacks.id })
+        .from(sitepingFeedbacks)
+        .where(eq(sitepingFeedbacks.projectName, projectName))
+        .orderBy(sitepingFeedbacks.id)
+        .limit(chunkSize);
+      const rows = await db
+        .delete(sitepingFeedbacks)
+        .where(inArray(sitepingFeedbacks.id, chunkIds))
+        .returning(deletedFeedbackColumns(sitepingFeedbacks, { collectScreenshotUrls: true }));
+      return toDeletedFeedbacks(rows);
     },
     async findReferencedScreenshotUrls(screenshotUrls) {
       const rows = await db

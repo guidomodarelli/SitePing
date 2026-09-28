@@ -138,22 +138,31 @@ function createLibSQLGateway(
       ]);
       return deleted.length > 0 ? toDeletedFeedbacks(deleted) : null;
     },
-    async deleteByProject(projectName, options) {
+    async deleteByProject(projectName) {
       const projectFeedbackIds = db
         .select({ id: sitepingFeedbacks.id })
         .from(sitepingFeedbacks)
         .where(eq(sitepingFeedbacks.projectName, projectName));
-      const deleteAnnotations = db
-        .delete(sitepingAnnotations)
-        .where(inArray(sitepingAnnotations.feedbackId, projectFeedbackIds));
-      const deleteFeedbacks = db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.projectName, projectName));
-      if (!options.collectScreenshotUrls) {
-        await db.batch([deleteAnnotations, deleteFeedbacks]);
-        return { screenshotUrls: [] };
-      }
+      await db.batch([
+        db.delete(sitepingAnnotations).where(inArray(sitepingAnnotations.feedbackId, projectFeedbackIds)),
+        db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.projectName, projectName)),
+      ]);
+    },
+    async deleteProjectChunk(projectName, chunkSize) {
+      // Ordered by the primary key, both statements of the batch pick the same
+      // rows: nothing else writes the feedback table between them.
+      const chunkIds = db
+        .select({ id: sitepingFeedbacks.id })
+        .from(sitepingFeedbacks)
+        .where(eq(sitepingFeedbacks.projectName, projectName))
+        .orderBy(sitepingFeedbacks.id)
+        .limit(chunkSize);
       const [, deleted] = await db.batch([
-        deleteAnnotations,
-        deleteFeedbacks.returning(deletedFeedbackColumns(sitepingFeedbacks, options)),
+        db.delete(sitepingAnnotations).where(inArray(sitepingAnnotations.feedbackId, chunkIds)),
+        db
+          .delete(sitepingFeedbacks)
+          .where(inArray(sitepingFeedbacks.id, chunkIds))
+          .returning(deletedFeedbackColumns(sitepingFeedbacks, { collectScreenshotUrls: true })),
       ]);
       return toDeletedFeedbacks(deleted);
     },

@@ -62,11 +62,19 @@ export interface SitepingSqlGateway {
   /** Delete one row and its annotations; `null` when no row has that id. */
   deleteById(id: string, options: DeleteFeedbacksOptions): Promise<DeletedFeedbacks | null>;
   /**
-   * Delete every row of a project and their annotations. Without
-   * `collectScreenshotUrls` the statement reads nothing back, however many
-   * (possibly inline, megabyte-sized) screenshots the rows hold.
+   * Delete every row of a project and their annotations atomically (one
+   * statement or one batch), reading nothing back however many (possibly
+   * inline, megabyte-sized) screenshots the rows hold.
    */
-  deleteByProject(projectName: string, options: DeleteFeedbacksOptions): Promise<DeletedFeedbacks>;
+  deleteByProject(projectName: string): Promise<void>;
+  /**
+   * Delete at most `chunkSize` rows of a project and their annotations
+   * atomically (one statement or one batch), reading back their uploaded
+   * screenshot URLs — the response stays bounded however large the project.
+   * The chunk is picked in `id` order; `deletedCount` is `0` once the project
+   * has no row left.
+   */
+  deleteProjectChunk(projectName: string, chunkSize: number): Promise<DeletedFeedbacks>;
   /**
    * The given screenshot URLs that some stored feedback row still references —
    * e.g. the row of an insert that committed although the driver reported a
@@ -88,6 +96,11 @@ export interface DeleteFeedbacksOptions {
 
 /** Outcome of a feedback delete. */
 export interface DeletedFeedbacks {
-  /** Stored screenshot URLs of the removed rows; empty unless `collectScreenshotUrls`. */
+  /** Number of feedback rows removed. */
+  deletedCount: number;
+  /**
+   * Uploaded screenshot URLs of the removed rows (`null` for rows without one
+   * or with an inline data URL); empty unless `collectScreenshotUrls`.
+   */
   screenshotUrls: Array<string | null>;
 }

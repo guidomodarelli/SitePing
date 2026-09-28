@@ -15,6 +15,7 @@ import {
   StoreNotFoundError,
   StorePersistenceError,
 } from "@siteping/core";
+import { PROJECT_DELETE_CHUNK_SIZE } from "../constants/deletes.js";
 import { DRIZZLE_STORE_MESSAGE_PREFIX, type DrizzleStoreMutation } from "../constants/errors.js";
 import {
   INLINE_SCREENSHOT_URL_PREFIX,
@@ -256,13 +257,37 @@ export class DrizzleSitepingStore implements DrizzleStore {
     await this.discardScreenshots(deleted.screenshotUrls);
   }
 
+  /**
+   * Delete every feedback of a project. Rows go first, storage second: orphaned
+   * objects are acceptable, rows pointing at deleted screenshots are not.
+   *
+   * Without a `ScreenshotStorage.delete` hook, one atomic statement (or batch)
+   * removes the project and reads nothing back. With one, the removed URLs are
+   * needed for cleanup, so rows go in chunks of
+   * {@link PROJECT_DELETE_CHUNK_SIZE}, each deleted atomically and its
+   * screenshots cleaned up before the next one: every driver response and the
+   * URLs held in memory stay bounded however large the project.
+   *
+   * @throws `StorePersistenceError` when a chunk fails. The chunks before it
+   *   stay deleted and their screenshots are already cleaned up; the delete is
+   *   idempotent, so retrying it removes the remaining rows. When the failing
+   *   chunk committed although the driver reported an error, its rows are gone
+   *   and their screenshots are left in the storage as orphans.
+   */
   async deleteAllFeedbacks(projectName: string): Promise<void> {
-    // Rows first, storage second: orphaned objects are acceptable, rows
-    // pointing at deleted screenshots are not.
-    const deleted = await persistMutation("deleteAllFeedbacks", { projectName }, () =>
-      this.gateway.deleteByProject(projectName, this.deleteOptions()),
-    );
-    await this.discardScreenshots(deleted.screenshotUrls);
+    if (!this.deleteOptions().collectScreenshotUrls) {
+      await persistMutation("deleteAllFeedbacks", { projectName }, () => this.gateway.deleteByProject(projectName));
+      return;
+    }
+    for (;;) {
+      const deleted = await persistMutation("deleteAllFeedbacks", { projectName }, () =>
+        this.gateway.deleteProjectChunk(projectName, PROJECT_DELETE_CHUNK_SIZE),
+      );
+      // Stop only on an empty chunk: a short one may come from a concurrent
+      // delete that removed some of its rows, not from the end of the project.
+      if (deleted.deletedCount === 0) return;
+      await this.discardScreenshots(deleted.screenshotUrls);
+    }
   }
 
   async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> {

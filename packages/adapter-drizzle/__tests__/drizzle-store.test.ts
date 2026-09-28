@@ -7,6 +7,7 @@ import {
 } from "@siteping/core";
 import { getTableName, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { PROJECT_DELETE_CHUNK_SIZE } from "../src/constants/deletes.js";
 import { SCREENSHOT_DELETE_CONCURRENCY } from "../src/constants/screenshots.js";
 import { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../src/constants/table-names.js";
 import { createLibSQLSitepingStore, createSitepingSqliteTables } from "../src/libsql/index.js";
@@ -82,6 +83,37 @@ function isFeedbackInsert(statementSql: string): boolean {
   return statementSql.toLowerCase().includes(`insert into "${DEFAULT_SITEPING_TABLE_NAMES.feedbacks}"`);
 }
 
+/** Whether a driver call deletes feedback rows (libSQL batches it with the annotation delete). */
+function isFeedbackDelete(statementSql: string): boolean {
+  return statementSql.toLowerCase().includes(`delete from "${DEFAULT_SITEPING_TABLE_NAMES.feedbacks}"`);
+}
+
+/** Rows per insert of a bulk application import — keeps each statement below SQLite's bound-parameter limit. */
+const APPLICATION_INSERT_BATCH_SIZE = 200;
+/** Response cap of the size-limited driver in the bulk-delete tests — one delete chunk fits, a whole test project does not. */
+const BULK_DELETE_RESPONSE_LIMIT_BYTES = 256 * 1024;
+/** Characters padding each external screenshot URL of the bulk-delete tests, so a project's URLs outgrow the cap. */
+const LONG_SCREENSHOT_URL_PADDING_LENGTH = 200;
+
+/** Application rows of `projectName` whose screenshots are stored externally under long, row-unique URLs. */
+function externallyStoredScreenshotRows(count: number, projectName = "site"): ApplicationFeedbackRow[] {
+  return Array.from({ length: count }, () => {
+    const row = applicationFeedbackRow();
+    const padding = "x".repeat(LONG_SCREENSHOT_URL_PADDING_LENGTH);
+    return { ...row, projectName, screenshotUrl: `https://cdn.example.com/${row.id}/${padding}.jpg` };
+  });
+}
+
+/** An error followed by its `cause`s — Drizzle's PostgreSQL session wraps driver errors in a `DrizzleQueryError`. */
+function causeChain(error: unknown): unknown[] {
+  const chain: unknown[] = [];
+  for (let current = error; current !== undefined && !chain.includes(current); ) {
+    chain.push(current);
+    current = current instanceof Error ? current.cause : undefined;
+  }
+  return chain;
+}
+
 const REJECTED_WRITE_OPERATIONS = ["INSERT", "UPDATE", "DELETE"] as const;
 
 interface DialectUnderTest {
@@ -97,6 +129,8 @@ interface DialectUnderTest {
     writeAsApplication(): Promise<void>;
     /** Insert one feedback row through the exported table, as the host application would — no internal column set. */
     insertFeedbackAsApplication(row: ApplicationFeedbackRow): Promise<void>;
+    /** Insert many feedback rows through the exported table, as the host application's bulk import would. */
+    insertFeedbacksAsApplication(rows: readonly ApplicationFeedbackRow[]): Promise<void>;
     /** Re-insert every annotation row in reverse physical order, as a dump/restore or a table rewrite may. */
     reverseAnnotationStorageOrder(): Promise<void>;
     /**
@@ -131,6 +165,13 @@ const dialects: DialectUnderTest[] = [
         },
         async insertFeedbackAsApplication(row) {
           await database.db.insert(tables.sitepingFeedbacks).values(row);
+        },
+        async insertFeedbacksAsApplication(rows) {
+          for (let start = 0; start < rows.length; start += APPLICATION_INSERT_BATCH_SIZE) {
+            await database.db
+              .insert(tables.sitepingFeedbacks)
+              .values(rows.slice(start, start + APPLICATION_INSERT_BATCH_SIZE));
+          }
         },
         async reverseAnnotationStorageOrder() {
           const rows = await database.db.select().from(tables.sitepingAnnotations);
@@ -177,6 +218,13 @@ const dialects: DialectUnderTest[] = [
         },
         async insertFeedbackAsApplication(row) {
           await database.db.insert(tables.sitepingFeedbacks).values(row);
+        },
+        async insertFeedbacksAsApplication(rows) {
+          for (let start = 0; start < rows.length; start += APPLICATION_INSERT_BATCH_SIZE) {
+            await database.db
+              .insert(tables.sitepingFeedbacks)
+              .values(rows.slice(start, start + APPLICATION_INSERT_BATCH_SIZE));
+          }
         },
         async reverseAnnotationStorageOrder() {
           const rows = await database.db.select().from(tables.sitepingAnnotations);
@@ -623,6 +671,86 @@ for (const dialect of dialects) {
       await store.deleteAllFeedbacks("bulk");
 
       expect(await database.countAnnotations()).toBe(1);
+    });
+
+    describe("when deleteAllFeedbacks frees more screenshots than one driver response can carry", () => {
+      it("deletes every row and cleans up every screenshot through a size-capped driver", async () => {
+        const rows = externallyStoredScreenshotRows(PROJECT_DELETE_CHUNK_SIZE * 3);
+        await database.insertFeedbacksAsApplication(rows);
+        const writer = database.createStore({ logger });
+        await writer.createFeedback(feedbackInput());
+        await writer.createFeedback(feedbackInput({ projectName: "other-site" }));
+        const screenshotUrls = rows.map((row) => row.screenshotUrl);
+        expect(JSON.stringify(screenshotUrls).length).toBeGreaterThan(BULK_DELETE_RESPONSE_LIMIT_BYTES);
+        const { storage, deletions } = recordingStorage();
+        const store = database.createStoreBehindResponseSizeLimit(BULK_DELETE_RESPONSE_LIMIT_BYTES, {
+          screenshotStorage: storage,
+          logger,
+        });
+
+        await store.deleteAllFeedbacks("site");
+
+        expect((await writer.getFeedbacks({ projectName: "site" })).total).toBe(0);
+        expect((await writer.getFeedbacks({ projectName: "other-site" })).total).toBe(1);
+        expect(await database.countAnnotations()).toBe(1);
+        expect([...deletions].sort()).toEqual([...screenshotUrls].sort());
+        expect(logger.warn).not.toHaveBeenCalled();
+      });
+
+      it("keeps the cleanup of committed chunks when a later chunk fails, and completes the delete on retry", async () => {
+        const rows = externallyStoredScreenshotRows(PROJECT_DELETE_CHUNK_SIZE + 10);
+        await database.insertFeedbacksAsApplication(rows);
+        const { storage, deletions } = recordingStorage();
+        const chunkFailure = new Error("connection lost while deleting the second chunk");
+        let feedbackDeletes = 0;
+        const store = database.createStoreWithDriverInterceptor(
+          (statementSql, run) => {
+            if (!isFeedbackDelete(statementSql)) return run();
+            feedbackDeletes += 1;
+            return feedbackDeletes === 2 ? Promise.reject(chunkFailure) : run();
+          },
+          { screenshotStorage: storage, logger },
+        );
+        const reader = database.createStore({ logger });
+
+        const failure = await store.deleteAllFeedbacks("site").then(
+          () => null,
+          (error: unknown) => error,
+        );
+
+        expect(isStorePersistence(failure)).toBe(true);
+        expect(causeChain(failure)).toContain(chunkFailure);
+        const remaining = await reader.getFeedbacks({ projectName: "site", limit: 50 });
+        expect(remaining.total).toBe(rows.length - PROJECT_DELETE_CHUNK_SIZE);
+        const remainingUrls = new Set(remaining.feedbacks.map((feedback) => feedback.screenshotUrl));
+        expect(deletions).toHaveLength(PROJECT_DELETE_CHUNK_SIZE);
+        expect(deletions.filter((url) => remainingUrls.has(url))).toEqual([]);
+
+        await store.deleteAllFeedbacks("site");
+
+        expect((await reader.getFeedbacks({ projectName: "site" })).total).toBe(0);
+        expect([...deletions].sort()).toEqual(rows.map((row) => row.screenshotUrl).sort());
+      });
+
+      it("never reads inline screenshots back while cleaning up a project with a delete hook", async () => {
+        // Each inline screenshot alone is larger than the driver accepts in a response.
+        const inlineScreenshot = `${SCREENSHOT_DATA_URL}${"A".repeat(RESPONSE_SIZE_LIMIT_BYTES)}`;
+        const writer = database.createStore({ logger });
+        await writer.createFeedback(feedbackInput({ screenshotDataUrl: inlineScreenshot }));
+        const single = await writer.createFeedback(feedbackInput({ screenshotDataUrl: inlineScreenshot }));
+        const { storage, deletions } = recordingStorage();
+        const store = database.createStoreBehindResponseSizeLimit(RESPONSE_SIZE_LIMIT_BYTES, {
+          screenshotStorage: storage,
+          logger,
+        });
+
+        await store.deleteFeedback(single.id);
+        await store.deleteAllFeedbacks("site");
+
+        expect((await writer.getFeedbacks({ projectName: "site" })).total).toBe(0);
+        expect(await database.countAnnotations()).toBe(0);
+        expect(deletions).toEqual([]);
+      });
     });
 
     it("deletes feedbacks with inline screenshots through a size-capped driver when no cleanup hook exists", async () => {

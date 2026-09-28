@@ -26,3 +26,6 @@ export const SCREENSHOT_REFERENCE_LOOKUP_BATCH_SIZE = 500;
  * can exhaust sockets or memory and trip object-store rate limits.
  */
 export const SCREENSHOT_DELETE_CONCURRENCY = 8;
+
+/** SQL `LIKE` pattern matching inline screenshots ({@link INLINE_SCREENSHOT_URL_PREFIX} contains no wildcard). */
+export const INLINE_SCREENSHOT_URL_LIKE_PATTERN = `${INLINE_SCREENSHOT_URL_PREFIX}%`;

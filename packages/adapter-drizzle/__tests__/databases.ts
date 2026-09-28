@@ -25,8 +25,17 @@ export interface TestDatabase<Database> {
   reset(): Promise<void>;
   /** The same database behind a driver that rejects responses larger than `maxResponseBytes`, as HTTP drivers do. */
   withResponseSizeLimit(maxResponseBytes: number): Database;
+  /** The same database behind a driver whose query calls all go through `intercept`. */
+  withDriverCallInterceptor(intercept: DriverCallInterceptor): Database;
   close(): Promise<void>;
 }
+
+/**
+ * Sees every driver call that returns query results: the SQL it sends and a
+ * thunk that runs it on the real engine. Returning `run()` passes the call
+ * through; the interceptor may do work before or after it, or reject instead.
+ */
+export type DriverCallInterceptor = (statementSql: string, run: () => Promise<unknown>) => Promise<unknown>;
 
 export async function createPgTestDatabase(names?: SitepingTableNames): Promise<TestDatabase<AnyPgDatabase>> {
   const client = new PGlite();
@@ -41,6 +50,8 @@ export async function createPgTestDatabase(names?: SitepingTableNames): Promise<
     },
     withResponseSizeLimit: (maxResponseBytes) =>
       drizzlePglite({ client: withResponseSizeLimit(client, maxResponseBytes, PGLITE_RESULT_METHODS) }),
+    withDriverCallInterceptor: (intercept) =>
+      drizzlePglite({ client: interceptDriverCalls(client, PGLITE_RESULT_METHODS, intercept) }),
     close: () => client.close(),
   };
 }
@@ -60,6 +71,8 @@ export async function createLibSQLTestDatabase(names?: SitepingTableNames): Prom
     },
     withResponseSizeLimit: (maxResponseBytes) =>
       drizzleLibSQL({ client: withResponseSizeLimit(client, maxResponseBytes, LIBSQL_RESULT_METHODS) }),
+    withDriverCallInterceptor: (intercept) =>
+      drizzleLibSQL({ client: interceptDriverCalls(client, LIBSQL_RESULT_METHODS, intercept) }),
     async close() {
       client.close();
       try {
@@ -104,6 +117,38 @@ function resultRowsBytes(result: unknown): number {
 }
 
 /**
+ * SQL text of a driver call's first argument: a string (PGlite `query`,
+ * libSQL `execute`), a `{ sql }` statement, or a libSQL `batch` of them.
+ */
+function statementSql(statement: unknown): string {
+  if (typeof statement === "string") return statement;
+  if (Array.isArray(statement)) return statement.map(statementSql).join(";\n");
+  const text = (statement as { sql?: unknown } | null)?.sql;
+  return typeof text === "string" ? text : "";
+}
+
+/**
+ * The same client, with every call of `resultMethods` routed through
+ * `intercept` while still executing on the real engine. Test-owned: it
+ * stands in for drivers or timings that cannot be produced locally.
+ */
+function interceptDriverCalls<Client extends object>(
+  client: Client,
+  resultMethods: readonly string[],
+  intercept: DriverCallInterceptor,
+): Client {
+  return new Proxy(client, {
+    get(target, property) {
+      const value = Reflect.get(target, property, target);
+      if (typeof value !== "function") return value;
+      const bound = value.bind(target);
+      if (typeof property !== "string" || !resultMethods.includes(property)) return bound;
+      return (...args: unknown[]) => intercept(statementSql(args[0]), () => bound(...args));
+    },
+  });
+}
+
+/**
  * The same client, with the response-size cap of HTTP database drivers
  * (Neon HTTP, Turso over HTTP…): a call whose rows exceed `maxResponseBytes`
  * rejects after running. No such driver runs locally, so this test-owned
@@ -114,20 +159,12 @@ function withResponseSizeLimit<Client extends object>(
   maxResponseBytes: number,
   resultMethods: readonly string[],
 ): Client {
-  return new Proxy(client, {
-    get(target, property) {
-      const value = Reflect.get(target, property, target);
-      if (typeof value !== "function") return value;
-      const bound = value.bind(target);
-      if (typeof property !== "string" || !resultMethods.includes(property)) return bound;
-      return async (...args: unknown[]) => {
-        const result = await bound(...args);
-        const bytes = resultRowsBytes(result);
-        if (bytes > maxResponseBytes) {
-          throw new Error(`Response too large: ${bytes} bytes exceed the ${maxResponseBytes}-byte driver limit`);
-        }
-        return result;
-      };
-    },
+  return interceptDriverCalls(client, resultMethods, async (_statementSql, run) => {
+    const result = await run();
+    const bytes = resultRowsBytes(result);
+    if (bytes > maxResponseBytes) {
+      throw new Error(`Response too large: ${bytes} bytes exceed the ${maxResponseBytes}-byte driver limit`);
+    }
+    return result;
   });
 }

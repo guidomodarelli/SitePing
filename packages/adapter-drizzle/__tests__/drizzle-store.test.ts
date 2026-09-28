@@ -8,11 +8,11 @@ import {
 import { getTableName, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { SCREENSHOT_DELETE_CONCURRENCY } from "../src/constants/screenshots.js";
-import type { SitepingTableNames } from "../src/constants/table-names.js";
+import { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../src/constants/table-names.js";
 import { createLibSQLSitepingStore, createSitepingSqliteTables } from "../src/libsql/index.js";
 import { createPgSitepingStore, createSitepingPgTables } from "../src/pg/index.js";
 import type { DrizzleStore, DrizzleStoreOptions } from "../src/shared/store.js";
-import { createLibSQLTestDatabase, createPgTestDatabase } from "./databases.js";
+import { createLibSQLTestDatabase, createPgTestDatabase, type DriverCallInterceptor } from "./databases.js";
 
 const SCREENSHOT_DATA_URL = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
 /** Response cap of the size-limited driver — smaller than one inline screenshot in the tests using it. */
@@ -74,6 +74,11 @@ function orderedAnnotations(count: number): FeedbackCreateInput["annotations"] {
   return Array.from({ length: count }, (_, index) => ({ ...template, cssSelector: `li:nth-child(${index + 1})` }));
 }
 
+/** Whether a driver call carries the store's feedback insert (PostgreSQL wraps it in a CTE, libSQL may batch it). */
+function isFeedbackInsert(statementSql: string): boolean {
+  return statementSql.toLowerCase().includes(`insert into "${DEFAULT_SITEPING_TABLE_NAMES.feedbacks}"`);
+}
+
 const REJECTED_WRITE_OPERATIONS = ["INSERT", "UPDATE", "DELETE"] as const;
 
 interface DialectUnderTest {
@@ -82,6 +87,8 @@ interface DialectUnderTest {
     createStore(options?: DrizzleStoreOptions): DrizzleStore;
     /** A store on the same database, reached through a driver that caps response size. */
     createStoreBehindResponseSizeLimit(maxResponseBytes: number, options?: DrizzleStoreOptions): DrizzleStore;
+    /** A store on the same database whose driver calls all go through `intercept`. */
+    createStoreWithDriverInterceptor(intercept: DriverCallInterceptor, options?: DrizzleStoreOptions): DrizzleStore;
     countAnnotations(): Promise<number>;
     /** Write through the same `db` as the host application would — an insert and a bulk update, outside the store. */
     writeAsApplication(): Promise<void>;
@@ -110,6 +117,8 @@ const dialects: DialectUnderTest[] = [
         createStore: (options) => createPgSitepingStore(database.db, { ...options, tables }),
         createStoreBehindResponseSizeLimit: (maxResponseBytes, options) =>
           createPgSitepingStore(database.withResponseSizeLimit(maxResponseBytes), { ...options, tables }),
+        createStoreWithDriverInterceptor: (intercept, options) =>
+          createPgSitepingStore(database.withDriverCallInterceptor(intercept), { ...options, tables }),
         countAnnotations: async () => (await database.db.select().from(tables.sitepingAnnotations)).length,
         async writeAsApplication() {
           await database.db.insert(tables.sitepingFeedbacks).values(applicationFeedbackRow());
@@ -151,6 +160,8 @@ const dialects: DialectUnderTest[] = [
         createStore: (options) => createLibSQLSitepingStore(database.db, { ...options, tables }),
         createStoreBehindResponseSizeLimit: (maxResponseBytes, options) =>
           createLibSQLSitepingStore(database.withResponseSizeLimit(maxResponseBytes), { ...options, tables }),
+        createStoreWithDriverInterceptor: (intercept, options) =>
+          createLibSQLSitepingStore(database.withDriverCallInterceptor(intercept), { ...options, tables }),
         countAnnotations: async () => (await database.db.select().from(tables.sitepingAnnotations)).length,
         async writeAsApplication() {
           await database.db.insert(tables.sitepingFeedbacks).values(applicationFeedbackRow());
@@ -355,6 +366,77 @@ for (const dialect of dialects) {
       expect(objects.get(winnerScreenshotUrl)).toBe(SCREENSHOT_DATA_URL);
       // The loser's own object is cleaned up; only the winner's remains.
       expect([...objects.keys()]).toEqual([winnerScreenshotUrl]);
+    });
+
+    describe("when a duplicate create loses the insert race and reading the winner back fails", () => {
+      /**
+       * A loser store whose feedback insert conflicts: right before that insert runs,
+       * a separate store inserts the winning row for the same clientId (the loser has
+       * already missed it in its first lookup and uploaded its screenshot).
+       * `afterLostInsert` runs once the conflicting insert has completed.
+       */
+      function loserAgainstWinner(
+        clientId: string,
+        storage: ScreenshotStorage,
+        afterLostInsert: (winnerId: string) => Promise<void>,
+        interceptLaterCall: DriverCallInterceptor = (_statementSql, run) => run(),
+      ): DrizzleStore {
+        const referee = database.createStore({ logger });
+        let lostInsert = false;
+        return database.createStoreWithDriverInterceptor(
+          async (statementSql, run) => {
+            if (lostInsert) return interceptLaterCall(statementSql, run);
+            if (!isFeedbackInsert(statementSql)) return run();
+            const winner = await referee.createFeedback(feedbackInput({ clientId }));
+            const result = await run();
+            lostInsert = true;
+            await afterLostInsert(winner.id);
+            return result;
+          },
+          { screenshotStorage: storage, logger },
+        );
+      }
+
+      it("discards the loser's upload when the winning row is deleted before the loser reads it back", async () => {
+        const { storage, uploads, deletions } = recordingStorage();
+        const clientId = crypto.randomUUID();
+        const cleanup = database.createStore({ logger });
+        const loser = loserAgainstWinner(clientId, storage, (winnerId) => cleanup.deleteFeedback(winnerId));
+
+        await expect(
+          loser.createFeedbackIfAbsent(feedbackInput({ clientId, screenshotDataUrl: SCREENSHOT_DATA_URL })),
+        ).rejects.toThrow(`clientId ${clientId} conflicted but no row was found`);
+
+        expect(uploads).toHaveLength(1);
+        expect(deletions).toEqual([`https://cdn.example.com/${uploads[0]?.feedbackId}.jpg`]);
+        expect((await cleanup.getFeedbacks({ projectName: "site" })).total).toBe(0);
+      });
+
+      it("discards the loser's upload and propagates the error when reading the winning row back rejects", async () => {
+        const { storage, uploads, deletions } = recordingStorage();
+        const clientId = crypto.randomUUID();
+        const lookupFailure = new Error("connection lost while reading the winning row back");
+        let lookupRejected = false;
+        const loser = loserAgainstWinner(
+          clientId,
+          storage,
+          async () => {},
+          (_statementSql, run) => {
+            if (lookupRejected) return run();
+            lookupRejected = true;
+            return Promise.reject(lookupFailure);
+          },
+        );
+
+        await expect(
+          loser.createFeedbackIfAbsent(feedbackInput({ clientId, screenshotDataUrl: SCREENSHOT_DATA_URL })),
+        ).rejects.toMatchObject({ cause: lookupFailure });
+
+        expect(uploads).toHaveLength(1);
+        expect(deletions).toEqual([`https://cdn.example.com/${uploads[0]?.feedbackId}.jpg`]);
+        const stored = await database.createStore({ logger }).findByClientId(clientId);
+        expect(stored?.screenshotUrl).toBeNull();
+      });
     });
 
     it("keeps the winner's screenshot when a contract-breaking storage shares one URL across racing uploads", async () => {

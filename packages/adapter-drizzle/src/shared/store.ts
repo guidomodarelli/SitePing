@@ -143,6 +143,13 @@ export class DrizzleSitepingStore implements DrizzleStore {
    * unique `client_id` index plus `ON CONFLICT DO NOTHING` make the check
    * atomic across store instances and processes: of N concurrent calls, only
    * the one whose insert lands reports `created: true`.
+   *
+   * @throws `StorePersistenceError` when the insert fails. When the insert
+   *   loses the race, the winning row is read back: if that read rejects, its
+   *   error propagates; if the row was deleted in the meantime, an `Error`
+   *   naming the `clientId` is thrown (the caller may retry the submission).
+   *   On every failure path, the screenshot this attempt uploaded is discarded
+   *   first — no committed row references it.
    */
   async createFeedbackIfAbsent(data: FeedbackCreateInput): Promise<FeedbackCreateOutcome> {
     const existing = await this.findByClientId(data.clientId);
@@ -180,13 +187,19 @@ export class DrizzleSitepingStore implements DrizzleStore {
     // Lost a race against the same clientId: the stored row keeps its own
     // screenshot, uploaded under its own id, so the one just uploaded is an
     // orphan no row references (screenshot URLs are unique per feedback id).
-    const winner = await this.findByClientId(data.clientId);
+    // It is discarded however the winner lookup ends — found, deleted in the
+    // meantime, or rejected — and a lookup failure still propagates untouched.
+    let winner: FeedbackRecord | null;
+    try {
+      winner = await this.findByClientId(data.clientId);
+    } finally {
+      await this.discardScreenshots([screenshotUrl], { clientId: data.clientId });
+    }
     if (!winner) {
       throw new Error(
-        `[siteping] DrizzleStore.createFeedbackIfAbsent: clientId ${data.clientId} conflicted but no row was found`,
+        `${DRIZZLE_STORE_MESSAGE_PREFIX}.createFeedbackIfAbsent: clientId ${data.clientId} conflicted but no row was found (the winning row was deleted before it could be read back)`,
       );
     }
-    await this.discardScreenshots([screenshotUrl], { clientId: data.clientId });
     return { feedback: winner, created: false };
   }
 

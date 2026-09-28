@@ -21,7 +21,8 @@ export interface ScreenshotServeHandlerOptions {
    * responses are marked `Cache-Control: private, no-cache`: shared caches (CDN,
    * proxy) never serve an authorized screenshot to a request that skipped this
    * check, and the browser revalidates every reuse, so a revoked access takes
-   * effect at once (an unchanged screenshot costs a `304`, not its bytes).
+   * effect at once (a matching `If-None-Match` costs a `304` answered without
+   * reading the object — the ETag is the never-reused key, so no backend I/O).
    * Receives the requested key for per-screenshot decisions.
    */
   authorize?: (request: Request, target: ScreenshotServeRequestTarget) => boolean | Promise<boolean>;
@@ -71,13 +72,17 @@ export function createScreenshotServeHandler(
       const key = keyFromRequestUrl(request.url);
       if (key === null || !isGeneratedKey(key, keyPrefix)) return new Response(null, { status: 404 });
       if (authorize && !(await authorize(request, { key }))) return new Response(null, { status: 403 });
-      const object = await read(key);
-      if (!object) return new Response(null, { status: 404 });
       const etag = servedScreenshotEtag(key);
       const cacheHeaders = { "Cache-Control": cacheControl, ETag: etag };
-      if (matchesIfNoneMatch(request.headers.get("If-None-Match"), etag)) {
-        return new Response(null, { status: 304, headers: cacheHeaders });
-      }
+      const ifNoneMatch = parseIfNoneMatch(request.headers.get("If-None-Match"));
+      // The ETag is the key, and a key names the same bytes forever: a client
+      // listing it already holds this exact screenshot, so the (just
+      // re-authorized) revalidation is answered without reading the object.
+      if (ifNoneMatch.listedTags.includes(etag)) return new Response(null, { status: 304, headers: cacheHeaders });
+      const object = await read(key);
+      if (!object) return new Response(null, { status: 404 });
+      // `*` only matches an existing object, so it is answered after the read.
+      if (ifNoneMatch.matchesAny) return new Response(null, { status: 304, headers: cacheHeaders });
       return new Response(object.bytes, {
         headers: {
           ...cacheHeaders,
@@ -110,17 +115,27 @@ function servedScreenshotEtag(key: string): string {
   return `"${key}"`;
 }
 
+/** A parsed `If-None-Match` request header. */
+interface IfNoneMatchCondition {
+  /** `*` was sent: matches any existing representation. */
+  matchesAny: boolean;
+  /** Listed entity tags, weak prefix (`W/`) removed — `If-None-Match` uses weak comparison (RFC 9110). */
+  listedTags: string[];
+}
+
 /**
- * Whether an `If-None-Match` request header matches `etag` (weak comparison,
- * as RFC 9110 prescribes for `If-None-Match`): `*`, or any listed tag.
+ * Parse an `If-None-Match` request header: `*`, or a comma-separated list of
+ * (possibly weak) entity tags.
  *
  * @param ifNoneMatch - Raw header value, `null` when absent.
- * @param etag - Current strong ETag of the screenshot.
  */
-function matchesIfNoneMatch(ifNoneMatch: string | null, etag: string): boolean {
-  if (ifNoneMatch === null) return false;
-  return ifNoneMatch.split(",").some((listedTag) => {
-    const tag = listedTag.trim();
-    return tag === "*" || tag.replace(/^W\//, "") === etag;
-  });
+function parseIfNoneMatch(ifNoneMatch: string | null): IfNoneMatchCondition {
+  const entries = (ifNoneMatch ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry !== "");
+  return {
+    matchesAny: entries.includes("*"),
+    listedTags: entries.filter((entry) => entry !== "*").map((entry) => entry.replace(/^W\//, "")),
+  };
 }

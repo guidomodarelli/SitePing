@@ -485,6 +485,69 @@ describe("createScreenshotServeHandler", () => {
     expect(afterRevocation.status).toBe(403);
   });
 
+  describe("revalidation against a private S3 bucket", () => {
+    const credentials = { accessKeyId: "AKIDEXAMPLE", secretAccessKey: "s3-secret" };
+
+    async function openPrivateS3(authorize: () => boolean) {
+      const fake = createFakeS3({ bucket: "screens", region: "auto", ...credentials });
+      const objectStore = createS3ObjectStore({
+        endpoint: "https://account.r2.cloudflarestorage.com",
+        bucket: "screens",
+        publicBaseUrl: PUBLIC_BASE_URL,
+        ...credentials,
+        fetch: fake.fetch,
+      });
+      const { url } = await createScreenshotStorage(objectStore).upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
+      const handler = createScreenshotServeHandler(objectStore, { authorize });
+      const objectReads = () => fake.requests.filter(({ method }) => method === "GET").length;
+      return { url, handler, objectReads };
+    }
+
+    it("answers a matching If-None-Match with a 304 without downloading the object", async () => {
+      const { url, handler, objectReads } = await openPrivateS3(() => true);
+      const etag = (await handler.GET(new Request(url))).headers.get("etag");
+      const readsAfterFirstResponse = objectReads();
+
+      const revalidation = await handler.GET(
+        new Request(url, { headers: { "If-None-Match": `"other-tag", W/${etag}` } }),
+      );
+
+      expect(revalidation.status).toBe(304);
+      expect(revalidation.headers.get("etag")).toBe(etag);
+      expect(revalidation.headers.get("cache-control")).toBe("private, no-cache");
+      expect(objectReads()).toBe(readsAfterFirstResponse);
+    });
+
+    it("serves the object again when If-None-Match lists other tags only", async () => {
+      const { url, handler, objectReads } = await openPrivateS3(() => true);
+
+      const response = await handler.GET(new Request(url, { headers: { "If-None-Match": '"other-tag", W/"stale"' } }));
+
+      expect(response.status).toBe(200);
+      expect(new Uint8Array(await response.arrayBuffer())).toEqual(JPEG_BYTES);
+      expect(objectReads()).toBe(1);
+    });
+
+    it("refuses an unauthorized revalidation without reading the object", async () => {
+      const { url, handler, objectReads } = await openPrivateS3(() => false);
+      const key = url.split("/").pop() ?? "";
+
+      const response = await handler.GET(new Request(url, { headers: { "If-None-Match": `"${key}"` } }));
+
+      expect(response.status).toBe(403);
+      expect(objectReads()).toBe(0);
+    });
+
+    it("answers If-None-Match: * with a 304 only when the object exists", async () => {
+      const { url, handler } = await openPrivateS3(() => true);
+      const missingUrl = `${PUBLIC_BASE_URL}/siteping-${"c".repeat(32)}.jpg`;
+      const wildcard = { headers: { "If-None-Match": "*" } };
+
+      expect((await handler.GET(new Request(url, wildcard))).status).toBe(304);
+      expect((await handler.GET(new Request(missingUrl, wildcard))).status).toBe(404);
+    });
+  });
+
   it("only serves its own keyPrefix namespace from a filesystem directory shared with another app", async () => {
     const directory = mkdtempSync(join(tmpdir(), "siteping-shared-"));
     temporaryDirectories.push(directory);

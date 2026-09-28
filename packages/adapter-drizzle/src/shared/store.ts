@@ -126,9 +126,15 @@ export class DrizzleSitepingStore implements DrizzleStore {
     const existing = await this.findByClientId(data.clientId);
     if (existing) return { feedback: existing, created: false };
 
-    const screenshotUrl = await this.persistScreenshot(data.screenshotDataUrl, data.clientId);
+    // Fresh per attempt: racing creates of one clientId upload under distinct
+    // ids, so the winner's object is never overwritten by a loser's upload.
+    const id = crypto.randomUUID();
+    const screenshotUrl = await this.persistScreenshot(data.screenshotDataUrl, {
+      feedbackId: id,
+      clientId: data.clientId,
+    });
     const { annotations, ...feedback } = buildFeedbackRecord(data, {
-      id: crypto.randomUUID(),
+      id,
       annotationId: () => crypto.randomUUID(),
       now: this.nextCreatedAt(),
     });
@@ -148,9 +154,9 @@ export class DrizzleSitepingStore implements DrizzleStore {
     }
 
     // Lost a race against the same clientId: the stored row keeps its own
-    // screenshot, so the one just uploaded is an orphan — unless the storage
-    // derives the object key from the clientId and both uploads landed on the
-    // winner's URL, which must survive.
+    // screenshot, uploaded under its own id, so the one just uploaded is an
+    // orphan. The URL check only guards storages that ignore the id (e.g. a
+    // content-addressed key), where both uploads can share the winner's URL.
     const winner = await this.findByClientId(data.clientId);
     if (!winner) {
       throw new Error(
@@ -249,25 +255,29 @@ export class DrizzleSitepingStore implements DrizzleStore {
    * Value to persist on `screenshotUrl`: the storage URL, `null` when the
    * upload fails (an inline fallback would bloat the database unnoticed
    * during a storage outage), or the inline data URL without storage.
+   *
+   * @param dataUrl - Screenshot submitted with the feedback, if any.
+   * @param attempt - `feedbackId` is the id this create attempt will insert
+   *   the row under — unique per attempt and never client-supplied — so
+   *   racing attempts on one `clientId` never write the same object;
+   *   `clientId` is only reported in logs.
    */
-  private async persistScreenshot(dataUrl: string | null | undefined, clientId: string): Promise<string | null> {
+  private async persistScreenshot(
+    dataUrl: string | null | undefined,
+    { feedbackId, clientId }: { feedbackId: string; clientId: string },
+  ): Promise<string | null> {
     if (!dataUrl) return null;
     if (this.screenshotStorage) {
       try {
-        // The row id does not exist yet; clientId is unique and stable, but
-        // client-supplied — storages must sanitize it before building paths.
         const { url } = await this.screenshotStorage.upload(dataUrl, {
-          feedbackId: clientId,
+          feedbackId,
           mimeType: SCREENSHOT_MIME_TYPE,
         });
         return url;
       } catch (error) {
         this.logger.warn(
           "[siteping] DrizzleStore: screenshotStorage.upload failed — feedback saved without screenshot",
-          {
-            clientId,
-            error,
-          },
+          { clientId, feedbackId, error },
         );
         return null;
       }
@@ -284,15 +294,17 @@ export class DrizzleSitepingStore implements DrizzleStore {
 
   /**
    * After a failed insert, drop the screenshot uploaded for it — but only
-   * once the database confirms no row holds that `clientId`: a failure
-   * reported after the commit (e.g. a dropped connection) may have stored a
-   * row that points at it. When the check itself fails, the object is kept
-   * (an orphan is acceptable, a dangling row is not).
+   * once the database confirms no stored row points at it: a failure
+   * reported after the commit (e.g. a dropped connection) may have stored
+   * this attempt's row. A row stored by a racing attempt holds its own
+   * screenshot, so this one is still an orphan. When the check itself fails,
+   * the object is kept (an orphan is acceptable, a dangling row is not).
    */
   private async discardUnreferencedScreenshot(screenshotUrl: string | null, clientId: string): Promise<void> {
     if (!isUploadedScreenshotUrl(screenshotUrl)) return;
     try {
-      if (await this.gateway.findByClientId(clientId)) return;
+      const stored = await this.gateway.findByClientId(clientId);
+      if (stored?.screenshotUrl === screenshotUrl) return;
     } catch (lookupError) {
       this.logger.warn(
         `${DRIZZLE_STORE_MESSAGE_PREFIX}: insert failed and its row could not be checked — screenshot kept`,

@@ -33,7 +33,7 @@ const store = createLibSQLSitepingStore(
 );
 ```
 
-Serve it with `createSitepingHandler({ store, … })` from `@siteping/server`. Without `screenshotStorage`, screenshots are stored inline as base64.
+Serve it with `createSitepingHandler({ store, … })` from `@siteping/server`. Without `screenshotStorage`, screenshots are stored inline as base64. With it, `upload` receives as `feedbackId` the id the record will be stored under — generated server-side and unique per create attempt, not the client's `clientId` — so key objects by it: when two submissions of the same feedback race, each uploads its own object and the one that loses the insert deletes it (through `delete`), leaving the winner's screenshot intact.
 
 The store implements the whole contract, including `verifyProjectOwnership` (needed by project-scoped `access.authorize`) and an atomic `createFeedbackIfAbsent`: the unique `client_id` index arbitrates concurrent submissions of the same feedback, even across processes, so creation webhooks fire once. The store never opens an interactive `db.transaction`: on PostgreSQL every write is a single statement (so Neon HTTP works), and on libSQL multi-statement writes go through `db.batch`, which never holds the write lock across an `await` — your application can keep writing to the same database concurrently. When several processes share one local libSQL **file**, set the client's busy `timeout` so their writes queue instead of failing with `SQLITE_BUSY`.
 

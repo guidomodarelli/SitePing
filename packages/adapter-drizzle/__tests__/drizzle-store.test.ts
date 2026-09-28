@@ -200,8 +200,9 @@ for (const dialect of dialects) {
       const created = await store.createFeedback(input);
       await store.deleteFeedback(created.id);
 
-      expect(uploads).toEqual([{ feedbackId: input.clientId, mimeType: "image/jpeg" }]);
-      expect(created.screenshotUrl).toBe(`https://cdn.example.com/${input.clientId}.jpg`);
+      // Uploaded under the record id — server-generated, unlike the clientId.
+      expect(uploads).toEqual([{ feedbackId: created.id, mimeType: "image/jpeg" }]);
+      expect(created.screenshotUrl).toBe(`https://cdn.example.com/${created.id}.jpg`);
       expect(deletions).toEqual([created.screenshotUrl]);
     });
 
@@ -254,8 +255,52 @@ for (const dialect of dialects) {
       expect(deletions).not.toContain(winner?.screenshotUrl);
     });
 
-    it("keeps the winner's screenshot when a racing loser uploaded to the same clientId-derived URL", async () => {
-      const { storage, deletions } = recordingStorage();
+    it("keeps the winner's own screenshot when a racing loser finishes uploading last", async () => {
+      // An object store keyed by the upload's feedbackId, as the documented key pattern builds it.
+      const objects = new Map<string, string>();
+      let releaseLateUpload: () => void = () => {};
+      const lateUploadGate = new Promise<void>((resolve) => {
+        releaseLateUpload = resolve;
+      });
+      const lateScreenshot = `${SCREENSHOT_DATA_URL}late`;
+      const storage: ScreenshotStorage = {
+        async upload(dataUrl, context) {
+          if (dataUrl === lateScreenshot) await lateUploadGate;
+          const url = `https://cdn.example.com/${context.feedbackId}.jpg`;
+          objects.set(url, dataUrl);
+          return { url };
+        },
+        async delete(url) {
+          objects.delete(url);
+        },
+      };
+      const clientId = crypto.randomUUID();
+      const [lateStore, winningStore] = [1, 2].map(() => database.createStore({ screenshotStorage: storage, logger }));
+
+      // Both attempts miss the clientId lookup; the late one uploads only after the other inserted.
+      const lateAttempt = lateStore?.createFeedbackIfAbsent(
+        feedbackInput({ clientId, screenshotDataUrl: lateScreenshot }),
+      );
+      const winner = await winningStore?.createFeedbackIfAbsent(
+        feedbackInput({ clientId, screenshotDataUrl: SCREENSHOT_DATA_URL }),
+      );
+      releaseLateUpload();
+      const loser = await lateAttempt;
+
+      expect(winner?.created).toBe(true);
+      expect(loser).toEqual({ feedback: expect.objectContaining({ id: winner?.feedback.id }), created: false });
+      const winnerScreenshotUrl = winner?.feedback.screenshotUrl ?? "";
+      expect(objects.get(winnerScreenshotUrl)).toBe(SCREENSHOT_DATA_URL);
+      // The loser's own object is cleaned up; only the winner's remains.
+      expect([...objects.keys()]).toEqual([winnerScreenshotUrl]);
+    });
+
+    it("keeps the winner's screenshot when racing uploads share one URL because the storage ignores the id", async () => {
+      const { storage, deletions } = recordingStorage({
+        async upload() {
+          return { url: "https://cdn.example.com/content-addressed.jpg" };
+        },
+      });
       const stores = [1, 2, 3].map(() => database.createStore({ screenshotStorage: storage, logger }));
       const input = feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL });
 
@@ -295,6 +340,7 @@ for (const dialect of dialects) {
       expect(created.screenshotUrl).toBeNull();
       expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("upload failed"), {
         clientId: created.clientId,
+        feedbackId: created.id,
         error: uploadError,
       });
     });

@@ -41,10 +41,15 @@ export interface ScreenshotStorage {
    * Adapters call this synchronously inside `createFeedback` — keep it
    * fast or move to a queue if needed.
    *
-   * **Security note:** `ctx.feedbackId` is the *client-generated* id
-   * (`clientId`) — the record id does not exist yet at upload time. Treat it
-   * as attacker-controlled: sanitize before using it in filesystem paths or
-   * object keys, even though server adapters validate its shape upstream.
+   * `ctx.feedbackId` identifies the upload. Adapters that upload before the
+   * record exists pass the *client-generated* `clientId` (Prisma); the
+   * Drizzle adapter passes the server-generated id the create attempt will
+   * insert the record under — unique per attempt, so racing submissions of
+   * one `clientId` never write the same object key.
+   *
+   * **Security note:** treat `ctx.feedbackId` as attacker-controlled:
+   * sanitize before using it in filesystem paths or object keys, even though
+   * server adapters validate its shape upstream.
    */
   upload(dataUrl: string, ctx: { feedbackId: string; mimeType: string }): Promise<{ url: string }>;
   /**

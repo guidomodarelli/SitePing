@@ -33,6 +33,11 @@ function createLibSQLGateway(
   const whereClause = (filter: FeedbackFilter) =>
     buildFeedbackWhere(sitepingFeedbacks, filter, CASE_INSENSITIVE_LIKE_OPERATOR.sqlite);
   const recordColumns = feedbackRecordColumns(getTableColumns(sitepingFeedbacks));
+  /** Number of feedback rows matching a where clause — the page `total`. */
+  const countMatching = async (where: ReturnType<typeof whereClause>): Promise<number> => {
+    const [totals] = await db.select({ total: count() }).from(sitepingFeedbacks).where(where);
+    return totals?.total ?? 0;
+  };
   // Evaluated inside the insert statement: SQLite runs one writer at a time,
   // so concurrent inserts — from any process — never read the same maximum.
   const nextCreationSequence = sql<number>`(SELECT COALESCE(MAX(${sitepingFeedbacks.creationSequence}), 0) + 1 FROM ${sitepingFeedbacks})`;
@@ -68,7 +73,7 @@ function createLibSQLGateway(
     },
     async findFeedbacks(filter, { limit, offset }) {
       const where = whereClause(filter);
-      const [rows, totals] = await Promise.all([
+      const [rows, total] = await Promise.all([
         db
           .select(recordColumns)
           .from(sitepingFeedbacks)
@@ -76,9 +81,12 @@ function createLibSQLGateway(
           .orderBy(...newestFeedbackFirst(sitepingFeedbacks))
           .limit(limit)
           .offset(offset),
-        db.select({ total: count() }).from(sitepingFeedbacks).where(where),
+        countMatching(where),
       ]);
-      return { rows, total: totals[0]?.total ?? 0 };
+      return { rows, total };
+    },
+    async countFeedbacks(filter) {
+      return countMatching(whereClause(filter));
     },
     async findAnnotations(feedbackIds) {
       return db

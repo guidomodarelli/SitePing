@@ -50,6 +50,11 @@ function createPgGateway(
   const whereClause = (filter: FeedbackFilter) =>
     buildFeedbackWhere(sitepingFeedbacks, filter, CASE_INSENSITIVE_LIKE_OPERATOR.postgres);
   const recordColumns = feedbackRecordColumns(getTableColumns(sitepingFeedbacks));
+  /** Number of feedback rows matching a where clause — the page `total`. */
+  const countMatching = async (where: ReturnType<typeof whereClause>): Promise<number> => {
+    const [totals] = await db.select({ total: count() }).from(sitepingFeedbacks).where(where);
+    return totals?.total ?? 0;
+  };
 
   return {
     /**
@@ -95,7 +100,7 @@ function createPgGateway(
     },
     async findFeedbacks(filter, { limit, offset }) {
       const where = whereClause(filter);
-      const [rows, totals] = await Promise.all([
+      const [rows, total] = await Promise.all([
         db
           .select(recordColumns)
           .from(sitepingFeedbacks)
@@ -103,9 +108,12 @@ function createPgGateway(
           .orderBy(...newestFeedbackFirst(sitepingFeedbacks))
           .limit(limit)
           .offset(offset),
-        db.select({ total: count() }).from(sitepingFeedbacks).where(where),
+        countMatching(where),
       ]);
-      return { rows, total: totals[0]?.total ?? 0 };
+      return { rows, total };
+    },
+    async countFeedbacks(filter) {
+      return countMatching(whereClause(filter));
     },
     async findAnnotations(feedbackIds) {
       return db

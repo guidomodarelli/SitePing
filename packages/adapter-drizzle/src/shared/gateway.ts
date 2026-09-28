@@ -40,6 +40,8 @@ export interface SitepingSqlGateway {
     filter: FeedbackFilter,
     page: { limit: number; offset: number },
   ): Promise<{ rows: FeedbackRow[]; total: number }>;
+  /** Number of rows matching the filter — for a page no row can reach, without an `OFFSET` query. */
+  countFeedbacks(filter: FeedbackFilter): Promise<number>;
   /** Annotations of the given feedbacks, each feedback's in submission order. */
   findAnnotations(feedbackIds: readonly string[]): Promise<AnnotationRow[]>;
   findByClientId(clientId: string): Promise<FeedbackRow | null>;

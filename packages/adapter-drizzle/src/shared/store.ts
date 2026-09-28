@@ -215,6 +215,15 @@ export class DrizzleSitepingStore implements DrizzleStore {
     if (query.urlPattern) filter.urlPattern = query.urlPattern;
     if (query.search) filter.search = query.search;
 
+    // `clampPagination` bounds `page` from below only, so a direct caller's
+    // huge `page` yields an offset past `Number.MAX_SAFE_INTEGER` — or
+    // `Infinity` — that PostgreSQL and SQLite reject as `OFFSET`. No table
+    // holds that many rows: answer the empty page the in-memory stores
+    // return, with the real total, without issuing the `OFFSET` query.
+    if (!Number.isSafeInteger(skip)) {
+      return { feedbacks: [], total: await this.gateway.countFeedbacks(filter) };
+    }
+
     const { rows, total } = await this.gateway.findFeedbacks(filter, { limit, offset: skip });
     return { feedbacks: await this.withAnnotations(rows), total };
   }

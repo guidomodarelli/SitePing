@@ -11,6 +11,42 @@ function lastCall(fetchFn: Mock<typeof fetch>): { url: string; init: RequestInit
   return { url, init };
 }
 
+describe("createEndpointSource — credentials", () => {
+  /** Exercise every request kind the endpoint source makes. */
+  async function callEveryMethod(credentials?: "omit" | "same-origin" | "include") {
+    const fetchFn = vi.fn<typeof fetch>(async (_input, init) => {
+      if (init?.method === "GET") return new Response(JSON.stringify({ feedbacks: [], total: 0 }), { status: 200 });
+      if (init?.method === "PATCH") return new Response(JSON.stringify(makeResponse()), { status: 200 });
+      return new Response(null, { status: 204 });
+    });
+    const source = createEndpointSource({
+      endpoint: ENDPOINT,
+      fetchFn,
+      ...(credentials === undefined ? {} : { credentials }),
+    });
+    await source.list({ projectName: "demo" });
+    await source.setStatus("fb-1", "demo", "resolved");
+    await source.remove("fb-1", "demo");
+    return fetchFn.mock.calls.map(([, init]) => init?.credentials);
+  }
+
+  it('defaults every request to "same-origin"', async () => {
+    expect(await callEveryMethod()).toEqual(["same-origin", "same-origin", "same-origin"]);
+  });
+
+  it('sends "include" on every request when configured', async () => {
+    expect(await callEveryMethod("include")).toEqual(["include", "include", "include"]);
+  });
+
+  it("rejects an unknown credentials mode when the source is created", () => {
+    expect(() => createEndpointSource({ endpoint: ENDPOINT, credentials: "always" as unknown as "include" })).toThrow(
+      new TypeError(
+        '[siteping] createEndpointSource: invalid `credentials` "always". Expected one of "omit", "same-origin", "include".',
+      ),
+    );
+  });
+});
+
 describe("createEndpointSource — list()", () => {
   it("builds a GET with projectName only and cache:no-store", async () => {
     const fetchFn = jsonFetch({ feedbacks: [], total: 0 });

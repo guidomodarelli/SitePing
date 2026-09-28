@@ -18,10 +18,11 @@ initSiteping({ projectName: "x" });                                   // ✗ auc
 | Option | Type | Défaut | Ce que ça fait |
 |---|---|---|---|
 | `endpoint` | `string` | — | **Mode HTTP.** URL de votre API SitePing (ex. `/api/siteping`) |
-| `store` | `SitepingStore` | — | **Mode store.** Écrit dans un store du navigateur au lieu de faire du HTTP — exclut `endpoint`, `apiKey` et `headers` |
+| `store` | `SitepingStore` | — | **Mode store.** Écrit dans un store du navigateur au lieu de faire du HTTP — exclut `endpoint`, `apiKey`, `headers` et `credentials` |
 | `projectName` | `string` | — | Obligatoire dans les deux modes. Cadre tout ce que le widget lit et écrit |
 | `apiKey` | `string` | — | Mode HTTP uniquement. Envoyé en `Authorization: Bearer <clé>` sur chaque requête |
 | `headers` | objet ou fonction | — | Mode HTTP uniquement. En-têtes supplémentaires, statiques ou calculés par requête (sync ou async). Fusionnés en dernier : un `Authorization` explicite ici l'emporte sur `apiKey` |
+| `credentials` | `"omit" \| "same-origin" \| "include"` | `"same-origin"` | Mode HTTP uniquement. Politique de cookies de `fetch` pour chaque requête, y compris le rejeu de la file hors ligne. Mettez `"include"` quand `endpoint` est sur une autre origine et authentifie par cookie de session. Toute autre valeur affiche une erreur et le widget ne se charge pas |
 
 Les deux moitiés sont exportées sous les noms `SitepingHttpConfig` et `SitepingStoreConfig` — exactement ce qu'il vous faut quand un composant d'enrobage reçoit la config en prop et ne gère qu'un seul mode :
 
@@ -32,6 +33,20 @@ function mountFeedback(config: SitepingHttpConfig) { /* endpoint garanti */ }
 ```
 
 > `apiKey` part dans votre bundle client — chaque visiteur peut le lire. Réservez-le aux outils internes déjà protégés par une authentification ; sur un site public, préférez `headers` avec une fonction qui renvoie un jeton à durée de vie courte.
+
+### Sessions par cookie sur une autre origine
+
+Par défaut, le navigateur n'envoie les cookies que si `endpoint` partage l'origine de la page. Si votre API est ailleurs (`https://api.example.com` servant un widget sur `https://client-site.com`) et authentifie par cookie de session, activez `credentials: "include"` — sinon le cookie n'est jamais envoyé et chaque requête revient en `401` :
+
+```ts
+initSiteping({
+  endpoint: "https://api.example.com/api/siteping",
+  projectName: "x",
+  credentials: "include",
+});
+```
+
+Le serveur doit répondre avec un CORS « avec identifiants » pour cette origine exacte (`Access-Control-Allow-Origin: https://client-site.com` et `Access-Control-Allow-Credentials: true` — une origine `*` ne fonctionne jamais avec les cookies) ; `@siteping/server` le fait quand l'origine figure dans `allowedOrigins`. Le cookie de session doit lui-même pouvoir circuler entre sites (`SameSite=None; Secure`). La valeur par défaut reste volontairement `"same-origin"` : n'incluez les identifiants que pour une API que vous contrôlez, car les requêtes cross-origin authentifiées par cookie reposent sur la liste d'origines autorisées du serveur pour se protéger du CSRF.
 
 ## Visibilité
 

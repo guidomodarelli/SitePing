@@ -1,4 +1,5 @@
 import {
+  DEFAULT_REQUEST_CREDENTIALS,
   errorFromResponse,
   type FeedbackPayload,
   type FeedbackQuery,
@@ -11,6 +12,7 @@ import {
   SitepingError,
   type SitepingHeadersOption,
   SitepingNetworkError,
+  type SitepingRequestCredentials,
 } from "@siteping/core";
 import type { Identity } from "./identity.js";
 
@@ -42,6 +44,17 @@ export interface ApiClientAuth {
   apiKey?: string | undefined;
   /** Extra headers, static or per-request factory. An explicit `Authorization` entry wins over `apiKey`. */
   headers?: SitepingHeadersOption | undefined;
+  /**
+   * `fetch` credentials mode for every request (cookie policy). Defaults to
+   * {@link DEFAULT_REQUEST_CREDENTIALS} (`"same-origin"`); `"include"` lets a
+   * cross-origin, cookie-authenticated endpoint receive the session cookie.
+   */
+  credentials?: SitepingRequestCredentials | undefined;
+}
+
+/** Resolve the configured credentials mode, falling back to the browser default. */
+function resolveCredentials(auth: ApiClientAuth): SitepingRequestCredentials {
+  return auth.credentials ?? DEFAULT_REQUEST_CREDENTIALS;
 }
 
 /**
@@ -278,10 +291,12 @@ export async function flushRetryQueue(
       let rejected = 0;
       if (toRetry.length > 0) {
         const headers = await buildRequestHeaders(auth, true);
+        const credentials = resolveCredentials(auth);
         for (const entry of toRetry) {
           try {
             const res = await fetch(endpoint, {
               method: "POST",
+              credentials,
               headers,
               body: JSON.stringify(entry.payload),
             });
@@ -323,11 +338,16 @@ async function parseJsonAs<T>(response: Response): Promise<T> {
 }
 
 export class ApiClient implements WidgetClient {
+  /** Cookie policy applied to every request this client makes (see `ApiClientAuth.credentials`). */
+  private readonly credentials: SitepingRequestCredentials;
+
   constructor(
     private readonly endpoint: string,
     private readonly projectName: string,
     private readonly auth: ApiClientAuth = {},
-  ) {}
+  ) {
+    this.credentials = resolveCredentials(auth);
+  }
 
   async sendFeedback(payload: FeedbackPayload): Promise<FeedbackResponse> {
     // Only put `screenshotRegion` on the wire when a region was actually
@@ -340,6 +360,7 @@ export class ApiClient implements WidgetClient {
       try {
         response = await resilientFetch(this.endpoint, {
           method: "POST",
+          credentials: this.credentials,
           headers: await buildRequestHeaders(this.auth, true),
           body: JSON.stringify(body),
         });
@@ -372,6 +393,7 @@ export class ApiClient implements WidgetClient {
       response = await resilientFetch(`${this.endpoint}?${params.toString()}`, {
         method: "GET",
         cache: "no-store",
+        credentials: this.credentials,
         ...(Object.keys(headers).length > 0 ? { headers } : {}),
       });
     } catch (error) {
@@ -390,6 +412,7 @@ export class ApiClient implements WidgetClient {
     try {
       response = await resilientFetch(this.endpoint, {
         method: "PATCH",
+        credentials: this.credentials,
         headers: await buildRequestHeaders(this.auth, true),
         body: JSON.stringify({ id, projectName: this.projectName, status: resolved ? "resolved" : "open" }),
       });
@@ -409,6 +432,7 @@ export class ApiClient implements WidgetClient {
     try {
       response = await resilientFetch(this.endpoint, {
         method: "DELETE",
+        credentials: this.credentials,
         headers: await buildRequestHeaders(this.auth, true),
         body: JSON.stringify({ id, projectName: this.projectName }),
       });
@@ -426,6 +450,7 @@ export class ApiClient implements WidgetClient {
     try {
       response = await resilientFetch(this.endpoint, {
         method: "DELETE",
+        credentials: this.credentials,
         headers: await buildRequestHeaders(this.auth, true),
         body: JSON.stringify({ projectName, deleteAll: true }),
       });

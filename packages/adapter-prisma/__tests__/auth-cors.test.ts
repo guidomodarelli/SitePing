@@ -439,15 +439,16 @@ describe("CORS", () => {
       expect(res.headers.get("Access-Control-Allow-Origin")).toBe(ALLOWED_ORIGIN);
     });
 
-    it("POST omits CORS headers when origin does not match", async () => {
+    it("POST from a foreign origin is refused with 403, without CORS headers or a write", async () => {
       const handler = createSitepingHandler({
         prisma,
         allowedOrigins: [ALLOWED_ORIGIN],
       });
       const res = await handler.POST(postRequest(validPayloadNoAnnotations, { Origin: "http://evil.com" }));
 
-      expect(res.status).toBe(201);
+      expect(res.status).toBe(403);
       expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
+      expect(prisma.sitepingFeedback.create).not.toHaveBeenCalled();
     });
 
     it("GET includes CORS headers when origin matches", async () => {

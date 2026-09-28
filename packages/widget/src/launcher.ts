@@ -1,6 +1,8 @@
 import {
   type DiagnosticsSnapshot,
+  describeInvalidRequestCredentials,
   type FeedbackPayload,
+  isRequestCredentials,
   isValidEmail,
   type PageScope,
   type SitepingConfig,
@@ -198,6 +200,13 @@ export function launch(config: SitepingConfig): SitepingInstance {
     console.error("[siteping] Missing or invalid 'projectName' in config. Expected a non-empty string.");
     return skippedInstance();
   }
+  // Untyped (script-tag) consumers can pass anything — an unknown mode would
+  // make every `fetch` throw, surfacing as opaque network errors. Fail at init
+  // with an actionable message instead of silently downgrading the cookie policy.
+  if (config.credentials !== undefined && !isRequestCredentials(config.credentials)) {
+    console.error(`[siteping] Widget not loaded: ${describeInvalidRequestCredentials(config.credentials)}`);
+    return skippedInstance();
+  }
 
   const locale = config.locale ?? "en";
   // Kick off the locale fetch immediately. English is bundled synchronously
@@ -259,7 +268,11 @@ export function launch(config: SitepingConfig): SitepingInstance {
     if (typeof endpoint !== "string" || endpoint.length === 0) {
       throw new Error("[siteping] internal invariant: endpoint must be a non-empty string in HTTP mode");
     }
-    return new ApiClient(endpoint, config.projectName, { apiKey: config.apiKey, headers: config.headers });
+    return new ApiClient(endpoint, config.projectName, {
+      apiKey: config.apiKey,
+      headers: config.headers,
+      credentials: config.credentials,
+    });
   })();
 
   // Wire config callbacks to event bus
@@ -628,6 +641,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
     flushRetryQueue(config.endpoint, config.identity ?? getIdentity(), {
       apiKey: config.apiKey,
       headers: config.headers,
+      credentials: config.credentials,
     })
       .then(() => log("Retry queue flushed"))
       .catch(() => {});

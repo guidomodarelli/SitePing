@@ -16,7 +16,7 @@ const inbox = useSitepingInbox({
 
 ## Options
 
-The options are a union over the three source modes: supply **exactly one** of `source`, `store` or `endpoint`. Supplying none, supplying two, or pairing endpoint-only options (`apiKey`, `headers`) with `store`/`source` is a compile error — not a runtime throw and not a silently ignored option.
+The options are a union over the three source modes: supply **exactly one** of `source`, `store` or `endpoint`. Supplying none, supplying two, or pairing endpoint-only options (`apiKey`, `headers`, `credentials`) with `store`/`source` is a compile error — not a runtime throw and not a silently ignored option.
 
 | Option | Type | Default | Notes |
 |---|---|---|---|
@@ -26,6 +26,7 @@ The options are a union over the three source modes: supply **exactly one** of `
 | `source` | `InboxSource` | — | Fully custom data source; see [Data sources](/docs/dashboard/sources) |
 | `apiKey` | `string` | — | Endpoint mode only. `Authorization: Bearer` on every request |
 | `headers` | object or function | — | Endpoint mode only. An explicit `Authorization` beats `apiKey`. Read live — changing it doesn't rebuild the source |
+| `credentials` | `"omit" \| "same-origin" \| "include"` | `"same-origin"` | Endpoint mode only. `fetch` cookie policy for every request — `"include"` for a cross-origin endpoint that authenticates with a session cookie. An unknown value throws |
 | `pageSize` | `number` | `50` | Clamped to 1–100 |
 | `onStatusChange` | `(feedback, previousStatus) => void` | — | After the server confirms |
 | `onDelete` | `(feedback) => void` | — | After the server confirms |

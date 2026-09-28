@@ -10,6 +10,17 @@ import {
   StorePersistenceError,
 } from "../src/types.js";
 
+/**
+ * Stand-ins for the store errors of another package's bundled copy of core:
+ * same stable `code`, different class identity.
+ */
+class ForeignStoreNotFoundError extends Error {
+  readonly code = "STORE_NOT_FOUND" as const;
+}
+class ForeignStoreDuplicateError extends Error {
+  readonly code = "STORE_DUPLICATE" as const;
+}
+
 // ---------------------------------------------------------------------------
 // StoreNotFoundError
 // ---------------------------------------------------------------------------
@@ -105,6 +116,11 @@ describe("isStoreNotFound", () => {
     expect(isStoreNotFound(new StoreDuplicateError())).toBe(false);
   });
 
+  it("returns true for a StoreNotFoundError from another bundled copy of core (matched by code)", () => {
+    expect(isStoreNotFound(new ForeignStoreNotFoundError())).toBe(true);
+    expect(isStoreNotFound(new ForeignStoreDuplicateError())).toBe(false);
+  });
+
   it("returns false for plain Error", () => {
     expect(isStoreNotFound(new Error("oops"))).toBe(false);
   });
@@ -140,6 +156,11 @@ describe("isStoreDuplicate", () => {
 
   it("returns false for StoreNotFoundError", () => {
     expect(isStoreDuplicate(new StoreNotFoundError())).toBe(false);
+  });
+
+  it("returns true for a StoreDuplicateError from another bundled copy of core (matched by code)", () => {
+    expect(isStoreDuplicate(new ForeignStoreDuplicateError())).toBe(true);
+    expect(isStoreDuplicate(new ForeignStoreNotFoundError())).toBe(false);
   });
 
   it("returns false for null/undefined", () => {

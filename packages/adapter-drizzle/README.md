@@ -1,73 +1,40 @@
+[![npm version](https://img.shields.io/npm/v/@siteping/adapter-drizzle)](https://www.npmjs.com/package/@siteping/adapter-drizzle)
+[![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/adapters/drizzle)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
+
 # @siteping/adapter-drizzle
 
-[Drizzle ORM](https://orm.drizzle.team) store for [Siteping](https://siteping.dev), on **PostgreSQL** or **Turso / libSQL**.
+[Drizzle ORM](https://orm.drizzle.team) store for [SitePing](https://github.com/NeosiaNexus/SitePing), on **PostgreSQL** (node-postgres, postgres.js, Neon HTTP, PGlite…) or **Turso / libSQL**.
 
-## 1. Add the tables to your Drizzle schema
+**[Documentation](https://siteping.dev/docs/adapters/drizzle)**
+
+## Install
+
+```bash
+npm install @siteping/adapter-drizzle drizzle-orm
+```
+
+**Peer dependency:** `drizzle-orm` ≥ 0.45 · Node ≥ 20.
+
+## Quick start
 
 ```ts
-// db/schema.ts — PostgreSQL
+// db/schema.ts — then `drizzle-kit generate` as usual
 import { createSitepingPgTables } from "@siteping/adapter-drizzle/pg";
 export const { sitepingFeedbacks, sitepingAnnotations } = createSitepingPgTables();
 
-// db/schema.ts — Turso / libSQL
-import { createSitepingSqliteTables } from "@siteping/adapter-drizzle/libsql";
-export const { sitepingFeedbacks, sitepingAnnotations } = createSitepingSqliteTables();
-```
-
-Then `drizzle-kit generate` (or `push`) as usual. The annotations table carries a `position` column (integer, default `0`) that keeps each feedback's annotations in submission order — `annotations[0]` is the primary anchor; if you created the tables with an earlier version, generate a migration to add it. The feedbacks table likewise carries an internal `creation_sequence` column that breaks `created_at` ties, so rows created in the same millisecond by different processes still list newest first and paginate stably: a `bigint` identity on PostgreSQL (existing rows are numbered when the column is added), and an indexed integer (default `0`) on libSQL that the store fills on insert — older rows keep `0` and only their `created_at` order. Generate a migration to add it too. Pass `{ feedbacks, annotations }` to rename the tables, and hand the same tables to the store through `tables`.
-
-### Text search and non-ASCII case
-
-`getFeedbacks({ search })` matches the message case-insensitively, folding case like the standard store filter (JavaScript's Unicode-aware `toLowerCase()`), so `échec` finds `Échec` and `äöü` finds `ÄÖÜ` — whatever the database's own case rules. SQLite's `LIKE` folds only ASCII case, and PostgreSQL's `ILIKE` folds with the column collation / `LC_CTYPE` (ASCII-only under `C`), so on both dialects the feedbacks table carries an internal `message_search` column (nullable text) holding the message lowercased in JavaScript: the store fills it on insert and the search matches the lowercased term against it with a plain `LIKE`. If you created the tables with an earlier version, generate a migration to add it (`ALTER TABLE siteping_feedbacks ADD COLUMN message_search text` on either dialect). Rows without it — written before the migration, or inserted by your application outside the store — fall back to `message` with the database's case folding (`LIKE` on libSQL, `ILIKE` on PostgreSQL); backfill them once to make every row fold Unicode case:
-
-```ts
-import { eq, isNull } from "drizzle-orm";
-
-const rows = await db
-  .select({ id: sitepingFeedbacks.id, message: sitepingFeedbacks.message })
-  .from(sitepingFeedbacks)
-  .where(isNull(sitepingFeedbacks.messageSearch));
-for (const row of rows) {
-  await db
-    .update(sitepingFeedbacks)
-    .set({ messageSearch: row.message.toLowerCase() })
-    .where(eq(sitepingFeedbacks.id, row.id));
-}
-```
-
-Run the backfill in JavaScript rather than with SQL `lower()`: the database's `lower()` follows the same locale rules the column exists to avoid.
-
-## 2. Create the store
-
-```ts
-// PostgreSQL — node-postgres, postgres.js, Neon, PGlite…
+// server
 import { drizzle } from "drizzle-orm/node-postgres";
 import { createPgSitepingStore } from "@siteping/adapter-drizzle/pg";
-const store = createPgSitepingStore(drizzle(process.env.DATABASE_URL!), { screenshotStorage });
-
-// Turso / libSQL
-import { drizzle } from "drizzle-orm/libsql";
-import { createLibSQLSitepingStore } from "@siteping/adapter-drizzle/libsql";
-const store = createLibSQLSitepingStore(
-  drizzle({ connection: { url: process.env.TURSO_DATABASE_URL!, authToken: process.env.TURSO_AUTH_TOKEN } }),
-  { screenshotStorage },
-);
+const store = createPgSitepingStore(drizzle(process.env.DATABASE_URL!), { logger: console });
 ```
 
-Serve it with `createSitepingHandler({ store, … })` from `@siteping/server`. Without `screenshotStorage`, screenshots are stored inline as base64. With it, `upload` receives as `feedbackId` the id the record will be stored under — generated server-side and unique per create attempt, not the client's `clientId` — and the returned URL must be unique to it — key objects by it, never by a content hash or a fixed name: the store treats each URL as owned by the one feedback that stores it and may delete it (through `delete`) without coordinating with concurrent creates. When two submissions of the same feedback race, each uploads its own object and the one that loses the insert deletes it, leaving the winner's screenshot intact. Before any `delete` — on `deleteFeedback`, `deleteAllFeedbacks`, a lost race or a failed insert — the store checks that no stored feedback still references the URL (an insert reported as failed may have committed); if that check fails, the object is kept. Its `mimeType` is the media type the data URL declares (`image/jpeg`, `image/png`, `image/webp`…; `image/jpeg` when it declares none) — use it as the object's `Content-Type`.
+Turso / libSQL: same shape with `createSitepingSqliteTables` and `createLibSQLSitepingStore` from `@siteping/adapter-drizzle/libsql`. Serve the store with `createSitepingHandler({ store })`.
 
-The store implements the whole contract, including `verifyProjectOwnership` (needed by project-scoped `access.authorize`) and an atomic `createFeedbackIfAbsent`: the unique `client_id` index arbitrates concurrent submissions of the same feedback, even across processes, so creation webhooks fire once. The store never opens an interactive `db.transaction`: on PostgreSQL every write is a single statement (so Neon HTTP works), and on libSQL multi-statement writes go through `db.batch`, which never holds the write lock across an `await` — your application can keep writing to the same database concurrently. When several processes share one local libSQL **file**, set the client's busy `timeout` so their writes queue instead of failing with `SQLITE_BUSY`.
+## Documentation
 
-The store reports degraded-but-non-fatal events — a failed screenshot upload (the feedback is saved without it), a failed cleanup, inline screenshots — through the `logger` option (`{ warn(message, context) }`). It never chooses a logging backend itself: without `logger` those events are dropped, so pass your application's logger, or `console`:
+Schema setup and migrations (including the internal `position`, `creation_sequence` and `message_search` columns and their backfill), options, the screenshot storage contract, concurrency guarantees and limitations: **[siteping.dev/docs/adapters/drizzle](https://siteping.dev/docs/adapters/drizzle)**.
 
-```ts
-const store = createPgSitepingStore(db, { screenshotStorage, logger: console });
-```
+## License
 
-Record timestamps (`createdAt` on create, `updatedAt` on status updates) come from the `now` option (`() => Date`, the system clock by default) — inject your own clock for tests or a controlled time source.
-
-Database failures on writes (read-only or full database, lost connection…) surface as `StorePersistenceError` (detect it with `isStorePersistence`, exported by both entries), with the driver error as `cause`; a missing record stays `StoreNotFoundError`.
-
-Requires `drizzle-orm` ≥ 0.45. The libSQL entry targets `drizzle-orm/libsql` (Turso, embedded replicas, local files); other SQLite drivers (better-sqlite3, Cloudflare D1) are not supported.
-
-MIT
+[MIT](https://github.com/NeosiaNexus/SitePing/blob/main/LICENSE)

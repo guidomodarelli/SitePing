@@ -745,6 +745,20 @@ describe("createScreenshotStorage — uploads committed after a timeout", () => 
     expect(scheduledDelaysMs).toEqual([10]);
   });
 
+  it.each([
+    { label: "[undefined]", delaysMs: [undefined], index: 0 },
+    // biome-ignore lint/suspicious/noSparseArray: the hole is the input under test.
+    { label: "a sparse array", delaysMs: [1_000, , 2_000], index: 1 },
+  ])("refuses an undefined reclaim delay in $label", ({ delaysMs, index }) => {
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+    expect(() =>
+      createScreenshotStorage(objectStore, {
+        // JavaScript callers are not held to the `number[]` type.
+        uncertainUploadReclaimDelaysMs: delaysMs as unknown as number[],
+      }),
+    ).toThrow(`uncertainUploadReclaimDelaysMs[${index}] is undefined`);
+  });
+
   it("refuses reclaim delays that are not finite, non-negative milliseconds", () => {
     const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
     expect(() => createScreenshotStorage(objectStore, { uncertainUploadReclaimDelaysMs: [-1] })).toThrow(

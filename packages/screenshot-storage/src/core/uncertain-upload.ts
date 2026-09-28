@@ -33,15 +33,24 @@ export const scheduleWithTimer: ReclaimScheduler = (task, delayMs) => {
 /**
  * Refuse reclaim delays that are not finite, non-negative numbers of milliseconds.
  *
+ * Iterates by index rather than with `find`: an invalid entry may itself be
+ * `undefined` (a JavaScript caller's `[undefined]`, or a hole in a sparse
+ * array), which `find` would return indistinguishably from "no match" — and the
+ * default scheduler would coerce it to an immediate timer, running every retry
+ * before a late upload commits.
+ *
  * @param delaysMs - The `uncertainUploadReclaimDelaysMs` option.
- * @throws Error naming the invalid delay.
+ * @throws Error naming the index and value of the first invalid delay.
  */
 export function assertReclaimDelays(delaysMs: readonly number[]): void {
-  const invalidDelay = delaysMs.find((delayMs) => !Number.isFinite(delayMs) || delayMs < 0);
-  if (invalidDelay !== undefined) {
-    throw new Error(
-      `[siteping] createScreenshotStorage: uncertainUploadReclaimDelaysMs entry ${invalidDelay} must be a finite, non-negative number of milliseconds`,
-    );
+  for (let index = 0; index < delaysMs.length; index++) {
+    const delayMs: unknown = delaysMs[index];
+    if (typeof delayMs !== "number" || !Number.isFinite(delayMs) || delayMs < 0) {
+      throw new Error(
+        `[siteping] createScreenshotStorage: uncertainUploadReclaimDelaysMs[${index}] is ${String(delayMs)}, ` +
+          "but must be a finite, non-negative number of milliseconds",
+      );
+    }
   }
 }
 

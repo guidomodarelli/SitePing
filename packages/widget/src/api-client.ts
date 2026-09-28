@@ -1,4 +1,5 @@
 import {
+  DEFAULT_REQUEST_CREDENTIALS,
   errorFromResponse,
   type FeedbackPayload,
   type FeedbackQuery,
@@ -11,6 +12,7 @@ import {
   SitepingError,
   type SitepingHeadersOption,
   SitepingNetworkError,
+  type SitepingRequestCredentials,
 } from "@siteping/core";
 import type { Identity } from "./identity.js";
 
@@ -42,6 +44,17 @@ export interface ApiClientAuth {
   apiKey?: string | undefined;
   /** Extra headers, static or per-request factory. An explicit `Authorization` entry wins over `apiKey`. */
   headers?: SitepingHeadersOption | undefined;
+  /**
+   * `fetch` credentials mode for every request (cookie policy). Defaults to
+   * {@link DEFAULT_REQUEST_CREDENTIALS} (`"same-origin"`); `"include"` lets a
+   * cross-origin, cookie-authenticated endpoint receive the session cookie.
+   */
+  credentials?: SitepingRequestCredentials | undefined;
+}
+
+/** Resolve the configured credentials mode, falling back to the browser default. */
+function resolveCredentials(auth: ApiClientAuth): SitepingRequestCredentials {
+  return auth.credentials ?? DEFAULT_REQUEST_CREDENTIALS;
 }
 
 /**
@@ -179,11 +192,43 @@ function queueForRetry(endpoint: string, payload: FeedbackPayload): void {
       }
 
       queue.push({ endpoint, payload });
-      localStorage.setItem(RETRY_QUEUE_KEY, JSON.stringify(queue));
+      if (tryWriteQueue(queue)) return;
+
+      // Quota exceeded: a captured screenshot is a multi-MB base64 data URL
+      // and two of them already overflow the ~5 MB localStorage budget. Drop
+      // the screenshots (the heaviest, least essential part of a replay) so
+      // the message, annotations and diagnostics still survive; if even that
+      // does not fit, give up the oldest entries first.
+      const withoutScreenshots = queue.map(withoutScreenshot);
+      while (withoutScreenshots.length > 0) {
+        if (tryWriteQueue(withoutScreenshots)) {
+          console.warn(
+            `[siteping] retry queue exceeded the localStorage quota — kept ${withoutScreenshots.length} of ${queue.length} queued feedback(s) without their screenshots`,
+          );
+          return;
+        }
+        withoutScreenshots.shift();
+      }
+      console.warn("[siteping] retry queue could not be persisted — localStorage is full or unavailable");
     } catch {
-      // localStorage full or unavailable — silently drop
+      // localStorage unavailable or queue unreadable — nothing to persist into
     }
   });
+}
+
+function tryWriteQueue(queue: RetryEntry[]): boolean {
+  try {
+    localStorage.setItem(RETRY_QUEUE_KEY, JSON.stringify(queue));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Replay copy without the screenshot; its region is meaningless without the image. */
+function withoutScreenshot(entry: RetryEntry): RetryEntry {
+  const { screenshotDataUrl: _screenshotDataUrl, screenshotRegion: _screenshotRegion, ...payload } = entry.payload;
+  return { endpoint: entry.endpoint, payload };
 }
 
 function normalizeName(value: string): string {
@@ -246,10 +291,12 @@ export async function flushRetryQueue(
       let rejected = 0;
       if (toRetry.length > 0) {
         const headers = await buildRequestHeaders(auth, true);
+        const credentials = resolveCredentials(auth);
         for (const entry of toRetry) {
           try {
             const res = await fetch(endpoint, {
               method: "POST",
+              credentials,
               headers,
               body: JSON.stringify(entry.payload),
             });
@@ -291,11 +338,16 @@ async function parseJsonAs<T>(response: Response): Promise<T> {
 }
 
 export class ApiClient implements WidgetClient {
+  /** Cookie policy applied to every request this client makes (see `ApiClientAuth.credentials`). */
+  private readonly credentials: SitepingRequestCredentials;
+
   constructor(
     private readonly endpoint: string,
     private readonly projectName: string,
     private readonly auth: ApiClientAuth = {},
-  ) {}
+  ) {
+    this.credentials = resolveCredentials(auth);
+  }
 
   async sendFeedback(payload: FeedbackPayload): Promise<FeedbackResponse> {
     // Only put `screenshotRegion` on the wire when a region was actually
@@ -308,6 +360,7 @@ export class ApiClient implements WidgetClient {
       try {
         response = await resilientFetch(this.endpoint, {
           method: "POST",
+          credentials: this.credentials,
           headers: await buildRequestHeaders(this.auth, true),
           body: JSON.stringify(body),
         });
@@ -340,6 +393,7 @@ export class ApiClient implements WidgetClient {
       response = await resilientFetch(`${this.endpoint}?${params.toString()}`, {
         method: "GET",
         cache: "no-store",
+        credentials: this.credentials,
         ...(Object.keys(headers).length > 0 ? { headers } : {}),
       });
     } catch (error) {
@@ -358,6 +412,7 @@ export class ApiClient implements WidgetClient {
     try {
       response = await resilientFetch(this.endpoint, {
         method: "PATCH",
+        credentials: this.credentials,
         headers: await buildRequestHeaders(this.auth, true),
         body: JSON.stringify({ id, projectName: this.projectName, status: resolved ? "resolved" : "open" }),
       });
@@ -377,6 +432,7 @@ export class ApiClient implements WidgetClient {
     try {
       response = await resilientFetch(this.endpoint, {
         method: "DELETE",
+        credentials: this.credentials,
         headers: await buildRequestHeaders(this.auth, true),
         body: JSON.stringify({ id, projectName: this.projectName }),
       });
@@ -394,6 +450,7 @@ export class ApiClient implements WidgetClient {
     try {
       response = await resilientFetch(this.endpoint, {
         method: "DELETE",
+        credentials: this.credentials,
         headers: await buildRequestHeaders(this.auth, true),
         body: JSON.stringify({ projectName, deleteAll: true }),
       });

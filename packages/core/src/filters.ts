@@ -62,6 +62,25 @@ export function clampPagination(query: Pick<FeedbackQuery, "page" | "limit">): P
 }
 
 /**
+ * Whether a {@link clampPagination} offset lies beyond any row a store can
+ * hold. `clampPagination` bounds `page` from below only, so a direct caller's
+ * huge `page` yields an offset past `Number.MAX_SAFE_INTEGER` — or `Infinity`
+ * — that SQL backends reject (`OFFSET` is a 64-bit integer in PostgreSQL and
+ * SQLite; Prisma's `skip` rejects non-integers and 64-bit overflow).
+ *
+ * Every safe integer fits a signed 64-bit offset and no table holds more rows
+ * than that, so query adapters answer such a page as empty — with the real
+ * `total` — instead of issuing the query: the same result the in-memory
+ * pipeline returns.
+ *
+ * @param skip - The `skip` returned by {@link clampPagination}.
+ * @returns `true` when no row can sit at that offset.
+ */
+export function isUnreachableOffset(skip: number): boolean {
+  return !Number.isSafeInteger(skip);
+}
+
+/**
  * Apply the standard feedback filter + pagination pipeline against an
  * in-memory snapshot. Used by `MemoryStore.getFeedbacks` and
  * `LocalStorageStore.getFeedbacks` so the two never drift.
@@ -100,6 +119,7 @@ export function applyFeedbackFilters(items: readonly FeedbackRecord[], query: Fe
   // negative indices from the END — so `page: -1` used to return a window
   // whose position depended on how many records happened to match.
   const { limit, skip } = clampPagination(query);
+  if (isUnreachableOffset(skip)) return { feedbacks: [], total };
 
   return { feedbacks: results.slice(skip, skip + limit), total };
 }

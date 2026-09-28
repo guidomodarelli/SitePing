@@ -124,3 +124,75 @@ describe("createCollectionStore — snapshot immutability", () => {
     expect((await store.getFeedbacks({ projectName: "p" })).total).toBe(1);
   });
 });
+
+describe("createCollectionStore — serialized mutations", () => {
+  /**
+   * Backend whose `load`/`persist` both yield to the event loop, like a real
+   * async KV — the window in which unserialized read-modify-write calls
+   * would read the same stale snapshot and overwrite each other.
+   */
+  function asyncBackend() {
+    const state = { feedbacks: [] as FeedbackRecord[], failNextPersist: false, seq: 0 };
+    const yieldToEventLoop = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+    const store = createCollectionStore({
+      load: async () => {
+        await yieldToEventLoop();
+        return state.feedbacks;
+      },
+      persist: async (next) => {
+        await yieldToEventLoop();
+        if (state.failNextPersist) {
+          state.failNextPersist = false;
+          throw new StorePersistenceError("async kv write failed");
+        }
+        state.feedbacks = next;
+      },
+      generateId: () => `id-${++state.seq}`,
+    });
+    return { store, state };
+  }
+
+  it("concurrent createFeedbackIfAbsent calls with the same clientId insert exactly once", async () => {
+    const { store, state } = asyncBackend();
+
+    const outcomes = await Promise.all(Array.from({ length: 5 }, () => store.createFeedbackIfAbsent(input("same"))));
+
+    expect(outcomes.filter((outcome) => outcome.created)).toHaveLength(1);
+    const insertedId = outcomes.find((outcome) => outcome.created)?.feedback.id;
+    expect(outcomes.every((outcome) => outcome.feedback.id === insertedId)).toBe(true);
+    expect(state.feedbacks.map((feedback) => feedback.id)).toEqual([insertedId]);
+  });
+
+  it("concurrent creates with distinct clientIds keep every record", async () => {
+    const { store, state } = asyncBackend();
+
+    await Promise.all(["c1", "c2", "c3"].map((clientId) => store.createFeedback(input(clientId))));
+
+    expect(state.feedbacks.map((feedback) => feedback.clientId).sort()).toEqual(["c1", "c2", "c3"]);
+  });
+
+  it("a concurrent update does not overwrite a create queued alongside it", async () => {
+    const { store, state } = asyncBackend();
+    const created = await store.createFeedback(input("c1"));
+
+    await Promise.all([
+      store.updateFeedback(created.id, { status: "in_progress", resolvedAt: null }),
+      store.createFeedback(input("c2")),
+    ]);
+
+    expect(state.feedbacks).toHaveLength(2);
+    expect(state.feedbacks.find((feedback) => feedback.id === created.id)?.status).toBe("in_progress");
+  });
+
+  it("a failed mutation rejects with its original error and does not block the queued ones", async () => {
+    const { store, state } = asyncBackend();
+    state.failNextPersist = true;
+
+    const failing = store.createFeedbackIfAbsent(input("c1"));
+    const queued = store.createFeedbackIfAbsent(input("c1"));
+
+    await expect(failing).rejects.toThrow("async kv write failed");
+    await expect(queued).resolves.toMatchObject({ created: true, feedback: { clientId: "c1" } });
+    expect(state.feedbacks).toHaveLength(1);
+  });
+});

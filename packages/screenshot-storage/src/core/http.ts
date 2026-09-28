@@ -1,8 +1,15 @@
+import { OBJECT_STORE_REQUEST_FAILED_CODE } from "../constants/errors.js";
 import { OBJECT_STORE_REQUEST_TIMEOUT_MS } from "../constants/http.js";
+import { hasErrorCode } from "./error-code.js";
 import { ScreenshotUploadRejectedError } from "./object-store.js";
 
-/** A backend API call that failed — method, path and status, never credentials. */
+/**
+ * A backend API call that failed — method, path and status, never credentials.
+ * Match it with {@link isObjectStoreRequestError} rather than `instanceof`
+ * (CommonJS entry points each bundle their own copy of the class).
+ */
 export class ObjectStoreRequestError extends Error {
+  readonly code = OBJECT_STORE_REQUEST_FAILED_CODE;
   constructor(
     readonly backend: string,
     readonly method: string,
@@ -16,6 +23,16 @@ export class ObjectStoreRequestError extends Error {
     );
     this.name = "ObjectStoreRequestError";
   }
+}
+
+/**
+ * Whether `error` is a failed backend request, matched on its stable `code`
+ * so it holds across bundle copies of the class.
+ *
+ * @param error - Any thrown value.
+ */
+export function isObjectStoreRequestError(error: unknown): error is ObjectStoreRequestError {
+  return hasErrorCode(error, OBJECT_STORE_REQUEST_FAILED_CODE);
 }
 
 export interface BackendRequest {

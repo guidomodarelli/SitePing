@@ -4,8 +4,10 @@ import { findAnchorElement, generateAnchor, rectToPercentages } from "./dom/anch
 import { el, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { isWidgetChrome } from "./focus-tracker.js";
+import { isolateFromHost, registerEscapeLayer } from "./host-isolation.js";
 import type { TFunction } from "./i18n/index.js";
 import { Popup } from "./popup.js";
+import { NO_VIEWPORT_INSETS, type ViewportInsets } from "./popup-placement.js";
 import { type AnnotatedScreenshot, captureAnnotatedScreenshot } from "./screenshot.js";
 import type { ThemeColors } from "./styles/theme.js";
 
@@ -42,6 +44,8 @@ export class Annotator {
   private startY = 0;
   private isDrawing = false;
   private isActive = false;
+  /** Unregisters the session's Escape layer from host isolation; set while active. */
+  private unregisterEscapeLayer: (() => void) | null = null;
   /**
    * True when the current annotation session was triggered by right-click
    * (instant comment) rather than the FAB draw flow. Controls whether the
@@ -145,6 +149,7 @@ export class Annotator {
       style: `
         position:fixed;inset:0;
         z-index:${Z_INDEX_MAX - 1};
+        pointer-events:auto;
         background:rgba(15, 23, 42, 0.04);
         cursor:${drawMode ? "crosshair" : "default"};
       `,
@@ -168,6 +173,7 @@ export class Annotator {
         style: `
           position:fixed;top:0;left:0;right:0;
           z-index:${Z_INDEX_MAX};
+          pointer-events:auto;
           height:52px;
           background:${this.colors.glassBg};
           backdrop-filter:blur(24px);
@@ -212,7 +218,7 @@ export class Annotator {
         transition:all 0.2s ease;
       `;
       setText(cancelBtn, this.t("annotator.cancel"));
-      cancelBtn.addEventListener("click", () => this.deactivate());
+      cancelBtn.addEventListener("click", () => this.cancelSession());
       cancelBtn.addEventListener("mouseenter", () => {
         cancelBtn.style.borderColor = this.colors.typeBug;
         cancelBtn.style.color = this.colors.typeBug;
@@ -247,9 +253,14 @@ export class Annotator {
     // Allow tab-through so keyboard users can reach underlying elements
     this.overlay.setAttribute("tabindex", "0");
 
-    // Escape to cancel
+    // Escape to cancel — declared to host isolation so host modals ignore
+    // that Escape only while this session will consume it.
     document.addEventListener("keydown", this.onKeyDown);
+    this.unregisterEscapeLayer = registerEscapeLayer(document, () => this.isActive);
 
+    // Host modals must not read drawing or toolbar clicks as outside interactions.
+    isolateFromHost(this.overlay);
+    if (this.toolbar) isolateFromHost(this.toolbar);
     document.body.appendChild(this.overlay);
     if (this.toolbar) document.body.appendChild(this.toolbar);
 
@@ -260,6 +271,38 @@ export class Annotator {
     // of activate(), before the overlay existed, so focusing here doesn't
     // clobber it. (WCAG 2.1.1 Level A)
     this.overlay.focus({ preventScroll: true });
+  }
+
+  /**
+   * Viewport band covered by the toolbar, measured rather than assumed: hosts
+   * may restyle or relocate it (e.g. to the bottom edge while a modal is open).
+   */
+  private toolbarInsets(): ViewportInsets {
+    if (!this.toolbar) return NO_VIEWPORT_INSETS;
+    const toolbarRect = this.toolbar.getBoundingClientRect();
+    if (toolbarRect.height === 0) return NO_VIEWPORT_INSETS;
+    const viewportHeight = window.innerHeight;
+    const sitsInTopHalf = toolbarRect.top + toolbarRect.height / 2 < viewportHeight / 2;
+    return sitsInTopHalf
+      ? { top: Math.max(0, toolbarRect.bottom), bottom: 0 }
+      : { top: 0, bottom: Math.max(0, viewportHeight - toolbarRect.top) };
+  }
+
+  /**
+   * User-initiated end of the session (toolbar Cancel, Escape). Closes an open
+   * comment form first so it is not left floating with nothing behind it — the
+   * popup's own focus restore runs before the annotator hands focus back to the
+   * pre-activation element. While a submission is in flight the popup refuses
+   * to close, and the session stays active too: deactivating here would clear
+   * `isActive` and emit `annotation:end` while the popup still waits on
+   * `feedback:sent`, letting a second annotation overwrite its resolver and
+   * submit handler. The session ends once the pending popup settles.
+   */
+  private cancelSession(): void {
+    if (!this.isActive) return;
+    this.popup.dismiss();
+    if (this.popup.isOpen) return;
+    this.deactivate();
   }
 
   private deactivate(): void {
@@ -280,6 +323,8 @@ export class Annotator {
 
     document.body.style.overflow = this.savedOverflow;
     document.removeEventListener("keydown", this.onKeyDown);
+    this.unregisterEscapeLayer?.();
+    this.unregisterEscapeLayer = null;
 
     this.overlay?.remove();
     this.toolbar?.remove();
@@ -300,7 +345,7 @@ export class Annotator {
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
-    if (e.key === "Escape") this.deactivate();
+    if (e.key === "Escape") this.cancelSession();
   };
 
   /**
@@ -354,8 +399,10 @@ export class Annotator {
     // Submission stays inside the popup so the user gets a visible spinner
     // until the server confirms — see finishDrawing for the rationale.
     const screenshotCache: { value?: AnnotatedScreenshot | null } = {};
-    const result = await this.popup.show(rectBounds, (formResult) =>
-      this.runSubmission(annotation, formResult, rectBounds, screenshotCache),
+    const result = await this.popup.show(
+      rectBounds,
+      (formResult) => this.runSubmission(annotation, formResult, rectBounds, screenshotCache),
+      this.toolbarInsets(),
     );
 
     this.drawingRect?.remove();
@@ -477,8 +524,10 @@ export class Annotator {
     // can see what they're sending feedback about — including while the
     // submit-spinner is running. We only remove it after the popup closes.
     const screenshotCache: { value?: AnnotatedScreenshot | null } = {};
-    const result = await this.popup.show(rectBounds, (formResult) =>
-      this.runSubmission(annotation, formResult, rectBounds, screenshotCache),
+    const result = await this.popup.show(
+      rectBounds,
+      (formResult) => this.runSubmission(annotation, formResult, rectBounds, screenshotCache),
+      this.toolbarInsets(),
     );
 
     this.drawingRect?.remove();

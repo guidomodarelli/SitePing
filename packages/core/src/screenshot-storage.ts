@@ -41,16 +41,33 @@ export interface ScreenshotStorage {
    * Adapters call this synchronously inside `createFeedback` — keep it
    * fast or move to a queue if needed.
    *
-   * **Security note:** `ctx.feedbackId` is the *client-generated* id
-   * (`clientId`) — the record id does not exist yet at upload time. Treat it
-   * as attacker-controlled: sanitize before using it in filesystem paths or
-   * object keys, even though server adapters validate its shape upstream.
+   * `ctx.feedbackId` identifies the upload. Adapters that upload before the
+   * record exists pass the *client-generated* `clientId` (Prisma); the
+   * Drizzle adapter passes the server-generated id the create attempt will
+   * insert the record under — unique per attempt, so racing submissions of
+   * one `clientId` never write the same object key.
+   *
+   * **URL ownership:** the returned URL must be unique to `ctx.feedbackId` —
+   * key the object by it (as the example does), never by a content hash or a
+   * fixed name. Adapters treat each URL as the exclusive property of the one
+   * record that stores it and may pass it to `delete` once that record is
+   * deleted or its upload discarded, without coordinating with concurrent
+   * creates. A URL shared by several records (content-addressed or
+   * id-ignoring keys) breaks this contract: deleting one record can remove
+   * the object another record still points at.
+   *
+   * **Security note:** treat `ctx.feedbackId` as attacker-controlled:
+   * sanitize before using it in filesystem paths or object keys, even though
+   * server adapters validate its shape upstream.
    */
   upload(dataUrl: string, ctx: { feedbackId: string; mimeType: string }): Promise<{ url: string }>;
   /**
-   * Optional cleanup hook called when the feedback is deleted. Adapters
-   * call this best-effort and swallow errors — orphaned objects are
-   * preferred over failed deletes.
+   * Optional cleanup hook called when the feedback is deleted, or when an
+   * uploaded screenshot is discarded because its record was not stored.
+   * Receives only URLs returned by {@link ScreenshotStorage.upload}, each
+   * owned by a single record (see its URL ownership rule). Adapters call
+   * this best-effort and swallow errors — orphaned objects are preferred
+   * over failed deletes.
    */
   delete?: (url: string) => Promise<void>;
 }

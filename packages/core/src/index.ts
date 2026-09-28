@@ -2,7 +2,13 @@ export { EMAIL_PATTERN, isValidEmail } from "./email.js";
 export type { SitepingErrorCode } from "./errors.js";
 export { SitepingAuthError, SitepingError, SitepingNetworkError, SitepingValidationError } from "./errors.js";
 export type { FilterResult, Pagination } from "./filters.js";
-export { applyFeedbackFilters, clampPagination, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT } from "./filters.js";
+export {
+  applyFeedbackFilters,
+  clampPagination,
+  DEFAULT_PAGE_LIMIT,
+  isUnreachableOffset,
+  MAX_PAGE_LIMIT,
+} from "./filters.js";
 export type { I18n, LocaleLoaders, TranslateFunction } from "./i18n.js";
 export { createI18n, interpolate, tWithParams } from "./i18n.js";
 export type {
@@ -36,6 +42,7 @@ export type {
   DiagnosticsCaptureOptions,
   DiagnosticsSnapshot,
   FeedbackCreateInput,
+  FeedbackCreateOutcome,
   FeedbackPage,
   FeedbackPayload,
   FeedbackQuery,
@@ -61,6 +68,7 @@ export type {
   SitepingPosition,
   SitepingPublicEventListener,
   SitepingPublicEvents,
+  SitepingRequestCredentials,
   SitepingSkipReason,
   SitepingStore,
   SitepingStoreConfig,
@@ -71,14 +79,18 @@ export {
   BUILTIN_LOCALES,
   CLOSED_FEEDBACK_STATUSES,
   CONSOLE_DIAGNOSTIC_LEVELS,
+  DEFAULT_REQUEST_CREDENTIALS,
+  describeInvalidRequestCredentials,
   FEEDBACK_STATUSES,
   FEEDBACK_TYPES,
   flattenAnnotation,
   isClosedStatus,
+  isRequestCredentials,
   isStoreDuplicate,
   isStoreNotFound,
   isStorePersistence,
   OPEN_FEEDBACK_STATUSES,
+  REQUEST_CREDENTIALS_MODES,
   StoreDuplicateError,
   StoreNotFoundError,
   StorePersistenceError,

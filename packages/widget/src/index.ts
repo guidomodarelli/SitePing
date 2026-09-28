@@ -16,6 +16,7 @@ export type {
   SitepingInstance,
   SitepingLocale,
   SitepingPublicEvents,
+  SitepingRequestCredentials,
   SitepingStore,
   SitepingStoreConfig,
 } from "@siteping/core";

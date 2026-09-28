@@ -5,18 +5,19 @@
  *
  * - `@siteping/screenshot-storage/cloudflare-images` — Cloudflare Images
  * - `@siteping/screenshot-storage/s3` — AWS S3, Cloudflare R2, Backblaze B2, MinIO…
- * - `@siteping/screenshot-storage/drizzle-pg` / `drizzle-libsql` — your database (PostgreSQL, Turso)
+ * - `@siteping/screenshot-storage/drizzle-pg` / `drizzle-libsql` — your database (PostgreSQL, Turso/libSQL)
  * - `@siteping/screenshot-storage/filesystem` — local disk (Node.js)
  * - `@siteping/screenshot-storage/memory` — development and tests
  *
  * Or implement `ScreenshotObjectStore` for any other backend (Vercel Blob,
- * Supabase Storage…). Backends without their own public
+ * Supabase Storage, another ORM…). Backends without their own public
  * URL are served through `createScreenshotServeHandler`.
  */
 export type { ScreenshotStorage } from "@siteping/core";
 export { InvalidScreenshotError } from "./core/data-url.js";
-export { ObjectStoreRequestError } from "./core/http.js";
+export { isObjectStoreRequestError, ObjectStoreRequestError } from "./core/http.js";
 export {
+  isScreenshotUploadRejected,
   type ScreenshotObject,
   type ScreenshotObjectStore,
   ScreenshotUploadRejectedError,
@@ -24,7 +25,13 @@ export {
 export { createPublicUrlMapping } from "./core/public-url.js";
 export {
   createScreenshotStorage,
+  type ReclaimScheduler,
   type ScreenshotStorageLogger,
   type ScreenshotStorageOptions,
+  type UncertainUploadHook,
 } from "./core/screenshot-storage.js";
-export { createScreenshotServeHandler, type ScreenshotServeHandlerOptions } from "./core/serve-handler.js";
+export {
+  createScreenshotServeHandler,
+  type ScreenshotServeHandlerOptions,
+  type ScreenshotServeRequestTarget,
+} from "./core/serve-handler.js";

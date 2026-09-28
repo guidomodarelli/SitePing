@@ -8,5 +8,7 @@ export function toBytes(value: unknown): Uint8Array<ArrayBuffer> {
   if (ArrayBuffer.isView(value)) {
     return new Uint8Array(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength) as ArrayBuffer);
   }
-  throw new TypeError(`[siteping] expected binary column data, got ${typeof value}`);
+  throw new TypeError(
+    `[siteping] database screenshot store: expected binary column data (Buffer, Uint8Array or ArrayBuffer), got ${typeof value}`,
+  );
 }

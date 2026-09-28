@@ -67,14 +67,17 @@ function toAmzDate(date: Date): string {
 /**
  * Sign a request with AWS Signature Version 4 (header-based) using WebCrypto
  * only. Returns every header to send, `Authorization` included.
+ *
+ * @param signingDate - Instant the signature is valid from. Supplied by the
+ * caller (the store's injected clock) so this module never reads the host clock.
  */
 export async function signS3Request(
   request: SigV4Request,
   credentials: SigV4Credentials,
   region: string,
-  now: Date = new Date(),
+  signingDate: Date,
 ): Promise<Record<string, string>> {
-  const amzDate = toAmzDate(now);
+  const amzDate = toAmzDate(signingDate);
   const dateStamp = amzDate.slice(0, 8);
   const headers: Record<string, string> = {
     ...Object.fromEntries(Object.entries(request.headers).map(([name, value]) => [name.toLowerCase(), value])),

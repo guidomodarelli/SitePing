@@ -80,6 +80,8 @@ export function createApiKeyGate({
   };
 
   return {
+    // Legacy contract: a successful POST echoes the email back to its author.
+    echoesAuthorEmailOnCreate: true,
     async authenticate(request, method) {
       const canReadAuthorEmail = !redactUnauthenticatedEmails || isBearerAuthenticated(request);
       if (!apiKey) {

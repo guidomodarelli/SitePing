@@ -62,6 +62,10 @@ CORS only hides responses from foreign pages; it does not stop a browser from *s
 - **Origin allowlist.** When `allowedOrigins` is set, a mutation whose `Origin` header is neither listed nor the endpoint's own origin (including the opaque `null` origin) answers `403 { error: "Forbidden" }` and is logged with its method, path and truncated origin. Requests without an `Origin` header (server-to-server calls, curl) are let through — browsers always send one on cross-origin mutations. Behind a proxy that rewrites `request.url`, list your public origin in `allowedOrigins` so same-origin calls still match.
 - **JSON only.** A mutation must declare `Content-Type: application/json` (parameters such as `charset` are fine), otherwise it answers `415`. That content type is not CORS-safelisted, so a cross-origin browser must pass a preflight first — a forged `text/plain` form or `fetch` never reaches the handler. The widget and the dashboard always send it.
 
-Without `access`, the handler keeps the shared-secret policy of `@siteping/adapter-prisma` (`apiKey`, `publicEndpoints`, `requireAuthForDestructive`, `redactUnauthenticatedEmails`).
+## Author email visibility
+
+`access.canReadAuthorEmail(principal)` decides whether `authorEmail` (reviewer PII) appears in responses — the `GET` list, the `PATCH` answer and the `POST` answer, fresh or replayed on a duplicate `clientId`. A principal it refuses gets `authorEmail: ""`, even when `beforeCreate` replaced the submitted email. Defaults to `true`; a throw answers `500`.
+
+Without `access`, the handler keeps the shared-secret policy of `@siteping/adapter-prisma` (`apiKey`, `publicEndpoints`, `requireAuthForDestructive`, `redactUnauthenticatedEmails`) — including its `POST` answer that echoes `authorEmail` back to the submitter.
 
 MIT

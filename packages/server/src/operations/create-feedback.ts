@@ -53,13 +53,14 @@ export function createFeedbackOperation<Principal>({
 }: CreateFeedbackDependencies<Principal>) {
   /**
    * A clientId is unique across the store, so a replay resolving to another
-   * project's record is a boundary violation, not a dedup. Email stays intact
-   * otherwise: the requester supplied it (fresh insert) or proved ownership by
-   * presenting the clientId (replay).
+   * project's record is a boundary violation, not a dedup. `authorEmail`
+   * follows the access policy (`canReadAuthorEmail`): `beforeCreate` may have
+   * stored an email the requester never sent. The legacy api-key policy
+   * still echoes it — see `AccessGate.echoesAuthorEmailOnCreate`.
    */
   const respondCreated = (scope: AuthenticatedRequest<Principal>, feedback: FeedbackRecord, projectName: string) =>
     feedback.projectName === projectName
-      ? pipeline.json(scope, pipeline.present(scope, feedback, true), { status: 201 })
+      ? pipeline.json(scope, pipeline.presentCreated(scope, feedback), { status: 201 })
       : pipeline.error(scope, 409, SITEPING_ERROR_MESSAGES.clientIdUsedByAnotherProject);
 
   /**

@@ -96,6 +96,13 @@ export function createRequestPipeline<Principal>({
       failure,
     });
 
+  /** Wire shape of a record for this requester (presentFeedback + email policy). */
+  const present = (
+    scope: AuthenticatedRequest<Principal>,
+    feedback: FeedbackRecord,
+    includeEmail = scope.canReadAuthorEmail,
+  ) => toWireFeedback(presentFeedback ? presentFeedback(feedback, scope.context) : feedback, includeEmail);
+
   return {
     json,
     error,
@@ -164,9 +171,15 @@ export function createRequestPipeline<Principal>({
       return allowed ? null : error(scope, 403, SITEPING_ERROR_MESSAGES.forbidden);
     },
 
-    /** Wire shape of a record for this requester (presentFeedback + email policy). */
-    present(scope: AuthenticatedRequest<Principal>, feedback: FeedbackRecord, includeEmail = scope.canReadAuthorEmail) {
-      return toWireFeedback(presentFeedback ? presentFeedback(feedback, scope.context) : feedback, includeEmail);
+    present,
+
+    /**
+     * Wire shape of a record answering a `POST` (fresh or replayed): the
+     * requester's email policy, except under a gate that echoes the email to
+     * its submitter (legacy api-key policy).
+     */
+    presentCreated(scope: AuthenticatedRequest<Principal>, feedback: FeedbackRecord) {
+      return present(scope, feedback, gate.echoesAuthorEmailOnCreate || scope.canReadAuthorEmail);
     },
 
     /** Log an unexpected failure and answer 500 (with `describeError`'s hint when it has one). */

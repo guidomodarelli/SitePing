@@ -32,7 +32,10 @@ export interface SitepingAuthorizationContext<Principal> extends SitepingRequest
  *   `verifyProjectOwnership`: PATCH/DELETE address records by id, and the
  *   check is what keeps the authorized `projectName` bound to the record.
  * - `canReadAuthorEmail` decides whether responses include `authorEmail`
- *   (reviewer PII). Defaults to `true` for authenticated principals.
+ *   (reviewer PII) — every response, including the `POST` answer for a
+ *   fresh or replayed submission (`beforeCreate` may have replaced the
+ *   submitted email). Defaults to `true` for authenticated principals; a
+ *   throw answers `500`.
  */
 export interface SitepingAccessControl<Principal> {
   authenticate(request: Request): Principal | null | Promise<Principal | null>;
@@ -51,6 +54,12 @@ export type AuthenticationOutcome<Principal> =
  * @internal
  */
 export interface AccessGate<Principal> {
+  /**
+   * Whether a successful `POST` echoes `authorEmail` whatever the
+   * requester's read permission. Only the legacy api-key policy sets it: its
+   * public `POST` has always returned the email to the submitter.
+   */
+  echoesAuthorEmailOnCreate: boolean;
   authenticate(request: Request, method: SitepingHttpMethod): Promise<AuthenticationOutcome<Principal>>;
   authorize(context: SitepingAuthorizationContext<Principal>): Promise<boolean>;
 }
@@ -58,6 +67,7 @@ export interface AccessGate<Principal> {
 /** Wrap a public `SitepingAccessControl` into the handler's gate. @internal */
 export function accessGateFromControl<Principal>(access: SitepingAccessControl<Principal>): AccessGate<Principal> {
   return {
+    echoesAuthorEmailOnCreate: false,
     async authenticate(request) {
       const principal = await access.authenticate(request);
       if (principal === null) return { ok: false, status: 401, error: SITEPING_ERROR_MESSAGES.unauthorized };

@@ -132,6 +132,63 @@ describe("createSitepingHandler — access control", () => {
     expect(asAdmin.feedbacks[0]).not.toHaveProperty("clientId");
   });
 
+  it("blanks authorEmail in fresh and replayed POST responses for principals that may not read it", async () => {
+    const store = new MemoryStore();
+    const handler = createSitepingHandler({
+      store,
+      access: sessionAccess({ canReadAuthorEmail: (principal) => principal.isAdmin }),
+    });
+
+    const fresh = await createFeedback(handler, GUEST);
+    const replayed = await createFeedback(handler, GUEST);
+
+    expect(fresh.authorEmail).toBe("");
+    expect(replayed.authorEmail).toBe("");
+    expect(replayed.id).toBe(fresh.id);
+    expect((await store.findByClientId(validPayloadNoAnnotations.clientId))?.authorEmail).toBe(
+      validPayloadNoAnnotations.authorEmail,
+    );
+  });
+
+  it("returns authorEmail in fresh and replayed POST responses for principals that may read it", async () => {
+    const handler = createSitepingHandler({
+      store: new MemoryStore(),
+      access: sessionAccess({ canReadAuthorEmail: (principal) => principal.isAdmin }),
+    });
+
+    const fresh = await createFeedback(handler, ADMIN);
+    const replayed = await createFeedback(handler, ADMIN);
+
+    expect(fresh.authorEmail).toBe(validPayloadNoAnnotations.authorEmail);
+    expect(replayed.authorEmail).toBe(validPayloadNoAnnotations.authorEmail);
+  });
+
+  it("does not disclose an email set by beforeCreate to a principal that may not read it", async () => {
+    const serverSuppliedEmail = "directory-owner@example.com";
+    const handler = createSitepingHandler({
+      store: new MemoryStore(),
+      access: sessionAccess({ canReadAuthorEmail: () => false }),
+      beforeCreate: (input) => ({ ...input, authorEmail: serverSuppliedEmail }),
+    });
+
+    const fresh = await createFeedback(handler, ADMIN);
+    const replayed = await createFeedback(handler, ADMIN);
+
+    expect(JSON.stringify(fresh)).not.toContain(serverSuppliedEmail);
+    expect(JSON.stringify(replayed)).not.toContain(serverSuppliedEmail);
+  });
+
+  it("keeps echoing authorEmail to the anonymous submitter under the shared-secret policy", async () => {
+    const handler = createSitepingHandler({ store: new MemoryStore(), apiKey: "secret-key" });
+
+    const fresh = await handler.POST(jsonRequest("POST", validPayloadNoAnnotations));
+    const replayed = await handler.POST(jsonRequest("POST", validPayloadNoAnnotations));
+
+    expect(fresh.status).toBe(201);
+    expect(((await fresh.json()) as FeedbackRecord).authorEmail).toBe(validPayloadNoAnnotations.authorEmail);
+    expect(((await replayed.json()) as FeedbackRecord).authorEmail).toBe(validPayloadNoAnnotations.authorEmail);
+  });
+
   it("never lets the browser cache a list response that depends on the session", async () => {
     const handler = createSitepingHandler({
       store: new MemoryStore(),
@@ -490,6 +547,25 @@ describe("createSitepingHandler — access gate failures", () => {
 
     expect(response.status).toBe(500);
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe(ALLOWED_ORIGIN);
+  });
+
+  it("answers the POST 500 without the email when canReadAuthorEmail throws", async () => {
+    const handler = createSitepingHandler({
+      store: new MemoryStore(),
+      access: sessionAccess({
+        canReadAuthorEmail: () => {
+          throw sessionStoreError;
+        },
+      }),
+      allowedOrigins: [ALLOWED_ORIGIN],
+      logger: silentLogger(),
+    });
+
+    const response = await handler.POST(withOrigin(jsonRequest("POST", validPayloadNoAnnotations, ADMIN)));
+
+    expect(response.status).toBe(500);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe(ALLOWED_ORIGIN);
+    expect(await response.text()).not.toContain(validPayloadNoAnnotations.authorEmail);
   });
 });
 

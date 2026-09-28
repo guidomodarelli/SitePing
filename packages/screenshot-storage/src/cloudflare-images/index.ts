@@ -7,6 +7,7 @@ import {
 import { HTTP_STATUS_NOT_FOUND } from "../constants/http.js";
 import { sendBackendRequest } from "../core/http.js";
 import type { ScreenshotObjectStore } from "../core/object-store.js";
+import { trimTrailingSlashes } from "../core/trailing-slashes.js";
 
 export interface CloudflareImagesObjectStoreOptions {
   /** Cloudflare account id (API calls). */
@@ -38,7 +39,7 @@ export function createCloudflareImagesObjectStore({
   timeoutMs,
 }: CloudflareImagesObjectStoreOptions): ScreenshotObjectStore {
   const imagesUrl = `${CLOUDFLARE_API_BASE_URL}/accounts/${encodeURIComponent(accountId)}/images/v1`;
-  const deliveryPrefix = `${deliveryBaseUrl.replace(/\/+$/, "")}/${accountHash}/`;
+  const deliveryPrefix = `${trimTrailingSlashes(deliveryBaseUrl)}/${accountHash}/`;
   const authorization = { Authorization: `Bearer ${apiToken}` };
   const request = (url: URL, init: RequestInit, extra: { acceptStatuses?: number[]; isUpload?: boolean } = {}) =>
     sendBackendRequest({

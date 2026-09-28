@@ -3,6 +3,7 @@ import { S3_DEFAULT_REGION } from "../constants/s3.js";
 import { sendBackendRequest } from "../core/http.js";
 import type { ScreenshotObjectStore } from "../core/object-store.js";
 import { createPublicUrlMapping } from "../core/public-url.js";
+import { trimTrailingSlashes } from "../core/trailing-slashes.js";
 import { encodeRfc3986, type SigV4Credentials, sha256Hex, signS3Request } from "./sigv4.js";
 
 export interface S3ObjectStoreOptions extends SigV4Credentials {
@@ -42,8 +43,8 @@ export function createS3ObjectStore({
   timeoutMs,
 }: S3ObjectStoreOptions): ScreenshotObjectStore {
   const credentials: SigV4Credentials = { accessKeyId, secretAccessKey, ...(sessionToken ? { sessionToken } : {}) };
-  const objectUrl = (key: string) =>
-    new URL(`${endpoint.replace(/\/+$/, "")}/${encodeRfc3986(bucket)}/${encodeRfc3986(key)}`);
+  const endpointBase = trimTrailingSlashes(endpoint);
+  const objectUrl = (key: string) => new URL(`${endpointBase}/${encodeRfc3986(bucket)}/${encodeRfc3986(key)}`);
 
   const send = async (
     method: "PUT" | "DELETE" | "GET",

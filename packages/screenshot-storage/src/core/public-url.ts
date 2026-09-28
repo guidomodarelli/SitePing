@@ -1,10 +1,12 @@
+import { trimTrailingSlashes } from "./trailing-slashes.js";
+
 /**
  * URL ↔ key mapping for backends that serve objects under a base URL
  * (`<base>/<key>`): the filesystem and memory stores behind the serve
  * handler, or an S3 bucket behind a CDN / public domain.
  */
 export function createPublicUrlMapping(publicBaseUrl: string) {
-  const base = publicBaseUrl.replace(/\/+$/, "");
+  const base = trimTrailingSlashes(publicBaseUrl);
   return {
     urlFor: (key: string): string => `${base}/${encodeURIComponent(key)}`,
     keyFromUrl: (url: string): string | null => {

@@ -140,6 +140,74 @@ for (const dialect of dialects) {
       expect(uploads).toHaveLength(1);
     });
 
+    it("reports created only for the first createFeedbackIfAbsent of a clientId", async () => {
+      const store = database.createStore({ logger });
+      const input = feedbackInput();
+
+      const first = await store.createFeedbackIfAbsent(input);
+      const replay = await store.createFeedbackIfAbsent(input);
+
+      expect(first.created).toBe(true);
+      expect(replay).toEqual({ feedback: expect.objectContaining({ id: first.feedback.id }), created: false });
+    });
+
+    it("inserts once and discards the losers' uploads when separate store instances race on a clientId", async () => {
+      let uploadCount = 0;
+      const { storage, deletions } = recordingStorage({
+        async upload(_dataUrl, context) {
+          uploadCount += 1;
+          return { url: `https://cdn.example.com/${context.feedbackId}-${uploadCount}.jpg` };
+        },
+      });
+      // Distinct instances share nothing in memory, so only the database's
+      // unique clientId index can arbitrate — as with several server processes.
+      const stores = [1, 2, 3].map(() => database.createStore({ screenshotStorage: storage, logger }));
+      const input = feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL });
+
+      const outcomes = await Promise.all(stores.map((store) => store.createFeedbackIfAbsent(input)));
+
+      const inserted = outcomes.filter((outcome) => outcome.created);
+      expect(inserted).toHaveLength(1);
+      const winner = inserted[0]?.feedback;
+      for (const outcome of outcomes) expect(outcome.feedback.id).toBe(winner?.id);
+      expect((await stores[0]?.getFeedbacks({ projectName: "site" }))?.total).toBe(1);
+      expect(await database.countAnnotations()).toBe(1);
+      // Every caller that uploaded but lost the insert deletes its own upload, never the winner's.
+      expect(deletions).toHaveLength(uploadCount - 1);
+      expect(deletions).not.toContain(winner?.screenshotUrl);
+    });
+
+    it("keeps the winner's screenshot when a racing loser uploaded to the same clientId-derived URL", async () => {
+      const { storage, deletions } = recordingStorage();
+      const stores = [1, 2, 3].map(() => database.createStore({ screenshotStorage: storage, logger }));
+      const input = feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL });
+
+      const outcomes = await Promise.all(stores.map((store) => store.createFeedbackIfAbsent(input)));
+
+      expect(outcomes.filter((outcome) => outcome.created)).toHaveLength(1);
+      expect(deletions).toEqual([]);
+    });
+
+    it("completes concurrent creates, updates and deletes issued from one process", async () => {
+      const store = database.createStore({ logger });
+      const [toUpdate, toDelete] = await Promise.all([
+        store.createFeedback(feedbackInput()),
+        store.createFeedback(feedbackInput()),
+      ]);
+
+      await Promise.all([
+        store.createFeedback(feedbackInput()),
+        store.updateFeedback(toUpdate.id, { status: "in_progress", resolvedAt: null }),
+        store.deleteFeedback(toDelete.id),
+        store.createFeedbackIfAbsent(feedbackInput()),
+      ]);
+
+      const page = await store.getFeedbacks({ projectName: "site" });
+      expect(page.total).toBe(3);
+      expect(page.feedbacks.find((feedback) => feedback.id === toUpdate.id)?.status).toBe("in_progress");
+      expect(await store.verifyProjectOwnership(toDelete.id, "site")).toBe(false);
+    });
+
     it("saves the feedback without screenshot and warns when the upload fails", async () => {
       const uploadError = new Error("storage unavailable");
       const { storage } = recordingStorage({ upload: () => Promise.reject(uploadError) });

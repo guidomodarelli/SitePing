@@ -5,6 +5,7 @@ import { buildFeedbackWhere } from "../shared/filters.js";
 import type { FeedbackFilter, SitepingSqlGateway } from "../shared/gateway.js";
 import { DrizzleSitepingStore, type DrizzleStore, type DrizzleStoreOptions } from "../shared/store.js";
 import { createSitepingSqliteTables, type SitepingSqliteTables } from "./tables.js";
+import { enqueueWrite } from "./write-queue.js";
 
 export type { FeedbackRecord, ScreenshotStorage, SitepingStore } from "@siteping/core";
 export { StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@siteping/core";
@@ -30,16 +31,18 @@ function createLibSQLGateway(
 
   return {
     async insertFeedback(feedback, annotations) {
-      return db.transaction(async (transaction) => {
-        const inserted = await transaction
-          .insert(sitepingFeedbacks)
-          .values(feedback)
-          .onConflictDoNothing({ target: sitepingFeedbacks.clientId })
-          .returning({ id: sitepingFeedbacks.id });
-        if (inserted.length === 0) return false;
-        if (annotations.length > 0) await transaction.insert(sitepingAnnotations).values([...annotations]);
-        return true;
-      });
+      return enqueueWrite(db, () =>
+        db.transaction(async (transaction) => {
+          const inserted = await transaction
+            .insert(sitepingFeedbacks)
+            .values(feedback)
+            .onConflictDoNothing({ target: sitepingFeedbacks.clientId })
+            .returning({ id: sitepingFeedbacks.id });
+          if (inserted.length === 0) return false;
+          if (annotations.length > 0) await transaction.insert(sitepingAnnotations).values([...annotations]);
+          return true;
+        }),
+      );
     },
     async findFeedbacks(filter, { limit, offset }) {
       const where = whereClause(filter);
@@ -71,33 +74,39 @@ function createLibSQLGateway(
       return row ?? null;
     },
     async updateStatus(id, update) {
-      const [row] = await db.update(sitepingFeedbacks).set(update).where(eq(sitepingFeedbacks.id, id)).returning();
+      const [row] = await enqueueWrite(db, () =>
+        db.update(sitepingFeedbacks).set(update).where(eq(sitepingFeedbacks.id, id)).returning(),
+      );
       return row ?? null;
     },
     async deleteById(id) {
       // Annotations cascade only with `PRAGMA foreign_keys = ON`, which libSQL
       // does not guarantee — delete them explicitly in the same transaction.
-      return db.transaction(async (transaction) => {
-        await transaction.delete(sitepingAnnotations).where(eq(sitepingAnnotations.feedbackId, id));
-        const [row] = await transaction.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).returning();
-        return row ?? null;
-      });
+      return enqueueWrite(db, () =>
+        db.transaction(async (transaction) => {
+          await transaction.delete(sitepingAnnotations).where(eq(sitepingAnnotations.feedbackId, id));
+          const [row] = await transaction.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).returning();
+          return row ?? null;
+        }),
+      );
     },
     async deleteByProject(projectName) {
-      return db.transaction(async (transaction) => {
-        const projectFeedbackIds = transaction
-          .select({ id: sitepingFeedbacks.id })
-          .from(sitepingFeedbacks)
-          .where(eq(sitepingFeedbacks.projectName, projectName));
-        await transaction
-          .delete(sitepingAnnotations)
-          .where(inArray(sitepingAnnotations.feedbackId, projectFeedbackIds));
-        const rows = await transaction
-          .delete(sitepingFeedbacks)
-          .where(eq(sitepingFeedbacks.projectName, projectName))
-          .returning({ screenshotUrl: sitepingFeedbacks.screenshotUrl });
-        return rows.map((row) => row.screenshotUrl);
-      });
+      return enqueueWrite(db, () =>
+        db.transaction(async (transaction) => {
+          const projectFeedbackIds = transaction
+            .select({ id: sitepingFeedbacks.id })
+            .from(sitepingFeedbacks)
+            .where(eq(sitepingFeedbacks.projectName, projectName));
+          await transaction
+            .delete(sitepingAnnotations)
+            .where(inArray(sitepingAnnotations.feedbackId, projectFeedbackIds));
+          const rows = await transaction
+            .delete(sitepingFeedbacks)
+            .where(eq(sitepingFeedbacks.projectName, projectName))
+            .returning({ screenshotUrl: sitepingFeedbacks.screenshotUrl });
+          return rows.map((row) => row.screenshotUrl);
+        }),
+      );
     },
   };
 }

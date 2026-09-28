@@ -35,6 +35,8 @@ const store = createLibSQLSitepingStore(
 
 Serve it with `createSitepingHandler({ store, … })` from `@siteping/server`. Without `screenshotStorage`, screenshots are stored inline as base64.
 
+The store implements the whole contract, including `verifyProjectOwnership` (needed by project-scoped `access.authorize`) and an atomic `createFeedbackIfAbsent`: the unique `client_id` index arbitrates concurrent submissions of the same feedback, even across processes, so creation webhooks fire once. When several processes share one local libSQL **file**, set the client's busy `timeout` so their writes queue instead of failing with `SQLITE_BUSY`.
+
 Requires `drizzle-orm` ≥ 0.45. The libSQL entry uses interactive transactions, so synchronous SQLite drivers (better-sqlite3) and Cloudflare D1 are not supported.
 
 MIT

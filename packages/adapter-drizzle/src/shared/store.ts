@@ -2,6 +2,7 @@ import {
   buildFeedbackRecord,
   clampPagination,
   type FeedbackCreateInput,
+  type FeedbackCreateOutcome,
   type FeedbackPage,
   type FeedbackQuery,
   type FeedbackRecord,
@@ -13,8 +14,12 @@ import {
 import { INLINE_SCREENSHOT_URL_PREFIX, SCREENSHOT_MIME_TYPE } from "../constants/screenshots.js";
 import type { AnnotationRow, FeedbackFilter, FeedbackRow, SitepingSqlGateway } from "./gateway.js";
 
-/** The store returned by the dialect factories — the full contract, including the ownership check. */
-export type DrizzleStore = SitepingStore & Required<Pick<SitepingStore, "verifyProjectOwnership">>;
+/**
+ * The store returned by the dialect factories — the full contract, including
+ * the ownership check and the atomic `createFeedbackIfAbsent`.
+ */
+export type DrizzleStore = SitepingStore &
+  Required<Pick<SitepingStore, "verifyProjectOwnership" | "createFeedbackIfAbsent">>;
 
 /** Where the store reports degraded-but-non-fatal situations. Defaults to `console.warn`. */
 export interface DrizzleStoreLogger {
@@ -65,8 +70,18 @@ export class DrizzleSitepingStore implements DrizzleStore {
   }
 
   async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {
+    return (await this.createFeedbackIfAbsent(data)).feedback;
+  }
+
+  /**
+   * Insert the feedback unless a row with the same `clientId` exists. The
+   * unique `client_id` index plus `ON CONFLICT DO NOTHING` make the check
+   * atomic across store instances and processes: of N concurrent calls, only
+   * the one whose insert lands reports `created: true`.
+   */
+  async createFeedbackIfAbsent(data: FeedbackCreateInput): Promise<FeedbackCreateOutcome> {
     const existing = await this.findByClientId(data.clientId);
-    if (existing) return existing;
+    if (existing) return { feedback: existing, created: false };
 
     const screenshotUrl = await this.persistScreenshot(data.screenshotDataUrl, data.clientId);
     const { annotations, ...feedback } = buildFeedbackRecord(data, {
@@ -77,19 +92,21 @@ export class DrizzleSitepingStore implements DrizzleStore {
     const row: FeedbackRow = { ...feedback, screenshotUrl };
 
     if (await this.gateway.insertFeedback(row, annotations)) {
-      return { ...row, annotations };
+      return { feedback: { ...row, annotations }, created: true };
     }
 
     // Lost a race against the same clientId: the stored row keeps its own
-    // screenshot, so the one just uploaded is an orphan.
-    await this.discardScreenshots([screenshotUrl]);
+    // screenshot, so the one just uploaded is an orphan — unless the storage
+    // derives the object key from the clientId and both uploads landed on the
+    // winner's URL, which must survive.
     const winner = await this.findByClientId(data.clientId);
     if (!winner) {
       throw new Error(
-        `[siteping] DrizzleStore.createFeedback: clientId ${data.clientId} conflicted but no row was found`,
+        `[siteping] DrizzleStore.createFeedbackIfAbsent: clientId ${data.clientId} conflicted but no row was found`,
       );
     }
-    return winner;
+    if (screenshotUrl !== winner.screenshotUrl) await this.discardScreenshots([screenshotUrl]);
+    return { feedback: winner, created: false };
   }
 
   async getFeedbacks(query: FeedbackQuery): Promise<FeedbackPage> {

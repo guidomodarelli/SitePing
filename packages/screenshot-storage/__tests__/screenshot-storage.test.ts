@@ -145,6 +145,22 @@ for (const backend of backends) {
       await expect(storage.delete?.("https://elsewhere.example.com/siteping-x.jpg")).resolves.toBeUndefined();
     });
 
+    it("never deletes another object behind the same public base URL", async () => {
+      const { objectStore, storedBytes } = backend.open();
+      const logger = silentLogger();
+      const storage = createScreenshotStorage(objectStore, { logger });
+      const foreignKey = `other-app-${"b".repeat(32)}.jpg`;
+      await objectStore.put({ key: foreignKey, bytes: JPEG_BYTES.slice(), contentType: "image/jpeg" });
+
+      await storage.delete?.(objectStore.urlFor(foreignKey));
+
+      expect(await storedBytes(foreignKey)).toEqual(JPEG_BYTES);
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("refusing to delete"), {
+        key: foreignKey,
+        keyPrefix: "siteping-",
+      });
+    });
+
     if (backend.name !== "memory" && backend.name !== "filesystem") {
       it("reclaims an upload whose outcome is unknown, then reports the failure", async () => {
         const { objectStore, storedBytes, failUploadsUncertainly } = backend.open();
@@ -193,6 +209,19 @@ describe("createScreenshotStorage — validation", () => {
     ["a remote URL", "https://example.com/shot.jpg"],
   ])("rejects %s before any I/O", async (_label, dataUrl) => {
     await expect(storage().upload(dataUrl, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(InvalidScreenshotError);
+  });
+
+  it("only deletes keys with the configured prefix and the generated shape", async () => {
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+    const storage = createScreenshotStorage(objectStore, { keyPrefix: "team-a-", logger: silentLogger() });
+    const { url } = await storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
+    const foreignKeys = ["team-a-logo.png", `siteping-${"c".repeat(32)}.jpg`, `team-a-${"c".repeat(32)}.jpg.bak`];
+    for (const key of foreignKeys) await objectStore.put({ key, bytes: JPEG_BYTES.slice(), contentType: "image/jpeg" });
+
+    for (const key of foreignKeys) await storage.delete?.(objectStore.urlFor(key));
+    await storage.delete?.(url);
+
+    expect(objectStore.keys().sort()).toEqual([...foreignKeys].sort());
   });
 
   it("refuses a key prefix that is unsafe in paths or URLs", () => {

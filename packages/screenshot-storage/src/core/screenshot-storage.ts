@@ -6,10 +6,10 @@ import {
   KEY_PREFIX_PATTERN,
 } from "../constants/screenshots.js";
 import { decodeImageDataUrl } from "./data-url.js";
-import { assertKeyableContentTypes, generateKey } from "./generated-key.js";
+import { assertKeyableContentTypes, generateKey, isGeneratedKey } from "./generated-key.js";
 import { type ScreenshotObjectStore, ScreenshotUploadRejectedError } from "./object-store.js";
 
-/** Reports degraded-but-handled situations (failed reclaim of an uncertain upload). */
+/** Reports degraded-but-handled situations (failed reclaim of an uncertain upload, refused delete). */
 export interface ScreenshotStorageLogger {
   warn(message: string, context: Record<string, unknown>): void;
 }
@@ -23,7 +23,11 @@ export interface ScreenshotStorageOptions {
   allowedContentTypes?: readonly string[];
   /** Largest decoded image accepted, in bytes. Defaults to 1.5 MB. */
   maxBytes?: number;
-  /** Prefix of generated keys (lowercase letters, digits, `-`, `_`). Defaults to `siteping-`. */
+  /**
+   * Prefix of generated keys (lowercase letters, digits, `-`, `_`). Defaults to
+   * `siteping-`. `delete` only removes keys with this prefix, so keep it
+   * distinctive when the bucket or CDN is shared with other objects.
+   */
   keyPrefix?: string;
   logger?: ScreenshotStorageLogger;
 }
@@ -47,7 +51,11 @@ const defaultLogger: ScreenshotStorageLogger = {
  *   cannot overwrite someone else's screenshot.
  * - The URL is reserved before the upload; when the upload outcome is unknown
  *   (timeout, 5xx) the key is reclaimed so no unreferenced object survives.
- * - `delete` ignores URLs the backend does not own (inline data URLs, other hosts).
+ * - `delete` ignores URLs the backend does not own (inline data URLs, other
+ *   hosts) and, under the backend's own base URL, any key outside this
+ *   storage's generated namespace (`<keyPrefix><hex>.<ext>`) — so a legacy or
+ *   imported URL pointing at another object of a shared bucket or CDN is never
+ *   deleted. Such refusals are logged as warnings.
  *
  * @example
  * ```ts
@@ -97,7 +105,15 @@ export function createScreenshotStorage(
 
     async delete(url) {
       const key = objectStore.keyFromUrl(url);
-      if (key) await objectStore.remove(key);
+      if (!key) return;
+      if (!isGeneratedKey(key, keyPrefix)) {
+        logger.warn(`[siteping] ${objectStore.name}: refusing to delete an object this storage did not generate`, {
+          key,
+          keyPrefix,
+        });
+        return;
+      }
+      await objectStore.remove(key);
     },
   };
 }

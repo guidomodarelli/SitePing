@@ -23,7 +23,7 @@ const screenshotStorage = createScreenshotStorage(
 
 Without any storage, stores keep screenshots inline in the database as base64 — fine for development.
 
-`createScreenshotStorage` handles the backend-agnostic parts: image type and size validation, a fresh random key per upload (one URL per feedback, never shared nor content-addressed, never derived from client input — as the `ScreenshotStorage` contract requires), reclaiming uploads whose outcome is unknown, and ignoring URLs it does not own on delete.
+`createScreenshotStorage` handles the backend-agnostic parts: image type and size validation, a fresh random key per upload (one URL per feedback, never shared nor content-addressed, never derived from client input — as the `ScreenshotStorage` contract requires), reclaiming uploads whose outcome is unknown, and ignoring URLs it does not own on delete — including, under the backend's own base URL, any key outside its generated namespace (`<keyPrefix><random hex>.<ext>`), so a legacy or imported URL pointing at another object of a shared bucket or CDN is never deleted.
 
 Options: `allowedContentTypes` (default JPEG, PNG, WebP — each type must map to a 1–10 character key extension such as `image/gif` → `gif`, checked when the storage is created), `maxBytes`, `keyPrefix` (default `siteping-`), `logger`.
 

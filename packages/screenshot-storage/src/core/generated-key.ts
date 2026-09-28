@@ -1,4 +1,9 @@
-import { CONTENT_TYPE_EXTENSIONS, KEY_EXTENSION_PATTERN, KEY_RANDOM_BYTES } from "../constants/screenshots.js";
+import {
+  CONTENT_TYPE_EXTENSIONS,
+  GENERATED_KEY_SUFFIX_PATTERN,
+  KEY_EXTENSION_PATTERN,
+  KEY_RANDOM_BYTES,
+} from "../constants/screenshots.js";
 
 /**
  * Extension a generated key gets for `contentType`: the conventional one when
@@ -47,4 +52,16 @@ function randomHex(byteCount: number): string {
  */
 export function generateKey(keyPrefix: string, contentType: string): string {
   return `${keyPrefix}${randomHex(KEY_RANDOM_BYTES)}.${keyExtensionFor(contentType)}`;
+}
+
+/**
+ * Whether `key` could have been produced by {@link generateKey} with
+ * `keyPrefix` — the namespace a storage may delete from. Anything else behind
+ * the same public base (another app's asset, a legacy import) is not ours.
+ *
+ * @param key - Key recovered from a URL by the backend's `keyFromUrl`.
+ * @param keyPrefix - Validated `keyPrefix` option.
+ */
+export function isGeneratedKey(key: string, keyPrefix: string): boolean {
+  return key.startsWith(keyPrefix) && GENERATED_KEY_SUFFIX_PATTERN.test(key.slice(keyPrefix.length));
 }

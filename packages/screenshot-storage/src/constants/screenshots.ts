@@ -43,5 +43,8 @@ export const KEY_PREFIX_PATTERN = new RegExp(`^${KEY_PREFIX_SOURCE}$`);
 /** Allowed extension of a generated key — every allowed content type must map to one. */
 export const KEY_EXTENSION_PATTERN = new RegExp(`^${KEY_EXTENSION_SOURCE}$`);
 
+/** Part of a generated key after its prefix: `<hex>.<extension>`. */
+export const GENERATED_KEY_SUFFIX_PATTERN = new RegExp(`^${KEY_RANDOM_SOURCE}\\.${KEY_EXTENSION_SOURCE}$`);
+
 /** Shape of a generated key (`<prefix><hex>.<ext>`) — the serve handler refuses anything else. */
 export const GENERATED_KEY_PATTERN = new RegExp(`^${KEY_PREFIX_SOURCE}${KEY_RANDOM_SOURCE}\\.${KEY_EXTENSION_SOURCE}$`);

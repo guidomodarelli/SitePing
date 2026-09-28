@@ -198,6 +198,29 @@ describe("createScreenshotStorage — validation", () => {
       createScreenshotStorage(createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL }), { keyPrefix: "../" }),
     ).toThrow(/keyPrefix/);
   });
+
+  it("refuses an allowed content type whose key extension the serve handler would reject", () => {
+    expect(() =>
+      createScreenshotStorage(createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL }), {
+        allowedContentTypes: ["image/jpeg", "image/vnd.adobe.photoshop"],
+      }),
+    ).toThrow(/image\/vnd\.adobe\.photoshop.*vndadobephotoshop/);
+  });
+
+  it("gives custom content types keys the serve handler accepts", async () => {
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+    const storage = createScreenshotStorage(objectStore, {
+      allowedContentTypes: ["image/vnd.microsoft.icon"],
+      logger: silentLogger(),
+    });
+
+    const { url } = await storage.upload(`data:image/vnd.microsoft.icon;base64,${JPEG_BASE64}`, UPLOAD_CONTEXT);
+    const response = await createScreenshotServeHandler(objectStore).GET(new Request(url));
+
+    expect(objectStore.keyFromUrl(url)).toMatch(/\.ico$/);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("image/vnd.microsoft.icon");
+  });
 });
 
 describe("createScreenshotServeHandler", () => {

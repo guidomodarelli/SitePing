@@ -1,13 +1,12 @@
 import type { ScreenshotStorage } from "@siteping/core";
 import {
-  CONTENT_TYPE_EXTENSIONS,
   DEFAULT_ALLOWED_CONTENT_TYPES,
   DEFAULT_KEY_PREFIX,
   DEFAULT_MAX_SCREENSHOT_BYTES,
   KEY_PREFIX_PATTERN,
-  KEY_RANDOM_BYTES,
 } from "../constants/screenshots.js";
 import { decodeImageDataUrl } from "./data-url.js";
+import { assertKeyableContentTypes, generateKey } from "./generated-key.js";
 import { type ScreenshotObjectStore, ScreenshotUploadRejectedError } from "./object-store.js";
 
 /** Reports degraded-but-handled situations (failed reclaim of an uncertain upload). */
@@ -16,7 +15,11 @@ export interface ScreenshotStorageLogger {
 }
 
 export interface ScreenshotStorageOptions {
-  /** Image types accepted. Defaults to JPEG, PNG and WebP. */
+  /**
+   * Image types accepted. Defaults to JPEG, PNG and WebP. Each type must map to
+   * a key extension of 1–10 lowercase letters or digits (`image/gif` → `gif`,
+   * `image/svg+xml` → `svg`); `createScreenshotStorage` throws otherwise.
+   */
   allowedContentTypes?: readonly string[];
   /** Largest decoded image accepted, in bytes. Defaults to 1.5 MB. */
   maxBytes?: number;
@@ -30,11 +33,6 @@ const defaultLogger: ScreenshotStorageLogger = {
     console.warn(message, context);
   },
 };
-
-function randomHex(byteCount: number): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(byteCount));
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-}
 
 /**
  * Build a `ScreenshotStorage` (what `DrizzleStore`, `PrismaStore` and other
@@ -72,13 +70,12 @@ export function createScreenshotStorage(
   if (!KEY_PREFIX_PATTERN.test(keyPrefix)) {
     throw new Error(`[siteping] createScreenshotStorage: keyPrefix "${keyPrefix}" must match [a-z0-9_-]{0,64}`);
   }
+  assertKeyableContentTypes(allowedContentTypes);
 
   return {
     async upload(dataUrl) {
       const image = decodeImageDataUrl(dataUrl, { allowedContentTypes, maxBytes });
-      const extension =
-        CONTENT_TYPE_EXTENSIONS[image.contentType] ?? image.contentType.split("/")[1]?.replace(/[^a-z0-9]/g, "");
-      const key = `${keyPrefix}${randomHex(KEY_RANDOM_BYTES)}.${extension}`;
+      const key = generateKey(keyPrefix, image.contentType);
       const url = objectStore.urlFor(key);
       try {
         await objectStore.put({ key, bytes: image.bytes, contentType: image.contentType });

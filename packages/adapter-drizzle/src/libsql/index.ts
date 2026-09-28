@@ -38,9 +38,12 @@ function createLibSQLGateway(
     const [totals] = await db.select({ total: count() }).from(sitepingFeedbacks).where(where);
     return totals?.total ?? 0;
   };
-  // Evaluated inside the insert statement: SQLite runs one writer at a time,
-  // so concurrent inserts — from any process — never read the same maximum.
-  const nextCreationSequence = sql<number>`(SELECT COALESCE(MAX(${sitepingFeedbacks.creationSequence}), 0) + 1 FROM ${sitepingFeedbacks})`;
+  // SQLite's implicit rowid is the insertion ordinal: the database assigns it on
+  // every insert — the store's, or the host application's through the exported
+  // table — under its single-writer lock, above every existing row's rowid
+  // (without AUTOINCREMENT a deleted maximum may be reused, which still ranks
+  // the new row after every row that remains).
+  const insertionOrder = sql`${sitepingFeedbacks}.rowid`;
 
   // Multi-statement writes go through `db.batch`, never an interactive
   // `db.transaction`: libSQL runs a batch as one transaction without yielding
@@ -51,7 +54,7 @@ function createLibSQLGateway(
     async insertFeedback(feedback, annotations) {
       const insertFeedbackRow = db
         .insert(sitepingFeedbacks)
-        .values({ ...withSearchableMessage(feedback), creationSequence: nextCreationSequence })
+        .values(withSearchableMessage(feedback))
         .onConflictDoNothing({ target: sitepingFeedbacks.clientId })
         .returning({ id: sitepingFeedbacks.id });
       if (annotations.length === 0) return (await insertFeedbackRow).length > 0;
@@ -78,7 +81,7 @@ function createLibSQLGateway(
           .select(recordColumns)
           .from(sitepingFeedbacks)
           .where(where)
-          .orderBy(...newestFeedbackFirst(sitepingFeedbacks))
+          .orderBy(...newestFeedbackFirst(sitepingFeedbacks.createdAt, insertionOrder))
           .limit(limit)
           .offset(offset),
         countMatching(where),

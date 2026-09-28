@@ -58,14 +58,17 @@ function feedbackInput(overrides: Partial<FeedbackCreateInput> = {}): FeedbackCr
   };
 }
 
-/** A feedback row written by the host application itself, bypassing the store. */
-function applicationFeedbackRow() {
+/** A feedback row written by the host application itself, bypassing the store; `now` stamps its timestamps. */
+function applicationFeedbackRow(now?: Date) {
   const { annotations: _annotations, ...row } = buildFeedbackRecord(feedbackInput(), {
     id: crypto.randomUUID(),
     annotationId: () => crypto.randomUUID(),
+    ...(now ? { now } : {}),
   });
   return row;
 }
+
+type ApplicationFeedbackRow = ReturnType<typeof applicationFeedbackRow>;
 
 /** Annotation inputs told apart by their selector, to check the stored order. */
 function orderedAnnotations(count: number): FeedbackCreateInput["annotations"] {
@@ -92,6 +95,8 @@ interface DialectUnderTest {
     countAnnotations(): Promise<number>;
     /** Write through the same `db` as the host application would — an insert and a bulk update, outside the store. */
     writeAsApplication(): Promise<void>;
+    /** Insert one feedback row through the exported table, as the host application would — no internal column set. */
+    insertFeedbackAsApplication(row: ApplicationFeedbackRow): Promise<void>;
     /** Re-insert every annotation row in reverse physical order, as a dump/restore or a table rewrite may. */
     reverseAnnotationStorageOrder(): Promise<void>;
     /**
@@ -123,6 +128,9 @@ const dialects: DialectUnderTest[] = [
         async writeAsApplication() {
           await database.db.insert(tables.sitepingFeedbacks).values(applicationFeedbackRow());
           await database.db.update(tables.sitepingFeedbacks).set({ authorName: "Edited by the application" });
+        },
+        async insertFeedbackAsApplication(row) {
+          await database.db.insert(tables.sitepingFeedbacks).values(row);
         },
         async reverseAnnotationStorageOrder() {
           const rows = await database.db.select().from(tables.sitepingAnnotations);
@@ -166,6 +174,9 @@ const dialects: DialectUnderTest[] = [
         async writeAsApplication() {
           await database.db.insert(tables.sitepingFeedbacks).values(applicationFeedbackRow());
           await database.db.update(tables.sitepingFeedbacks).set({ authorName: "Edited by the application" });
+        },
+        async insertFeedbackAsApplication(row) {
+          await database.db.insert(tables.sitepingFeedbacks).values(row);
         },
         async reverseAnnotationStorageOrder() {
           const rows = await database.db.select().from(tables.sitepingAnnotations);
@@ -870,6 +881,34 @@ for (const dialect of dialects) {
         expect(all.feedbacks.map((feedback) => feedback.id)).toEqual(newestFirst);
         expect(pages.flatMap((page) => page.feedbacks.map((feedback) => feedback.id))).toEqual(newestFirst);
         expect(all.feedbacks[0]).not.toHaveProperty("creationSequence");
+      });
+
+      it("orders feedbacks the host application inserts directly in the same millisecond by insertion, among the store's", async () => {
+        const store = database.createStore({ logger, now: frozenClock });
+        const insertDirectly = async () => {
+          const row = applicationFeedbackRow(frozenClock());
+          await database.insertFeedbackAsApplication(row);
+          return row.id;
+        };
+        const insertedIds = [
+          (await store.createFeedback(feedbackInput())).id,
+          await insertDirectly(),
+          (await store.createFeedback(feedbackInput())).id,
+          await insertDirectly(),
+          await insertDirectly(),
+        ];
+
+        const all = await store.getFeedbacks({ projectName: "site" });
+        const pages = await Promise.all(
+          [1, 2, 3].map((page) => store.getFeedbacks({ projectName: "site", page, limit: 2 })),
+        );
+
+        const newestFirst = [...insertedIds].reverse();
+        expect(all.feedbacks.map((feedback) => feedback.createdAt.getTime())).toEqual(
+          insertedIds.map(() => FROZEN_TIME_MS),
+        );
+        expect(all.feedbacks.map((feedback) => feedback.id)).toEqual(newestFirst);
+        expect(pages.flatMap((page) => page.feedbacks.map((feedback) => feedback.id))).toEqual(newestFirst);
       });
     });
 

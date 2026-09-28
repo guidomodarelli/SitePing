@@ -105,7 +105,7 @@ function createPgGateway(
           .select(recordColumns)
           .from(sitepingFeedbacks)
           .where(where)
-          .orderBy(...newestFeedbackFirst(sitepingFeedbacks))
+          .orderBy(...newestFeedbackFirst(sitepingFeedbacks.createdAt, sitepingFeedbacks.creationSequence))
           .limit(limit)
           .offset(offset),
         countMatching(where),

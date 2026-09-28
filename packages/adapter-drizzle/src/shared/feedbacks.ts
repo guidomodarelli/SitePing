@@ -1,18 +1,13 @@
 import { type Column, desc, type SQL } from "drizzle-orm";
 
-/** Feedback columns the "newest first" ordering reads — satisfied by both dialects' tables. */
-export interface FeedbackOrderingColumns {
-  createdAt: Column;
-  creationSequence: Column;
-}
-
 /**
  * Internal feedback columns that are never part of the feedback record: the
- * `creationSequence` ordinal (drives the ordering) and the `messageSearch`
- * normalized copy of the message (drives the text search).
+ * `creationSequence` ordinal (drives the ordering on PostgreSQL; SQLite uses
+ * its implicit `rowid` instead, so the libSQL table has no such column) and the
+ * `messageSearch` normalized copy of the message (drives the text search).
  */
 export interface InternalFeedbackColumns {
-  creationSequence: Column;
+  creationSequence?: Column;
   messageSearch: Column;
 }
 
@@ -34,11 +29,14 @@ export function feedbackRecordColumns<Columns extends InternalFeedbackColumns>(
  * `ORDER BY` of the feedback list: newest `createdAt` first, ties broken by the
  * database-wide insertion ordinal. `createdAt` is the injected clock
  * value as is, so rows created in the same millisecond — by one store
- * instance or several processes — would otherwise come back in an undefined
- * order, and offset pages would overlap or skip rows.
+ * instance, several processes or the host application inserting directly —
+ * would otherwise come back in an undefined order, and offset pages would
+ * overlap or skip rows.
  *
- * @param columns - Feedback table columns.
+ * @param createdAt - The feedback `createdAt` column.
+ * @param insertionOrder - Ordinal the database assigns on every insert, the
+ *   store's or not: the PostgreSQL identity column, SQLite's `rowid`.
  */
-export function newestFeedbackFirst(columns: FeedbackOrderingColumns): SQL[] {
-  return [desc(columns.createdAt), desc(columns.creationSequence)];
+export function newestFeedbackFirst(createdAt: Column, insertionOrder: Column | SQL): SQL[] {
+  return [desc(createdAt), desc(insertionOrder)];
 }

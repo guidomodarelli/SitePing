@@ -52,7 +52,6 @@ Two tables, `siteping_feedbacks` and `siteping_annotations` by default. Annotati
 | `<feedbacks>_client_id_key` (unique) | `client_id` — arbitrates duplicate submissions |
 | `<feedbacks>_project_status_created_idx` | `project_name`, `status`, `created_at` |
 | `<feedbacks>_project_url_idx` | `project_name`, `url` |
-| `<feedbacks>_creation_sequence_idx` (libSQL only) | `creation_sequence` |
 | `<annotations>_feedback_id_idx` | `feedback_id` |
 
 Column types follow the dialect: on PostgreSQL, JSON fields are `jsonb` and timestamps are `timestamptz(3)`; on libSQL, JSON fields are stored as text and timestamps as epoch milliseconds.
@@ -144,18 +143,18 @@ Both factories take the same options:
 
 - **Duplicate submissions are atomic.** The store implements `createFeedbackIfAbsent`: the unique `client_id` index plus `ON CONFLICT DO NOTHING` arbitrate concurrent submissions of the same feedback, across store instances and processes. Exactly one caller gets `created: true`, so creation hooks and webhooks fire once.
 - **Annotations land with their feedback, or not at all.** On PostgreSQL the feedback and its annotations are inserted by one statement (a data-modifying CTE). On libSQL, multi-statement writes go through `db.batch`, which runs as one transaction and never holds the write lock across an `await` — your application can keep writing to the same database concurrently.
-- **Ordering is stable.** Lists come back newest first. `createdAt` is the clock value at insert time, and rows created in the same millisecond — by one store instance or several processes — are ordered by the internal, database-wide `creation_sequence` column: a later insert always lists first, and offset pages never overlap or skip rows.
+- **Ordering is stable.** Lists come back newest first. `createdAt` is the clock value at insert time, and rows created in the same millisecond — by one store instance, several processes, or your own code inserting through the exported tables — are ordered by an insertion ordinal the database itself assigns on every insert: the internal `creation_sequence` identity on PostgreSQL, SQLite's implicit `rowid` on libSQL. A later insert always lists first, and offset pages never overlap or skip rows.
 - **`updatedAt` never precedes `createdAt`.** Status updates clamp it in SQL against the row's own timestamps, which holds across processes whose clocks disagree.
 - **Project ownership.** The store implements `verifyProjectOwnership`, so the handler answers `404` to a PATCH/DELETE addressing an id from another project. `@siteping/server` requires it when you use a project-scoped `access.authorize`.
 
 ## Internal columns and upgrades
 
-Three columns are internal to the store — never part of the returned records — and were added after the first version of the tables. If you created your tables with an earlier version, **run `drizzle-kit generate` again** to add them:
+These columns are internal to the store — never part of the returned records — and were added after the first version of the tables. If you created your tables with an earlier version, **run `drizzle-kit generate` again** to add them (on libSQL, the same migration drops the `creation_sequence` column and its index that earlier versions created — the implicit `rowid` replaces them):
 
 | Column | Table | Purpose | Existing rows |
 |---|---|---|---|
 | `position` | annotations | Integer (default `0`) keeping each feedback's annotations in submission order — `annotations[0]` is the primary anchor | Stay `0` and keep their `created_at` order |
-| `creation_sequence` | feedbacks | Breaks `created_at` ties between processes. PostgreSQL: a `bigint` identity. libSQL: an indexed integer (default `0`) the store fills on insert | Numbered when the column is added on PostgreSQL; on libSQL they stay `0` and keep only their `created_at` order |
+| `creation_sequence` | feedbacks (PostgreSQL only) | Breaks `created_at` ties: a `bigint` identity the database assigns on every insert, the store's or yours. libSQL has no such column — it orders by the implicit `rowid` | Numbered when the column is added |
 | `message_search` | feedbacks | Nullable text: the message lowercased in JavaScript, read by the text search | Stay `NULL` — backfill them, see below |
 
 ### Text search and non-ASCII case

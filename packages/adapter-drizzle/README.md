@@ -33,7 +33,7 @@ Turso / libSQL: same shape with `createSitepingSqliteTables` and `createLibSQLSi
 
 ## Documentation
 
-Schema setup and migrations (including the internal `position`, `creation_sequence` and `message_search` columns and their backfill), options, the screenshot storage contract, concurrency guarantees and limitations: **[siteping.dev/docs/adapters/drizzle](https://siteping.dev/docs/adapters/drizzle)**.
+Schema setup and migrations (including the internal `position`, `creation_sequence` (PostgreSQL) and `message_search` columns and their backfill), options, the screenshot storage contract, concurrency guarantees and limitations: **[siteping.dev/docs/adapters/drizzle](https://siteping.dev/docs/adapters/drizzle)**.
 
 ## License
 

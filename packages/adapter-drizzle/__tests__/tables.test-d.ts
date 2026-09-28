@@ -5,9 +5,10 @@ import type { SitepingPgTables } from "../src/pg/index.js";
 
 // Rows read back from either dialect must be exactly the core records, so a
 // field added to the store contract cannot ship without its column. The tables
-// add only internal columns: `creationSequence` on feedbacks (tie-break of
-// "newest first"), `position` on annotations (submission order) and
-// `messageSearch` on feedbacks (Unicode-lowercased message searched).
+// add only internal columns: `creationSequence` on PostgreSQL feedbacks
+// (tie-break of "newest first" — SQLite uses its implicit `rowid`), `position`
+// on annotations (submission order) and `messageSearch` on feedbacks
+// (Unicode-lowercased message searched).
 type FeedbackRow = Omit<FeedbackRecord, "annotations">;
 
 test("PostgreSQL tables match the core records", () => {
@@ -23,8 +24,7 @@ test("PostgreSQL tables match the core records", () => {
 test("SQLite / libSQL tables match the core records", () => {
   type FeedbackSelect = SitepingSqliteTables["sitepingFeedbacks"]["$inferSelect"];
   type AnnotationSelect = SitepingSqliteTables["sitepingAnnotations"]["$inferSelect"];
-  expectTypeOf<Omit<FeedbackSelect, "creationSequence" | "messageSearch">>().toEqualTypeOf<FeedbackRow>();
-  expectTypeOf<FeedbackSelect["creationSequence"]>().toEqualTypeOf<number>();
+  expectTypeOf<Omit<FeedbackSelect, "messageSearch">>().toEqualTypeOf<FeedbackRow>();
   expectTypeOf<FeedbackSelect["messageSearch"]>().toEqualTypeOf<string | null>();
   expectTypeOf<Omit<AnnotationSelect, "position">>().toEqualTypeOf<AnnotationRecord>();
   expectTypeOf<AnnotationSelect["position"]>().toEqualTypeOf<number>();

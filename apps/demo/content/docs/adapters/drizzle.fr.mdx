@@ -52,7 +52,6 @@ Deux tables, `siteping_feedbacks` et `siteping_annotations` par défaut. Les ann
 | `<feedbacks>_client_id_key` (unique) | `client_id` — arbitre les soumissions en double |
 | `<feedbacks>_project_status_created_idx` | `project_name`, `status`, `created_at` |
 | `<feedbacks>_project_url_idx` | `project_name`, `url` |
-| `<feedbacks>_creation_sequence_idx` (libSQL uniquement) | `creation_sequence` |
 | `<annotations>_feedback_id_idx` | `feedback_id` |
 
 Les types de colonnes suivent le dialecte : sur PostgreSQL, les champs JSON sont en `jsonb` et les dates en `timestamptz(3)` ; sur libSQL, les champs JSON sont stockés en texte et les dates en millisecondes epoch.
@@ -144,18 +143,18 @@ Les deux factories acceptent les mêmes options :
 
 - **Les soumissions en double sont atomiques.** Le store implémente `createFeedbackIfAbsent` : l'index unique sur `client_id` et `ON CONFLICT DO NOTHING` arbitrent les soumissions concurrentes d'un même feedback, entre instances du store et entre processus. Un seul appelant obtient `created: true`, donc les hooks et webhooks de création ne partent qu'une fois.
 - **Les annotations arrivent avec leur feedback, ou pas du tout.** Sur PostgreSQL, le feedback et ses annotations sont insérés par une seule requête (une CTE qui modifie les données). Sur libSQL, les écritures en plusieurs requêtes passent par `db.batch`, qui s'exécute en une transaction et ne garde jamais le verrou d'écriture à travers un `await` — votre application peut continuer d'écrire dans la même base en parallèle.
-- **L'ordre est stable.** Les listes arrivent du plus récent au plus ancien. `createdAt` est la valeur de l'horloge à l'insertion, et les feedbacks créés dans la même milliseconde — par une instance du store ou par plusieurs processus — sont ordonnés par la colonne interne `creation_sequence`, commune à toute la base : une insertion plus tardive apparaît toujours en premier, et les pages par offset ne se chevauchent jamais et ne sautent aucune ligne.
+- **L'ordre est stable.** Les listes arrivent du plus récent au plus ancien. `createdAt` est la valeur de l'horloge à l'insertion, et les feedbacks créés dans la même milliseconde — par une instance du store, par plusieurs processus ou par votre propre code qui insère via les tables exportées — sont ordonnés par un ordinal d'insertion que la base attribue elle-même à chaque insertion : l'identité interne `creation_sequence` sur PostgreSQL, le `rowid` implicite de SQLite sur libSQL. Une insertion plus tardive apparaît toujours en premier, et les pages par offset ne se chevauchent jamais et ne sautent aucune ligne.
 - **`updatedAt` ne précède jamais `createdAt`.** Les changements de statut le bornent en SQL par les dates de la ligne elle-même, ce qui tient entre processus dont les horloges divergent.
 - **Appartenance au projet.** Le store implémente `verifyProjectOwnership`, donc le handler répond `404` à un PATCH/DELETE visant un id d'un autre projet. `@siteping/server` l'exige quand vous utilisez un `access.authorize` limité par projet.
 
 ## Colonnes internes et mises à jour
 
-Trois colonnes sont internes au store — jamais présentes dans les enregistrements renvoyés — et ont été ajoutées après la première version des tables. Si vous avez créé vos tables avec une version antérieure, **relancez `drizzle-kit generate`** pour les ajouter :
+Ces colonnes sont internes au store — jamais présentes dans les enregistrements renvoyés — et ont été ajoutées après la première version des tables. Si vous avez créé vos tables avec une version antérieure, **relancez `drizzle-kit generate`** pour les ajouter (sur libSQL, la même migration supprime la colonne `creation_sequence` et son index créés par les versions antérieures — le `rowid` implicite les remplace) :
 
 | Colonne | Table | Rôle | Lignes existantes |
 |---|---|---|---|
 | `position` | annotations | Entier (défaut `0`) qui garde les annotations de chaque feedback dans l'ordre de soumission — `annotations[0]` est l'ancre principale | Restent à `0` et gardent leur ordre `created_at` |
-| `creation_sequence` | feedbacks | Départage les égalités de `created_at` entre processus. PostgreSQL : une identité `bigint`. libSQL : un entier indexé (défaut `0`) rempli par le store à l'insertion | Numérotées à l'ajout de la colonne sur PostgreSQL ; sur libSQL elles restent à `0` et ne gardent que leur ordre `created_at` |
+| `creation_sequence` | feedbacks (PostgreSQL uniquement) | Départage les égalités de `created_at` : une identité `bigint` que la base attribue à chaque insertion, celles du store comme les vôtres. libSQL n'a pas cette colonne — il ordonne par le `rowid` implicite | Numérotées à l'ajout de la colonne |
 | `message_search` | feedbacks | Texte nullable : le message passé en minuscules en JavaScript, lu par la recherche textuelle | Restent `NULL` — remplissez-les, voir ci-dessous |
 
 ### Recherche textuelle et casse non ASCII

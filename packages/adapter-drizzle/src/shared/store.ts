@@ -164,8 +164,8 @@ export class DrizzleSitepingStore implements DrizzleStore {
       id,
       annotationId: () => crypto.randomUUID(),
       // The clock value as is: rows created in the same millisecond — by this
-      // or any other instance — are ordered by the database-wide
-      // `creation_sequence`, so a later insert always lists first.
+      // or any other instance — are ordered by the database-wide insertion
+      // ordinal, so a later insert always lists first.
       now: this.now(),
     });
     const row: FeedbackRow = { ...feedback, screenshotUrl };

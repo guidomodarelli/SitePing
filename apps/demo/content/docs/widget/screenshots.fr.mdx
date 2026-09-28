@@ -41,3 +41,5 @@ La capture est volontairement « au mieux » : si le moteur de rendu ne se charg
 ## Où va l'image
 
 Par défaut, le JPEG voyage en ligne (une URL `data:`, plafonnée à 1,5 Mo) et est stocké tel quel par l'adapter. C'est très bien pour démarrer ; pour un volume de production, configurez un [`screenshotStorage`](/fr/docs/adapters/prisma#stockage-des-captures) côté adapter serveur pour envoyer les images sur S3/R2/GCS et ne stocker que l'URL.
+
+`@siteping/screenshot-storage` fournit ce `screenshotStorage` clé en main : enveloppez un backend — `/cloudflare-images`, `/s3` (AWS S3, Cloudflare R2, Backblaze B2, MinIO…), `/filesystem` (Node.js), `/memory`, ou votre propre `ScreenshotObjectStore` — avec `createScreenshotStorage` et passez le résultat à votre store. Il valide le type et la taille de l'image avant tout envoi, stocke chaque capture sous une clé aléatoire neuve (une URL par envoi, jamais partagée entre feedbacks), et sert les backends sans URL publique via `createScreenshotServeHandler`.

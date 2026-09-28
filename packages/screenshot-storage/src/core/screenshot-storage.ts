@@ -41,8 +41,12 @@ function randomHex(byteCount: number): string {
  * stores accept) on top of any `ScreenshotObjectStore`.
  *
  * - Validates the widget's data URL (type allowlist, size cap) before any I/O.
- * - Keys are random — never derived from the client-supplied `clientId`, so a
- *   replayed id cannot overwrite someone else's screenshot.
+ * - Every upload gets a fresh random key, so each returned URL belongs to one
+ *   upload — and therefore to one `ctx.feedbackId` — never shared between
+ *   records nor content-addressed, as the core `ScreenshotStorage` URL
+ *   ownership rule requires. `ctx.feedbackId` is attacker-controlled (Prisma
+ *   passes the client's `clientId`) and never enters a key, so a replayed id
+ *   cannot overwrite someone else's screenshot.
  * - The URL is reserved before the upload; when the upload outcome is unknown
  *   (timeout, 5xx) the key is reclaimed so no unreferenced object survives.
  * - `delete` ignores URLs the backend does not own (inline data URLs, other hosts).

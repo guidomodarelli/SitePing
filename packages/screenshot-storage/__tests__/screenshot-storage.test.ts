@@ -122,7 +122,7 @@ for (const backend of backends) {
       expect(await storedBytes(key as string)).toBeNull();
     });
 
-    it("never reuses a key, even for the same client id", async () => {
+    it("returns a distinct URL per upload, even for the same feedbackId and identical bytes", async () => {
       const { objectStore } = backend.open();
       const storage = createScreenshotStorage(objectStore, { logger: silentLogger() });
 

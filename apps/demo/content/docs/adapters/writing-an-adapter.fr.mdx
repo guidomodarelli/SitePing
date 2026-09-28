@@ -41,7 +41,7 @@ export function createArrayStore(): SitepingStore {
 }
 ```
 
-C'est un vrai adapter, pleinement conforme — c'est l'exemple contre lequel la suite de tests du kit lance elle-même les 44 tests de conformité. Remplacez les trois fonctions par votre stockage et c'est terminé : [`MemoryStore`](/fr/docs/adapters/memory) et [`LocalStorageStore`](/fr/docs/adapters/localstorage) sont ce même moteur avec d'autres primitives.
+C'est un vrai adapter, pleinement conforme — c'est l'exemple contre lequel la suite de tests du kit lance elle-même les 47 tests de conformité. Remplacez les trois fonctions par votre stockage et c'est terminé : [`MemoryStore`](/fr/docs/adapters/memory) et [`LocalStorageStore`](/fr/docs/adapters/localstorage) sont ce même moteur avec d'autres primitives.
 
 **Les trois primitives :**
 
@@ -51,7 +51,7 @@ C'est un vrai adapter, pleinement conforme — c'est l'exemple contre lequel la 
 | `persist(feedbacks)` | Réécrit l'instantané complet. Levez `StorePersistenceError` quand l'écriture est perdue (quota, stockage désactivé) — ne l'avalez jamais |
 | `generateId()` | Un identifiant unique, utilisé pour les feedbacks comme pour les annotations |
 
-`createCollectionStore` renvoie un `CollectionStore` — un `SitepingStore` dont `verifyProjectOwnership` est garanti au lieu d'être optionnel, vous pouvez donc lui déléguer sans vérification préalable.
+`createCollectionStore` renvoie un `CollectionStore` — un `SitepingStore` dont `verifyProjectOwnership` et `createFeedbackIfAbsent` sont garantis au lieu d'être optionnels, vous pouvez donc lui déléguer sans vérification préalable.
 
 **Un `persist` qui échoue laisse votre instantané intact.** Le moteur ne modifie jamais le tableau renvoyé par `load()` — chaque écriture construit un nouveau tableau et le passe à `persist`. Donc si `load()` sert un tableau en cache et que l'écriture lève, aucun enregistrement fantôme ne reste visible, et le réessai du widget avec le même `clientId` est écrit pour de bon au lieu d'être dédupliqué contre quelque chose qui n'a jamais atteint le stockage.
 
@@ -59,7 +59,7 @@ C'est un vrai adapter, pleinement conforme — c'est l'exemple contre lequel la 
 
 ## Backends à requêtes
 
-Pour SQL et les ORM, implémentez les six méthodes directement — vos clauses `WHERE` ont leur place dans la base, pas dans un chargement complet de la table à chaque requête. Le kit vous épargne quand même la conversion entrée → enregistrement :
+Pour SQL et les ORM, implémentez les six méthodes directement — vos clauses `WHERE` ont leur place dans la base, pas dans un chargement complet de la table à chaque requête. Le kit vous épargne quand même la conversion entrée → enregistrement (sur PostgreSQL ou Turso / libSQL, l'[adapter Drizzle](/fr/docs/adapters/drizzle) officiel fait déjà tout cela) :
 
 ```ts
 import {
@@ -112,11 +112,11 @@ Les gardes correspondantes sont fournies : `isStoreNotFound`, `isStoreDuplicate`
 - Du plus récent au plus ancien, par `createdAt` décroissant.
 - `page` commence à 1, `limit` vaut 50 par défaut et est plafonné à 100.
 
-Vous gardez un instantané en mémoire ? `applyFeedbackFilters(records, query)` est exporté précisément pour ça et implémente tout ce qui précède. Vous interrogez une base ? `clampPagination(query)` renvoie le `{ page, limit, skip }` normalisé — le même plafonnement que le pipeline en mémoire et `PrismaStore`, à passer tel quel à votre `LIMIT`/`OFFSET`.
+Vous gardez un instantané en mémoire ? `applyFeedbackFilters(records, query)` est exporté précisément pour ça et implémente tout ce qui précède. Vous interrogez une base ? `clampPagination(query)` renvoie le `{ page, limit, skip }` normalisé — le même plafonnement que le pipeline en mémoire et `PrismaStore`, à passer tel quel à votre `LIMIT`/`OFFSET`. Testez d'abord `isUnreachableOffset(skip)` : un `page` énorme venu d'un appel direct donne un offset au-delà de `Number.MAX_SAFE_INTEGER` (ou `Infinity`) que les bases SQL rejettent, et la suite attend `{ feedbacks: [], total }` — répondez avec votre seule requête de comptage.
 
 ## Appartenance au projet
 
-`verifyProjectOwnership(id, projectName)` est la seule méthode optionnelle. Les handlers HTTP l'appellent avant `PATCH` et `DELETE` et répondent 404 quand elle renvoie `false` — c'est ce qui empêche un projet de modifier les feedbacks d'un autre avec un id deviné. Le typage est structurel ici, donc les adapters tiers bénéficient de la vérification sans rien câbler :
+`verifyProjectOwnership(id, projectName)` est optionnelle. Les handlers HTTP l'appellent avant `PATCH` et `DELETE` et répondent 404 quand elle renvoie `false` — c'est ce qui empêche un projet de modifier les feedbacks d'un autre avec un id deviné. Le typage est structurel ici, donc les adapters tiers bénéficient de la vérification sans rien câbler :
 
 ```ts
 async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> {
@@ -125,11 +125,15 @@ async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> 
 }
 ```
 
-Implémentez-la dès que votre store sert plus d'un projet. En son absence, les handlers sautent la vérification et se fient au seul `id`.
+Implémentez-la dès que votre store sert plus d'un projet. En son absence, les handlers se fient au seul `id` — c'est pourquoi `createSitepingHandler` refuse de démarrer avec un `access.authorize` personnalisé sur un store qui ne l'implémente pas.
+
+## Effets de création exactement une fois
+
+`createFeedbackIfAbsent(data)` est l'autre méthode optionnelle : un `createFeedback` qui indique aussi si cet appel a inséré l'enregistrement — `{ feedback, created }`. Quand deux requêtes se disputent le même `clientId`, le handler ne déclenche les webhooks et `onCreated` que pour `created: true`. Implémentez-la si votre `createFeedback` renvoie l'enregistrement existant sur un doublon (`duplicateBehavior: "return"`) ; un store qui lève `StoreDuplicateError` donne déjà ce signal au handler et peut s'en passer. La vérification du doublon et l'insertion doivent être atomiques : parmi des appels concurrents avec le même `clientId`, un seul renvoie `created: true`. `createCollectionStore` le garantit au sein d'une instance de store en mettant ses écritures en file ; un stockage partagé par plusieurs processus (ou onglets) nécessite sa propre primitive atomique — contrainte d'unicité, transaction, compare-and-set.
 
 ## La preuve : la suite de conformité
 
-La même suite que celle des adapters officiels. Pointez-la vers une factory qui renvoie un store neuf et vide, et elle exerce tout le contrat — 44 tests :
+La même suite que celle des adapters officiels. Pointez-la vers une factory qui renvoie un store neuf et vide, et elle exerce tout le contrat — 47 tests :
 
 ```ts
 // __tests__/my-store.test.ts
@@ -153,7 +157,7 @@ testSitepingStore(() => new PostgresStore(db), {
 });
 ```
 
-`verifyProjectOwnership` est couverte elle aussi : les stores qui ne l'implémentent pas sautent les assertions, donc l'ajouter plus tard est vérifié automatiquement, sans toucher aux tests.
+`verifyProjectOwnership` et `createFeedbackIfAbsent` sont couvertes elles aussi : les stores qui ne les implémentent pas sautent les assertions, donc les ajouter plus tard est vérifié automatiquement, sans toucher aux tests.
 
 ## Utiliser votre adapter
 

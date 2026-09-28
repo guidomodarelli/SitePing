@@ -9,7 +9,6 @@ rules:
       # reaches a `run:` step — see the header comment in each file.
       - welcome.yml
       - auto-label.yml
-      - pr-title.yml
 
   use-trusted-publishing:
     ignore:

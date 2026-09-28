@@ -44,7 +44,7 @@ const source: InboxSource = {
 };
 ```
 
-The two building blocks behind the built-in modes are exported too — `createEndpointSource({ endpoint, apiKey, headers })` and `createStoreSource(store)` — so you can wrap, compose, or decorate them (e.g. add logging around the HTTP client) instead of starting from scratch.
+The two building blocks behind the built-in modes are exported too — `createEndpointSource({ endpoint, apiKey, headers, credentials })` and `createStoreSource(store)` — so you can wrap, compose, or decorate them (e.g. add logging around the HTTP client) instead of starting from scratch.
 
 ## Types without extra dependencies
 

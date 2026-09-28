@@ -1,6 +1,7 @@
 import type { SitepingConfig } from "@siteping/core";
 import { parseSvg, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
+import { registerEscapeLayer } from "./host-isolation.js";
 import { type TFunction, type Translations, tWithParams } from "./i18n/index.js";
 import { ICON_CLOSE, ICON_EDIT, ICON_EYE, ICON_EYE_OFF, ICON_LIST, ICON_SITEPING } from "./icons.js";
 
@@ -110,14 +111,16 @@ export class Fab {
     // single pass so the constructor and `refreshLabels()` never drift.
     this.applyLabels();
 
-    // Close radial menu on click outside.
+    // Close radial menu on click outside. Capture phase: widget surfaces stop
+    // `click` in the bubble phase (host-isolation.ts), and a click on another
+    // surface (marker, popup, overlay) must still close the menu.
     const host = shadowRoot.host;
     this.onDocumentClick = (e: MouseEvent) => {
       if (this.isOpen && !e.composedPath().includes(host)) {
         this.close();
       }
     };
-    document.addEventListener("click", this.onDocumentClick);
+    document.addEventListener("click", this.onDocumentClick, true);
 
     // Escape on FAB or menu container closes the menu
     const handleEscape = (e: KeyboardEvent) => {
@@ -128,6 +131,11 @@ export class Fab {
     };
     this.fab.addEventListener("keydown", handleEscape);
     this.radialContainer.addEventListener("keydown", handleEscape);
+    // Host modals ignore that Escape only while the menu is open: once it has
+    // closed and focus is back on the FAB, the next Escape reaches the host.
+    const isMenuOpen = (): boolean => this.isOpen;
+    registerEscapeLayer(this.fab, isMenuOpen);
+    registerEscapeLayer(this.radialContainer, isMenuOpen);
 
     // Arrow key navigation within the radial menu
     this.radialContainer.addEventListener("keydown", (e) => {
@@ -301,7 +309,7 @@ export class Fab {
   }
 
   destroy(): void {
-    document.removeEventListener("click", this.onDocumentClick);
+    document.removeEventListener("click", this.onDocumentClick, true);
     this.root.remove();
   }
 }

@@ -19,6 +19,7 @@ import type {
   AnnotationCreateInput,
   AnnotationRecord,
   FeedbackCreateInput,
+  FeedbackCreateOutcome,
   FeedbackPage,
   FeedbackQuery,
   FeedbackRecord,
@@ -131,16 +132,18 @@ export interface CollectionStoreBackend {
 }
 
 /**
- * A `SitepingStore` with the optional `verifyProjectOwnership` guaranteed —
- * what `createCollectionStore` returns.
+ * A `SitepingStore` with the optional `verifyProjectOwnership` and
+ * `createFeedbackIfAbsent` guaranteed — what `createCollectionStore` returns.
  */
-export type CollectionStore = SitepingStore & Required<Pick<SitepingStore, "verifyProjectOwnership">>;
+export type CollectionStore = SitepingStore &
+  Required<Pick<SitepingStore, "verifyProjectOwnership" | "createFeedbackIfAbsent">>;
 
 /**
  * Build a fully conformant `SitepingStore` on top of a snapshot backend.
  *
  * The engine implements the whole store contract: clientId dedup (idempotent
- * create), newest-first ordering, the standard filter/pagination pipeline,
+ * create, with `createFeedbackIfAbsent` reporting inserts), newest-first
+ * ordering, the standard filter/pagination pipeline,
  * `StoreNotFoundError` on missing update/delete, project-scoped bulk delete,
  * and `verifyProjectOwnership`. The snapshot returned by `load` is never
  * mutated: every write hands `persist` a new array, so a failed write leaves
@@ -149,6 +152,21 @@ export type CollectionStore = SitepingStore & Required<Pick<SitepingStore, "veri
  * without the screenshot (by far the heaviest field) so the text feedback
  * survives a storage-quota hit; if that also fails, the error propagates —
  * returning the record would claim a success that was never persisted.
+ *
+ * Every read-modify-write mutation (`createFeedbackIfAbsent`,
+ * `createFeedback`, `updateFeedback`, `deleteFeedback`,
+ * `deleteAllFeedbacks`) runs through one promise queue per returned store,
+ * so its `load` → check → `persist` sequence never interleaves with another
+ * mutation of the same instance. That makes `createFeedbackIfAbsent` report
+ * `created: true` exactly once per `clientId` and prevents concurrent writes
+ * from overwriting each other's snapshot. The guarantee is scoped to one
+ * store instance in one JS process: two instances over the same storage (two
+ * server processes on a shared file, two browser tabs on the same
+ * localStorage key) are not coordinated — backends that need that must
+ * provide their own atomic primitive (a unique constraint, a transaction, a
+ * compare-and-set). A failed mutation rejects with its original error and
+ * does not block the ones queued after it. Reads are not queued: they see the
+ * last persisted snapshot.
  *
  * @example
  * ```ts
@@ -173,28 +191,59 @@ export function createCollectionStore(backend: CollectionStoreBackend): Collecti
   // the write is confirmed — and when `persist` throws, the phantom record
   // stays visible, and the widget's retry of the same clientId dedups against
   // it instead of being written for real.
+
+  /**
+   * Tail of the mutation queue. It always settles as fulfilled (failures are
+   * observed by the caller of the failed mutation, not by the queue), so one
+   * rejected write never blocks the mutations queued after it.
+   */
+  let mutationQueueTail: Promise<void> = Promise.resolve();
+
+  /**
+   * Run a read-modify-write mutation after every previously queued one has
+   * settled, so no two mutations of this store interleave their `load` and
+   * `persist`. Resolves or rejects exactly like `mutation` itself.
+   */
+  const runSerializedMutation = <MutationResult>(mutation: () => Promise<MutationResult>): Promise<MutationResult> => {
+    const mutationResult = mutationQueueTail.then(mutation);
+    mutationQueueTail = mutationResult.then(
+      () => undefined,
+      () => undefined,
+    );
+    return mutationResult;
+  };
+
+  const insertFeedbackIfAbsent = async (data: FeedbackCreateInput): Promise<FeedbackCreateOutcome> => {
+    const feedbacks = await backend.load();
+
+    // ClientId dedup — idempotent
+    const existing = feedbacks.find((f) => f.clientId === data.clientId);
+    if (existing) return { feedback: existing, created: false };
+
+    const record = buildFeedbackRecord(data, {
+      id: backend.generateId(),
+      annotationId: () => backend.generateId(),
+    });
+
+    const next = [record, ...feedbacks];
+    try {
+      await backend.persist(next);
+    } catch (err) {
+      if (!record.screenshotUrl) throw err;
+      record.screenshotUrl = null;
+      await backend.persist(next);
+    }
+    return { feedback: record, created: true };
+  };
+
+  const createFeedbackIfAbsent = (data: FeedbackCreateInput): Promise<FeedbackCreateOutcome> =>
+    runSerializedMutation(() => insertFeedbackIfAbsent(data));
+
   return {
+    createFeedbackIfAbsent,
+
     async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {
-      const feedbacks = await backend.load();
-
-      // ClientId dedup — idempotent
-      const existing = feedbacks.find((f) => f.clientId === data.clientId);
-      if (existing) return existing;
-
-      const record = buildFeedbackRecord(data, {
-        id: backend.generateId(),
-        annotationId: () => backend.generateId(),
-      });
-
-      const next = [record, ...feedbacks];
-      try {
-        await backend.persist(next);
-      } catch (err) {
-        if (!record.screenshotUrl) throw err;
-        record.screenshotUrl = null;
-        await backend.persist(next);
-      }
-      return record;
+      return (await createFeedbackIfAbsent(data)).feedback;
     },
 
     async getFeedbacks(query: FeedbackQuery): Promise<FeedbackPage> {
@@ -205,31 +254,37 @@ export function createCollectionStore(backend: CollectionStoreBackend): Collecti
       return (await backend.load()).find((f) => f.clientId === clientId) ?? null;
     },
 
-    async updateFeedback(id: string, data: FeedbackUpdateInput): Promise<FeedbackRecord> {
-      const feedbacks = await backend.load();
-      const current = feedbacks.find((f) => f.id === id);
-      if (!current) throw new StoreNotFoundError();
+    updateFeedback(id: string, data: FeedbackUpdateInput): Promise<FeedbackRecord> {
+      return runSerializedMutation(async () => {
+        const feedbacks = await backend.load();
+        const current = feedbacks.find((f) => f.id === id);
+        if (!current) throw new StoreNotFoundError();
 
-      const updated: FeedbackRecord = {
-        ...current,
-        status: data.status,
-        resolvedAt: data.resolvedAt,
-        updatedAt: new Date(),
-      };
-      await backend.persist(feedbacks.map((f) => (f === current ? updated : f)));
-      return updated;
+        const updated: FeedbackRecord = {
+          ...current,
+          status: data.status,
+          resolvedAt: data.resolvedAt,
+          updatedAt: new Date(),
+        };
+        await backend.persist(feedbacks.map((f) => (f === current ? updated : f)));
+        return updated;
+      });
     },
 
-    async deleteFeedback(id: string): Promise<void> {
-      const feedbacks = await backend.load();
-      if (!feedbacks.some((f) => f.id === id)) throw new StoreNotFoundError();
+    deleteFeedback(id: string): Promise<void> {
+      return runSerializedMutation(async () => {
+        const feedbacks = await backend.load();
+        if (!feedbacks.some((f) => f.id === id)) throw new StoreNotFoundError();
 
-      await backend.persist(feedbacks.filter((f) => f.id !== id));
+        await backend.persist(feedbacks.filter((f) => f.id !== id));
+      });
     },
 
-    async deleteAllFeedbacks(projectName: string): Promise<void> {
-      const feedbacks = await backend.load();
-      await backend.persist(feedbacks.filter((f) => f.projectName !== projectName));
+    deleteAllFeedbacks(projectName: string): Promise<void> {
+      return runSerializedMutation(async () => {
+        const feedbacks = await backend.load();
+        await backend.persist(feedbacks.filter((f) => f.projectName !== projectName));
+      });
     },
 
     async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> {

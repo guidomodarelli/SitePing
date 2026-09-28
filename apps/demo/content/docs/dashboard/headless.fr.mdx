@@ -16,7 +16,7 @@ const inbox = useSitepingInbox({
 
 ## Options
 
-Les options forment une union sur les trois modes de source : fournissez **exactement un** de `source`, `store` ou `endpoint`. N'en fournir aucun, en fournir deux, ou associer des options propres au mode endpoint (`apiKey`, `headers`) à `store`/`source` est une erreur de compilation — pas une exception à l'exécution, et pas une option ignorée en silence.
+Les options forment une union sur les trois modes de source : fournissez **exactement un** de `source`, `store` ou `endpoint`. N'en fournir aucun, en fournir deux, ou associer des options propres au mode endpoint (`apiKey`, `headers`, `credentials`) à `store`/`source` est une erreur de compilation — pas une exception à l'exécution, et pas une option ignorée en silence.
 
 | Option | Type | Défaut | Notes |
 |---|---|---|---|
@@ -26,6 +26,7 @@ Les options forment une union sur les trois modes de source : fournissez **exact
 | `source` | `InboxSource` | — | Source de données entièrement personnalisée ; voir [Sources de données](/fr/docs/dashboard/sources) |
 | `apiKey` | `string` | — | Mode endpoint uniquement. `Authorization: Bearer` sur chaque requête |
 | `headers` | objet ou fonction | — | Mode endpoint uniquement. Un `Authorization` explicite l'emporte sur `apiKey`. Lu en direct — le modifier ne reconstruit pas la source |
+| `credentials` | `"omit" \| "same-origin" \| "include"` | `"same-origin"` | Mode endpoint uniquement. Politique de cookies de `fetch` pour chaque requête — `"include"` pour un endpoint d'une autre origine authentifié par cookie de session. Une valeur inconnue lève une erreur |
 | `pageSize` | `number` | `50` | Borné entre 1 et 100 |
 | `onStatusChange` | `(feedback, previousStatus) => void` | — | Après confirmation du serveur |
 | `onDelete` | `(feedback) => void` | — | Après confirmation du serveur |

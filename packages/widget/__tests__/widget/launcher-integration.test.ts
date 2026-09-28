@@ -1640,7 +1640,25 @@ describe("launcher — annotation:complete integration", () => {
       expect(vi.mocked(ApiClient)).toHaveBeenCalledWith("/api/siteping", "test-project", {
         apiKey: undefined,
         headers: undefined,
+        credentials: undefined,
       });
+
+      instance.destroy();
+    });
+
+    it("passes the credentials mode from config to ApiClient and flushRetryQueue", () => {
+      const instance = launch(defaultConfig({ credentials: "include" }));
+
+      expect(vi.mocked(ApiClient)).toHaveBeenCalledWith(
+        "/api/siteping",
+        "test-project",
+        expect.objectContaining({ credentials: "include" }),
+      );
+      expect(vi.mocked(flushRetryQueue)).toHaveBeenCalledWith(
+        "/api/siteping",
+        { name: "Test User", email: "test@example.com" },
+        expect.objectContaining({ credentials: "include" }),
+      );
 
       instance.destroy();
     });

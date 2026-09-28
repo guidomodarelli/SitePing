@@ -43,6 +43,7 @@ Any framework that speaks Web `Request`/`Response` (Hono, Remix, SvelteKit, …)
 - **Reads are public by default.** Without an `apiKey`, anyone who knows the URL can list feedbacks (with emails redacted — see below).
 - **Destructive calls are not.** PATCH and DELETE answer `401` unless you set an `apiKey` or explicitly opt out with `requireAuthForDestructive: false`. In production the factory throws at startup rather than run without a key.
 - `OPTIONS` is always public — preflights must work.
+- **Mutations are CSRF-guarded.** `POST`, `PATCH` and `DELETE` must send `Content-Type: application/json` (`415` otherwise), so a cross-origin browser always has to pass a CORS preflight. With `allowedOrigins` set, a mutation whose `Origin` is neither listed nor the endpoint's own answers `403` before anything runs; requests without `Origin` (server-to-server, curl) are allowed.
 
 ### What responses expose
 
@@ -56,7 +57,7 @@ One endpoint, five methods. All bodies are JSON.
 | Method | Purpose | Success |
 |---|---|---|
 | `POST` | Create feedback (widget submissions) | `201` + record. A replayed `clientId` returns the existing record instead of failing (and never notifies webhooks twice); a `clientId` already used by **another** project is refused with `409` |
-| `GET` | List feedbacks | `200` + `{ feedbacks, total }`, with `Cache-Control: private, max-age=5` |
+| `GET` | List feedbacks | `200` + `{ feedbacks, total }`, with `Cache-Control: no-store` |
 | `PATCH` | Change a status | `200` + updated record |
 | `DELETE` | Delete one or all | `200` + `{ deleted: true }` |
 | `OPTIONS` | CORS preflight | `204` |
@@ -67,7 +68,7 @@ One endpoint, five methods. All bodies are JSON.
 
 **DELETE body:** `{ id, projectName }` for one record, or `{ projectName, deleteAll: true }` for everything in the project.
 
-**Errors:** invalid JSON → `400 { error }`; validation failure → `400 { errors: [{ field, message }] }`; unknown id → `404`; `clientId` owned by another project → `409 { error }`; missing table → `500` with a hint to run `npx prisma db push`; anything else → `500 { error: "Internal server error" }`.
+**Errors:** mutation from an origin outside `allowedOrigins` → `403 { error }`; mutation without `Content-Type: application/json` → `415 { error }`; invalid JSON → `400 { error }`; validation failure → `400 { errors: [{ field, message }] }`; unknown id → `404`; `clientId` owned by another project → `409 { error }`; missing table → `500` with a hint to run `npx prisma db push`; anything else → `500 { error: "Internal server error" }`.
 
 ### Validation limits worth knowing
 

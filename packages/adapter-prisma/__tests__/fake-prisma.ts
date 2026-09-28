@@ -6,10 +6,13 @@ import type { SitepingPrismaClient } from "../src/index.js";
  * the Prisma semantics the adapter relies on: a unique `clientId` (`P2002`
  * on duplicate), `P2025` on update/delete of a missing row, `contains`
  * (case-sensitive, like Postgres `LIKE`), `{ in }` and `{ not }` filters,
- * `orderBy`, `skip`/`take`, `select`, and Prisma's rejection of a negative
- * `skip`. Lets the published conformance suite run against `PrismaStore`
+ * `orderBy`, `skip`/`take`, `select`, and Prisma's rejection of a `skip`
+ * outside a signed 64-bit integer. Lets the published conformance suite run against `PrismaStore`
  * without a database.
  */
+
+/** First `skip` past a signed 64-bit integer — Prisma rejects it and above. */
+const PRISMA_SKIP_EXCLUSIVE_MAX = 2 ** 63;
 
 type Where = Record<string, unknown>;
 
@@ -83,7 +86,13 @@ export class FakeFeedbackDelegate {
   }
 
   async findMany({ where, orderBy, skip = 0, take, select }: FindManyArgs): Promise<unknown[]> {
-    if (skip < 0) throw new Error(`PrismaClientValidationError: Invalid value for argument \`skip\`: ${skip}`);
+    // Prisma's query engine reads `skip` as a signed 64-bit integer: it
+    // rejects negatives, non-integers, `Infinity` (serialised as `null`) and
+    // values past 2^63 - 1 — where JavaScript's `slice` would silently accept
+    // them and mask an adapter that forwards an unchecked offset.
+    if (skip < 0 || !Number.isInteger(skip) || skip >= PRISMA_SKIP_EXCLUSIVE_MAX) {
+      throw new Error(`PrismaClientValidationError: Invalid value for argument \`skip\`: ${skip}`);
+    }
     let result = this.rows.map((r, index) => ({ r, index })).filter(({ r }) => matches(r, where));
     if (orderBy?.createdAt === "desc") {
       // Ties broken by insertion order desc — the most favourable reading of

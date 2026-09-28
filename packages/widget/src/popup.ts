@@ -1,6 +1,12 @@
 import type { FeedbackType } from "@siteping/core";
 import { POPUP_HIDE_TRANSITION_MS, Z_INDEX_MAX } from "./constants.js";
 import { el, parseSvg, setText } from "./dom-utils.js";
+import {
+  addSurfaceKeydownListener,
+  isolateFromHost,
+  registerEscapeLayer,
+  removeSurfaceKeydownListener,
+} from "./host-isolation.js";
 import type { TFunction, Translations } from "./i18n/index.js";
 import { ICON_BUG, ICON_CHANGE, ICON_OTHER, ICON_QUESTION } from "./icons.js";
 import {
@@ -100,6 +106,7 @@ export class Popup {
       style: `
         position:fixed;
         z-index:${Z_INDEX_MAX};
+        pointer-events:auto;
         width:300px;
         padding:16px;
         border-radius:16px;
@@ -278,6 +285,8 @@ export class Popup {
     this.root.appendChild(this.textarea);
     this.root.appendChild(this.hint);
     this.root.appendChild(btnRow);
+    isolateFromHost(this.root);
+    registerEscapeLayer(this.root, () => this.isOpen);
     document.body.appendChild(this.root);
 
     // Bind every `t()`-derived string into the freshly-built DOM. Kept as a
@@ -405,7 +414,7 @@ export class Popup {
           }
         }
       };
-      this.root.addEventListener("keydown", this.onKeydownTrap);
+      addSurfaceKeydownListener(this.root, this.onKeydownTrap);
 
       // Check prefers-reduced-motion live (not cached at construction time)
       const reduceMotion =
@@ -631,7 +640,7 @@ export class Popup {
   private hideElement(): void {
     // Remove focus trap
     if (this.onKeydownTrap) {
-      this.root.removeEventListener("keydown", this.onKeydownTrap);
+      removeSurfaceKeydownListener(this.root, this.onKeydownTrap);
       this.onKeydownTrap = null;
     }
     // Make sure the submitting decoration doesn't leak into the next show()
@@ -667,7 +676,7 @@ export class Popup {
     this.resolve = null;
     this.onSubmit = null;
     if (this.onKeydownTrap) {
-      this.root.removeEventListener("keydown", this.onKeydownTrap);
+      removeSurfaceKeydownListener(this.root, this.onKeydownTrap);
       this.onKeydownTrap = null;
     }
     this.root.remove();

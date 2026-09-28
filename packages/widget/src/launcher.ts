@@ -16,6 +16,13 @@ import { NetworkBuffer } from "./diagnostics/network-buffer.js";
 import { EventBus, type WidgetEvents } from "./events.js";
 import { Fab } from "./fab.js";
 import { createFocusTracker } from "./focus-tracker.js";
+import {
+  addSurfaceKeydownListener,
+  installHostIsolationGuard,
+  isolateFromHost,
+  registerEscapeLayer,
+  removeSurfaceKeydownListener,
+} from "./host-isolation.js";
 import { createT, loadLocale, type TFunction } from "./i18n/index.js";
 import { getIdentity, type Identity, saveIdentity } from "./identity.js";
 import { MarkerManager } from "./markers.js";
@@ -306,6 +313,13 @@ export function launch(config: SitepingConfig): SitepingInstance {
     shadow.appendChild(style);
   }
 
+  // The FAB and panel must stay usable over host modals (see host-isolation.ts).
+  // The host is a <body> child, so it inherits a modal's `pointer-events:none`;
+  // `isolateFromHost` also undoes the `inert` / `aria-hidden` sibling-inerting
+  // modals apply.
+  host.style.pointerEvents = "auto";
+  isolateFromHost(host);
+  const removeHostIsolationGuard = installHostIsolationGuard();
   document.body.appendChild(host);
 
   // Track the last page element the user focused. FAB-launched annotation
@@ -321,6 +335,10 @@ export function launch(config: SitepingConfig): SitepingInstance {
   liveRegion.setAttribute("aria-atomic", "true");
   liveRegion.style.cssText =
     "position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;";
+  // An inert or aria-hidden live region is dropped from the accessibility tree,
+  // silencing submission announcements made while a sibling-inerting host
+  // modal is open.
+  isolateFromHost(liveRegion);
   document.body.appendChild(liveRegion);
 
   // Components outside Shadow DOM
@@ -730,6 +748,10 @@ export function launch(config: SitepingConfig): SitepingInstance {
       publicBus.removeAll();
       liveRegion.remove();
       host.remove();
+      // Last: tearing down the annotator and its popup moves focus (e.g. from
+      // the popup textarea back to the pre-annotation element), and a host
+      // modal's capture-phase focus trap must not read that as outside focus.
+      removeHostIsolationGuard();
       instance = null;
     },
     open: () => {
@@ -854,7 +876,8 @@ function promptIdentity(shadowRoot: ShadowRoot, t: TFunction): Promise<Identity 
     btnRow.style.cssText = "display:flex;gap:8px;justify-content:flex-end;margin-top:20px;";
 
     const closeModal = (result: Identity | null) => {
-      backdrop.removeEventListener("keydown", onKeydown);
+      removeSurfaceKeydownListener(backdrop, onKeydown);
+      unregisterEscapeLayer();
       backdrop.style.opacity = "0";
       modal.style.transform = "translateY(12px) scale(0.97)";
       setTimeout(() => {
@@ -888,8 +911,7 @@ function promptIdentity(shadowRoot: ShadowRoot, t: TFunction): Promise<Identity 
 
     // Focus trap: cycle Tab/Shift+Tab within the modal
     const focusableSelectors = 'input, button, [tabindex]:not([tabindex="-1"])';
-    const onKeydown = (e: Event) => {
-      const ke = e as KeyboardEvent;
+    const onKeydown = (ke: KeyboardEvent) => {
       if (ke.key === "Escape") {
         closeModal(null);
         return;
@@ -914,7 +936,8 @@ function promptIdentity(shadowRoot: ShadowRoot, t: TFunction): Promise<Identity 
         }
       }
     };
-    backdrop.addEventListener("keydown", onKeydown);
+    addSurfaceKeydownListener(backdrop, onKeydown);
+    const unregisterEscapeLayer = registerEscapeLayer(backdrop, () => true);
 
     // Close on backdrop click
     backdrop.addEventListener("click", (e) => {

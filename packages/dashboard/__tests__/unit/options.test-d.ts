@@ -16,6 +16,11 @@ describe("UseSitepingInboxOptions XOR union", () => {
     expectTypeOf({ projects: "p", source }).toExtend<UseSitepingInboxOptions>();
     expectTypeOf({ projects: "p", store }).toExtend<UseSitepingInboxOptions>();
     expectTypeOf({ projects: "p", endpoint: "/api", apiKey: "k" }).toExtend<UseSitepingInboxOptions>();
+    expectTypeOf({
+      projects: "p",
+      endpoint: "/api",
+      credentials: "include" as const,
+    }).toExtend<UseSitepingInboxOptions>();
   });
 
   it("rejects no source and mixed sources", () => {
@@ -27,6 +32,9 @@ describe("UseSitepingInboxOptions XOR union", () => {
 
     // @ts-expect-error — apiKey is endpoint-mode only
     useSitepingInbox({ projects: "p", store, apiKey: "leaked" });
+
+    // @ts-expect-error — credentials is endpoint-mode only
+    useSitepingInbox({ projects: "p", source, credentials: "include" });
   });
 });
 

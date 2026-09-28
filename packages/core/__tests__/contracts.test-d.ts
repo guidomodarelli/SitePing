@@ -32,6 +32,7 @@ describe("SitepingConfig discriminated union", () => {
   it("accepts each mode on its own", () => {
     expectTypeOf({ projectName: "p", endpoint: "/api/siteping" }).toExtend<SitepingConfig>();
     expectTypeOf({ projectName: "p", endpoint: "/api", apiKey: "k" }).toExtend<SitepingConfig>();
+    expectTypeOf({ projectName: "p", endpoint: "/api", credentials: "include" as const }).toExtend<SitepingConfig>();
     expectTypeOf({ projectName: "p", store }).toExtend<SitepingConfig>();
   });
 
@@ -47,6 +48,14 @@ describe("SitepingConfig discriminated union", () => {
     // @ts-expect-error — apiKey is HTTP-mode only
     const storeWithApiKey: SitepingConfig = { projectName: "p", store, apiKey: "leaked" };
     void storeWithApiKey;
+
+    // @ts-expect-error — credentials is HTTP-mode only
+    const storeWithCredentials: SitepingConfig = { projectName: "p", store, credentials: "include" };
+    void storeWithCredentials;
+
+    // @ts-expect-error — only the three fetch credentials modes are accepted
+    const unknownCredentials: SitepingConfig = { projectName: "p", endpoint: "/api", credentials: "always" };
+    void unknownCredentials;
   });
 });
 

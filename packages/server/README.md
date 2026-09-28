@@ -41,6 +41,20 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ sto
 
 `allowedHeaders` extends the defaults (case-insensitive, deduplicated) and throws at startup on an invalid header name; the preflight's requested headers are never reflected.
 
+### Cookie sessions across origins
+
+With `allowedOrigins`, responses carry `Access-Control-Allow-Credentials: true` for the listed origins, so an `access.authenticate` that reads a session cookie works cross-origin — but only if the browser actually sends the cookie. `fetch` defaults to `credentials: "same-origin"`, so opt in on the client:
+
+```ts
+// Widget on https://client-site.com, API on another origin
+initSiteping({ endpoint: "https://api.example.com/api/siteping", projectName: "my-site", credentials: "include" });
+
+// Dashboard (endpoint mode)
+<SitepingInbox projects="my-site" endpoint="https://api.example.com/api/siteping" credentials="include" />
+```
+
+The session cookie must be issued with `SameSite=None; Secure` to travel cross-site. Without `credentials: "include"` the cookie never reaches `authenticate` and every request is rejected with `401`. Keep `allowedOrigins` to origins you trust: it is the CSRF boundary for cookie-authenticated requests.
+
 Without `access`, the handler keeps the shared-secret policy of `@siteping/adapter-prisma` (`apiKey`, `publicEndpoints`, `requireAuthForDestructive`, `redactUnauthenticatedEmails`).
 
 MIT

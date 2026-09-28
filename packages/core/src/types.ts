@@ -57,6 +57,60 @@ export type SitepingHeadersOption =
   | (() => Record<string, string> | Promise<Record<string, string>>);
 
 /**
+ * Cookie policy for HTTP-mode requests — forwarded verbatim as the
+ * `credentials` option of every `fetch` the widget (or the dashboard's
+ * endpoint source) makes. Mirrors the DOM `RequestCredentials` union,
+ * declared here so core stays free of DOM lib types.
+ *
+ * - `"same-origin"` (default): cookies only when the endpoint shares the
+ *   page's origin — the browser's own default.
+ * - `"include"`: also send cookies to a cross-origin endpoint. Required when a
+ *   server on another origin authenticates with a session cookie; the server
+ *   must answer with credentialed CORS (the page's exact origin plus
+ *   `Access-Control-Allow-Credentials: true`, e.g. `@siteping/server`'s
+ *   `allowedOrigins`).
+ * - `"omit"`: never send cookies, even same-origin.
+ */
+export type SitepingRequestCredentials = "omit" | "same-origin" | "include";
+
+/** Every accepted {@link SitepingRequestCredentials} value — runtime guard source for untyped (script-tag) consumers. */
+export const REQUEST_CREDENTIALS_MODES = [
+  "omit",
+  "same-origin",
+  "include",
+] as const satisfies readonly SitepingRequestCredentials[];
+
+/**
+ * Credentials mode used when none is configured — the browser's own `fetch`
+ * default, so leaving the option unset never changes cookie behavior (and
+ * never opts a cross-origin endpoint into cookie-carrying, CSRF-prone requests).
+ */
+export const DEFAULT_REQUEST_CREDENTIALS = "same-origin" satisfies SitepingRequestCredentials;
+
+/**
+ * Narrow an untyped config value to a {@link SitepingRequestCredentials} mode.
+ *
+ * @param value - Raw `credentials` option (may come from an untyped script-tag config).
+ * @returns `true` when `value` is one of {@link REQUEST_CREDENTIALS_MODES}.
+ */
+export function isRequestCredentials(value: unknown): value is SitepingRequestCredentials {
+  return typeof value === "string" && (REQUEST_CREDENTIALS_MODES as readonly string[]).includes(value);
+}
+
+/**
+ * Actionable description of a rejected `credentials` option — shared by the
+ * widget init guard and the dashboard's endpoint source so both report the
+ * same wording.
+ *
+ * @param value - The rejected raw value (a config value, never user content).
+ * @returns e.g. `invalid \`credentials\` "all". Expected one of "omit", "same-origin", "include".`
+ */
+export function describeInvalidRequestCredentials(value: unknown): string {
+  const accepted = REQUEST_CREDENTIALS_MODES.map((mode) => `"${mode}"`).join(", ");
+  return `invalid \`credentials\` ${String(JSON.stringify(value))}. Expected one of ${accepted}.`;
+}
+
+/**
  * Options shared by both widget modes (HTTP and direct store).
  *
  * Do not use this type directly — use {@link SitepingConfig}, the
@@ -307,6 +361,25 @@ export interface SitepingHttpConfig extends SitepingBaseConfig {
    * fails the request like a network error.
    */
   headers?: SitepingHeadersOption | undefined;
+  /**
+   * Cookie policy for every HTTP-mode request (submit, list, update, delete
+   * and the offline retry-queue replay). Defaults to `"same-origin"` — the
+   * browser default, so existing setups are unchanged.
+   *
+   * Set `"include"` when `endpoint` lives on **another origin** and the
+   * server authenticates with a session cookie (e.g. a custom
+   * `access.authenticate` in `@siteping/server`): without it the browser
+   * never attaches the cookie and every request is rejected as
+   * unauthenticated. The server must allow the page's origin explicitly with
+   * credentialed CORS (`allowedOrigins`) — a wildcard origin never works
+   * with cookies. Only opt in for origins you trust: cookie-authenticated
+   * cross-origin requests rely on the server's CSRF defenses (strict origin
+   * allowlist, `SameSite` cookies).
+   *
+   * An unknown value (untyped script-tag config) is rejected at init: the
+   * widget logs an error and does not load.
+   */
+  credentials?: SitepingRequestCredentials | undefined;
   /** Not available in HTTP mode — use either `endpoint` or `store`, never both. */
   store?: never;
 }
@@ -324,13 +397,15 @@ export interface SitepingStoreConfig extends SitepingBaseConfig {
   apiKey?: never;
   /** HTTP-mode only — meaningless without an `endpoint`. */
   headers?: never;
+  /** HTTP-mode only — meaningless without an `endpoint`. */
+  credentials?: never;
 }
 
 /**
  * Configuration options for the Siteping widget.
  *
  * A discriminated union over the two transport modes: pass `endpoint`
- * (HTTP mode, optionally with `apiKey`/`headers`) **or** `store` (direct
+ * (HTTP mode, optionally with `apiKey`/`headers`/`credentials`) **or** `store` (direct
  * client-side mode) — never both, never neither. Invalid combinations are
  * compile errors instead of runtime warnings.
  */

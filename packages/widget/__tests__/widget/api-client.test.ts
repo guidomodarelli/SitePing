@@ -720,6 +720,80 @@ describe("ApiClient — auth & headers", () => {
 });
 
 // ---------------------------------------------------------------------------
+// credentials — cookie policy forwarded to every fetch
+// ---------------------------------------------------------------------------
+
+describe("ApiClient — credentials", () => {
+  const endpoint = "https://api.example.com/api/siteping";
+
+  const payload = {
+    projectName: "test",
+    type: "bug" as const,
+    message: "x",
+    url: "https://x.com",
+    viewport: "1x1",
+    userAgent: "t",
+    authorName: "A",
+    authorEmail: "a@b.com",
+    annotations: [],
+    clientId: "u",
+  };
+
+  beforeEach(() => {
+    // Fresh Response per call — every test fires several requests.
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response("{}", { status: 200 }));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  /** Fire one request of every kind the widget makes against the endpoint. */
+  async function callEveryMethod(client: ApiClient): Promise<void> {
+    await client.sendFeedback(payload);
+    await client.getFeedbacks("test");
+    await client.resolveFeedback("fb-1", true);
+    await client.deleteFeedback("fb-1");
+    await client.deleteAllFeedbacks("test");
+  }
+
+  function credentialsPerCall(): Array<RequestCredentials | undefined> {
+    return vi.mocked(fetch).mock.calls.map(([, init]) => init?.credentials);
+  }
+
+  it('defaults every request to "same-origin" (the browser default)', async () => {
+    await callEveryMethod(new ApiClient(endpoint, "test"));
+
+    expect(credentialsPerCall()).toEqual(Array(5).fill("same-origin"));
+  });
+
+  it('sends "include" on every request when configured (cross-origin cookie auth)', async () => {
+    await callEveryMethod(new ApiClient(endpoint, "test", { credentials: "include" }));
+
+    expect(credentialsPerCall()).toEqual(Array(5).fill("include"));
+  });
+
+  it('sends "omit" on every request when configured', async () => {
+    await callEveryMethod(new ApiClient(endpoint, "test", { credentials: "omit" }));
+
+    expect(credentialsPerCall()).toEqual(Array(5).fill("omit"));
+  });
+
+  it("keeps the configured mode on every retry attempt after a 5xx", async () => {
+    vi.useFakeTimers();
+    vi.mocked(fetch).mockImplementation(async () => new Response("Server error", { status: 500 }));
+    const client = new ApiClient(endpoint, "test", { credentials: "include" });
+
+    const promise = client.getFeedbacks("test").catch((error: unknown) => error);
+    await drainRetryBackoff();
+    await promise;
+    vi.useRealTimers();
+
+    expect(credentialsPerCall()).toEqual(Array(4).fill("include"));
+  });
+});
+
+// ---------------------------------------------------------------------------
 // flushRetryQueue
 // ---------------------------------------------------------------------------
 
@@ -850,6 +924,39 @@ describe("flushRetryQueue", () => {
     });
     expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
   });
+
+  it.each([
+    { configured: undefined, expected: "same-origin" },
+    { configured: "include", expected: "include" },
+  ] as const)(
+    "replays queued POSTs with credentials $expected (configured: $configured)",
+    async ({ configured, expected }) => {
+      const payload = {
+        projectName: "test",
+        type: "bug" as const,
+        message: "retry with cookies",
+        url: "https://example.com",
+        viewport: "1x1",
+        userAgent: "t",
+        authorName: "A",
+        authorEmail: "a@b.com",
+        annotations: [],
+        clientId: "cookie-1",
+      };
+      vi.mocked(localStorage.getItem).mockReturnValue(
+        JSON.stringify([
+          { endpoint, payload },
+          { endpoint, payload: { ...payload, clientId: "cookie-2" } },
+        ]),
+      );
+      vi.mocked(fetch).mockImplementation(async () => new Response("", { status: 201 }));
+
+      await flushRetryQueue(endpoint, null, configured === undefined ? {} : { credentials: configured });
+
+      const credentials = vi.mocked(fetch).mock.calls.map(([, init]) => init?.credentials);
+      expect(credentials).toEqual([expected, expected]);
+    },
+  );
 
   it("preserves legacy replay behavior when current identity is omitted", async () => {
     const payload1 = {

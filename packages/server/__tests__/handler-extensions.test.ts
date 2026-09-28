@@ -384,6 +384,80 @@ describe("createSitepingHandler — store failures", () => {
   });
 });
 
+/**
+ * Store errors as thrown by an adapter that bundles its own copy of
+ * `@siteping/core` (every published package does): same stable `code`,
+ * a class identity the server's `instanceof` checks do not know.
+ */
+class BundledStoreNotFoundError extends Error {
+  readonly code = "STORE_NOT_FOUND" as const;
+}
+class BundledStoreDuplicateError extends Error {
+  readonly code = "STORE_DUPLICATE" as const;
+}
+
+describe("createSitepingHandler — store errors from another bundled copy of core", () => {
+  it("answers 404 when the record vanishes between the ownership check and the mutation", async () => {
+    class RacingStore extends MemoryStore {
+      override updateFeedback(): Promise<FeedbackRecord> {
+        return Promise.reject(new BundledStoreNotFoundError("Record not found"));
+      }
+      override deleteFeedback(): Promise<void> {
+        return Promise.reject(new BundledStoreNotFoundError("Record not found"));
+      }
+    }
+    const handler = createSitepingHandler({
+      store: new RacingStore(),
+      access: sessionAccess(),
+      logger: silentLogger(),
+    });
+    const feedback = await createFeedback(handler);
+
+    const update = await handler.PATCH(
+      jsonRequest("PATCH", { id: feedback.id, projectName: "test-project", status: "resolved" }, ADMIN),
+    );
+    const removal = await handler.DELETE(
+      jsonRequest("DELETE", { id: feedback.id, projectName: "test-project" }, ADMIN),
+    );
+
+    expect(update.status).toBe(404);
+    expect(removal.status).toBe(404);
+  });
+
+  it("resolves a duplicate-clientId race to the winning record instead of a 500", async () => {
+    const onCreated = vi.fn();
+    class RacingStore extends MemoryStore {
+      /** The concurrent request inserts right after this request's replay lookup missed. */
+      private lookupsBeforeRace = 1;
+      override findByClientId(clientId: string): Promise<FeedbackRecord | null> {
+        if (this.lookupsBeforeRace-- > 0) return Promise.resolve(null);
+        return super.findByClientId(clientId);
+      }
+      override async createFeedback(data: Parameters<MemoryStore["createFeedback"]>[0]): Promise<FeedbackRecord> {
+        if (await super.findByClientId(data.clientId)) throw new BundledStoreDuplicateError("Duplicate record");
+        return super.createFeedback(data);
+      }
+    }
+    const store = new RacingStore();
+    const winner = await store.createFeedback({
+      ...validPayloadNoAnnotations,
+      status: "open",
+      urlPattern: null,
+      annotations: [],
+      screenshotDataUrl: null,
+      screenshotRegion: null,
+      diagnostics: null,
+    });
+    const handler = createSitepingHandler({ store, access: sessionAccess(), hooks: { onCreated } });
+
+    const response = await handler.POST(jsonRequest("POST", validPayloadNoAnnotations, ADMIN));
+
+    expect(response.status).toBe(201);
+    expect(((await response.json()) as FeedbackRecord).id).toBe(winner.id);
+    expect(onCreated).not.toHaveBeenCalled();
+  });
+});
+
 describe("createSitepingIdentityHandler", () => {
   const identityHandler = (enabled?: boolean | ((principal: Reviewer) => boolean)) =>
     createSitepingIdentityHandler<Reviewer>({

@@ -415,7 +415,70 @@ describe("createSitepingHandler — store failures", () => {
 
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ error: "Run the SitePing migrations" });
-    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("create feedback failed"), { error: storeError });
+    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("create feedback failed"), {
+      error: storeError,
+      method: "POST",
+      path: "/api/siteping",
+    });
+  });
+});
+
+describe("createSitepingHandler — access gate failures", () => {
+  const ALLOWED_ORIGIN = "https://client-site.example";
+  const sessionStoreError = new Error("session database unreachable: connection refused at 10.0.0.5:5432");
+  const failingAccess = sessionAccess({ authenticate: () => Promise.reject(sessionStoreError) });
+
+  const withOrigin = (request: Request) => {
+    const headers = new Headers(request.headers);
+    headers.set("Origin", ALLOWED_ORIGIN);
+    return new Request(request, { headers });
+  };
+
+  it("answers a logged, CORS-readable 500 on every method when authenticate throws", async () => {
+    const logger = silentLogger();
+    const handler = createSitepingHandler({
+      store: new MemoryStore(),
+      access: failingAccess,
+      allowedOrigins: [ALLOWED_ORIGIN],
+      logger,
+    });
+    const requests = {
+      GET: listRequest("test-project"),
+      POST: jsonRequest("POST", validPayloadNoAnnotations),
+      PATCH: jsonRequest("PATCH", { id: "x", projectName: "test-project", status: "resolved" }),
+      DELETE: jsonRequest("DELETE", { id: "x", projectName: "test-project" }),
+    } as const;
+
+    for (const method of ["GET", "POST", "PATCH", "DELETE"] as const) {
+      const response = await handler[method](withOrigin(requests[method]));
+
+      expect(response.status).toBe(500);
+      expect(response.headers.get("Access-Control-Allow-Origin")).toBe(ALLOWED_ORIGIN);
+      expect(await response.json()).toEqual({ error: "Internal server error" });
+      expect(logger.error).toHaveBeenLastCalledWith(expect.stringContaining("authenticate request failed"), {
+        error: sessionStoreError,
+        method,
+        path: "/api/siteping",
+      });
+    }
+  });
+
+  it("answers the 500 when canReadAuthorEmail throws after a successful authenticate", async () => {
+    const handler = createSitepingHandler({
+      store: new MemoryStore(),
+      access: sessionAccess({
+        canReadAuthorEmail: () => {
+          throw sessionStoreError;
+        },
+      }),
+      allowedOrigins: [ALLOWED_ORIGIN],
+      logger: silentLogger(),
+    });
+
+    const response = await handler.GET(withOrigin(listRequest("test-project", ADMIN)));
+
+    expect(response.status).toBe(500);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe(ALLOWED_ORIGIN);
   });
 });
 
@@ -516,5 +579,46 @@ describe("createSitepingIdentityHandler", () => {
       disabled,
     );
     expect(await (await identityHandler(false).GET(identityRequest(ADMIN))).json()).toEqual(disabled);
+  });
+
+  it("answers a logged, uncached, CORS-readable 500 when a callback throws", async () => {
+    const allowedOrigin = "https://client-site.example";
+    const sessionStoreError = new Error("session database unreachable: connection refused at 10.0.0.5:5432");
+    const logger = silentLogger();
+    const failingCallbacks = {
+      authenticate: { access: sessionAccess({ authenticate: () => Promise.reject(sessionStoreError) }) },
+      enabled: {
+        access: sessionAccess(),
+        enabled: () => {
+          throw sessionStoreError;
+        },
+      },
+      resolveIdentity: { access: sessionAccess(), resolveIdentity: () => Promise.reject(sessionStoreError) },
+    };
+
+    for (const callbackOptions of Object.values(failingCallbacks)) {
+      const handler = createSitepingIdentityHandler<Reviewer>({
+        projectName: "my-site",
+        resolveIdentity: (principal) => ({ name: "Reviewer", email: principal.email }),
+        allowedOrigins: [allowedOrigin],
+        logger,
+        ...callbackOptions,
+      });
+
+      const response = await handler.GET(
+        new Request(`${ENDPOINT}/identity`, { headers: { Origin: allowedOrigin, "x-session": ADMIN.email } }),
+      );
+
+      expect(response.status).toBe(500);
+      expect(response.headers.get("Access-Control-Allow-Origin")).toBe(allowedOrigin);
+      expect(response.headers.get("Cache-Control")).toBe("no-store");
+      expect(await response.json()).toEqual({ error: "Internal server error" });
+      expect(logger.error).toHaveBeenLastCalledWith(expect.stringContaining("resolve identity failed"), {
+        error: sessionStoreError,
+        method: "GET",
+        path: "/api/siteping/identity",
+      });
+    }
+    expect(logger.error).toHaveBeenCalledTimes(3);
   });
 });

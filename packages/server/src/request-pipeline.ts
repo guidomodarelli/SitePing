@@ -1,7 +1,14 @@
 import type { FeedbackRecord } from "@siteping/core";
-import type { AccessGate, SitepingAuthorizationContext, SitepingHttpMethod, SitepingRequestContext } from "./access.js";
+import type {
+  AccessGate,
+  AuthenticationOutcome,
+  SitepingAuthorizationContext,
+  SitepingHttpMethod,
+  SitepingRequestContext,
+} from "./access.js";
 import { SITEPING_ERROR_MESSAGES } from "./constants/error-messages.js";
 import { buildCorsHeaders, type CorsHeaders, type CorsPolicy, withCors } from "./cors.js";
+import { internalErrorResponse } from "./internal-error.js";
 import type { SitepingLogger } from "./options.js";
 import { formatValidationErrors } from "./validation.js";
 
@@ -71,16 +78,38 @@ export function createRequestPipeline<Principal>({
     return { ok: false, response: json(scope, { errors: formatValidationErrors(parsed.error) }, { status: 400 }) };
   };
 
+  /** Log an unexpected failure and answer 500 (with `describeError`'s hint when it has one). */
+  const internalError = (request: Request, corsHeaders: CorsHeaders, operation: string, failure: unknown): Response =>
+    internalErrorResponse({
+      logger,
+      describeError,
+      source: "createSitepingHandler",
+      operation,
+      request,
+      corsHeaders,
+      failure,
+    });
+
   return {
     json,
     error,
 
+    /**
+     * Run the access gate. A throwing `authenticate` (session store down…)
+     * answers the logged 500 with CORS headers instead of rejecting the
+     * handler, which a browser would only see as an opaque network error.
+     */
     async authenticate(
       request: Request,
       method: SitepingHttpMethod,
     ): Promise<PipelineStep<AuthenticatedRequest<Principal>>> {
       const corsHeaders = buildCorsHeaders(request, corsPolicy);
-      const outcome = await gate.authenticate(request, method);
+      let outcome: AuthenticationOutcome<Principal>;
+      try {
+        outcome = await gate.authenticate(request, method);
+      } catch (failure) {
+        return { ok: false, response: internalError(request, corsHeaders, "authenticate request", failure) };
+      }
       if (!outcome.ok) return { ok: false, response: error({ corsHeaders }, outcome.status, outcome.error) };
       return {
         ok: true,
@@ -120,8 +149,7 @@ export function createRequestPipeline<Principal>({
 
     /** Log an unexpected failure and answer 500 (with `describeError`'s hint when it has one). */
     internalError(scope: AuthenticatedRequest<Principal>, operation: string, failure: unknown): Response {
-      logger.error(`[siteping] createSitepingHandler: ${operation} failed`, { error: failure });
-      return error(scope, 500, describeError?.(failure) ?? SITEPING_ERROR_MESSAGES.internalServerError);
+      return internalError(scope.context.request, scope.corsHeaders, operation, failure);
     },
 
     /** Run a post-write hook; its failure is logged, never surfaced. */

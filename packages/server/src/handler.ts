@@ -3,6 +3,7 @@ import { createApiKeyGate } from "./api-key-access.js";
 import { SITEPING_CONFIGURATION_ERROR_MESSAGES } from "./constants/error-messages.js";
 import { CORS_ALLOWED_METHODS } from "./constants/http.js";
 import { createCorsPolicy, preflightResponse } from "./cors.js";
+import { defaultLogger } from "./internal-error.js";
 import { createFeedbackOperation } from "./operations/create-feedback.js";
 import { deleteFeedbackOperation } from "./operations/delete-feedback.js";
 import { listFeedbacksOperation } from "./operations/list-feedbacks.js";
@@ -13,16 +14,9 @@ import type {
   SitepingHandler,
   SitepingHandlerBaseOptions,
   SitepingHandlerOptions,
-  SitepingLogger,
 } from "./options.js";
 import { createRequestPipeline } from "./request-pipeline.js";
 import type { WebhookConfig } from "./webhooks.js";
-
-const defaultLogger: SitepingLogger = {
-  error(message, context) {
-    console.error(message, context);
-  },
-};
 
 function toWebhookList(webhooks: SitepingHandlerBaseOptions<unknown>["webhooks"]): ReadonlyArray<WebhookConfig> {
   if (!webhooks) return [];

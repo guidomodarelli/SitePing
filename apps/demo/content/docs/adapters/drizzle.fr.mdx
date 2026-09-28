@@ -141,6 +141,27 @@ Les deux factories acceptent les mêmes options :
 
 **Gros projets.** Avec un `delete`, `deleteAllFeedbacks` doit relire les URLs supprimées : il supprime donc le projet par tranches de 500 lignes — chaque tranche de façon atomique, ses captures nettoyées avant la suivante — et aucune réponse du driver ni liste en mémoire ne grossit avec le projet. Si une tranche échoue, l'appel lève `StorePersistenceError` : les tranches précédentes restent supprimées et nettoyées, et relancer l'appel supprime le reste. Sans `delete`, tout le projet part en une seule instruction atomique.
 
+**Garder les captures dans votre base.** `@siteping/screenshot-storage/drizzle-pg` et `/drizzle-libsql` stockent les octets de l'image dans une table dédiée (`bytea` sur PostgreSQL, `blob` sur SQLite), à côté des feedbacks. Exportez la table depuis votre schéma pour que `drizzle-kit` la migre, puis servez les images depuis votre app avec `createScreenshotServeHandler` :
+
+```ts
+// db/schema.ts
+import { createSitepingScreenshotsPgTable } from "@siteping/screenshot-storage/drizzle-pg";
+export const sitepingScreenshots = createSitepingScreenshotsPgTable(); // "siteping_screenshots"
+
+// serveur
+import { createScreenshotStorage } from "@siteping/screenshot-storage";
+import { createPgScreenshotObjectStore } from "@siteping/screenshot-storage/drizzle-pg";
+
+const objectStore = createPgScreenshotObjectStore(db, {
+  publicBaseUrl: "https://app.example.com/api/siteping/screenshots",
+  table: sitepingScreenshots,
+});
+const store = createPgSitepingStore(db, { screenshotStorage: createScreenshotStorage(objectStore) });
+// app/api/siteping/screenshots/[key]/route.ts : export const { GET } = createScreenshotServeHandler(objectStore);
+```
+
+La table des captures est indépendante des `tables` du store — renommez-la avec `createSitepingScreenshotsPgTable("mon_nom")` et passez-la en `table`. Sur Turso/libSQL, utilisez `createSitepingScreenshotsSqliteTable` et `createLibSQLScreenshotObjectStore`.
+
 ## Garanties de concurrence
 
 - **Les soumissions en double sont atomiques.** Le store implémente `createFeedbackIfAbsent` : l'index unique sur `client_id` et `ON CONFLICT DO NOTHING` arbitrent les soumissions concurrentes d'un même feedback, entre instances du store et entre processus. Un seul appelant obtient `created: true`, donc les hooks et webhooks de création ne partent qu'une fois.

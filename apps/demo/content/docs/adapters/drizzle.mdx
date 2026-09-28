@@ -141,6 +141,27 @@ Both factories take the same options:
 
 **Large projects.** With a `delete` hook, `deleteAllFeedbacks` needs the removed URLs back, so it deletes the project in chunks of 500 rows — each chunk atomically, its screenshots cleaned up before the next — and no driver response or in-memory list grows with the project. If a chunk fails, the call throws `StorePersistenceError`: the earlier chunks stay deleted and cleaned up, and retrying the call removes the rest. Without a `delete` hook the whole project goes in one atomic statement.
 
+**Keeping screenshots in your database.** `@siteping/screenshot-storage/drizzle-pg` and `/drizzle-libsql` store the image bytes in a table of their own (`bytea` on PostgreSQL, `blob` on SQLite), next to the feedbacks. Export the table from your schema so `drizzle-kit` migrates it, then serve the images from your app with `createScreenshotServeHandler`:
+
+```ts
+// db/schema.ts
+import { createSitepingScreenshotsPgTable } from "@siteping/screenshot-storage/drizzle-pg";
+export const sitepingScreenshots = createSitepingScreenshotsPgTable(); // "siteping_screenshots"
+
+// server
+import { createScreenshotStorage } from "@siteping/screenshot-storage";
+import { createPgScreenshotObjectStore } from "@siteping/screenshot-storage/drizzle-pg";
+
+const objectStore = createPgScreenshotObjectStore(db, {
+  publicBaseUrl: "https://app.example.com/api/siteping/screenshots",
+  table: sitepingScreenshots,
+});
+const store = createPgSitepingStore(db, { screenshotStorage: createScreenshotStorage(objectStore) });
+// app/api/siteping/screenshots/[key]/route.ts: export const { GET } = createScreenshotServeHandler(objectStore);
+```
+
+The screenshots table is independent from the store's `tables` — rename it with `createSitepingScreenshotsPgTable("my_name")` and pass it as `table`. On Turso/libSQL use `createSitepingScreenshotsSqliteTable` and `createLibSQLScreenshotObjectStore`.
+
 ## Concurrency guarantees
 
 - **Duplicate submissions are atomic.** The store implements `createFeedbackIfAbsent`: the unique `client_id` index plus `ON CONFLICT DO NOTHING` arbitrate concurrent submissions of the same feedback, across store instances and processes. Exactly one caller gets `created: true`, so creation hooks and webhooks fire once.

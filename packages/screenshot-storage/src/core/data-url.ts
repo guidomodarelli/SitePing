@@ -1,6 +1,9 @@
 import {
   BASE64_BYTES_PER_GROUP,
   BASE64_CHARACTERS_PER_GROUP,
+  BASE64_LINE_BREAK_LENGTH,
+  BASE64_LINE_LENGTH,
+  DATA_URL_HEADER_MAX_LENGTH,
   IMAGE_DATA_URL_PATTERN,
 } from "../constants/screenshots.js";
 
@@ -45,6 +48,20 @@ function maxBase64Length(maxBytes: number): number {
   return Math.ceil(maxBytes / BASE64_BYTES_PER_GROUP) * BASE64_CHARACTERS_PER_GROUP;
 }
 
+/**
+ * Longest raw data URL worth parsing for `maxBytes`: the header, the longest
+ * accepted payload, and one line break per MIME-wrapped base64 line. Checked
+ * first, so a payload padded with whitespace is refused before the pattern
+ * match and the whitespace removal scan (and copy) all of it.
+ *
+ * @param maxBytes - Validated `maxBytes` limit.
+ */
+function maxDataUrlLength(maxBytes: number): number {
+  const payloadLength = maxBase64Length(maxBytes);
+  const lineBreaksLength = Math.ceil(payloadLength / BASE64_LINE_LENGTH) * BASE64_LINE_BREAK_LENGTH;
+  return DATA_URL_HEADER_MAX_LENGTH + payloadLength + lineBreaksLength;
+}
+
 /** Decode base64 with Web APIs only (runs on Node, Bun, Deno and edge runtimes). */
 function decodeBase64(payload: string): Uint8Array<ArrayBuffer> {
   const binary = atob(payload);
@@ -55,7 +72,9 @@ function decodeBase64(payload: string): Uint8Array<ArrayBuffer> {
 
 /**
  * Parse and validate a base64 image data URL against the allowed types and
- * size. The payload length is bounded before decoding, the decoded size after.
+ * size. The raw data URL length is bounded before parsing (so whitespace cannot
+ * inflate the work done before `maxBytes` applies), the payload length before
+ * decoding, the decoded size after.
  *
  * @param dataUrl - The widget's screenshot data URL (untrusted input).
  * @param limits - Allowed content types and `maxBytes`, validated by `createScreenshotStorage`.
@@ -65,6 +84,11 @@ export function decodeImageDataUrl(
   dataUrl: string,
   limits: { allowedContentTypes: readonly string[]; maxBytes: number },
 ): DecodedImage {
+  if (dataUrl.length > maxDataUrlLength(limits.maxBytes)) {
+    throw new InvalidScreenshotError(
+      `data URL of ${dataUrl.length} characters exceeds the ${limits.maxBytes}-byte limit`,
+    );
+  }
   const match = IMAGE_DATA_URL_PATTERN.exec(dataUrl);
   if (!match?.[1] || !match[2]) throw new InvalidScreenshotError("not a base64 image data URL");
   const contentType = match[1].toLowerCase();

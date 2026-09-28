@@ -24,6 +24,21 @@ export const BASE64_BYTES_PER_GROUP = 3;
 /** Characters per base64 group (padding included). */
 export const BASE64_CHARACTERS_PER_GROUP = 4;
 
+/**
+ * Longest `data:<type>;base64,` header budgeted before the payload when bounding
+ * a raw data URL — generous for any image subtype a browser produces.
+ */
+export const DATA_URL_HEADER_MAX_LENGTH = 128;
+
+/**
+ * Characters per line of a MIME-wrapped base64 payload (RFC 2045) — the most
+ * whitespace a legitimate data URL carries is one line break per such line.
+ */
+export const BASE64_LINE_LENGTH = 76;
+
+/** Characters of the line break (CR LF) budgeted after each wrapped base64 line. */
+export const BASE64_LINE_BREAK_LENGTH = 2;
+
 /** Base64 image data URL: `data:<type>;base64,<payload>`. */
 export const IMAGE_DATA_URL_PATTERN = /^data:(image\/[a-z0-9.+-]+);base64,([a-z0-9+/=\s]+)$/i;
 

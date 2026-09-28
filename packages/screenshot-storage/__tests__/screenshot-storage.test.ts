@@ -241,6 +241,20 @@ describe("createScreenshotStorage — validation", () => {
     await expect(storage().upload(oversizedUndecodable, UPLOAD_CONTEXT)).rejects.toThrow(/exceeds the 200-byte limit/);
   });
 
+  it("rejects a tiny image padded with whitespace by the raw data URL length, before parsing it", async () => {
+    const whitespacePadded = `data:image/jpeg;base64,${" ".repeat(100_000)}${btoa("x")}`;
+    await expect(storage().upload(whitespacePadded, UPLOAD_CONTEXT)).rejects.toThrow(
+      /data URL of 100027 characters exceeds the 200-byte limit/,
+    );
+  });
+
+  it("accepts an image of exactly maxBytes with its base64 wrapped in MIME lines", async () => {
+    const wrappedBase64 = btoa("x".repeat(200)).replace(/.{76}/g, "$&\r\n");
+    await expect(storage().upload(`data:image/jpeg;base64,${wrappedBase64}`, UPLOAD_CONTEXT)).resolves.toHaveProperty(
+      "url",
+    );
+  });
+
   it("accepts an image of exactly maxBytes", async () => {
     const exactSize = `data:image/jpeg;base64,${btoa("x".repeat(200))}`;
     await expect(storage().upload(exactSize, UPLOAD_CONTEXT)).resolves.toHaveProperty("url");

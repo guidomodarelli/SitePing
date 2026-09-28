@@ -53,6 +53,7 @@ Monorepo with bun workspaces + Turborepo. Libraries live in `packages/`, the web
 | `@siteping/dashboard` | published | Browser (React) | Linear-style triage inbox (`<SitepingInbox />` + headless `useSitepingInbox()`) |
 | `@siteping/adapter-prisma` | published | Node | Prisma database adapter |
 | `@siteping/adapter-drizzle` | published | Node | Drizzle ORM store (PostgreSQL, Turso/libSQL) |
+| `@siteping/screenshot-storage` | published | Any (`/filesystem`: Node) | Screenshot storage backends for stores: Cloudflare Images, S3-compatible, filesystem, memory, or a custom `ScreenshotObjectStore` |
 | `@siteping/adapter-memory` | published | Any | In-memory adapter (testing, demos, serverless) |
 | `@siteping/adapter-localstorage` | published | Browser | localStorage adapter (demos, prototyping) |
 | `@siteping/adapter-kit` | published | Any | Everything third-party adapter authors need: store contract, helpers, `createCollectionStore`, and the conformance suite (`/testing`) |

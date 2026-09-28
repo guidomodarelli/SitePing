@@ -16,7 +16,7 @@ import {
   StorePersistenceError,
 } from "@siteping/core";
 import { DRIZZLE_STORE_MESSAGE_PREFIX, type DrizzleStoreMutation } from "../constants/errors.js";
-import { INLINE_SCREENSHOT_URL_PREFIX } from "../constants/screenshots.js";
+import { INLINE_SCREENSHOT_URL_PREFIX, SCREENSHOT_REFERENCE_LOOKUP_BATCH_SIZE } from "../constants/screenshots.js";
 import type {
   AnnotationRow,
   DeleteFeedbacksOptions,
@@ -163,7 +163,9 @@ export class DrizzleSitepingStore implements DrizzleStore {
         this.gateway.insertFeedback(row, annotations),
       );
     } catch (error) {
-      await this.discardUnreferencedScreenshot(screenshotUrl, data.clientId);
+      // A failure reported after the commit (e.g. a dropped connection) may
+      // have stored this attempt's row: the reference check keeps its screenshot.
+      await this.discardScreenshots([screenshotUrl], { clientId: data.clientId });
       throw error;
     }
     if (inserted) {
@@ -172,15 +174,15 @@ export class DrizzleSitepingStore implements DrizzleStore {
 
     // Lost a race against the same clientId: the stored row keeps its own
     // screenshot, uploaded under its own id, so the one just uploaded is an
-    // orphan. The URL check only guards storages that ignore the id (e.g. a
-    // content-addressed key), where both uploads can share the winner's URL.
+    // orphan. The reference check only matters for storages that ignore the id
+    // (e.g. a content-addressed key), where both uploads can share the winner's URL.
     const winner = await this.findByClientId(data.clientId);
     if (!winner) {
       throw new Error(
         `[siteping] DrizzleStore.createFeedbackIfAbsent: clientId ${data.clientId} conflicted but no row was found`,
       );
     }
-    if (screenshotUrl !== winner.screenshotUrl) await this.discardScreenshots([screenshotUrl]);
+    await this.discardScreenshots([screenshotUrl], { clientId: data.clientId });
     return { feedback: winner, created: false };
   }
 
@@ -309,50 +311,67 @@ export class DrizzleSitepingStore implements DrizzleStore {
   }
 
   /**
-   * After a failed insert, drop the screenshot uploaded for it — but only
-   * once the database confirms no stored row points at it: a failure
-   * reported after the commit (e.g. a dropped connection) may have stored
-   * this attempt's row. A row stored by a racing attempt holds its own
-   * screenshot, so this one is still an orphan. When the check itself fails,
-   * the object is kept (an orphan is acceptable, a dangling row is not).
+   * Best-effort cleanup through `ScreenshotStorage.delete` of the screenshots
+   * no stored feedback references any more. A storage may hand one URL to
+   * several feedbacks (content-addressed or id-ignoring keys), so each URL is
+   * removed only once the database confirms no row — of any project or
+   * `clientId` — still points at it; inline data URLs were never uploaded and
+   * are skipped. When the check itself fails, every object is kept (an orphan
+   * is acceptable, a row pointing at a deleted screenshot is not). A row that
+   * starts referencing a URL between the check and the delete is not covered:
+   * storages that share URLs across feedbacks accept that window.
+   *
+   * Failures are logged, never thrown. Each delete runs inside its own
+   * promise, so a hook that throws synchronously is settled like a rejection:
+   * it neither fails an already committed delete nor skips the remaining objects.
+   *
+   * @param urls - `screenshotUrl` values of removed rows or of a discarded upload.
+   * @param context - Identifiers added to the log lines (never payload data).
    */
-  private async discardUnreferencedScreenshot(screenshotUrl: string | null, clientId: string): Promise<void> {
-    if (!isUploadedScreenshotUrl(screenshotUrl)) return;
+  private async discardScreenshots(
+    urls: ReadonlyArray<string | null | undefined>,
+    context: Record<string, string> = {},
+  ): Promise<void> {
+    const remove = this.screenshotStorage?.delete?.bind(this.screenshotStorage);
+    if (!remove) return;
+    const candidates = [...new Set(urls.filter(isUploadedScreenshotUrl))];
+    if (candidates.length === 0) return;
+
+    let referenced: Set<string>;
     try {
-      const stored = await this.gateway.findByClientId(clientId);
-      if (stored?.screenshotUrl === screenshotUrl) return;
+      referenced = await this.findReferencedScreenshotUrls(candidates);
     } catch (lookupError) {
       this.logger.warn(
-        `${DRIZZLE_STORE_MESSAGE_PREFIX}: insert failed and its row could not be checked — screenshot kept`,
-        {
-          clientId,
-          screenshotUrl,
-          error: lookupError,
-        },
+        `${DRIZZLE_STORE_MESSAGE_PREFIX}: screenshot references could not be checked — screenshots kept`,
+        { ...context, screenshotUrls: candidates, error: lookupError },
       );
       return;
     }
-    await this.discardScreenshots([screenshotUrl]);
-  }
-
-  /**
-   * Best-effort cleanup through `ScreenshotStorage.delete`; failures are
-   * logged, never thrown. Each call runs inside its own promise, so a hook
-   * that throws synchronously is settled like a rejection: it neither fails
-   * an already committed delete nor skips the remaining objects.
-   */
-  private async discardScreenshots(urls: ReadonlyArray<string | null | undefined>): Promise<void> {
-    const remove = this.screenshotStorage?.delete?.bind(this.screenshotStorage);
-    if (!remove) return;
-    const uploaded = urls.filter(isUploadedScreenshotUrl);
-    const results = await Promise.allSettled(uploaded.map(async (url) => remove(url)));
+    const unreferenced = candidates.filter((url) => !referenced.has(url));
+    const results = await Promise.allSettled(unreferenced.map(async (url) => remove(url)));
     results.forEach((result, index) => {
       if (result.status === "rejected") {
-        this.logger.warn("[siteping] DrizzleStore: screenshotStorage.delete failed — object left in place", {
-          screenshotUrl: uploaded[index],
+        this.logger.warn(`${DRIZZLE_STORE_MESSAGE_PREFIX}: screenshotStorage.delete failed — object left in place`, {
+          ...context,
+          screenshotUrl: unreferenced[index],
           error: result.reason,
         });
       }
     });
+  }
+
+  /**
+   * The URLs among `screenshotUrls` that a stored row still references, looked
+   * up in batches of {@link SCREENSHOT_REFERENCE_LOOKUP_BATCH_SIZE}.
+   *
+   * @param screenshotUrls - Distinct uploaded screenshot URLs.
+   */
+  private async findReferencedScreenshotUrls(screenshotUrls: readonly string[]): Promise<Set<string>> {
+    const referenced = new Set<string>();
+    for (let start = 0; start < screenshotUrls.length; start += SCREENSHOT_REFERENCE_LOOKUP_BATCH_SIZE) {
+      const batch = screenshotUrls.slice(start, start + SCREENSHOT_REFERENCE_LOOKUP_BATCH_SIZE);
+      for (const url of await this.gateway.findReferencedScreenshotUrls(batch)) referenced.add(url);
+    }
+    return referenced;
   }
 }

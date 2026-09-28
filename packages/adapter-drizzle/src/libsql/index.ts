@@ -146,6 +146,13 @@ function createLibSQLGateway(
       ]);
       return toDeletedFeedbacks(deleted);
     },
+    async findReferencedScreenshotUrls(screenshotUrls) {
+      const rows = await db
+        .selectDistinct({ screenshotUrl: sitepingFeedbacks.screenshotUrl })
+        .from(sitepingFeedbacks)
+        .where(inArray(sitepingFeedbacks.screenshotUrl, [...screenshotUrls]));
+      return new Set(rows.flatMap((row) => (row.screenshotUrl === null ? [] : [row.screenshotUrl])));
+    },
   };
 }
 

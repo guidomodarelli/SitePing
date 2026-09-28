@@ -184,6 +184,18 @@ const dialects: DialectUnderTest[] = [
   },
 ];
 
+/** URL a content-addressed storage returns for every upload of the same screenshot. */
+const SHARED_SCREENSHOT_URL = "https://cdn.example.com/content-addressed.jpg";
+
+/** A storage that ignores the feedback id and returns one URL for every upload, as content-addressed keys do. */
+function sharedUrlStorage() {
+  return recordingStorage({
+    async upload() {
+      return { url: SHARED_SCREENSHOT_URL };
+    },
+  });
+}
+
 function recordingStorage(overrides: Partial<ScreenshotStorage> = {}) {
   const uploads: Array<{ feedbackId: string; mimeType: string }> = [];
   const deletions: string[] = [];
@@ -341,11 +353,7 @@ for (const dialect of dialects) {
     });
 
     it("keeps the winner's screenshot when racing uploads share one URL because the storage ignores the id", async () => {
-      const { storage, deletions } = recordingStorage({
-        async upload() {
-          return { url: "https://cdn.example.com/content-addressed.jpg" };
-        },
-      });
+      const { storage, deletions } = sharedUrlStorage();
       const stores = [1, 2, 3].map(() => database.createStore({ screenshotStorage: storage, logger }));
       const input = feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL });
 
@@ -420,6 +428,34 @@ for (const dialect of dialects) {
 
       expect(deletions).toEqual([withScreenshot.screenshotUrl]);
       expect((await store.getFeedbacks({ projectName: "other-site" })).total).toBe(1);
+    });
+
+    it("keeps a screenshot shared by several feedbacks until the last one referencing it is deleted", async () => {
+      const { storage, deletions } = sharedUrlStorage();
+      const store = database.createStore({ screenshotStorage: storage, logger });
+      const first = await store.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL }));
+      const second = await store.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL }));
+      expect([first.screenshotUrl, second.screenshotUrl]).toEqual([SHARED_SCREENSHOT_URL, SHARED_SCREENSHOT_URL]);
+
+      await store.deleteFeedback(first.id);
+      expect(deletions).toEqual([]);
+
+      await store.deleteFeedback(second.id);
+      expect(deletions).toEqual([SHARED_SCREENSHOT_URL]);
+    });
+
+    it("keeps a screenshot another project references on deleteAllFeedbacks, and deletes it once when the last project goes", async () => {
+      const { storage, deletions } = sharedUrlStorage();
+      const store = database.createStore({ screenshotStorage: storage, logger });
+      await store.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL }));
+      await store.createFeedback(feedbackInput({ projectName: "other-site", screenshotDataUrl: SCREENSHOT_DATA_URL }));
+      await store.createFeedback(feedbackInput({ projectName: "other-site", screenshotDataUrl: SCREENSHOT_DATA_URL }));
+
+      await store.deleteAllFeedbacks("site");
+      expect(deletions).toEqual([]);
+
+      await store.deleteAllFeedbacks("other-site");
+      expect(deletions).toEqual([SHARED_SCREENSHOT_URL]);
     });
 
     it("completes deletes and keeps cleaning up when the delete hook throws synchronously", async () => {
@@ -731,6 +767,22 @@ for (const dialect of dialects) {
         expect(await database.countAnnotations()).toBe(annotationsBefore);
         expect((await store.getFeedbacks({ projectName: "site" })).total).toBe(1);
         expect(deletions).toHaveLength(1);
+      });
+
+      it("keeps the screenshot of a failed insert when another feedback references the same URL", async () => {
+        const { storage, deletions } = sharedUrlStorage();
+        const store = database.createStore({ screenshotStorage: storage, logger });
+        const stored = await store.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL }));
+        restoreWrites = await database.rejectFeedbackWrites();
+
+        const failure = await store.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL })).then(
+          () => null,
+          (error: unknown) => error,
+        );
+
+        expect(isStorePersistence(failure)).toBe(true);
+        expect(stored.screenshotUrl).toBe(SHARED_SCREENSHOT_URL);
+        expect(deletions).toEqual([]);
       });
     });
   });

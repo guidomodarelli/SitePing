@@ -568,6 +568,37 @@ describe("createScreenshotStorage — uploads committed after a timeout", () => 
     });
   });
 
+  it("logs a throwing scheduler and still runs the other attempts, the hook and reports the upload error", async () => {
+    const logger = silentLogger();
+    const scheduled: { task: () => void; delayMs: number }[] = [];
+    const uncertainKeys: string[] = [];
+    const { objectStore, storedKeys } = createLateCommittingObjectStore(0);
+    const storage = createScreenshotStorage(objectStore, {
+      uncertainUploadReclaimDelaysMs: [10, 20],
+      scheduleReclaim: (task, delayMs) => {
+        if (delayMs === 10) throw new Error("scheduler unavailable");
+        scheduled.push({ task, delayMs });
+      },
+      onUncertainUpload: (key) => {
+        uncertainKeys.push(key);
+      },
+      logger,
+    });
+
+    await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(ObjectStoreRequestError);
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("could not schedule a delayed reclaim"), {
+      key: uncertainKeys[0],
+      delayMs: 10,
+      error: expect.objectContaining({ message: "scheduler unavailable" }),
+    });
+    expect(uncertainKeys).toHaveLength(1);
+    expect(scheduled.map(({ delayMs }) => delayMs)).toEqual([20]);
+
+    await new Promise((resolve) => setTimeout(resolve, 5)); // let the late commit land
+    scheduled[0]?.task();
+    await vi.waitFor(() => expect(storedKeys()).toEqual([]));
+  });
+
   it("refuses reclaim delays that are not finite, non-negative milliseconds", () => {
     const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
     expect(() => createScreenshotStorage(objectStore, { uncertainUploadReclaimDelaysMs: [-1] })).toThrow(

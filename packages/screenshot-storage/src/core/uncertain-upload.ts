@@ -53,8 +53,9 @@ export function assertReclaimDelays(delaysMs: readonly number[]): void {
  * `reclaim(key)` removes the key right away, schedules one more `remove` per
  * configured delay (so an upload committed after the first removal is still
  * deleted, as long as the process lives), and hands the key to the host's
- * `onUncertainUpload` hook for durable handling. It never throws: failures
- * are logged, and the caller rethrows the original upload error.
+ * `onUncertainUpload` hook for durable handling. It never throws: a failed
+ * removal, a scheduler that throws and a failing hook are each logged without
+ * skipping the remaining steps, and the caller rethrows the original upload error.
  *
  * Only a backend-side lifecycle rule (e.g. S3/R2 expiration under the key
  * prefix) or a durable job fed by the hook fully guarantees no orphan
@@ -81,7 +82,17 @@ export function createUncertainUploadReclaimer({
   return async (key) => {
     await removeLogged(key, "immediate");
     for (const delayMs of delaysMs) {
-      schedule(() => void removeLogged(key, `after ${delayMs} ms`), delayMs);
+      // A failing injected scheduler loses this attempt only: the other
+      // attempts, the hook and the caller's original upload error still follow.
+      try {
+        schedule(() => void removeLogged(key, `after ${delayMs} ms`), delayMs);
+      } catch (scheduleError) {
+        logger.warn(`[siteping] ${objectStore.name}: could not schedule a delayed reclaim of an uncertain upload`, {
+          key,
+          delayMs,
+          error: scheduleError,
+        });
+      }
     }
     if (!onUncertainUpload) return;
     try {

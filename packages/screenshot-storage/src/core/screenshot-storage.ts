@@ -49,7 +49,11 @@ export interface ScreenshotStorageOptions {
    * 5 s, 30 s and 2 min; `[]` keeps only the immediate removal.
    */
   uncertainUploadReclaimDelaysMs?: readonly number[];
-  /** Runs the delayed reclaim attempts. Defaults to a `setTimeout` that does not keep Node.js alive. */
+  /**
+   * Runs the delayed reclaim attempts. Defaults to a `setTimeout` that does not
+   * keep Node.js alive. If it throws, that attempt is logged and skipped; the
+   * other attempts, `onUncertainUpload` and the upload error still follow.
+   */
   scheduleReclaim?: ReclaimScheduler;
   /**
    * Receives the key of every upload whose outcome is unknown: enqueue it in

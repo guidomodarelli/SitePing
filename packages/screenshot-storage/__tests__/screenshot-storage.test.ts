@@ -502,6 +502,57 @@ describe("createScreenshotServeHandler", () => {
   });
 });
 
+describe("createS3ObjectStore — credentials without s3:ListBucket", () => {
+  const credentials = { accessKeyId: "AKIDEXAMPLE", secretAccessKey: "s3-secret" };
+  const unknownKey = `siteping-${"b".repeat(32)}.jpg`;
+
+  function openS3WithoutListBucket(
+    storeOptions: { treatAccessDeniedAsMissing?: boolean; secretAccessKey?: string } = {},
+  ) {
+    const fake = createFakeS3({ bucket: "screens", region: "auto", ...credentials, canListBucket: false });
+    return createS3ObjectStore({
+      endpoint: "https://account.r2.cloudflarestorage.com",
+      bucket: "screens",
+      publicBaseUrl: PUBLIC_BASE_URL,
+      ...credentials,
+      ...storeOptions,
+      fetch: fake.fetch,
+    });
+  }
+
+  it("reads a 403 AccessDenied as a missing object when treatAccessDeniedAsMissing is set", async () => {
+    const objectStore = openS3WithoutListBucket({ treatAccessDeniedAsMissing: true });
+    const { url } = await createScreenshotStorage(objectStore).upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
+    const handler = createScreenshotServeHandler(objectStore);
+
+    expect(await objectStore.get?.(unknownKey)).toBeNull();
+    expect((await handler.GET(new Request(`${PUBLIC_BASE_URL}/${unknownKey}`))).status).toBe(404);
+    expect((await handler.GET(new Request(url))).status).toBe(200);
+  });
+
+  it("keeps failing on a 403 AccessDenied by default", async () => {
+    const objectStore = openS3WithoutListBucket();
+
+    const failure = await objectStore.get?.(unknownKey).catch((error: unknown) => error);
+
+    expect(isObjectStoreRequestError(failure)).toBe(true);
+    expect((failure as ObjectStoreRequestError).status).toBe(403);
+    await expect(
+      createScreenshotServeHandler(objectStore).GET(new Request(`${PUBLIC_BASE_URL}/${unknownKey}`)),
+    ).rejects.toSatisfy(isObjectStoreRequestError);
+  });
+
+  it("still fails on a credential error such as SignatureDoesNotMatch, even with the option set", async () => {
+    const objectStore = openS3WithoutListBucket({ treatAccessDeniedAsMissing: true, secretAccessKey: "wrong" });
+
+    const failure = await objectStore.get?.(unknownKey).catch((error: unknown) => error);
+
+    expect(isObjectStoreRequestError(failure)).toBe(true);
+    expect((failure as ObjectStoreRequestError).status).toBe(403);
+    expect((failure as ObjectStoreRequestError).cause).toContain("SignatureDoesNotMatch");
+  });
+});
+
 /**
  * A memory backend whose `put` times out while the upload is still in flight:
  * the caller gets an unknown outcome at once, and the object is committed

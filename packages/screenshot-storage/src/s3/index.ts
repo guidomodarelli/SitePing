@@ -1,6 +1,6 @@
-import { HTTP_STATUS_NOT_FOUND } from "../constants/http.js";
-import { S3_DEFAULT_REGION } from "../constants/s3.js";
-import { sendBackendRequest } from "../core/http.js";
+import { HTTP_STATUS_FORBIDDEN, HTTP_STATUS_NOT_FOUND } from "../constants/http.js";
+import { S3_ACCESS_DENIED_ERROR_CODE, S3_DEFAULT_REGION, S3_ERROR_CODE_PATTERN } from "../constants/s3.js";
+import { ObjectStoreRequestError, sendBackendRequest } from "../core/http.js";
 import type { ScreenshotObjectStore } from "../core/object-store.js";
 import { createPublicUrlMapping } from "../core/public-url.js";
 import { trimTrailingSlashes } from "../core/trailing-slashes.js";
@@ -29,6 +29,28 @@ export interface S3ObjectStoreOptions extends SigV4Credentials {
    * skewed, since S3 rejects signatures more than a few minutes off.
    */
   now?: () => Date;
+  /**
+   * Read a `403 AccessDenied` on GET as a missing object. Enable it when the
+   * credentials have `s3:GetObject` but not `s3:ListBucket` (a common
+   * least-privilege IAM policy): S3 then answers a missing key with
+   * `403 AccessDenied` instead of `404 NoSuchKey`, so the serve handler would
+   * return `500` instead of `404`. Only the `AccessDenied` code is mapped —
+   * credential failures (`SignatureDoesNotMatch`, `InvalidAccessKeyId`,
+   * `ExpiredToken`, `RequestTimeTooSkewed`…) still throw. Trade-off: a policy
+   * that also lacks `s3:GetObject` then shows as `404` rather than failing.
+   * Deletes need no mapping (S3 answers `204` for a missing key). Defaults to `false`.
+   */
+  treatAccessDeniedAsMissing?: boolean;
+}
+
+/**
+ * Whether an S3 error body carries the `AccessDenied` code — a permission
+ * denial, as opposed to a credential or signing failure.
+ *
+ * @param errorBody - Raw XML error body of the response.
+ */
+function isAccessDeniedError(errorBody: string): boolean {
+  return S3_ERROR_CODE_PATTERN.exec(errorBody)?.[1] === S3_ACCESS_DENIED_ERROR_CODE;
 }
 
 /**
@@ -48,9 +70,14 @@ export function createS3ObjectStore({
   fetch = globalThis.fetch,
   timeoutMs,
   now = () => new Date(),
+  treatAccessDeniedAsMissing = false,
 }: S3ObjectStoreOptions): ScreenshotObjectStore {
   const credentials: SigV4Credentials = { accessKeyId, secretAccessKey, ...(sessionToken ? { sessionToken } : {}) };
   const endpointBase = trimTrailingSlashes(endpoint);
+  // Without ListBucket, S3 hides a missing key behind 403 — see treatAccessDeniedAsMissing.
+  const getMissingStatuses = treatAccessDeniedAsMissing
+    ? [HTTP_STATUS_NOT_FOUND, HTTP_STATUS_FORBIDDEN]
+    : [HTTP_STATUS_NOT_FOUND];
   const objectUrl = (key: string) => new URL(`${endpointBase}/${encodeRfc3986(bucket)}/${encodeRfc3986(key)}`);
 
   const send = async (
@@ -96,8 +123,13 @@ export function createS3ObjectStore({
 
     // Lets a private bucket be served through createScreenshotServeHandler.
     async get(key) {
-      const response = await send("GET", key, { acceptStatuses: [HTTP_STATUS_NOT_FOUND] });
+      const response = await send("GET", key, { acceptStatuses: getMissingStatuses });
       if (response.status === HTTP_STATUS_NOT_FOUND) return null;
+      if (response.status === HTTP_STATUS_FORBIDDEN) {
+        const errorBody = await response.text();
+        if (isAccessDeniedError(errorBody)) return null;
+        throw new ObjectStoreRequestError("S3", "GET", objectUrl(key).pathname, response.status, { cause: errorBody });
+      }
       return {
         bytes: new Uint8Array(await response.arrayBuffer()),
         contentType: response.headers.get("content-type") ?? "application/octet-stream",

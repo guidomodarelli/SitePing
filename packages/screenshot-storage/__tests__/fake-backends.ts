@@ -89,17 +89,22 @@ export function createFakeCloudflareImages({
  * Fake S3 that authenticates every request by re-signing it with AWS's own
  * `@smithy/signature-v4` and comparing signatures, as S3 does — so a signing
  * bug surfaces as a 403 exactly like against the real service.
+ *
+ * `canListBucket: false` models credentials without `s3:ListBucket`: S3 then
+ * answers a GET of a missing key with `403 AccessDenied` instead of `404 NoSuchKey`.
  */
 export function createFakeS3({
   bucket,
   region,
   accessKeyId,
   secretAccessKey,
+  canListBucket = true,
 }: {
   bucket: string;
   region: string;
   accessKeyId: string;
   secretAccessKey: string;
+  canListBucket?: boolean;
 }): FakeBackend {
   const objects: FakeBackend["objects"] = new Map();
   const requests: RecordedRequest[] = [];
@@ -158,6 +163,11 @@ export function createFakeS3({
     if (failure) return new Response(null, { status: failure.status });
     if (request.method === "GET") {
       const object = objects.get(key);
+      if (!object && !canListBucket) {
+        return new Response("<Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>", {
+          status: 403,
+        });
+      }
       if (!object) return new Response("<Error><Code>NoSuchKey</Code></Error>", { status: 404 });
       return new Response(object.bytes as Uint8Array<ArrayBuffer>, { headers: { "content-type": object.contentType } });
     }

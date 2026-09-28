@@ -31,6 +31,8 @@ An upload that times out may still be committed by the backend after the immedia
 
 Match errors with `isScreenshotUploadRejected(error)` and `isObjectStoreRequestError(error)` (stable `code` checks) rather than `instanceof`: in CommonJS each entry point (`@siteping/screenshot-storage`, `/s3`…) bundles its own copy of the error classes.
 
+S3 with least-privilege credentials: when the IAM policy grants `s3:GetObject` (plus `s3:PutObject` and `s3:DeleteObject`) but not `s3:ListBucket`, S3 answers a missing key with `403 AccessDenied` instead of `404`. Pass `treatAccessDeniedAsMissing: true` to `createS3ObjectStore` so `get` reads it as absent and the serve handler answers `404` rather than `500`. Only the `AccessDenied` code is mapped: credential failures (`SignatureDoesNotMatch`, `InvalidAccessKeyId`, `ExpiredToken`, `RequestTimeTooSkewed`…) still throw. The option is off by default because it also turns a policy missing `s3:GetObject` into `404`s; grant `s3:ListBucket` instead when you can.
+
 Backends without a public URL are served from your app:
 
 ```ts

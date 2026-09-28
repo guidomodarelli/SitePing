@@ -18,6 +18,12 @@ export const DEFAULT_KEY_PREFIX = "siteping-";
 /** Random bytes in a generated key (hex-encoded: twice as many characters). */
 export const KEY_RANDOM_BYTES = 16;
 
+/** Decoded bytes per base64 group — with {@link BASE64_CHARACTERS_PER_GROUP}, bounds a payload before decoding it. */
+export const BASE64_BYTES_PER_GROUP = 3;
+
+/** Characters per base64 group (padding included). */
+export const BASE64_CHARACTERS_PER_GROUP = 4;
+
 /** Base64 image data URL: `data:<type>;base64,<payload>`. */
 export const IMAGE_DATA_URL_PATTERN = /^data:(image\/[a-z0-9.+-]+);base64,([a-z0-9+/=\s]+)$/i;
 

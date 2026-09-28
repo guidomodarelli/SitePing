@@ -227,6 +227,25 @@ describe("createScreenshotStorage — validation", () => {
     await expect(storage().upload(dataUrl, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(InvalidScreenshotError);
   });
 
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, 0, -1, 1.5])(
+    "refuses maxBytes %s, which cannot enforce a limit",
+    (maxBytes) => {
+      expect(() =>
+        createScreenshotStorage(createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL }), { maxBytes }),
+      ).toThrow(`maxBytes must be a positive integer number of bytes, got ${String(maxBytes)}`);
+    },
+  );
+
+  it("rejects an oversized payload by its base64 length, before decoding it", async () => {
+    const oversizedUndecodable = `data:image/jpeg;base64,${"AA==".repeat(80)}`;
+    await expect(storage().upload(oversizedUndecodable, UPLOAD_CONTEXT)).rejects.toThrow(/exceeds the 200-byte limit/);
+  });
+
+  it("accepts an image of exactly maxBytes", async () => {
+    const exactSize = `data:image/jpeg;base64,${btoa("x".repeat(200))}`;
+    await expect(storage().upload(exactSize, UPLOAD_CONTEXT)).resolves.toHaveProperty("url");
+  });
+
   it("only deletes keys with the configured prefix and the generated shape", async () => {
     const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
     const storage = createScreenshotStorage(objectStore, { keyPrefix: "team-a-", logger: silentLogger() });

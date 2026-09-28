@@ -6,7 +6,7 @@ import {
   UNCERTAIN_UPLOAD_RECLAIM_DELAYS_MS,
 } from "../constants/screenshots.js";
 import { assertInertContentTypes } from "./active-content.js";
-import { decodeImageDataUrl } from "./data-url.js";
+import { assertMaxBytes, decodeImageDataUrl } from "./data-url.js";
 import { assertKeyableContentTypes, assertKeyPrefix, generateKey, isGeneratedKey } from "./generated-key.js";
 import { isScreenshotUploadRejected, type ScreenshotObjectStore } from "./object-store.js";
 import {
@@ -28,7 +28,11 @@ export interface ScreenshotStorageOptions {
    * scripts when opened directly) are refused; `createScreenshotStorage` throws otherwise.
    */
   allowedContentTypes?: readonly string[];
-  /** Largest decoded image accepted, in bytes. Defaults to 1.5 MB. */
+  /**
+   * Largest decoded image accepted, in bytes. Defaults to 1.5 MB. Must be a
+   * positive integer — `NaN`, `Infinity`, `0` or a fraction throw, since they
+   * could not enforce a limit.
+   */
   maxBytes?: number;
   /**
    * Prefix of generated keys (lowercase letters, digits, `-`, `_`). Defaults to
@@ -108,6 +112,7 @@ export function createScreenshotStorage(
   }: ScreenshotStorageOptions = {},
 ): ScreenshotStorage {
   assertKeyPrefix(keyPrefix, "createScreenshotStorage");
+  assertMaxBytes(maxBytes);
   assertInertContentTypes(allowedContentTypes);
   assertKeyableContentTypes(allowedContentTypes);
   assertReclaimDelays(uncertainUploadReclaimDelaysMs);

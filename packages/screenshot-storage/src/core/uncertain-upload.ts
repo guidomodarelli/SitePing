@@ -54,7 +54,8 @@ export function assertReclaimDelays(delaysMs: readonly number[]): void {
  * configured delay (so an upload committed after the first removal is still
  * deleted, as long as the process lives), and hands the key to the host's
  * `onUncertainUpload` hook for durable handling. It never throws: a failed
- * removal, a scheduler that throws and a failing hook are each logged without
+ * removal (rejected or thrown synchronously by the backend), a scheduler that
+ * throws and a failing hook (sync or async) are each logged without
  * skipping the remaining steps, and the caller rethrows the original upload error.
  *
  * Only a backend-side lifecycle rule (e.g. S3/R2 expiration under the key
@@ -70,14 +71,21 @@ export function createUncertainUploadReclaimer({
   schedule,
   onUncertainUpload,
 }: UncertainUploadReclaimerOptions): (key: string) => Promise<void> {
+  // `remove` runs inside the promise chain, so a custom backend that throws
+  // before returning its promise is logged like a rejection instead of
+  // escaping: the caller keeps its original upload error, the remaining
+  // attempts and the hook still run, and a scheduled attempt never becomes an
+  // unhandled rejection.
   const removeLogged = (key: string, attempt: string): Promise<void> =>
-    objectStore.remove(key).catch((reclaimError: unknown) => {
-      logger.warn(`[siteping] ${objectStore.name}: could not reclaim an uncertain upload`, {
-        key,
-        attempt,
-        error: reclaimError,
+    Promise.resolve()
+      .then(() => objectStore.remove(key))
+      .catch((reclaimError: unknown) => {
+        logger.warn(`[siteping] ${objectStore.name}: could not reclaim an uncertain upload`, {
+          key,
+          attempt,
+          error: reclaimError,
+        });
       });
-    });
 
   return async (key) => {
     await removeLogged(key, "immediate");

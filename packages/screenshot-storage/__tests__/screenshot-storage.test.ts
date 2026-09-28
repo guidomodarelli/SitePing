@@ -686,6 +686,49 @@ describe("createScreenshotStorage — uploads committed after a timeout", () => 
     await vi.waitFor(() => expect(storedKeys()).toEqual([]));
   });
 
+  it("logs a backend remove that throws synchronously and still runs every attempt, the hook and reports the upload error", async () => {
+    const logger = silentLogger();
+    const scheduled: { task: () => void; delayMs: number }[] = [];
+    const uncertainKeys: string[] = [];
+    const { objectStore: lateCommittingObjectStore } = createLateCommittingObjectStore(0);
+    const removeAttempts: string[] = [];
+    const objectStore: ScreenshotObjectStore = {
+      ...lateCommittingObjectStore,
+      // A custom backend whose `remove` throws before returning a promise.
+      remove(key) {
+        removeAttempts.push(key);
+        throw new Error("remove client not initialized");
+      },
+    };
+    const storage = createScreenshotStorage(objectStore, {
+      uncertainUploadReclaimDelaysMs: [10, 20],
+      scheduleReclaim: (task, delayMs) => scheduled.push({ task, delayMs }),
+      onUncertainUpload: (key) => {
+        uncertainKeys.push(key);
+      },
+      logger,
+    });
+
+    await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(ObjectStoreRequestError);
+    expect(scheduled.map(({ delayMs }) => delayMs)).toEqual([10, 20]);
+    expect(uncertainKeys).toHaveLength(1);
+
+    for (const { task } of scheduled) task();
+    await vi.waitFor(() => expect(removeAttempts).toHaveLength(3));
+    await vi.waitFor(() =>
+      expect(logger.warn.mock.calls.map(([, context]) => context.attempt)).toEqual([
+        "immediate",
+        "after 10 ms",
+        "after 20 ms",
+      ]),
+    );
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("could not reclaim an uncertain upload"), {
+      key: uncertainKeys[0],
+      attempt: "immediate",
+      error: expect.objectContaining({ message: "remove client not initialized" }),
+    });
+  });
+
   it("keeps the validated reclaim delays when the caller mutates its array afterwards", async () => {
     const scheduledDelaysMs: number[] = [];
     const reclaimDelaysMs = [10];

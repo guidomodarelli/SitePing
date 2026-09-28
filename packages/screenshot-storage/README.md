@@ -17,7 +17,7 @@ const screenshotStorage = createScreenshotStorage(
 |---|---|---|
 | Cloudflare Images | `./cloudflare-images` | Served from `imagedelivery.net` (or your custom domain) |
 | AWS S3, Cloudflare R2, Backblaze B2, MinIO, DigitalOcean Spaces… | `./s3` | SigV4 over WebCrypto — no AWS SDK, runs on edge runtimes |
-| Local disk | `./filesystem` | Node.js; served by `createScreenshotServeHandler` |
+| Local disk | `./filesystem` | Node.js; served by `createScreenshotServeHandler`. Keeps each image's content type in a `<key>.content-type` file beside it |
 | Memory | `./memory` | Development and tests |
 | Your own (database table, Vercel Blob, Supabase Storage…) | — | Implement `ScreenshotObjectStore`: `put`, `remove`, `urlFor`, `keyFromUrl` (+ `get` to be served by the handler) |
 

@@ -21,6 +21,8 @@ const JPEG_BASE64 =
   "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=";
 const JPEG_DATA_URL = `data:image/jpeg;base64,${JPEG_BASE64}`;
 const JPEG_BYTES = Uint8Array.from(atob(JPEG_BASE64), (character) => character.charCodeAt(0));
+/** A real 1×1 GIF — a type outside the defaults. */
+const GIF_DATA_URL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 const PUBLIC_BASE_URL = "https://app.example.com/api/siteping/screenshots";
 const UPLOAD_CONTEXT = { feedbackId: "client-supplied-id", mimeType: "image/jpeg" };
 const silentLogger = () => ({ warn: vi.fn() });
@@ -234,6 +236,34 @@ describe("createScreenshotServeHandler", () => {
     expect(response.headers.get("content-type")).toBe("image/jpeg");
     expect(response.headers.get("cache-control")).toContain("immutable");
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(JPEG_BYTES);
+  });
+
+  for (const backend of backends.filter(({ name }) => name === "memory" || name === "filesystem")) {
+    it(`serves a custom allowed type from ${backend.name} with the type it was uploaded with`, async () => {
+      const { objectStore } = backend.open();
+      const storage = createScreenshotStorage(objectStore, {
+        allowedContentTypes: ["image/jpeg", "image/gif"],
+        logger: silentLogger(),
+      });
+
+      const { url } = await storage.upload(GIF_DATA_URL, UPLOAD_CONTEXT);
+      const response = await createScreenshotServeHandler(objectStore).GET(new Request(url));
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toBe("image/gif");
+    });
+  }
+
+  it("removes the filesystem content-type sidecar with the screenshot", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "siteping-sidecar-"));
+    temporaryDirectories.push(directory);
+    const storage = createScreenshotStorage(createFilesystemObjectStore({ directory, publicBaseUrl: PUBLIC_BASE_URL }));
+
+    const { url } = await storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
+    expect(readdirSync(directory)).toHaveLength(2);
+    await storage.delete?.(url);
+
+    expect(readdirSync(directory)).toEqual([]);
   });
 
   it("answers 404 for unknown keys and anything that is not a generated key", async () => {

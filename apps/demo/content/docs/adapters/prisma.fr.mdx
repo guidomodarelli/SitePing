@@ -43,6 +43,7 @@ Tout framework qui parle `Request`/`Response` du Web (Hono, Remix, SvelteKit, �
 - **Les lectures sont publiques par défaut.** Sans `apiKey`, quiconque connaît l'URL peut lister les feedbacks (avec les e-mails masqués — voir plus bas).
 - **Les appels destructifs, non.** PATCH et DELETE répondent `401` sauf si vous définissez un `apiKey` ou vous en désengagez explicitement avec `requireAuthForDestructive: false`. En production, la factory lève au démarrage plutôt que de tourner sans clé.
 - `OPTIONS` est toujours public — les préflights doivent fonctionner.
+- **Les mutations sont protégées du CSRF.** `POST`, `PATCH` et `DELETE` doivent envoyer `Content-Type: application/json` (sinon `415`), si bien qu'un navigateur cross-origin doit toujours passer un préflight CORS. Avec `allowedOrigins`, une mutation dont l'`Origin` n'est ni listée ni celle de l'endpoint répond `403` avant tout traitement ; les requêtes sans `Origin` (serveur à serveur, curl) sont acceptées.
 
 ### Ce que les réponses exposent
 
@@ -67,7 +68,7 @@ Un endpoint, cinq méthodes. Tous les corps sont en JSON.
 
 **Corps du DELETE :** `{ id, projectName }` pour un enregistrement, ou `{ projectName, deleteAll: true }` pour tout le projet.
 
-**Erreurs :** JSON invalide → `400 { error }` ; échec de validation → `400 { errors: [{ field, message }] }` ; id inconnu → `404` ; `clientId` appartenant à un autre projet → `409 { error }` ; table manquante → `500` avec une indication d'exécuter `npx prisma db push` ; tout le reste → `500 { error: "Internal server error" }`.
+**Erreurs :** mutation depuis une origine hors `allowedOrigins` → `403 { error }` ; mutation sans `Content-Type: application/json` → `415 { error }` ; JSON invalide → `400 { error }` ; échec de validation → `400 { errors: [{ field, message }] }` ; id inconnu → `404` ; `clientId` appartenant à un autre projet → `409 { error }` ; table manquante → `500` avec une indication d'exécuter `npx prisma db push` ; tout le reste → `500 { error: "Internal server error" }`.
 
 ### Les limites de validation à connaître
 

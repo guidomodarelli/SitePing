@@ -303,6 +303,7 @@ describe("createSitepingHandler — webhooks option", () => {
 
     const req = new Request("http://localhost/api/siteping", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(validPayloadNoAnnotations),
     });
     const res = await handler.POST(req);
@@ -324,6 +325,7 @@ describe("createSitepingHandler — webhooks option", () => {
 
     const req = new Request("http://localhost/api/siteping", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(validPayloadNoAnnotations),
     });
     await handler.POST(req);
@@ -343,6 +345,7 @@ describe("createSitepingHandler — webhooks option", () => {
 
     const req = new Request("http://localhost/api/siteping", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "bug" }), // missing required fields
     });
     const res = await handler.POST(req);
@@ -376,6 +379,7 @@ describe("createSitepingHandler — webhooks on clientId replays", () => {
       handler.POST(
         new Request("http://localhost/api/siteping", {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...validPayloadNoAnnotations, clientId: "replayed-once" }),
         }),
       );

@@ -10,6 +10,12 @@ import { SITEPING_ERROR_MESSAGES } from "./constants/error-messages.js";
 import { buildCorsHeaders, type CorsHeaders, type CorsPolicy, withCors } from "./cors.js";
 import { internalErrorResponse } from "./internal-error.js";
 import type { SitepingLogger } from "./options.js";
+import {
+  describeOriginForLog,
+  hasJsonContentType,
+  isCsrfProtectedMethod,
+  isMutationOriginAllowed,
+} from "./request-guards.js";
 import { formatValidationErrors } from "./validation.js";
 
 /** A request that passed authentication — what every operation works with. */
@@ -95,15 +101,31 @@ export function createRequestPipeline<Principal>({
     error,
 
     /**
-     * Run the access gate. A throwing `authenticate` (session store down…)
-     * answers the logged 500 with CORS headers instead of rejecting the
-     * handler, which a browser would only see as an opaque network error.
+     * Refuse forged mutations, then run the access gate. Mutating methods
+     * from an origin outside `allowedOrigins` answer 403 and non-JSON bodies
+     * 415, before the body is parsed, the caller authenticated or any hook
+     * run (see `request-guards.ts`). A throwing `authenticate` (session store
+     * down…) answers the logged 500 with CORS headers instead of rejecting
+     * the handler, which a browser would only see as an opaque network error.
      */
     async authenticate(
       request: Request,
       method: SitepingHttpMethod,
     ): Promise<PipelineStep<AuthenticatedRequest<Principal>>> {
       const corsHeaders = buildCorsHeaders(request, corsPolicy);
+      if (isCsrfProtectedMethod(method)) {
+        if (!isMutationOriginAllowed(request, corsPolicy)) {
+          logger.error("[siteping] createSitepingHandler: refused a mutation from an origin outside allowedOrigins", {
+            method,
+            path: new URL(request.url).pathname,
+            origin: describeOriginForLog(request),
+          });
+          return { ok: false, response: error({ corsHeaders }, 403, SITEPING_ERROR_MESSAGES.forbidden) };
+        }
+        if (!hasJsonContentType(request)) {
+          return { ok: false, response: error({ corsHeaders }, 415, SITEPING_ERROR_MESSAGES.unsupportedMediaType) };
+        }
+      }
       let outcome: AuthenticationOutcome<Principal>;
       try {
         outcome = await gate.authenticate(request, method);

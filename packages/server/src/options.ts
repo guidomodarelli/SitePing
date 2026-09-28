@@ -35,7 +35,11 @@ export interface SitepingLogger {
 export interface SitepingHandlerBaseOptions<Principal> {
   /** Persistence backend — any `SitepingStore` (Prisma, Drizzle, memory, your own). */
   store: SitepingStore;
-  /** Allowed CORS origins — when set, only those origins are reflected. */
+  /**
+   * Allowed CORS origins — when set, only those origins are reflected, and
+   * `POST`/`PATCH`/`DELETE` carrying any other `Origin` (except the
+   * endpoint's own) are refused with `403` before any processing (CSRF).
+   */
   allowedOrigins?: ReadonlyArray<string> | undefined;
   /**
    * Extra request headers cross-origin callers may send, on top of

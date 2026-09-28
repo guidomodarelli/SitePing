@@ -10,6 +10,19 @@ export const LIST_CACHE_CONTROL = "no-store";
 /** `Cache-Control` of the identity endpoint — depends on the session, never cached. */
 export const IDENTITY_CACHE_CONTROL = "no-store";
 
+/**
+ * Methods that change data, guarded against cross-site request forgery
+ * (origin allowlist + JSON content type) before any other processing.
+ */
+export const CSRF_PROTECTED_METHODS: ReadonlyArray<string> = ["POST", "PATCH", "DELETE"];
+
+/**
+ * Only media type accepted on mutating requests. Not CORS-safelisted, so a
+ * cross-origin browser must preflight it — a forged `text/plain` form or
+ * `fetch` is refused instead of being parsed as JSON.
+ */
+export const JSON_MEDIA_TYPE = "application/json";
+
 /** Methods announced in CORS preflight responses of the feedback endpoint. */
 export const CORS_ALLOWED_METHODS = "GET, POST, PATCH, DELETE, OPTIONS";
 

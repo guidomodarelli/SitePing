@@ -44,6 +44,7 @@ describe("createSitepingHandler", () => {
     it("creates a feedback with valid payload", async () => {
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validPayloadNoAnnotations),
       });
       const res = await handler.POST(req);
@@ -54,6 +55,7 @@ describe("createSitepingHandler", () => {
     it("returns 400 for invalid JSON", async () => {
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: "not json",
       });
       const res = await handler.POST(req);
@@ -63,6 +65,7 @@ describe("createSitepingHandler", () => {
     it("returns 400 for missing required fields", async () => {
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: "bug" }),
       });
       const res = await handler.POST(req);
@@ -75,6 +78,7 @@ describe("createSitepingHandler", () => {
     it("returns 400 for invalid email", async () => {
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...validPayloadNoAnnotations, authorEmail: "not-email" }),
       });
       const res = await handler.POST(req);
@@ -86,6 +90,7 @@ describe("createSitepingHandler", () => {
       prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", ...validPayloadNoAnnotations });
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validPayloadNoAnnotations),
       });
       const res = await handler.POST(req);
@@ -100,6 +105,7 @@ describe("createSitepingHandler", () => {
       prisma.sitepingFeedback.create.mockRejectedValue({ code: "P2002" });
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validPayloadNoAnnotations),
       });
       const res = await handler.POST(req);
@@ -110,6 +116,7 @@ describe("createSitepingHandler", () => {
       prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", ...validPayloadNoAnnotations });
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validPayloadNoAnnotations),
       });
       const res = await handler.POST(req);
@@ -127,6 +134,7 @@ describe("createSitepingHandler", () => {
       });
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validPayloadNoAnnotations),
       });
       const res = await handler.POST(req);
@@ -140,6 +148,7 @@ describe("createSitepingHandler", () => {
       prisma.sitepingFeedback.create.mockRejectedValue(new Error("DB down"));
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validPayloadNoAnnotations),
       });
       const res = await handler.POST(req);
@@ -155,6 +164,7 @@ describe("createSitepingHandler", () => {
 
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payloadWithAnnotation),
       });
 
@@ -191,6 +201,7 @@ describe("createSitepingHandler", () => {
       const region = { xPct: 0.25, yPct: 0.4, wPct: 0.3, hPct: 0.1 };
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...validPayloadNoAnnotations, screenshotRegion: region }),
       });
       const res = await handler.POST(req);
@@ -202,6 +213,7 @@ describe("createSitepingHandler", () => {
     it("omits the screenshotRegion column when the payload has none (unsynced schemas)", async () => {
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validPayloadNoAnnotations),
       });
       const res = await handler.POST(req);
@@ -213,6 +225,7 @@ describe("createSitepingHandler", () => {
     it("returns 400 for an invalid screenshotRegion", async () => {
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...validPayloadNoAnnotations,
           screenshotRegion: { xPct: 1.5, yPct: 0, wPct: 0.5, hPct: 0.5 },
@@ -484,6 +497,7 @@ describe("createSitepingHandler", () => {
       });
       const req = new Request("http://localhost/api/siteping", {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "resolved" }),
       });
       const res = await handler.PATCH(req);
@@ -504,6 +518,7 @@ describe("createSitepingHandler", () => {
       });
       const req = new Request("http://localhost/api/siteping", {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "open" }),
       });
       await handler.PATCH(req);
@@ -530,6 +545,7 @@ describe("createSitepingHandler", () => {
       });
       const req = new Request("http://localhost/api/siteping", {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status }),
       });
       const res = await handler.PATCH(req);
@@ -547,6 +563,7 @@ describe("createSitepingHandler", () => {
       prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "other-project" });
       const req = new Request("http://localhost/api/siteping", {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "resolved" }),
       });
       const res = await handler.PATCH(req);
@@ -558,6 +575,7 @@ describe("createSitepingHandler", () => {
       prisma.sitepingFeedback.findUnique.mockResolvedValue(null);
       const req = new Request("http://localhost/api/siteping", {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "nonexistent", projectName: "test-project", status: "resolved" }),
       });
       const res = await handler.PATCH(req);
@@ -568,6 +586,7 @@ describe("createSitepingHandler", () => {
     it("returns 400 for invalid status", async () => {
       const req = new Request("http://localhost/api/siteping", {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "pending" }),
       });
       const res = await handler.PATCH(req);
@@ -580,6 +599,7 @@ describe("createSitepingHandler", () => {
       prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
       const req = new Request("http://localhost/api/siteping", {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "fb-1", projectName: "test-project" }),
       });
       const res = await handler.DELETE(req);
@@ -590,6 +610,7 @@ describe("createSitepingHandler", () => {
     it("deletes all feedbacks for a project", async () => {
       const req = new Request("http://localhost/api/siteping", {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectName: "test", deleteAll: true }),
       });
       const res = await handler.DELETE(req);
@@ -600,6 +621,7 @@ describe("createSitepingHandler", () => {
     it("returns 400 for invalid JSON", async () => {
       const req = new Request("http://localhost/api/siteping", {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: "not json",
       });
       const res = await handler.DELETE(req);
@@ -609,6 +631,7 @@ describe("createSitepingHandler", () => {
     it("returns 400 for empty body", async () => {
       const req = new Request("http://localhost/api/siteping", {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
       const res = await handler.DELETE(req);
@@ -620,6 +643,7 @@ describe("createSitepingHandler", () => {
       prisma.sitepingFeedback.delete.mockRejectedValue({ code: "P2025" });
       const req = new Request("http://localhost/api/siteping", {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "nonexistent", projectName: "test-project" }),
       });
       const res = await handler.DELETE(req);
@@ -632,6 +656,7 @@ describe("createSitepingHandler", () => {
       prisma.sitepingFeedback.delete.mockRejectedValue(new Error("DB down"));
       const req = new Request("http://localhost/api/siteping", {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "fb-1", projectName: "test-project" }),
       });
       const res = await handler.DELETE(req);
@@ -675,6 +700,7 @@ describe("createSitepingHandler", () => {
     it("POST 201 strips clientId but keeps the submitter's own authorEmail", async () => {
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validPayloadNoAnnotations),
       });
       const res = await handler.POST(req);
@@ -689,6 +715,7 @@ describe("createSitepingHandler", () => {
       prisma.sitepingFeedback.findUnique.mockResolvedValue(feedbackRow());
       const req = new Request("http://localhost/api/siteping", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validPayloadNoAnnotations),
       });
       const res = await handler.POST(req);
@@ -704,6 +731,7 @@ describe("createSitepingHandler", () => {
       prisma.sitepingFeedback.update.mockResolvedValue(feedbackRow({ status: "resolved" }));
       const req = new Request("http://localhost/api/siteping", {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "resolved" }),
       });
       const res = await handler.PATCH(req);

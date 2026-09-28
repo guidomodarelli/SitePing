@@ -95,9 +95,13 @@ function createLibSQLGateway(
         .limit(1);
       return row ?? null;
     },
-    async findById(id) {
-      const [row] = await db.select(recordColumns).from(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).limit(1);
-      return row ?? null;
+    async findProjectName(id) {
+      const [row] = await db
+        .select({ projectName: sitepingFeedbacks.projectName })
+        .from(sitepingFeedbacks)
+        .where(eq(sitepingFeedbacks.id, id))
+        .limit(1);
+      return row?.projectName ?? null;
     },
     async updateStatus(id, { status, resolvedAt, updatedAt }) {
       const [row] = await db

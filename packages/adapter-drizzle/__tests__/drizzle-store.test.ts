@@ -437,6 +437,19 @@ for (const dialect of dialects) {
       expect(await database.countAnnotations()).toBe(0);
     });
 
+    it("verifies project ownership through a size-capped driver without reading inline screenshots", async () => {
+      // The inline screenshot alone is larger than the driver accepts in a response.
+      const inlineScreenshot = `${SCREENSHOT_DATA_URL}${"A".repeat(RESPONSE_SIZE_LIMIT_BYTES)}`;
+      const created = await database
+        .createStore({ logger })
+        .createFeedback(feedbackInput({ screenshotDataUrl: inlineScreenshot }));
+      const store = database.createStoreBehindResponseSizeLimit(RESPONSE_SIZE_LIMIT_BYTES, { logger });
+
+      expect(await store.verifyProjectOwnership(created.id, "site")).toBe(true);
+      expect(await store.verifyProjectOwnership(created.id, "other-site")).toBe(false);
+      expect(await store.verifyProjectOwnership(crypto.randomUUID(), "site")).toBe(false);
+    });
+
     it("matches LIKE wildcards in search literally", async () => {
       const store = database.createStore({ logger });
       await store.createFeedback(feedbackInput({ message: "Discount shows 100% off" }));

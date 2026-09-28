@@ -43,7 +43,12 @@ export interface SitepingSqlGateway {
   /** Annotations of the given feedbacks, each feedback's in submission order. */
   findAnnotations(feedbackIds: readonly string[]): Promise<AnnotationRow[]>;
   findByClientId(clientId: string): Promise<FeedbackRow | null>;
-  findById(id: string): Promise<FeedbackRow | null>;
+  /**
+   * Project of one row, `null` when no row has that id. Reads only that
+   * column: the row may hold a megabyte-sized inline screenshot, diagnostics
+   * and PII the ownership check never needs.
+   */
+  findProjectName(id: string): Promise<string | null>;
   /**
    * Update one row's status. `updatedAt` is the store clock's time: the stored value
    * is never earlier than the row's own `createdAt` / `updatedAt`.

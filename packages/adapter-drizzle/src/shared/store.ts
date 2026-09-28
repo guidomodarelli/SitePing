@@ -237,8 +237,7 @@ export class DrizzleSitepingStore implements DrizzleStore {
   }
 
   async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> {
-    const row = await this.gateway.findById(id);
-    return row !== null && row.projectName === projectName;
+    return (await this.gateway.findProjectName(id)) === projectName;
   }
 
   /**

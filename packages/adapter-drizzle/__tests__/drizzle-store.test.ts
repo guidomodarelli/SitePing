@@ -15,6 +15,8 @@ import { createLibSQLTestDatabase, createPgTestDatabase } from "./databases.js";
 const SCREENSHOT_DATA_URL = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
 /** Response cap of the size-limited driver — smaller than one inline screenshot in the tests using it. */
 const RESPONSE_SIZE_LIMIT_BYTES = 16 * 1024;
+/** Time the injected test clocks start at, far from the real wall clock. */
+const FROZEN_TIME_MS = Date.parse("2026-01-01T00:00:00.000Z");
 const CUSTOM_TABLE_NAMES: SitepingTableNames = { feedbacks: "review_feedbacks", annotations: "review_annotations" };
 
 function feedbackInput(overrides: Partial<FeedbackCreateInput> = {}): FeedbackCreateInput {
@@ -490,38 +492,44 @@ for (const dialect of dialects) {
       expect(reloaded?.annotations[0]).not.toHaveProperty("position");
     });
 
-    describe("with a frozen wall clock", () => {
-      beforeEach(() => {
-        // Only Date is faked: the database drivers keep their real timers.
-        vi.useFakeTimers({ toFake: ["Date"] });
-        vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
-      });
-      afterEach(() => {
-        vi.useRealTimers();
-      });
+    it("stamps createdAt and updatedAt with the injected clock", async () => {
+      let currentTime = FROZEN_TIME_MS;
+      const store = database.createStore({ logger, now: () => new Date(currentTime) });
+
+      const created = await store.createFeedback(feedbackInput());
+      currentTime += 60_000;
+      const updated = await store.updateFeedback(created.id, { status: "in_progress", resolvedAt: null });
+
+      expect(created.createdAt.getTime()).toBe(FROZEN_TIME_MS);
+      expect(updated.createdAt.getTime()).toBe(FROZEN_TIME_MS);
+      expect(updated.updatedAt.getTime()).toBe(FROZEN_TIME_MS + 60_000);
+    });
+
+    describe("with a frozen clock", () => {
+      const frozenClock = () => new Date(FROZEN_TIME_MS);
 
       it("never stamps updatedAt before the createdAt issued during a same-millisecond burst", async () => {
-        const store = database.createStore({ logger });
+        const store = database.createStore({ logger, now: frozenClock });
         await store.createFeedback(feedbackInput());
         await store.createFeedback(feedbackInput());
         const newest = await store.createFeedback(feedbackInput());
 
         const updated = await store.updateFeedback(newest.id, { status: "in_progress", resolvedAt: null });
 
-        expect(newest.createdAt.getTime()).toBeGreaterThan(Date.now());
+        expect(newest.createdAt.getTime()).toBeGreaterThan(FROZEN_TIME_MS);
         expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(updated.createdAt.getTime());
         expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(newest.updatedAt.getTime());
       });
 
       it("lists feedbacks created in the same millisecond by separate store instances newest first, across pages", async () => {
-        // Each instance has its own clock, so all of them stamp the same createdAt —
+        // Each instance issues createdAt from the same frozen clock, so all of them stamp the same value —
         // as several serverless invocations writing within one millisecond would.
         const createdIds: string[] = [];
         for (let instance = 0; instance < 6; instance += 1) {
-          const store = database.createStore({ logger });
+          const store = database.createStore({ logger, now: frozenClock });
           createdIds.push((await store.createFeedback(feedbackInput())).id);
         }
-        const reader = database.createStore({ logger });
+        const reader = database.createStore({ logger, now: frozenClock });
 
         const all = await reader.getFeedbacks({ projectName: "site" });
         const pages = await Promise.all(
@@ -529,7 +537,9 @@ for (const dialect of dialects) {
         );
 
         const newestFirst = [...createdIds].reverse();
-        expect(new Set(all.feedbacks.map((feedback) => feedback.createdAt.getTime())).size).toBe(1);
+        expect(all.feedbacks.map((feedback) => feedback.createdAt.getTime())).toEqual(
+          createdIds.map(() => FROZEN_TIME_MS),
+        );
         expect(all.feedbacks.map((feedback) => feedback.id)).toEqual(newestFirst);
         expect(pages.flatMap((page) => page.feedbacks.map((feedback) => feedback.id))).toEqual(newestFirst);
         expect(all.feedbacks[0]).not.toHaveProperty("creationSequence");

@@ -45,7 +45,7 @@ export interface SitepingSqlGateway {
   findByClientId(clientId: string): Promise<FeedbackRow | null>;
   findById(id: string): Promise<FeedbackRow | null>;
   /**
-   * Update one row's status. `updatedAt` is the wall clock: the stored value
+   * Update one row's status. `updatedAt` is the store clock's time: the stored value
    * is never earlier than the row's own `createdAt` / `updatedAt`.
    */
   updateStatus(

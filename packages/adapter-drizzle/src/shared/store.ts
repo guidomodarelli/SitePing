@@ -53,12 +53,20 @@ export interface DrizzleStoreOptions {
    * are dropped, so pass your application's logger (or `console`) to see them.
    */
   logger?: DrizzleStoreLogger | undefined;
+  /**
+   * Clock for record timestamps: `createdAt` of new feedbacks and `updatedAt`
+   * of status updates. Defaults to the system clock.
+   */
+  now?: (() => Date) | undefined;
 }
 
 /** Logger of stores created without one: drops every event, leaving the logging policy to the host application. */
 const silentLogger: DrizzleStoreLogger = {
   warn() {},
 };
+
+/** Clock of stores created without one. */
+const systemClock = (): Date => new Date();
 
 /** Whether a store error already carries its contract meaning and must propagate untouched. */
 function isStoreContractError(error: unknown): boolean {
@@ -106,6 +114,7 @@ function isUploadedScreenshotUrl(url: string | null | undefined): url is string 
 export class DrizzleSitepingStore implements DrizzleStore {
   private readonly screenshotStorage: ScreenshotStorage | undefined;
   private readonly logger: DrizzleStoreLogger;
+  private readonly now: () => Date;
   private inlineScreenshotWarned = false;
   /** Last issued `createdAt`, kept strictly increasing so "newest first" is stable within one millisecond. */
   private lastCreatedAtMs = 0;
@@ -116,6 +125,7 @@ export class DrizzleSitepingStore implements DrizzleStore {
   ) {
     this.screenshotStorage = options.screenshotStorage;
     this.logger = options.logger ?? silentLogger;
+    this.now = options.now ?? systemClock;
   }
 
   async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {
@@ -195,12 +205,12 @@ export class DrizzleSitepingStore implements DrizzleStore {
 
   async updateFeedback(id: string, data: FeedbackUpdateInput): Promise<FeedbackRecord> {
     // The gateway clamps updatedAt to the row's createdAt, which a burst of
-    // creates may have pushed a few milliseconds ahead of the wall clock.
+    // creates may have pushed a few milliseconds ahead of the clock.
     const row = await persistMutation("updateFeedback", { id }, () =>
       this.gateway.updateStatus(id, {
         status: data.status,
         resolvedAt: data.resolvedAt,
-        updatedAt: new Date(),
+        updatedAt: this.now(),
       }),
     );
     if (!row) throw new StoreNotFoundError();
@@ -241,7 +251,7 @@ export class DrizzleSitepingStore implements DrizzleStore {
   }
 
   private nextCreatedAt(): Date {
-    this.lastCreatedAtMs = Math.max(Date.now(), this.lastCreatedAtMs + 1);
+    this.lastCreatedAtMs = Math.max(this.now().getTime(), this.lastCreatedAtMs + 1);
     return new Date(this.lastCreatedAtMs);
   }
 

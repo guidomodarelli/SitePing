@@ -43,6 +43,8 @@ The store reports degraded-but-non-fatal events — a failed screenshot upload (
 const store = createPgSitepingStore(db, { screenshotStorage, logger: console });
 ```
 
+Record timestamps (`createdAt` on create, `updatedAt` on status updates) come from the `now` option (`() => Date`, the system clock by default) — inject your own clock for tests or a controlled time source.
+
 Database failures on writes (read-only or full database, lost connection…) surface as `StorePersistenceError` (detect it with `isStorePersistence`, exported by both entries), with the driver error as `cause`; a missing record stays `StoreNotFoundError`.
 
 Requires `drizzle-orm` ≥ 0.45. The libSQL entry targets `drizzle-orm/libsql` (Turso, embedded replicas, local files); other SQLite drivers (better-sqlite3, Cloudflare D1) are not supported.

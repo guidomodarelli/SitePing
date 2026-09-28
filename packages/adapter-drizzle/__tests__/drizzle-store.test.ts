@@ -330,6 +330,36 @@ for (const dialect of dialects) {
       expect(underscore.feedbacks.map((feedback) => feedback.message)).toEqual(["Field user_name is empty"]);
     });
 
+    it("matches backslashes in search literally", async () => {
+      const store = database.createStore({ logger });
+      await store.createFeedback(feedbackInput({ message: "Crash when saving to C:\\temp" }));
+      await store.createFeedback(feedbackInput({ message: "Crash when saving to C:temp" }));
+      await store.createFeedback(feedbackInput({ message: "Path ends with folder\\" }));
+      await store.createFeedback(feedbackInput({ message: "Path ends with folder" }));
+
+      const middle = await store.getFeedbacks({ projectName: "site", search: "C:\\temp" });
+      const trailing = await store.getFeedbacks({ projectName: "site", search: "folder\\" });
+
+      expect(middle.feedbacks.map((feedback) => feedback.message)).toEqual(["Crash when saving to C:\\temp"]);
+      expect(trailing.feedbacks.map((feedback) => feedback.message)).toEqual(["Path ends with folder\\"]);
+    });
+
+    it("matches backslashes combined with LIKE wildcards in search literally", async () => {
+      const store = database.createStore({ logger });
+      await store.createFeedback(feedbackInput({ message: "Regex \\% breaks" }));
+      await store.createFeedback(feedbackInput({ message: "Regex % breaks" }));
+      await store.createFeedback(feedbackInput({ message: "Regex \\x breaks" }));
+      await store.createFeedback(feedbackInput({ message: "Token a\\_b is wrong" }));
+      await store.createFeedback(feedbackInput({ message: "Token a_b is wrong" }));
+      await store.createFeedback(feedbackInput({ message: "Token a\\xb is wrong" }));
+
+      const percent = await store.getFeedbacks({ projectName: "site", search: "\\%" });
+      const underscore = await store.getFeedbacks({ projectName: "site", search: "a\\_b" });
+
+      expect(percent.feedbacks.map((feedback) => feedback.message)).toEqual(["Regex \\% breaks"]);
+      expect(underscore.feedbacks.map((feedback) => feedback.message)).toEqual(["Token a\\_b is wrong"]);
+    });
+
     it("lets the host application write through the same database while the store writes", async () => {
       const store = database.createStore({ logger });
       const existing = await store.createFeedback(feedbackInput());

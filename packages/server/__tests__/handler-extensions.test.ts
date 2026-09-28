@@ -1,5 +1,5 @@
 import { MemoryStore } from "@siteping/adapter-memory";
-import type { FeedbackRecord, SitepingStore } from "@siteping/core";
+import type { FeedbackCreateInput, FeedbackRecord, SitepingStore } from "@siteping/core";
 import { describe, expect, it, vi } from "vitest";
 import {
   createSitepingHandler,
@@ -42,6 +42,19 @@ function jsonRequest(method: string, body: unknown, session?: Reviewer): Request
 function listRequest(projectName: string, session?: Reviewer): Request {
   const headers: Record<string, string> = session ? { "x-session": session.email } : {};
   return new Request(`${ENDPOINT}?projectName=${projectName}`, { headers });
+}
+
+/** Store input the handler derives from a widget payload without annotations. */
+function storedInputOf(payload: typeof validPayloadNoAnnotations): FeedbackCreateInput {
+  return {
+    ...payload,
+    status: "open",
+    urlPattern: null,
+    annotations: [],
+    screenshotDataUrl: null,
+    screenshotRegion: null,
+    diagnostics: null,
+  };
 }
 
 const silentLogger = () => ({ error: vi.fn<SitepingLogger["error"]>() });
@@ -269,6 +282,28 @@ describe("createSitepingHandler — lifecycle hooks", () => {
     expect(onCreated.mock.calls[0]?.[1]).toMatchObject({ principal: ADMIN });
   });
 
+  it("runs no creation side effect when the store returns the record a concurrent request inserted", async () => {
+    class RacingStore extends MemoryStore {
+      /** The concurrent request inserts right after this request's replay lookup missed. */
+      private lookupsBeforeRace = 1;
+      override findByClientId(clientId: string): Promise<FeedbackRecord | null> {
+        if (this.lookupsBeforeRace-- > 0) return Promise.resolve(null);
+        return super.findByClientId(clientId);
+      }
+    }
+    const onCreated = vi.fn();
+    const store = new RacingStore();
+    const winner = await store.createFeedback(storedInputOf(validPayloadNoAnnotations));
+    const handler = createSitepingHandler({ store, access: sessionAccess(), hooks: { onCreated } });
+
+    const response = await handler.POST(jsonRequest("POST", validPayloadNoAnnotations, ADMIN));
+
+    expect(response.status).toBe(201);
+    expect(((await response.json()) as FeedbackRecord).id).toBe(winner.id);
+    expect(onCreated).not.toHaveBeenCalled();
+    expect((await store.getFeedbacks({ projectName: "test-project" })).total).toBe(1);
+  });
+
   it("keeps `this` for hooks implemented as class methods", async () => {
     class IssueTrackerHooks {
       readonly createdIds: string[] = [];
@@ -439,15 +474,7 @@ describe("createSitepingHandler — store errors from another bundled copy of co
       }
     }
     const store = new RacingStore();
-    const winner = await store.createFeedback({
-      ...validPayloadNoAnnotations,
-      status: "open",
-      urlPattern: null,
-      annotations: [],
-      screenshotDataUrl: null,
-      screenshotRegion: null,
-      diagnostics: null,
-    });
+    const winner = await store.createFeedback(storedInputOf(validPayloadNoAnnotations));
     const handler = createSitepingHandler({ store, access: sessionAccess(), hooks: { onCreated } });
 
     const response = await handler.POST(jsonRequest("POST", validPayloadNoAnnotations, ADMIN));

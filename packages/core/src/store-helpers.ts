@@ -19,6 +19,7 @@ import type {
   AnnotationCreateInput,
   AnnotationRecord,
   FeedbackCreateInput,
+  FeedbackCreateOutcome,
   FeedbackPage,
   FeedbackQuery,
   FeedbackRecord,
@@ -131,16 +132,17 @@ export interface CollectionStoreBackend {
 }
 
 /**
- * A `SitepingStore` with the optional `verifyProjectOwnership` guaranteed —
- * what `createCollectionStore` returns.
+ * A `SitepingStore` with the optional `verifyProjectOwnership` and
+ * `createFeedbackIfAbsent` guaranteed — what `createCollectionStore` returns.
  */
-export type CollectionStore = SitepingStore & Required<Pick<SitepingStore, "verifyProjectOwnership">>;
+export type CollectionStore = SitepingStore &
+  Required<Pick<SitepingStore, "verifyProjectOwnership" | "createFeedbackIfAbsent">>;
 
 /**
  * Build a fully conformant `SitepingStore` on top of a snapshot backend.
  *
  * The engine implements the whole store contract: clientId dedup (idempotent
- * create), newest-first ordering, the standard filter/pagination pipeline,
+ * create, with `createFeedbackIfAbsent` reporting inserts), newest-first ordering, the standard filter/pagination pipeline,
  * `StoreNotFoundError` on missing update/delete, project-scoped bulk delete,
  * and `verifyProjectOwnership`. The snapshot returned by `load` is never
  * mutated: every write hands `persist` a new array, so a failed write leaves
@@ -173,28 +175,34 @@ export function createCollectionStore(backend: CollectionStoreBackend): Collecti
   // the write is confirmed — and when `persist` throws, the phantom record
   // stays visible, and the widget's retry of the same clientId dedups against
   // it instead of being written for real.
+  const createFeedbackIfAbsent = async (data: FeedbackCreateInput): Promise<FeedbackCreateOutcome> => {
+    const feedbacks = await backend.load();
+
+    // ClientId dedup — idempotent
+    const existing = feedbacks.find((f) => f.clientId === data.clientId);
+    if (existing) return { feedback: existing, created: false };
+
+    const record = buildFeedbackRecord(data, {
+      id: backend.generateId(),
+      annotationId: () => backend.generateId(),
+    });
+
+    const next = [record, ...feedbacks];
+    try {
+      await backend.persist(next);
+    } catch (err) {
+      if (!record.screenshotUrl) throw err;
+      record.screenshotUrl = null;
+      await backend.persist(next);
+    }
+    return { feedback: record, created: true };
+  };
+
   return {
+    createFeedbackIfAbsent,
+
     async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {
-      const feedbacks = await backend.load();
-
-      // ClientId dedup — idempotent
-      const existing = feedbacks.find((f) => f.clientId === data.clientId);
-      if (existing) return existing;
-
-      const record = buildFeedbackRecord(data, {
-        id: backend.generateId(),
-        annotationId: () => backend.generateId(),
-      });
-
-      const next = [record, ...feedbacks];
-      try {
-        await backend.persist(next);
-      } catch (err) {
-        if (!record.screenshotUrl) throw err;
-        record.screenshotUrl = null;
-        await backend.persist(next);
-      }
-      return record;
+      return (await createFeedbackIfAbsent(data)).feedback;
     },
 
     async getFeedbacks(query: FeedbackQuery): Promise<FeedbackPage> {

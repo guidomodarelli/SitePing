@@ -62,9 +62,20 @@ export function createFeedbackOperation<Principal>({
       ? pipeline.json(scope, pipeline.present(scope, feedback, true), { status: 201 })
       : pipeline.error(scope, 409, SITEPING_ERROR_MESSAGES.clientIdUsedByAnotherProject);
 
-  /** Insert, resolving a unique-constraint race on clientId to the winning record. */
+  /**
+   * Insert, resolving a race on clientId to the winning record. `isNew` gates
+   * the creation side effects, so it must only be `true` when this call
+   * inserted: stores returning the existing record on a duplicate say so
+   * through `createFeedbackIfAbsent`; the others throw `StoreDuplicateError`.
+   * A store that returns the existing record from plain `createFeedback`
+   * cannot be told apart from an insert — see the `SitepingStore` contract.
+   */
   const insert = async (input: FeedbackCreateInput): Promise<{ feedback: FeedbackRecord; isNew: boolean }> => {
     try {
+      if (store.createFeedbackIfAbsent) {
+        const { feedback, created } = await store.createFeedbackIfAbsent(input);
+        return { feedback, isNew: created };
+      }
       return { feedback: await store.createFeedback(input), isNew: true };
     } catch (error) {
       if (isStoreDuplicate(error)) {

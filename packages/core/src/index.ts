@@ -36,6 +36,7 @@ export type {
   DiagnosticsCaptureOptions,
   DiagnosticsSnapshot,
   FeedbackCreateInput,
+  FeedbackCreateOutcome,
   FeedbackPage,
   FeedbackPayload,
   FeedbackQuery,

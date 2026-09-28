@@ -585,5 +585,24 @@ export function testSitepingStore(
         await expect(store.verifyProjectOwnership("unknown-id", "owner")).resolves.toBe(false);
       });
     });
+
+    // ------------------------------------------------------------------
+    // createFeedbackIfAbsent (optional contract member)
+    // ------------------------------------------------------------------
+
+    describe("createFeedbackIfAbsent", () => {
+      it("reports an insert, then the existing record for the same clientId (when implemented)", async () => {
+        // Optional member — same skip-but-run pattern as verifyProjectOwnership.
+        if (!store.createFeedbackIfAbsent) return;
+
+        const input = createInput({ clientId: "once-id" });
+        const first = await store.createFeedbackIfAbsent(input);
+        const second = await store.createFeedbackIfAbsent(input);
+
+        expect(first.created).toBe(true);
+        expect(second).toEqual({ feedback: expect.objectContaining({ id: first.feedback.id }), created: false });
+        expect((await store.getFeedbacks({ projectName: "test-project" })).total).toBe(1);
+      });
+    });
   });
 }

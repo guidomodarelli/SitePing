@@ -1,8 +1,9 @@
-import { count, desc, eq, getTableColumns, inArray, sql } from "drizzle-orm";
+import { count, eq, getTableColumns, inArray, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { CASE_INSENSITIVE_LIKE_OPERATOR } from "../constants/search.js";
 import { GREATEST_VALUE_FUNCTION } from "../constants/sql.js";
 import { annotationRecordColumns, selectAnnotationValues } from "../shared/annotations.js";
+import { feedbackRecordColumns, newestFeedbackFirst } from "../shared/feedbacks.js";
 import { buildFeedbackWhere } from "../shared/filters.js";
 import type { FeedbackFilter, SitepingSqlGateway } from "../shared/gateway.js";
 import { DrizzleSitepingStore, type DrizzleStore, type DrizzleStoreOptions } from "../shared/store.js";
@@ -30,6 +31,10 @@ function createLibSQLGateway(
 ): SitepingSqlGateway {
   const whereClause = (filter: FeedbackFilter) =>
     buildFeedbackWhere(sitepingFeedbacks, filter, CASE_INSENSITIVE_LIKE_OPERATOR.sqlite);
+  const recordColumns = feedbackRecordColumns(getTableColumns(sitepingFeedbacks));
+  // Evaluated inside the insert statement: SQLite runs one writer at a time,
+  // so concurrent inserts — from any process — never read the same maximum.
+  const nextCreationSequence = sql<number>`(SELECT COALESCE(MAX(${sitepingFeedbacks.creationSequence}), 0) + 1 FROM ${sitepingFeedbacks})`;
 
   // Multi-statement writes go through `db.batch`, never an interactive
   // `db.transaction`: libSQL runs a batch as one transaction without yielding
@@ -40,7 +45,7 @@ function createLibSQLGateway(
     async insertFeedback(feedback, annotations) {
       const insertFeedbackRow = db
         .insert(sitepingFeedbacks)
-        .values(feedback)
+        .values({ ...feedback, creationSequence: nextCreationSequence })
         .onConflictDoNothing({ target: sitepingFeedbacks.clientId })
         .returning({ id: sitepingFeedbacks.id });
       if (annotations.length === 0) return (await insertFeedbackRow).length > 0;
@@ -64,10 +69,10 @@ function createLibSQLGateway(
       const where = whereClause(filter);
       const [rows, totals] = await Promise.all([
         db
-          .select()
+          .select(recordColumns)
           .from(sitepingFeedbacks)
           .where(where)
-          .orderBy(desc(sitepingFeedbacks.createdAt))
+          .orderBy(...newestFeedbackFirst(sitepingFeedbacks))
           .limit(limit)
           .offset(offset),
         db.select({ total: count() }).from(sitepingFeedbacks).where(where),
@@ -82,11 +87,15 @@ function createLibSQLGateway(
         .orderBy(sitepingAnnotations.createdAt, sitepingAnnotations.position);
     },
     async findByClientId(clientId) {
-      const [row] = await db.select().from(sitepingFeedbacks).where(eq(sitepingFeedbacks.clientId, clientId)).limit(1);
+      const [row] = await db
+        .select(recordColumns)
+        .from(sitepingFeedbacks)
+        .where(eq(sitepingFeedbacks.clientId, clientId))
+        .limit(1);
       return row ?? null;
     },
     async findById(id) {
-      const [row] = await db.select().from(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).limit(1);
+      const [row] = await db.select(recordColumns).from(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).limit(1);
       return row ?? null;
     },
     async updateStatus(id, { status, resolvedAt, updatedAt }) {
@@ -98,7 +107,7 @@ function createLibSQLGateway(
           updatedAt: monotonicUpdatedAt(sitepingFeedbacks, updatedAt, GREATEST_VALUE_FUNCTION.sqlite),
         })
         .where(eq(sitepingFeedbacks.id, id))
-        .returning();
+        .returning(recordColumns);
       return row ?? null;
     },
     async deleteById(id) {
@@ -106,7 +115,7 @@ function createLibSQLGateway(
       // does not guarantee — delete them explicitly in the same batch.
       const [, deleted] = await db.batch([
         db.delete(sitepingAnnotations).where(eq(sitepingAnnotations.feedbackId, id)),
-        db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).returning(),
+        db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).returning(recordColumns),
       ]);
       return deleted[0] ?? null;
     },

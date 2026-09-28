@@ -14,7 +14,7 @@ import { createSitepingSqliteTables } from "@siteping/adapter-drizzle/libsql";
 export const { sitepingFeedbacks, sitepingAnnotations } = createSitepingSqliteTables();
 ```
 
-Then `drizzle-kit generate` (or `push`) as usual. The annotations table carries a `position` column (integer, default `0`) that keeps each feedback's annotations in submission order — `annotations[0]` is the primary anchor; if you created the tables with an earlier version, generate a migration to add it. Pass `{ feedbacks, annotations }` to rename the tables, and hand the same tables to the store through `tables`.
+Then `drizzle-kit generate` (or `push`) as usual. The annotations table carries a `position` column (integer, default `0`) that keeps each feedback's annotations in submission order — `annotations[0]` is the primary anchor; if you created the tables with an earlier version, generate a migration to add it. The feedbacks table likewise carries an internal `creation_sequence` column that breaks `created_at` ties, so rows created in the same millisecond by different processes still list newest first and paginate stably: a `bigint` identity on PostgreSQL (existing rows are numbered when the column is added), and an indexed integer (default `0`) on libSQL that the store fills on insert — older rows keep `0` and only their `created_at` order. Generate a migration to add it too. Pass `{ feedbacks, annotations }` to rename the tables, and hand the same tables to the store through `tables`.
 
 ## 2. Create the store
 

@@ -1,4 +1,4 @@
-import { type Column, count, desc, eq, getTableColumns, inArray, type SQL, sql, type WithSubquery } from "drizzle-orm";
+import { type Column, count, eq, getTableColumns, inArray, type SQL, sql, type WithSubquery } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { CASE_INSENSITIVE_LIKE_OPERATOR } from "../constants/search.js";
 import {
@@ -7,6 +7,7 @@ import {
   INSERTED_FEEDBACK_CTE_ALIAS,
 } from "../constants/sql.js";
 import { annotationRecordColumns, selectAnnotationValues } from "../shared/annotations.js";
+import { feedbackRecordColumns, newestFeedbackFirst } from "../shared/feedbacks.js";
 import { buildFeedbackWhere } from "../shared/filters.js";
 import type { FeedbackFilter, FeedbackRow, SitepingSqlGateway } from "../shared/gateway.js";
 import { DrizzleSitepingStore, type DrizzleStore, type DrizzleStoreOptions } from "../shared/store.js";
@@ -47,6 +48,7 @@ function createPgGateway(
 ): SitepingSqlGateway {
   const whereClause = (filter: FeedbackFilter) =>
     buildFeedbackWhere(sitepingFeedbacks, filter, CASE_INSENSITIVE_LIKE_OPERATOR.postgres);
+  const recordColumns = feedbackRecordColumns(getTableColumns(sitepingFeedbacks));
 
   return {
     /**
@@ -94,10 +96,10 @@ function createPgGateway(
       const where = whereClause(filter);
       const [rows, totals] = await Promise.all([
         db
-          .select()
+          .select(recordColumns)
           .from(sitepingFeedbacks)
           .where(where)
-          .orderBy(desc(sitepingFeedbacks.createdAt))
+          .orderBy(...newestFeedbackFirst(sitepingFeedbacks))
           .limit(limit)
           .offset(offset),
         db.select({ total: count() }).from(sitepingFeedbacks).where(where),
@@ -112,11 +114,15 @@ function createPgGateway(
         .orderBy(sitepingAnnotations.createdAt, sitepingAnnotations.position);
     },
     async findByClientId(clientId) {
-      const [row] = await db.select().from(sitepingFeedbacks).where(eq(sitepingFeedbacks.clientId, clientId)).limit(1);
+      const [row] = await db
+        .select(recordColumns)
+        .from(sitepingFeedbacks)
+        .where(eq(sitepingFeedbacks.clientId, clientId))
+        .limit(1);
       return row ?? null;
     },
     async findById(id) {
-      const [row] = await db.select().from(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).limit(1);
+      const [row] = await db.select(recordColumns).from(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).limit(1);
       return row ?? null;
     },
     async updateStatus(id, { status, resolvedAt, updatedAt }) {
@@ -128,11 +134,11 @@ function createPgGateway(
           updatedAt: monotonicUpdatedAt(sitepingFeedbacks, updatedAt, GREATEST_VALUE_FUNCTION.postgres),
         })
         .where(eq(sitepingFeedbacks.id, id))
-        .returning();
+        .returning(recordColumns);
       return row ?? null;
     },
     async deleteById(id) {
-      const [row] = await db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).returning();
+      const [row] = await db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).returning(recordColumns);
       return (row as FeedbackRow | undefined) ?? null;
     },
     async deleteByProject(projectName) {

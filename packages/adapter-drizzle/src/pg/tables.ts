@@ -1,5 +1,15 @@
 import type { DiagnosticsSnapshot, FeedbackStatus, FeedbackType, ScreenshotRegion } from "@siteping/core";
-import { doublePrecision, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  bigint,
+  doublePrecision,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../constants/table-names.js";
 
 /**
@@ -33,6 +43,10 @@ export function createSitepingPgTables(names: SitepingTableNames = DEFAULT_SITEP
       resolvedAt: timestamp("resolved_at", { withTimezone: true, precision: 3 }),
       createdAt: timestamp("created_at", { withTimezone: true, precision: 3 }).notNull().defaultNow(),
       updatedAt: timestamp("updated_at", { withTimezone: true, precision: 3 }).notNull().defaultNow(),
+      // Database-wide insertion ordinal: breaks `createdAt` ties between rows created in the
+      // same millisecond by different store instances or processes, so "newest first" and
+      // offset pages stay stable. Internal — never part of the feedback record.
+      creationSequence: bigint("creation_sequence", { mode: "number" }).generatedAlwaysAsIdentity(),
     },
     (table) => [
       uniqueIndex(`${names.feedbacks}_client_id_key`).on(table.clientId),

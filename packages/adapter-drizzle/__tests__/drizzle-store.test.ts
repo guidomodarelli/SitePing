@@ -416,6 +416,28 @@ for (const dialect of dialects) {
         expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(updated.createdAt.getTime());
         expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(newest.updatedAt.getTime());
       });
+
+      it("lists feedbacks created in the same millisecond by separate store instances newest first, across pages", async () => {
+        // Each instance has its own clock, so all of them stamp the same createdAt —
+        // as several serverless invocations writing within one millisecond would.
+        const createdIds: string[] = [];
+        for (let instance = 0; instance < 6; instance += 1) {
+          const store = database.createStore({ logger });
+          createdIds.push((await store.createFeedback(feedbackInput())).id);
+        }
+        const reader = database.createStore({ logger });
+
+        const all = await reader.getFeedbacks({ projectName: "site" });
+        const pages = await Promise.all(
+          [1, 2, 3].map((page) => reader.getFeedbacks({ projectName: "site", page, limit: 2 })),
+        );
+
+        const newestFirst = [...createdIds].reverse();
+        expect(new Set(all.feedbacks.map((feedback) => feedback.createdAt.getTime())).size).toBe(1);
+        expect(all.feedbacks.map((feedback) => feedback.id)).toEqual(newestFirst);
+        expect(pages.flatMap((page) => page.feedbacks.map((feedback) => feedback.id))).toEqual(newestFirst);
+        expect(all.feedbacks[0]).not.toHaveProperty("creationSequence");
+      });
     });
 
     describe("when the database rejects writes", () => {

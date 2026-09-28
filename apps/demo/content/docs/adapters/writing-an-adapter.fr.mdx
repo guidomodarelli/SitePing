@@ -41,7 +41,7 @@ export function createArrayStore(): SitepingStore {
 }
 ```
 
-C'est un vrai adapter, pleinement conforme — c'est l'exemple contre lequel la suite de tests du kit lance elle-même les 45 tests de conformité. Remplacez les trois fonctions par votre stockage et c'est terminé : [`MemoryStore`](/fr/docs/adapters/memory) et [`LocalStorageStore`](/fr/docs/adapters/localstorage) sont ce même moteur avec d'autres primitives.
+C'est un vrai adapter, pleinement conforme — c'est l'exemple contre lequel la suite de tests du kit lance elle-même les 47 tests de conformité. Remplacez les trois fonctions par votre stockage et c'est terminé : [`MemoryStore`](/fr/docs/adapters/memory) et [`LocalStorageStore`](/fr/docs/adapters/localstorage) sont ce même moteur avec d'autres primitives.
 
 **Les trois primitives :**
 
@@ -129,11 +129,11 @@ Implémentez-la dès que votre store sert plus d'un projet. En son absence, les 
 
 ## Effets de création exactement une fois
 
-`createFeedbackIfAbsent(data)` est l'autre méthode optionnelle : un `createFeedback` qui indique aussi si cet appel a inséré l'enregistrement — `{ feedback, created }`. Quand deux requêtes se disputent le même `clientId`, le handler ne déclenche les webhooks et `onCreated` que pour `created: true`. Implémentez-la si votre `createFeedback` renvoie l'enregistrement existant sur un doublon (`duplicateBehavior: "return"`) ; un store qui lève `StoreDuplicateError` donne déjà ce signal au handler et peut s'en passer.
+`createFeedbackIfAbsent(data)` est l'autre méthode optionnelle : un `createFeedback` qui indique aussi si cet appel a inséré l'enregistrement — `{ feedback, created }`. Quand deux requêtes se disputent le même `clientId`, le handler ne déclenche les webhooks et `onCreated` que pour `created: true`. Implémentez-la si votre `createFeedback` renvoie l'enregistrement existant sur un doublon (`duplicateBehavior: "return"`) ; un store qui lève `StoreDuplicateError` donne déjà ce signal au handler et peut s'en passer. La vérification du doublon et l'insertion doivent être atomiques : parmi des appels concurrents avec le même `clientId`, un seul renvoie `created: true`. `createCollectionStore` le garantit au sein d'une instance de store en mettant ses écritures en file ; un stockage partagé par plusieurs processus (ou onglets) nécessite sa propre primitive atomique — contrainte d'unicité, transaction, compare-and-set.
 
 ## La preuve : la suite de conformité
 
-La même suite que celle des adapters officiels. Pointez-la vers une factory qui renvoie un store neuf et vide, et elle exerce tout le contrat — 45 tests :
+La même suite que celle des adapters officiels. Pointez-la vers une factory qui renvoie un store neuf et vide, et elle exerce tout le contrat — 47 tests :
 
 ```ts
 // __tests__/my-store.test.ts

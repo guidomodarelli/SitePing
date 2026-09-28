@@ -34,6 +34,12 @@ export interface LocalStorageStoreOptions {
  * primitives: JSON persistence with Date revival, quota-safe writes, an id
  * generator.
  *
+ * Concurrency: writes are serialized within one `LocalStorageStore`
+ * instance, so concurrent `createFeedbackIfAbsent` calls on it insert a
+ * `clientId` once. Two instances on the same key — typically two browser
+ * tabs — are not coordinated: their read-modify-write cycles can still
+ * overwrite each other.
+ *
  * Note: localStorage has its own ~5 MB hard cap; inline screenshots are OK
  * for prototyping but will hit the cap quickly. Production users should use
  * adapter-prisma with a configured `ScreenshotStorage`.

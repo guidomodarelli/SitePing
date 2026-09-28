@@ -835,7 +835,12 @@ export interface SitepingStore {
    * Optional — `createFeedback` that reports whether this call inserted the
    * record (`created: true`) or found an existing one with the same
    * `clientId` (`created: false`). The dedup check and the insert must be
-   * atomic, like `createFeedback`'s.
+   * atomic, like `createFeedback`'s: of N concurrent calls with the same
+   * `clientId`, exactly one may report `created: true`, and all must return
+   * that same record. `createCollectionStore` guarantees this within one
+   * store instance by serializing its mutations; stores shared across
+   * processes need an atomic backend primitive (unique constraint,
+   * transaction, compare-and-set).
    *
    * HTTP handlers prefer it over `createFeedback` to fire creation side
    * effects (webhooks, `onCreated`) exactly once when concurrent requests

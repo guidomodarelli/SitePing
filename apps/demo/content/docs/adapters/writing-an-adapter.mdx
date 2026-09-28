@@ -41,7 +41,7 @@ export function createArrayStore(): SitepingStore {
 }
 ```
 
-That is a real, fully conformant adapter — it's the dogfood example the kit's own test suite runs the 45 conformance tests against. Swap the three functions for your storage and you're done: [`MemoryStore`](/docs/adapters/memory) and [`LocalStorageStore`](/docs/adapters/localstorage) are this same engine with different primitives.
+That is a real, fully conformant adapter — it's the dogfood example the kit's own test suite runs the 47 conformance tests against. Swap the three functions for your storage and you're done: [`MemoryStore`](/docs/adapters/memory) and [`LocalStorageStore`](/docs/adapters/localstorage) are this same engine with different primitives.
 
 **The three primitives:**
 
@@ -129,11 +129,11 @@ Implement it whenever your store serves more than one project. When it's absent,
 
 ## Exactly-once creation effects
 
-`createFeedbackIfAbsent(data)` is the other optional method: `createFeedback` that also returns whether this call inserted the record — `{ feedback, created }`. When two requests race on the same `clientId`, the handler fires webhooks and `onCreated` only for `created: true`. Implement it if your `createFeedback` returns the existing record on a duplicate (`duplicateBehavior: "return"`); a store that throws `StoreDuplicateError` already gives the handler that signal and can leave it out.
+`createFeedbackIfAbsent(data)` is the other optional method: `createFeedback` that also returns whether this call inserted the record — `{ feedback, created }`. When two requests race on the same `clientId`, the handler fires webhooks and `onCreated` only for `created: true`. Implement it if your `createFeedback` returns the existing record on a duplicate (`duplicateBehavior: "return"`); a store that throws `StoreDuplicateError` already gives the handler that signal and can leave it out. The dedup check and the insert must be atomic: of concurrent calls with the same `clientId`, exactly one reports `created: true`. `createCollectionStore` guarantees it within one store instance by queueing its writes; storage shared by several processes (or browser tabs) needs an atomic primitive of its own — a unique constraint, a transaction, a compare-and-set.
 
 ## Prove it: the conformance suite
 
-The same suite the first-party adapters run. Point it at a factory that returns a fresh, empty store and it exercises the whole contract — 45 tests:
+The same suite the first-party adapters run. Point it at a factory that returns a fresh, empty store and it exercises the whole contract — 47 tests:
 
 ```ts
 // __tests__/my-store.test.ts

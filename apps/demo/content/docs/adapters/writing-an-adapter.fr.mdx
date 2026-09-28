@@ -125,7 +125,7 @@ async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> 
 }
 ```
 
-Implémentez-la dès que votre store sert plus d'un projet. En son absence, les handlers sautent la vérification et se fient au seul `id`.
+Implémentez-la dès que votre store sert plus d'un projet. En son absence, les handlers se fient au seul `id` — c'est pourquoi `createSitepingHandler` refuse de démarrer avec un `access.authorize` personnalisé sur un store qui ne l'implémente pas.
 
 ## La preuve : la suite de conformité
 

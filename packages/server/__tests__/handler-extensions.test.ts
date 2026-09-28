@@ -130,6 +130,63 @@ describe("createSitepingHandler — access control", () => {
   });
 });
 
+/**
+ * A conformant store that leaves out the optional `verifyProjectOwnership`,
+ * as a minimal third-party adapter may — every required method delegates to
+ * a real `MemoryStore`.
+ */
+function storeWithoutOwnershipCheck(backing = new MemoryStore()): SitepingStore {
+  return {
+    createFeedback: (data) => backing.createFeedback(data),
+    getFeedbacks: (query) => backing.getFeedbacks(query),
+    findByClientId: (clientId) => backing.findByClientId(clientId),
+    updateFeedback: (id, data) => backing.updateFeedback(id, data),
+    deleteFeedback: (id) => backing.deleteFeedback(id),
+    deleteAllFeedbacks: (projectName) => backing.deleteAllFeedbacks(projectName),
+  };
+}
+
+/** Policy scoping each principal to one project: the admin to `test-project`, the guest to `guest-project`. */
+const projectScopedAccess = () =>
+  sessionAccess({
+    authorize: ({ principal, projectName }) => projectName === (principal?.isAdmin ? "test-project" : "guest-project"),
+  });
+
+describe("createSitepingHandler — project ownership of per-record mutations", () => {
+  it("refuses to start with a custom authorize over a store without verifyProjectOwnership", () => {
+    expect(() => createSitepingHandler({ store: storeWithoutOwnershipCheck(), access: projectScopedAccess() })).toThrow(
+      /needs a store implementing `verifyProjectOwnership`/,
+    );
+  });
+
+  it("still starts over such a store when no policy scopes callers to projects", () => {
+    expect(() => createSitepingHandler({ store: storeWithoutOwnershipCheck(), access: sessionAccess() })).not.toThrow();
+    expect(() => createSitepingHandler({ store: storeWithoutOwnershipCheck(), apiKey: "secret-key" })).not.toThrow();
+  });
+
+  it("answers 404 and leaves the record untouched when the claimed project is not the record's", async () => {
+    const store = new MemoryStore();
+    const handler = createSitepingHandler({ store, access: projectScopedAccess() });
+    const created = await handler.POST(
+      jsonRequest("POST", { ...validPayloadNoAnnotations, projectName: "guest-project" }, GUEST),
+    );
+    expect(created.status).toBe(201);
+    const guestFeedback = (await created.json()) as FeedbackRecord;
+
+    const crossUpdate = await handler.PATCH(
+      jsonRequest("PATCH", { id: guestFeedback.id, projectName: "test-project", status: "resolved" }, ADMIN),
+    );
+    const crossDelete = await handler.DELETE(
+      jsonRequest("DELETE", { id: guestFeedback.id, projectName: "test-project" }, ADMIN),
+    );
+
+    expect(crossUpdate.status).toBe(404);
+    expect(crossDelete.status).toBe(404);
+    const [stored] = (await store.getFeedbacks({ projectName: "guest-project" })).feedbacks;
+    expect(stored).toMatchObject({ id: guestFeedback.id, status: "open" });
+  });
+});
+
 describe("createSitepingHandler — beforeCreate and presentFeedback", () => {
   it("stores the input rewritten by beforeCreate and authorizes its effective project", async () => {
     const authorizedProjects: string[] = [];

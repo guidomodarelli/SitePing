@@ -28,7 +28,9 @@ export function updateFeedbackOperation<Principal>({
     try {
       const refusal = await pipeline.authorize(scope, { action: "update", projectName, feedbackId: id });
       if (refusal) return refusal;
-      // Cross-project guard for stores implementing the optional check.
+      // Cross-project guard. `createSitepingHandler` refuses to start with a
+      // custom `authorize` over a store lacking the check, so it is only ever
+      // skipped when no policy scopes callers to projects.
       if (store.verifyProjectOwnership && !(await store.verifyProjectOwnership(id, projectName))) {
         return pipeline.error(scope, 404, SITEPING_ERROR_MESSAGES.feedbackNotFound);
       }

@@ -125,7 +125,7 @@ async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> 
 }
 ```
 
-Implement it whenever your store serves more than one project. When it's absent, handlers skip the check and trust the `id` alone.
+Implement it whenever your store serves more than one project. When it's absent, handlers trust the `id` alone — which is why `createSitepingHandler` refuses to start with a custom `access.authorize` over a store that doesn't implement it.
 
 ## Prove it: the conformance suite
 

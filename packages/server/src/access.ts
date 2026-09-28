@@ -28,7 +28,9 @@ export interface SitepingAuthorizationContext<Principal> extends SitepingRequest
  *
  * - `authenticate` returning `null` → 401.
  * - `authorize` returning `false` → 403. Defaults to allowing every
- *   authenticated principal.
+ *   authenticated principal. When set, the store must implement
+ *   `verifyProjectOwnership`: PATCH/DELETE address records by id, and the
+ *   check is what keeps the authorized `projectName` bound to the record.
  * - `canReadAuthorEmail` decides whether responses include `authorEmail`
  *   (reviewer PII). Defaults to `true` for authenticated principals.
  */

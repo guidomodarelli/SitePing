@@ -794,8 +794,10 @@ export interface SitepingStore {
    * `projectName`, `false` otherwise (including when it does not exist).
    *
    * HTTP handlers use this to reject cross-project PATCH/DELETE requests.
-   * Implement it whenever your store serves multiple projects; when absent,
-   * handlers skip the ownership check and rely on `id` alone.
+   * Implement it whenever your store serves multiple projects. When absent,
+   * handlers rely on `id` alone — so `createSitepingHandler` refuses to start
+   * with a custom `access.authorize` (which may scope callers to projects)
+   * over a store that lacks it.
    */
   verifyProjectOwnership?(id: string, projectName: string): Promise<boolean>;
 }

@@ -1,5 +1,6 @@
 import { type AccessGate, accessGateFromControl } from "./access.js";
 import { createApiKeyGate } from "./api-key-access.js";
+import { SITEPING_CONFIGURATION_ERROR_MESSAGES } from "./constants/error-messages.js";
 import { buildCorsHeaders } from "./cors.js";
 import { createFeedbackOperation } from "./operations/create-feedback.js";
 import { deleteFeedbackOperation } from "./operations/delete-feedback.js";
@@ -34,6 +35,10 @@ function toWebhookList(webhooks: SitepingHandlerBaseOptions<unknown>["webhooks"]
  *
  * Rate limiting is not handled here; apply it at the framework or proxy level.
  *
+ * @throws Error when `access.authorize` is set and the store lacks
+ * `verifyProjectOwnership` — per-record PATCH/DELETE could otherwise target
+ * a record of a project the caller is not authorized for.
+ *
  * @example Next.js App Router with your own session auth
  * ```ts
  * export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
@@ -61,6 +66,13 @@ export function createSitepingHandler<Principal>(options: SitepingHandlerOptions
   } = options as SitepingHandlerBaseOptions<Principal>;
   if (!store) {
     throw new Error("[siteping] createSitepingHandler requires a `store`.");
+  }
+  // A custom `authorize` may scope principals to projects, but PATCH/DELETE
+  // address records by id: without an ownership check, the project a caller
+  // claims (and is authorized for) need not be the record's. Fail closed at
+  // startup rather than letting per-record mutations cross projects.
+  if (options.access?.authorize && !store.verifyProjectOwnership) {
+    throw new Error(SITEPING_CONFIGURATION_ERROR_MESSAGES.ownershipVerificationRequired);
   }
   const gate: AccessGate<Principal> = options.access
     ? accessGateFromControl(options.access)

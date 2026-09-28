@@ -47,6 +47,7 @@ export function deleteFeedbackOperation<Principal>({
       );
       if (refusal) return refusal;
 
+      // Cross-project guard — see the PATCH operation for why it may be absent.
       if (
         target.kind === "single" &&
         store.verifyProjectOwnership &&

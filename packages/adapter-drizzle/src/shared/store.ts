@@ -16,7 +16,7 @@ import {
   StorePersistenceError,
 } from "@siteping/core";
 import { DRIZZLE_STORE_MESSAGE_PREFIX, type DrizzleStoreMutation } from "../constants/errors.js";
-import { INLINE_SCREENSHOT_URL_PREFIX, SCREENSHOT_MIME_TYPE } from "../constants/screenshots.js";
+import { INLINE_SCREENSHOT_URL_PREFIX } from "../constants/screenshots.js";
 import type {
   AnnotationRow,
   DeleteFeedbacksOptions,
@@ -24,6 +24,7 @@ import type {
   FeedbackRow,
   SitepingSqlGateway,
 } from "./gateway.js";
+import { screenshotMimeType } from "./screenshots.js";
 
 /**
  * The store returned by the dialect factories — the full contract, including
@@ -287,7 +288,7 @@ export class DrizzleSitepingStore implements DrizzleStore {
       try {
         const { url } = await this.screenshotStorage.upload(dataUrl, {
           feedbackId,
-          mimeType: SCREENSHOT_MIME_TYPE,
+          mimeType: screenshotMimeType(dataUrl),
         });
         return url;
       } catch (error) {

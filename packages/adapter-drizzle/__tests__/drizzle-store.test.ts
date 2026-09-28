@@ -208,6 +208,29 @@ for (const dialect of dialects) {
       expect(deletions).toEqual([created.screenshotUrl]);
     });
 
+    it("uploads each screenshot with the MIME type its data URL declares", async () => {
+      const { storage, uploads } = recordingStorage();
+      const store = database.createStore({ screenshotStorage: storage, logger });
+
+      for (const dataUrl of [
+        "data:image/png;base64,iVBORw0KGgo=",
+        "data:image/webp;base64,UklGRg==",
+        SCREENSHOT_DATA_URL,
+        "data:IMAGE/PNG;base64,iVBORw0KGgo=",
+        "data:;base64,/9j/4AAQ",
+      ]) {
+        await store.createFeedback(feedbackInput({ screenshotDataUrl: dataUrl }));
+      }
+
+      expect(uploads.map((upload) => upload.mimeType)).toEqual([
+        "image/png",
+        "image/webp",
+        "image/jpeg",
+        "image/png",
+        "image/jpeg",
+      ]);
+    });
+
     it("does not upload again when a clientId is replayed", async () => {
       const { storage, uploads } = recordingStorage();
       const store = database.createStore({ screenshotStorage: storage, logger });

@@ -25,7 +25,9 @@ Without any storage, stores keep screenshots inline in the database as base64 �
 
 `createScreenshotStorage` handles the backend-agnostic parts: image type and size validation, a fresh random key per upload (one URL per feedback, never shared nor content-addressed, never derived from client input — as the `ScreenshotStorage` contract requires), reclaiming uploads whose outcome is unknown, and ignoring URLs it does not own on delete — including, under the backend's own base URL, any key outside its generated namespace (`<keyPrefix><random hex>.<ext>`), so a legacy or imported URL pointing at another object of a shared bucket or CDN is never deleted.
 
-Options: `allowedContentTypes` (default JPEG, PNG, WebP — each type must map to a 1–10 character key extension such as `image/gif` → `gif`, checked when the storage is created), `maxBytes`, `keyPrefix` (default `siteping-`), `logger`.
+Options: `allowedContentTypes` (default JPEG, PNG, WebP — each type must map to a 1–10 character key extension such as `image/gif` → `gif`, checked when the storage is created), `maxBytes`, `keyPrefix` (default `siteping-`), `logger`, and for uploads whose outcome is unknown (timeout, 5xx): `uncertainUploadReclaimDelaysMs` (default 5 s, 30 s, 2 min), `scheduleReclaim`, `onUncertainUpload`.
+
+An upload that times out may still be committed by the backend after the immediate reclaim, so the key is removed again after each delay. Those attempts live in process memory: on serverless platforms, or for a hard guarantee, also enqueue the keys `onUncertainUpload` receives in a durable job, or add a lifecycle rule on the bucket that expires objects under `keyPrefix` no feedback references.
 
 Match errors with `isScreenshotUploadRejected(error)` and `isObjectStoreRequestError(error)` (stable `code` checks) rather than `instanceof`: in CommonJS each entry point (`@siteping/screenshot-storage`, `/s3`…) bundles its own copy of the error classes.
 

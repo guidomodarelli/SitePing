@@ -24,7 +24,9 @@ export {
 export { createPublicUrlMapping } from "./core/public-url.js";
 export {
   createScreenshotStorage,
+  type ReclaimScheduler,
   type ScreenshotStorageLogger,
   type ScreenshotStorageOptions,
+  type UncertainUploadHook,
 } from "./core/screenshot-storage.js";
 export { createScreenshotServeHandler, type ScreenshotServeHandlerOptions } from "./core/serve-handler.js";

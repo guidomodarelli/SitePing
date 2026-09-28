@@ -327,6 +327,105 @@ describe("createScreenshotServeHandler", () => {
 });
 
 /**
+ * A memory backend whose `put` times out while the upload is still in flight:
+ * the caller gets an unknown outcome at once, and the object is committed
+ * `commitDelayMs` later — after the immediate reclaim already ran.
+ */
+function createLateCommittingObjectStore(commitDelayMs: number) {
+  const committed = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+  const objectStore: ScreenshotObjectStore = {
+    ...committed,
+    async put(object) {
+      setTimeout(() => void committed.put(object), commitDelayMs);
+      throw new ObjectStoreRequestError("memory", "PUT", `/${object.key}`, null, {
+        cause: new DOMException("The operation timed out.", "TimeoutError"),
+      });
+    },
+  };
+  return { objectStore, storedKeys: () => committed.keys() };
+}
+
+describe("createScreenshotStorage — uploads committed after a timeout", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("reclaims an object the backend commits after the immediate reclaim", async () => {
+    vi.useFakeTimers();
+    const { objectStore, storedKeys } = createLateCommittingObjectStore(1_000);
+    const storage = createScreenshotStorage(objectStore, { logger: silentLogger() });
+
+    await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(ObjectStoreRequestError);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(storedKeys()).toHaveLength(1);
+
+    await vi.runAllTimersAsync();
+    expect(storedKeys()).toEqual([]);
+  });
+
+  it("leaves the late commit behind with only the immediate reclaim — the gap the delays close", async () => {
+    vi.useFakeTimers();
+    const { objectStore, storedKeys } = createLateCommittingObjectStore(1_000);
+    const storage = createScreenshotStorage(objectStore, {
+      uncertainUploadReclaimDelaysMs: [],
+      logger: silentLogger(),
+    });
+
+    await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(ObjectStoreRequestError);
+    await vi.runAllTimersAsync();
+
+    expect(storedKeys()).toHaveLength(1);
+  });
+
+  it("runs the delayed attempts through the injected scheduler and hands the key to onUncertainUpload", async () => {
+    const scheduled: { task: () => void; delayMs: number }[] = [];
+    const uncertainKeys: string[] = [];
+    const { objectStore, storedKeys } = createLateCommittingObjectStore(0);
+    const storage = createScreenshotStorage(objectStore, {
+      uncertainUploadReclaimDelaysMs: [10, 20],
+      scheduleReclaim: (task, delayMs) => scheduled.push({ task, delayMs }),
+      onUncertainUpload: (key) => {
+        uncertainKeys.push(key);
+      },
+      logger: silentLogger(),
+    });
+
+    await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(ObjectStoreRequestError);
+    await new Promise((resolve) => setTimeout(resolve, 5)); // let the late commit land
+    expect(storedKeys()).toEqual(uncertainKeys);
+    expect(scheduled.map(({ delayMs }) => delayMs)).toEqual([10, 20]);
+
+    scheduled[0]?.task();
+    await vi.waitFor(() => expect(storedKeys()).toEqual([]));
+  });
+
+  it("logs a failing onUncertainUpload hook and still reports the upload error", async () => {
+    const logger = silentLogger();
+    const { objectStore } = createLateCommittingObjectStore(0);
+    const storage = createScreenshotStorage(objectStore, {
+      uncertainUploadReclaimDelaysMs: [],
+      onUncertainUpload: () => {
+        throw new Error("queue unavailable");
+      },
+      logger,
+    });
+
+    await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(ObjectStoreRequestError);
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("onUncertainUpload failed"), {
+      key: expect.stringMatching(/^siteping-[a-f0-9]{32}\.jpg$/),
+      error: expect.objectContaining({ message: "queue unavailable" }),
+    });
+  });
+
+  it("refuses reclaim delays that are not finite, non-negative milliseconds", () => {
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+    expect(() => createScreenshotStorage(objectStore, { uncertainUploadReclaimDelaysMs: [-1] })).toThrow(
+      /uncertainUploadReclaimDelaysMs/,
+    );
+  });
+});
+
+/**
  * What a backend subpath's CommonJS bundle throws: same name and code as the
  * classes the consumer imported from the package root, but another class.
  */

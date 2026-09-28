@@ -6,7 +6,7 @@ import {
   UNCERTAIN_UPLOAD_RECLAIM_DELAYS_MS,
 } from "../constants/screenshots.js";
 import { assertInertContentTypes } from "./active-content.js";
-import { assertMaxBytes, decodeImageDataUrl } from "./data-url.js";
+import { assertMaxBytes, decodeImageDataUrl, normalizeContentTypes } from "./data-url.js";
 import { assertKeyableContentTypes, assertKeyPrefix, generateKey, isGeneratedKey } from "./generated-key.js";
 import { isScreenshotUploadRejected, type ScreenshotObjectStore } from "./object-store.js";
 import {
@@ -22,7 +22,8 @@ export type { ReclaimScheduler, ScreenshotStorageLogger, UncertainUploadHook } f
 
 export interface ScreenshotStorageOptions {
   /**
-   * Image types accepted. Defaults to JPEG, PNG and WebP. Each type must map to
+   * Image types accepted. Defaults to JPEG, PNG and WebP. Entries are
+   * case-insensitive and trimmed (`"IMAGE/GIF"` means `image/gif`). Each type must map to
    * a key extension of 1–10 lowercase letters or digits (`image/gif` → `gif`,
    * `image/x-icon` → `ico`), and active formats (`image/svg+xml`, which can run
    * scripts when opened directly) are refused; `createScreenshotStorage` throws otherwise.
@@ -117,8 +118,9 @@ export function createScreenshotStorage(
 ): ScreenshotStorage {
   assertKeyPrefix(keyPrefix, "createScreenshotStorage");
   assertMaxBytes(maxBytes);
-  assertInertContentTypes(allowedContentTypes);
-  assertKeyableContentTypes(allowedContentTypes);
+  const normalizedContentTypes = normalizeContentTypes(allowedContentTypes);
+  assertInertContentTypes(normalizedContentTypes);
+  assertKeyableContentTypes(normalizedContentTypes);
   assertReclaimDelays(uncertainUploadReclaimDelaysMs);
   const reclaimUncertainUpload = createUncertainUploadReclaimer({
     objectStore,
@@ -130,7 +132,7 @@ export function createScreenshotStorage(
 
   return {
     async upload(dataUrl) {
-      const image = decodeImageDataUrl(dataUrl, { allowedContentTypes, maxBytes });
+      const image = decodeImageDataUrl(dataUrl, { allowedContentTypes: normalizedContentTypes, maxBytes });
       const key = generateKey(keyPrefix, image.contentType);
       const url = objectStore.urlFor(key);
       try {

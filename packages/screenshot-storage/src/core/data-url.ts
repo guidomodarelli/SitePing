@@ -38,6 +38,19 @@ export function assertMaxBytes(maxBytes: number): void {
 }
 
 /**
+ * Canonical form of the configured allowlist. MIME types are case-insensitive
+ * and uploads compare the data URL's lowercased type, so each entry is trimmed
+ * and lowercased once, at configuration time — `"IMAGE/GIF"` then accepts GIF
+ * uploads instead of silently refusing every one.
+ *
+ * @param allowedContentTypes - The `allowedContentTypes` option of `createScreenshotStorage`.
+ * @returns A new array of normalized content types; the caller's array is left untouched.
+ */
+export function normalizeContentTypes(allowedContentTypes: readonly string[]): string[] {
+  return allowedContentTypes.map((contentType) => contentType.trim().toLowerCase());
+}
+
+/**
  * Longest base64 payload (whitespace removed) that can decode to at most
  * `maxBytes` bytes — checked before decoding so an oversized upload never
  * costs its decoding.
@@ -77,7 +90,7 @@ function decodeBase64(payload: string): Uint8Array<ArrayBuffer> {
  * decoding, the decoded size after.
  *
  * @param dataUrl - The widget's screenshot data URL (untrusted input).
- * @param limits - Allowed content types and `maxBytes`, validated by `createScreenshotStorage`.
+ * @param limits - Allowed content types (normalized by {@link normalizeContentTypes}) and `maxBytes`, validated by `createScreenshotStorage`.
  * @throws InvalidScreenshotError naming the reason, never echoing the payload.
  */
 export function decodeImageDataUrl(

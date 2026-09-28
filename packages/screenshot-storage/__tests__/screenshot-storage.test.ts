@@ -295,6 +295,16 @@ describe("createScreenshotStorage — validation", () => {
     ).toThrow(/active format/);
   });
 
+  it("accepts uploads of a configured content type written in another case or with spaces", async () => {
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+    const storage = createScreenshotStorage(objectStore, { allowedContentTypes: [" IMAGE/GIF "] });
+
+    const { url } = await storage.upload(GIF_DATA_URL, UPLOAD_CONTEXT);
+
+    expect(objectStore.keyFromUrl(url)).toMatch(/\.gif$/);
+    expect((await objectStore.get?.(objectStore.keyFromUrl(url) ?? ""))?.contentType).toBe("image/gif");
+  });
+
   it("gives custom content types keys the serve handler accepts", async () => {
     const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
     const storage = createScreenshotStorage(objectStore, {

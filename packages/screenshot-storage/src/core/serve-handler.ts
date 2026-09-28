@@ -9,8 +9,10 @@ export interface ScreenshotServeHandlerOptions {
   /**
    * Decide whether the request may read screenshots (e.g. same session check
    * as the feedback API). Defaults to public — keys are unguessable. When set,
-   * responses are marked `Cache-Control: private` so shared caches (CDN, proxy)
-   * never serve an authorized screenshot to a request that skipped this check.
+   * responses are marked `Cache-Control: private, no-cache`: shared caches (CDN,
+   * proxy) never serve an authorized screenshot to a request that skipped this
+   * check, and the browser revalidates every reuse, so a revoked access takes
+   * effect at once (an unchanged screenshot costs a `304`, not its bytes).
    */
   authorize?: (request: Request) => boolean | Promise<boolean>;
 }
@@ -47,10 +49,15 @@ export function createScreenshotServeHandler(
       if (key === null || !GENERATED_KEY_PATTERN.test(key)) return new Response(null, { status: 404 });
       const object = await read(key);
       if (!object) return new Response(null, { status: 404 });
+      const etag = servedScreenshotEtag(key);
+      const cacheHeaders = { "Cache-Control": cacheControl, ETag: etag };
+      if (matchesIfNoneMatch(request.headers.get("If-None-Match"), etag)) {
+        return new Response(null, { status: 304, headers: cacheHeaders });
+      }
       return new Response(object.bytes, {
         headers: {
+          ...cacheHeaders,
           "Content-Type": object.contentType,
-          "Cache-Control": cacheControl,
           "X-Content-Type-Options": "nosniff",
         },
       });
@@ -71,4 +78,29 @@ function keyFromRequestUrl(requestUrl: string): string | null {
     if (error instanceof URIError) return null;
     throw error;
   }
+}
+
+/**
+ * Strong ETag of a served screenshot. A key is written once and never reused
+ * (a new key per upload), so the key itself identifies the bytes — no hashing.
+ *
+ * @param key - Generated key being served.
+ */
+function servedScreenshotEtag(key: string): string {
+  return `"${key}"`;
+}
+
+/**
+ * Whether an `If-None-Match` request header matches `etag` (weak comparison,
+ * as RFC 9110 prescribes for `If-None-Match`): `*`, or any listed tag.
+ *
+ * @param ifNoneMatch - Raw header value, `null` when absent.
+ * @param etag - Current strong ETag of the screenshot.
+ */
+function matchesIfNoneMatch(ifNoneMatch: string | null, etag: string): boolean {
+  if (ifNoneMatch === null) return false;
+  return ifNoneMatch.split(",").some((listedTag) => {
+    const tag = listedTag.trim();
+    return tag === "*" || tag.replace(/^W\//, "") === etag;
+  });
 }

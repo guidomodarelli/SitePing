@@ -330,7 +330,7 @@ describe("createScreenshotServeHandler", () => {
     expect((await handler.GET(new Request(url, { headers: { cookie: "session=ok" } }))).status).toBe(200);
   });
 
-  it("keeps screenshots behind an authorize callback out of shared caches", async () => {
+  it("keeps screenshots behind an authorize callback out of shared caches and revalidated on every reuse", async () => {
     const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
     const { url } = await createScreenshotStorage(objectStore).upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
     const handler = createScreenshotServeHandler(objectStore, { authorize: () => true });
@@ -338,7 +338,26 @@ describe("createScreenshotServeHandler", () => {
     const response = await handler.GET(new Request(url));
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("cache-control")).toBe("private, max-age=31536000, immutable");
+    expect(response.headers.get("cache-control")).toBe("private, no-cache");
+  });
+
+  it("revalidates an authorized screenshot with a 304, and refuses it once access is revoked", async () => {
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+    const { url } = await createScreenshotStorage(objectStore).upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
+    let hasAccess = true;
+    const handler = createScreenshotServeHandler(objectStore, { authorize: () => hasAccess });
+
+    const firstResponse = await handler.GET(new Request(url));
+    const etag = firstResponse.headers.get("etag");
+    expect(etag).toMatch(/^".+"$/);
+    const revalidation = await handler.GET(new Request(url, { headers: { "If-None-Match": `W/${etag}` } }));
+    expect(revalidation.status).toBe(304);
+    expect(revalidation.headers.get("cache-control")).toBe("private, no-cache");
+    expect(await revalidation.text()).toBe("");
+
+    hasAccess = false;
+    const afterRevocation = await handler.GET(new Request(url, { headers: { "If-None-Match": `${etag}` } }));
+    expect(afterRevocation.status).toBe(403);
   });
 
   it("refuses backends that serve their own URLs", () => {

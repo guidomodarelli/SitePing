@@ -35,10 +35,15 @@ export const SERVED_SCREENSHOT_CACHE_CONTROL = "public, max-age=31536000, immuta
 
 /**
  * `Cache-Control` of screenshots served behind an `authorize` callback: only the
- * requesting browser may keep them. A shared cache (CDN, proxy) storing an
- * authorized response would hand it to later requests without running the check.
+ * requesting browser may keep them (a shared cache — CDN, proxy — storing an
+ * authorized response would hand it to later requests without running the
+ * check), and it must revalidate every reuse (`no-cache`), so a logout, a
+ * revoked access or another user of the same browser profile gets the new
+ * `authorize` decision instead of a still-fresh copy. Revalidation is cheap:
+ * the handler answers `304` to a matching `If-None-Match` (the ETag is the
+ * immutable key) without resending the bytes.
  */
-export const AUTHORIZED_SERVED_SCREENSHOT_CACHE_CONTROL = "private, max-age=31536000, immutable";
+export const AUTHORIZED_SERVED_SCREENSHOT_CACHE_CONTROL = "private, no-cache";
 
 // Building blocks of a generated key `<prefix><hex>.<extension>` — the single
 // source every key check below is derived from, so keys `createScreenshotStorage`

@@ -63,7 +63,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup && node ../../scripts/fix-dts.mjs dist",
+    "build": "rm -rf dist && tsup && node ../../scripts/fix-dts.mjs dist",
     "check": "tsc --noEmit",
     "clean": "rm -rf dist"
   },

@@ -335,12 +335,17 @@ export class DrizzleSitepingStore implements DrizzleStore {
     await this.discardScreenshots([screenshotUrl]);
   }
 
-  /** Best-effort cleanup through `ScreenshotStorage.delete`; failures are logged, never thrown. */
+  /**
+   * Best-effort cleanup through `ScreenshotStorage.delete`; failures are
+   * logged, never thrown. Each call runs inside its own promise, so a hook
+   * that throws synchronously is settled like a rejection: it neither fails
+   * an already committed delete nor skips the remaining objects.
+   */
   private async discardScreenshots(urls: ReadonlyArray<string | null | undefined>): Promise<void> {
     const remove = this.screenshotStorage?.delete?.bind(this.screenshotStorage);
     if (!remove) return;
     const uploaded = urls.filter(isUploadedScreenshotUrl);
-    const results = await Promise.allSettled(uploaded.map((url) => remove(url)));
+    const results = await Promise.allSettled(uploaded.map(async (url) => remove(url)));
     results.forEach((result, index) => {
       if (result.status === "rejected") {
         this.logger.warn("[siteping] DrizzleStore: screenshotStorage.delete failed — object left in place", {

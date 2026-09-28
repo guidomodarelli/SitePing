@@ -402,6 +402,35 @@ for (const dialect of dialects) {
       expect((await store.getFeedbacks({ projectName: "other-site" })).total).toBe(1);
     });
 
+    it("completes deletes and keeps cleaning up when the delete hook throws synchronously", async () => {
+      const cleanupError = new Error("storage client not ready");
+      let failingUrl = "";
+      const { storage, deletions } = recordingStorage();
+      const recordDeletion = storage.delete?.bind(storage);
+      storage.delete = (url) => {
+        if (url === failingUrl) throw cleanupError;
+        return recordDeletion?.(url) ?? Promise.resolve();
+      };
+      const store = database.createStore({ screenshotStorage: storage, logger });
+      const single = await store.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL }));
+      const failing = await store.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL }));
+      const cleaned = await store.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL }));
+      failingUrl = single.screenshotUrl ?? "";
+
+      await expect(store.deleteFeedback(single.id)).resolves.toBeUndefined();
+      failingUrl = failing.screenshotUrl ?? "";
+      await expect(store.deleteAllFeedbacks("site")).resolves.toBeUndefined();
+
+      expect((await store.getFeedbacks({ projectName: "site" })).total).toBe(0);
+      expect(deletions).toEqual([cleaned.screenshotUrl]);
+      for (const screenshotUrl of [single.screenshotUrl, failing.screenshotUrl]) {
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("delete failed"), {
+          screenshotUrl,
+          error: cleanupError,
+        });
+      }
+    });
+
     it("removes the annotations of deleted feedbacks", async () => {
       const store = database.createStore({ logger });
       const single = await store.createFeedback(feedbackInput());

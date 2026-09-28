@@ -1,7 +1,9 @@
 import { Sha256 } from "@aws-crypto/sha256-js";
 import { SignatureV4 } from "@smithy/signature-v4";
 import { describe, expect, it } from "vitest";
+import { createS3ObjectStore } from "../src/s3/index.js";
 import { sha256Hex, signS3Request } from "../src/s3/sigv4.js";
+import { createFakeS3 } from "./fake-backends.js";
 
 // Every case is checked against AWS's own signer (@smithy/signature-v4, used by the AWS SDK).
 const credentials = { accessKeyId: "AKIDEXAMPLE", secretAccessKey: "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY" };
@@ -106,5 +108,38 @@ describe("signS3Request", () => {
         "session-token",
       ),
     );
+  });
+});
+
+describe("createS3ObjectStore — signing clock", () => {
+  it("signs every request with the injected clock, read once per request", async () => {
+    const fake = createFakeS3({ bucket: "screens", region: "auto", ...credentials });
+    const signingDates = [new Date("2026-09-27T12:34:56Z"), new Date("2026-09-27T12:40:00Z")];
+    let clockReads = 0;
+    const objectStore = createS3ObjectStore({
+      endpoint: "https://account.r2.cloudflarestorage.com",
+      bucket: "screens",
+      publicBaseUrl: "https://screens.example.com",
+      ...credentials,
+      fetch: fake.fetch,
+      now: () => signingDates[clockReads++] as Date,
+    });
+
+    await objectStore.put({
+      key: "siteping-0123abcd.jpg",
+      bytes: new TextEncoder().encode("jpeg-bytes"),
+      contentType: "image/jpeg",
+    });
+    await objectStore.remove("siteping-0123abcd.jpg");
+
+    // The fake bucket re-signs each request with AWS's own signer and answers 403 on mismatch,
+    // so the object round-trip proves the signatures were valid for the injected instants.
+    expect(fake.objects.has("siteping-0123abcd.jpg")).toBe(false);
+    expect(fake.requests.map((request) => request.headers.get("x-amz-date"))).toEqual([
+      "20260927T123456Z",
+      "20260927T124000Z",
+    ]);
+    expect(fake.requests[0]?.headers.get("authorization")).toContain("/20260927/auto/s3/aws4_request");
+    expect(clockReads).toBe(2);
   });
 });

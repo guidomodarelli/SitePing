@@ -23,6 +23,12 @@ export interface S3ObjectStoreOptions extends SigV4Credentials {
   publicBaseUrl: string;
   fetch?: typeof fetch;
   timeoutMs?: number;
+  /**
+   * Clock read once per request to sign it (`x-amz-date` and credential scope).
+   * Defaults to the host clock; supply a corrected one when the host clock is
+   * skewed, since S3 rejects signatures more than a few minutes off.
+   */
+  now?: () => Date;
 }
 
 /**
@@ -41,6 +47,7 @@ export function createS3ObjectStore({
   sessionToken,
   fetch = globalThis.fetch,
   timeoutMs,
+  now = () => new Date(),
 }: S3ObjectStoreOptions): ScreenshotObjectStore {
   const credentials: SigV4Credentials = { accessKeyId, secretAccessKey, ...(sessionToken ? { sessionToken } : {}) };
   const endpointBase = trimTrailingSlashes(endpoint);
@@ -61,6 +68,7 @@ export function createS3ObjectStore({
       { method, url, headers: options.headers ?? {}, payloadHash: await sha256Hex(options.body ?? new Uint8Array()) },
       credentials,
       region,
+      now(),
     );
     return sendBackendRequest({
       backend: "S3",

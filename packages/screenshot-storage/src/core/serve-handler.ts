@@ -6,6 +6,7 @@ import {
 } from "../constants/screenshots.js";
 import { assertKeyPrefix, isGeneratedKey } from "./generated-key.js";
 import type { ScreenshotObjectStore } from "./object-store.js";
+import { safeDecodeURIComponent } from "./safe-decode-uri-component.js";
 
 /** The screenshot a request asks for, handed to `authorize`. */
 export interface ScreenshotServeRequestTarget {
@@ -96,12 +97,7 @@ export function createScreenshotServeHandler(
  */
 function keyFromRequestUrl(requestUrl: string): string | null {
   const lastSegment = new URL(requestUrl).pathname.split("/").pop() ?? "";
-  try {
-    return decodeURIComponent(lastSegment);
-  } catch (error) {
-    if (error instanceof URIError) return null;
-    throw error;
-  }
+  return safeDecodeURIComponent(lastSegment);
 }
 
 /**

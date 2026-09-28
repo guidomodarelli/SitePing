@@ -147,6 +147,20 @@ for (const backend of backends) {
       await expect(storage.delete?.("https://elsewhere.example.com/siteping-x.jpg")).resolves.toBeUndefined();
     });
 
+    it("treats a stored URL with malformed percent-encoding as not its own on delete", async () => {
+      const { objectStore, storedBytes } = backend.open();
+      const storage = createScreenshotStorage(objectStore, { logger: silentLogger() });
+      const { url } = await storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
+      const key = objectStore.keyFromUrl(url) ?? "";
+
+      for (const malformedKey of ["%", "%ZZ", "%E0%A4%A"]) {
+        const malformedUrl = objectStore.urlFor("PLACEHOLDER").replace("PLACEHOLDER", malformedKey);
+        expect(objectStore.keyFromUrl(malformedUrl)).toBeNull();
+        await expect(storage.delete?.(malformedUrl)).resolves.toBeUndefined();
+      }
+      expect(await storedBytes(key)).toEqual(JPEG_BYTES);
+    });
+
     it("never deletes another object behind the same public base URL", async () => {
       const { objectStore, storedBytes } = backend.open();
       const logger = silentLogger();

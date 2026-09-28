@@ -7,6 +7,7 @@ import {
 import { HTTP_STATUS_NOT_FOUND } from "../constants/http.js";
 import { sendBackendRequest } from "../core/http.js";
 import type { ScreenshotObjectStore } from "../core/object-store.js";
+import { safeDecodeURIComponent } from "../core/safe-decode-uri-component.js";
 import { trimTrailingSlashes } from "../core/trailing-slashes.js";
 
 export interface CloudflareImagesObjectStoreOptions {
@@ -59,7 +60,8 @@ export function createCloudflareImagesObjectStore({
     keyFromUrl(url) {
       if (!url.startsWith(deliveryPrefix)) return null;
       const [key, deliveredVariant, ...rest] = url.slice(deliveryPrefix.length).split("/");
-      return key && deliveredVariant && rest.length === 0 ? decodeURIComponent(key) : null;
+      // A malformed encoding (legacy or corrupt record) is not ours: `null`, never a throw.
+      return key && deliveredVariant && rest.length === 0 ? safeDecodeURIComponent(key) : null;
     },
 
     async put({ key, bytes, contentType }) {

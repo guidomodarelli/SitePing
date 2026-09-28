@@ -19,6 +19,9 @@ export const IDENTITY_CACHE_CONTROL = "no-store";
 /** Methods announced in CORS preflight responses of the feedback endpoint. */
 export const CORS_ALLOWED_METHODS = "GET, POST, PATCH, DELETE, OPTIONS";
 
+/** Methods announced in CORS preflight responses of the identity endpoint. */
+export const IDENTITY_CORS_ALLOWED_METHODS = "GET, OPTIONS";
+
 /**
  * Request headers the widget sends cross-origin — always allowed. The
  * `allowedHeaders` option extends this list (e.g. a custom session header

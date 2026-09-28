@@ -9,7 +9,12 @@ export type {
 export type { ApiKeyAccessOptions } from "./api-key-access.js";
 export { SITEPING_ERROR_MESSAGES } from "./constants/error-messages.js";
 export { createSitepingHandler } from "./handler.js";
-export type { SitepingIdentity, SitepingIdentityHandlerOptions, SitepingIdentityResponse } from "./identity.js";
+export type {
+  SitepingIdentity,
+  SitepingIdentityHandler,
+  SitepingIdentityHandlerOptions,
+  SitepingIdentityResponse,
+} from "./identity.js";
 export { createSitepingIdentityHandler } from "./identity.js";
 export type {
   SitepingAccessHandlerOptions,

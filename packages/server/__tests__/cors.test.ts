@@ -160,3 +160,57 @@ describe("createSitepingIdentityHandler — allowedHeaders", () => {
     expect(() => identityHandler(["X Session"])).toThrow(/allowedHeaders/);
   });
 });
+
+describe("createSitepingIdentityHandler — CORS preflight", () => {
+  const identityHandler = (allowedOrigins?: ReadonlyArray<string>) =>
+    createSitepingIdentityHandler<Reviewer>({
+      access: {
+        authenticate: (request) => {
+          const token = request.headers.get("Authorization");
+          return token ? { email: REVIEWER_EMAIL } : null;
+        },
+      },
+      projectName: "my-site",
+      resolveIdentity: (principal) => ({ name: "Reviewer", email: principal.email }),
+      allowedHeaders: [SESSION_HEADER],
+      ...(allowedOrigins ? { allowedOrigins } : {}),
+    });
+
+  it("answers the preflight of an Authorization-bearing identity request, then serves the GET", async () => {
+    const handler = identityHandler([ALLOWED_ORIGIN]);
+
+    const preflight = handler.OPTIONS(preflightRequest(IDENTITY_ENDPOINT, "GET", "authorization"));
+
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get("Access-Control-Allow-Origin")).toBe(ALLOWED_ORIGIN);
+    expect(preflight.headers.get("Access-Control-Allow-Methods")).toBe("GET, OPTIONS");
+    expect(allowedHeaderNames(preflight)).toEqual(["content-type", "authorization", "x-session"]);
+
+    const response = await handler.GET(
+      new Request(IDENTITY_ENDPOINT, { headers: { Origin: ALLOWED_ORIGIN, Authorization: "Bearer token" } }),
+    );
+
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe(ALLOWED_ORIGIN);
+    expect(await response.json()).toEqual({
+      enabled: true,
+      identity: { name: "Reviewer", email: REVIEWER_EMAIL },
+      projectName: "my-site",
+    });
+  });
+
+  it("answers 204 without CORS headers for an origin outside the allowlist", () => {
+    const preflight = identityHandler([ALLOWED_ORIGIN]).OPTIONS(
+      preflightRequest(IDENTITY_ENDPOINT, "GET", "authorization", FOREIGN_ORIGIN),
+    );
+
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get("Access-Control-Allow-Origin")).toBe(null);
+  });
+
+  it("answers 204 without CORS headers when allowedOrigins is not set", () => {
+    const preflight = identityHandler().OPTIONS(preflightRequest(IDENTITY_ENDPOINT, "GET", "authorization"));
+
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get("Access-Control-Allow-Origin")).toBe(null);
+  });
+});

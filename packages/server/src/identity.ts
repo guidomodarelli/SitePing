@@ -1,6 +1,6 @@
 import type { SitepingAccessControl } from "./access.js";
-import { CORS_ALLOWED_METHODS, IDENTITY_CACHE_CONTROL } from "./constants/http.js";
-import { buildCorsHeaders, createCorsPolicy, withCors } from "./cors.js";
+import { IDENTITY_CACHE_CONTROL, IDENTITY_CORS_ALLOWED_METHODS } from "./constants/http.js";
+import { buildCorsHeaders, createCorsPolicy, preflightResponse, withCors } from "./cors.js";
 
 /** Reviewer identity the widget pre-fills (`SitepingConfig.identity`). */
 export interface SitepingIdentity {
@@ -44,11 +44,20 @@ export interface SitepingIdentityHandlerOptions<Principal> {
   allowedHeaders?: ReadonlyArray<string> | undefined;
 }
 
+/** Handlers of the identity endpoint — mount both on any Fetch-API router. */
+export interface SitepingIdentityHandler {
+  /** CORS preflight — needed as soon as the identity request carries a non-simple header (e.g. `Authorization`). */
+  OPTIONS: (request: Request) => Response;
+  GET: (request: Request) => Promise<Response>;
+}
+
 /**
  * `GET` endpoint telling the host page whether the current visitor may give
  * feedback, and as whom. Anonymous or disabled visitors get
  * `{ enabled: false, identity: null }` with 200 — the page simply does not
  * mount the widget. Responses are `no-store`: they depend on the session.
+ * `OPTIONS` answers the CORS preflight of cross-origin callers with the
+ * same `allowedOrigins` / `allowedHeaders` policy.
  *
  * @throws Error when `allowedHeaders` contains an invalid header name.
  */
@@ -59,8 +68,12 @@ export function createSitepingIdentityHandler<Principal>({
   enabled = true,
   allowedOrigins,
   allowedHeaders,
-}: SitepingIdentityHandlerOptions<Principal>): { GET: (request: Request) => Promise<Response> } {
-  const corsPolicy = createCorsPolicy({ allowedOrigins, allowedHeaders, allowedMethods: CORS_ALLOWED_METHODS });
+}: SitepingIdentityHandlerOptions<Principal>): SitepingIdentityHandler {
+  const corsPolicy = createCorsPolicy({
+    allowedOrigins,
+    allowedHeaders,
+    allowedMethods: IDENTITY_CORS_ALLOWED_METHODS,
+  });
   const respond = (request: Request, body: SitepingIdentityResponse): Response =>
     withCors(
       Response.json(body, { headers: { "Cache-Control": IDENTITY_CACHE_CONTROL } }),
@@ -69,6 +82,7 @@ export function createSitepingIdentityHandler<Principal>({
   const disabled = (request: Request) => respond(request, { enabled: false, identity: null, projectName });
 
   return {
+    OPTIONS: (request: Request): Response => preflightResponse(request, corsPolicy),
     GET: async (request: Request): Promise<Response> => {
       const principal = await access.authenticate(request);
       if (principal === null) return disabled(request);

@@ -21,6 +21,7 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
 });
 
 // Tells the host page whether to mount the widget, and as whom.
+// Mount both `identity.GET` and `identity.OPTIONS` (the CORS preflight) on the identity route.
 export const identity = createSitepingIdentityHandler({
   access,
   projectName: "my-site",
@@ -30,7 +31,7 @@ export const identity = createSitepingIdentityHandler({
 
 ## Cross-origin widgets
 
-Set `allowedOrigins` (exact-match allowlist) on both factories to serve a widget hosted on another origin. Browsers may send `Content-Type` and `Authorization`; when `access.authenticate` reads another header (a custom session or proxy identity header), declare it with `allowedHeaders` so the CORS preflight lets it through:
+Set `allowedOrigins` (exact-match allowlist) on both factories to serve a widget hosted on another origin. Each factory returns an `OPTIONS` handler answering the CORS preflight (`GET, POST, PATCH, DELETE, OPTIONS` for feedback, `GET, OPTIONS` for identity) — mount it next to the other methods. Browsers may send `Content-Type` and `Authorization`; when `access.authenticate` reads another header (a custom session or proxy identity header), declare it with `allowedHeaders` so the CORS preflight lets it through:
 
 ```ts
 const cors = { allowedOrigins: ["https://client-site.com"], allowedHeaders: ["X-Session"] };

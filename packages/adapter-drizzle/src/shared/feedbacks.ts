@@ -32,10 +32,10 @@ export function feedbackRecordColumns<Columns extends InternalFeedbackColumns>(
 
 /**
  * `ORDER BY` of the feedback list: newest `createdAt` first, ties broken by the
- * database-wide insertion ordinal. `createdAt` is only issued strictly
- * increasing within one store instance, so rows created in the same
- * millisecond by separate instances or processes would otherwise come back in
- * an undefined order — and offset pages would overlap or skip rows.
+ * database-wide insertion ordinal. `createdAt` is the injected clock
+ * value as is, so rows created in the same millisecond — by one store
+ * instance or several processes — would otherwise come back in an undefined
+ * order, and offset pages would overlap or skip rows.
  *
  * @param columns - Feedback table columns.
  */

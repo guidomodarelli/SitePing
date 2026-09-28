@@ -144,8 +144,8 @@ Both factories take the same options:
 
 - **Duplicate submissions are atomic.** The store implements `createFeedbackIfAbsent`: the unique `client_id` index plus `ON CONFLICT DO NOTHING` arbitrate concurrent submissions of the same feedback, across store instances and processes. Exactly one caller gets `created: true`, so creation hooks and webhooks fire once.
 - **Annotations land with their feedback, or not at all.** On PostgreSQL the feedback and its annotations are inserted by one statement (a data-modifying CTE). On libSQL, multi-statement writes go through `db.batch`, which runs as one transaction and never holds the write lock across an `await` — your application can keep writing to the same database concurrently.
-- **Ordering is stable.** Lists come back newest first. `createdAt` is issued strictly increasing within one store instance, and same-millisecond ties between instances or processes are broken by the internal `creation_sequence` column, so offset pages never overlap or skip rows.
-- **`updatedAt` never precedes `createdAt`.** Status updates clamp it in SQL against the row's own timestamps, which holds across processes.
+- **Ordering is stable.** Lists come back newest first. `createdAt` is the clock value at insert time, and rows created in the same millisecond — by one store instance or several processes — are ordered by the internal, database-wide `creation_sequence` column: a later insert always lists first, and offset pages never overlap or skip rows.
+- **`updatedAt` never precedes `createdAt`.** Status updates clamp it in SQL against the row's own timestamps, which holds across processes whose clocks disagree.
 - **Project ownership.** The store implements `verifyProjectOwnership`, so the handler answers `404` to a PATCH/DELETE addressing an id from another project. `@siteping/server` requires it when you use a project-scoped `access.authorize`.
 
 ## Internal columns and upgrades

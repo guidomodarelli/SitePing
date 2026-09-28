@@ -44,7 +44,7 @@ export function createSitepingPgTables(names: SitepingTableNames = DEFAULT_SITEP
       createdAt: timestamp("created_at", { withTimezone: true, precision: 3 }).notNull().defaultNow(),
       updatedAt: timestamp("updated_at", { withTimezone: true, precision: 3 }).notNull().defaultNow(),
       // Database-wide insertion ordinal: breaks `createdAt` ties between rows created in the
-      // same millisecond by different store instances or processes, so "newest first" and
+      // same millisecond, by any store instance or process, so "newest first" and
       // offset pages stay stable. Internal — never part of the feedback record.
       creationSequence: bigint("creation_sequence", { mode: "number" }).generatedAlwaysAsIdentity(),
       // `message` lowercased in JavaScript (`String.prototype.toLowerCase`, Unicode-aware), the

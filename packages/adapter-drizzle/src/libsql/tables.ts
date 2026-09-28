@@ -36,7 +36,7 @@ export function createSitepingSqliteTables(names: SitepingTableNames = DEFAULT_S
       createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
       updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
       // Database-wide insertion ordinal: breaks `createdAt` ties between rows created in the
-      // same millisecond by different store instances or processes, so "newest first" and
+      // same millisecond, by any store instance or process, so "newest first" and
       // offset pages stay stable. The store writes MAX + 1 inside its insert statement
       // (SQLite serializes writers); rows written before this column existed, or by the host
       // application, default to 0. Internal — never part of the feedback record.

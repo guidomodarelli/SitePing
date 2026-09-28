@@ -122,8 +122,6 @@ export class DrizzleSitepingStore implements DrizzleStore {
   private readonly logger: DrizzleStoreLogger;
   private readonly now: () => Date;
   private inlineScreenshotWarned = false;
-  /** Last issued `createdAt`, kept strictly increasing so "newest first" is stable within one millisecond. */
-  private lastCreatedAtMs = 0;
 
   constructor(
     private readonly gateway: SitepingSqlGateway,
@@ -165,7 +163,10 @@ export class DrizzleSitepingStore implements DrizzleStore {
     const { annotations, ...feedback } = buildFeedbackRecord(data, {
       id,
       annotationId: () => crypto.randomUUID(),
-      now: this.nextCreatedAt(),
+      // The clock value as is: rows created in the same millisecond — by this
+      // or any other instance — are ordered by the database-wide
+      // `creation_sequence`, so a later insert always lists first.
+      now: this.now(),
     });
     const row: FeedbackRow = { ...feedback, screenshotUrl };
 
@@ -224,8 +225,8 @@ export class DrizzleSitepingStore implements DrizzleStore {
   }
 
   async updateFeedback(id: string, data: FeedbackUpdateInput): Promise<FeedbackRecord> {
-    // The gateway clamps updatedAt to the row's createdAt, which a burst of
-    // creates may have pushed a few milliseconds ahead of the clock.
+    // The gateway clamps updatedAt to the row's createdAt, which another
+    // process whose clock runs ahead may have stamped later than this clock.
     const row = await persistMutation("updateFeedback", { id }, () =>
       this.gateway.updateStatus(id, {
         status: data.status,
@@ -267,11 +268,6 @@ export class DrizzleSitepingStore implements DrizzleStore {
    */
   private deleteOptions(): DeleteFeedbacksOptions {
     return { collectScreenshotUrls: typeof this.screenshotStorage?.delete === "function" };
-  }
-
-  private nextCreatedAt(): Date {
-    this.lastCreatedAtMs = Math.max(this.now().getTime(), this.lastCreatedAtMs + 1);
-    return new Date(this.lastCreatedAtMs);
   }
 
   private async withAnnotations(rows: readonly FeedbackRow[]): Promise<FeedbackRecord[]> {

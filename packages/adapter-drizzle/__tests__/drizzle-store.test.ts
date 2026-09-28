@@ -805,17 +805,47 @@ for (const dialect of dialects) {
     describe("with a frozen clock", () => {
       const frozenClock = () => new Date(FROZEN_TIME_MS);
 
-      it("never stamps updatedAt before the createdAt issued during a same-millisecond burst", async () => {
+      it("stamps every create of a same-millisecond burst with the clock value itself", async () => {
         const store = database.createStore({ logger, now: frozenClock });
-        await store.createFeedback(feedbackInput());
-        await store.createFeedback(feedbackInput());
-        const newest = await store.createFeedback(feedbackInput());
 
-        const updated = await store.updateFeedback(newest.id, { status: "in_progress", resolvedAt: null });
+        const burst = [
+          await store.createFeedback(feedbackInput()),
+          await store.createFeedback(feedbackInput()),
+          await store.createFeedback(feedbackInput()),
+        ];
 
-        expect(newest.createdAt.getTime()).toBeGreaterThan(FROZEN_TIME_MS);
+        expect(burst.map((feedback) => feedback.createdAt.getTime())).toEqual([
+          FROZEN_TIME_MS,
+          FROZEN_TIME_MS,
+          FROZEN_TIME_MS,
+        ]);
+        const { feedbacks } = await store.getFeedbacks({ projectName: "site" });
+        expect(feedbacks.map((feedback) => feedback.id)).toEqual(burst.map((feedback) => feedback.id).reverse());
+      });
+
+      it("lists a later insert from another instance first after a same-millisecond burst of one instance", async () => {
+        const burstingStore = database.createStore({ logger, now: frozenClock });
+        const laterStore = database.createStore({ logger, now: frozenClock });
+        const burstIds: string[] = [];
+        for (let create = 0; create < 3; create += 1) {
+          burstIds.push((await burstingStore.createFeedback(feedbackInput())).id);
+        }
+        const later = await laterStore.createFeedback(feedbackInput());
+
+        const { feedbacks } = await laterStore.getFeedbacks({ projectName: "site" });
+
+        expect(feedbacks.map((feedback) => feedback.id)).toEqual([later.id, ...[...burstIds].reverse()]);
+      });
+
+      it("never stamps updatedAt before the createdAt of a row written by an instance whose clock runs ahead", async () => {
+        const aheadStore = database.createStore({ logger, now: () => new Date(FROZEN_TIME_MS + 5_000) });
+        const laggingStore = database.createStore({ logger, now: frozenClock });
+        const created = await aheadStore.createFeedback(feedbackInput());
+
+        const updated = await laggingStore.updateFeedback(created.id, { status: "in_progress", resolvedAt: null });
+
         expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(updated.createdAt.getTime());
-        expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(newest.updatedAt.getTime());
+        expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(created.updatedAt.getTime());
       });
 
       it("lists feedbacks created in the same millisecond by separate store instances newest first, across pages", async () => {

@@ -119,6 +119,28 @@ describe("createSitepingHandler — access control", () => {
     expect(asAdmin.feedbacks[0]).not.toHaveProperty("clientId");
   });
 
+  it("never lets the browser cache a list response that depends on the session", async () => {
+    const handler = createSitepingHandler({
+      store: new MemoryStore(),
+      access: sessionAccess({ canReadAuthorEmail: (principal) => principal.isAdmin }),
+    });
+    await createFeedback(handler);
+
+    const response = await handler.GET(listRequest("test-project", ADMIN));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+  });
+
+  it("keeps the short private list cache under the shared-secret policy", async () => {
+    const handler = createSitepingHandler({ store: new MemoryStore(), requireAuthForDestructive: false });
+
+    const response = await handler.GET(listRequest("test-project"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("private, max-age=5");
+  });
+
   it("does not require an apiKey in production when a custom access policy is passed", () => {
     vi.stubEnv("NODE_ENV", "production");
     try {

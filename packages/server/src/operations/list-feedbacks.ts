@@ -1,5 +1,5 @@
 import type { SitepingStore } from "@siteping/core";
-import { LIST_CACHE_CONTROL, LIST_QUERY_KEYS } from "../constants/http.js";
+import { LIST_QUERY_KEYS } from "../constants/http.js";
 import type { RequestPipeline } from "../request-pipeline.js";
 import { getQuerySchema } from "../validation.js";
 
@@ -36,7 +36,7 @@ export function listFeedbacksOperation<Principal>({ store, pipeline }: ListFeedb
       return pipeline.json(
         scope,
         { ...page, feedbacks: page.feedbacks.map((feedback) => pipeline.present(scope, feedback)) },
-        { headers: { "Cache-Control": LIST_CACHE_CONTROL } },
+        { headers: { "Cache-Control": pipeline.listCacheControl } },
       );
     } catch (error) {
       return pipeline.internalError(scope, "list feedbacks", error);

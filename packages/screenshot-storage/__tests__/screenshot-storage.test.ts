@@ -305,6 +305,21 @@ describe("createScreenshotStorage — validation", () => {
     expect((await objectStore.get?.(objectStore.keyFromUrl(url) ?? ""))?.contentType).toBe("image/gif");
   });
 
+  it("keeps the validated content types when the caller mutates its array afterwards", async () => {
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+    const allowedContentTypes = ["image/jpeg"];
+    const storage = createScreenshotStorage(objectStore, { allowedContentTypes });
+
+    allowedContentTypes.push("image/svg+xml", "image/gif");
+
+    await expect(storage.upload(`data:image/svg+xml;base64,${btoa("<svg/>")}`, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(
+      InvalidScreenshotError,
+    );
+    await expect(storage.upload(GIF_DATA_URL, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(InvalidScreenshotError);
+    await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).resolves.toHaveProperty("url");
+    expect(objectStore.keys()).toHaveLength(1);
+  });
+
   it("gives custom content types keys the serve handler accepts", async () => {
     const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
     const storage = createScreenshotStorage(objectStore, {
@@ -607,6 +622,22 @@ describe("createScreenshotStorage — uploads committed after a timeout", () => 
     await new Promise((resolve) => setTimeout(resolve, 5)); // let the late commit land
     scheduled[0]?.task();
     await vi.waitFor(() => expect(storedKeys()).toEqual([]));
+  });
+
+  it("keeps the validated reclaim delays when the caller mutates its array afterwards", async () => {
+    const scheduledDelaysMs: number[] = [];
+    const reclaimDelaysMs = [10];
+    const { objectStore } = createLateCommittingObjectStore(0);
+    const storage = createScreenshotStorage(objectStore, {
+      uncertainUploadReclaimDelaysMs: reclaimDelaysMs,
+      scheduleReclaim: (_task, delayMs) => scheduledDelaysMs.push(delayMs),
+      logger: silentLogger(),
+    });
+
+    reclaimDelaysMs.push(-1, Number.NaN);
+
+    await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(ObjectStoreRequestError);
+    expect(scheduledDelaysMs).toEqual([10]);
   });
 
   it("refuses reclaim delays that are not finite, non-negative milliseconds", () => {

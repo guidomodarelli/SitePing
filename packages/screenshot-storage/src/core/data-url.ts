@@ -43,11 +43,16 @@ export function assertMaxBytes(maxBytes: number): void {
  * and lowercased once, at configuration time — `"IMAGE/GIF"` then accepts GIF
  * uploads instead of silently refusing every one.
  *
+ * The result is a private, frozen snapshot: the factory validates it and
+ * uploads keep matching against it, so a caller that later mutates its own
+ * array (TypeScript's `readonly` does not freeze it) cannot slip an
+ * unvalidated type such as `image/svg+xml` past the configuration checks.
+ *
  * @param allowedContentTypes - The `allowedContentTypes` option of `createScreenshotStorage`.
- * @returns A new array of normalized content types; the caller's array is left untouched.
+ * @returns A new frozen array of normalized content types; the caller's array is left untouched.
  */
-export function normalizeContentTypes(allowedContentTypes: readonly string[]): string[] {
-  return allowedContentTypes.map((contentType) => contentType.trim().toLowerCase());
+export function normalizeContentTypes(allowedContentTypes: readonly string[]): readonly string[] {
+  return Object.freeze(allowedContentTypes.map((contentType) => contentType.trim().toLowerCase()));
 }
 
 /**

@@ -76,6 +76,8 @@ const defaultLogger: ScreenshotStorageLogger = {
  * stores accept) on top of any `ScreenshotObjectStore`.
  *
  * - Validates the widget's data URL (type allowlist, size cap) before any I/O.
+ *   Array options (`allowedContentTypes`, `uncertainUploadReclaimDelaysMs`)
+ *   are copied when the storage is created: mutating them afterwards has no effect.
  * - Every upload gets a fresh random key, so each returned URL belongs to one
  *   upload — and therefore to one `ctx.feedbackId` — never shared between
  *   records nor content-addressed, as the core `ScreenshotStorage` URL
@@ -118,14 +120,17 @@ export function createScreenshotStorage(
 ): ScreenshotStorage {
   assertKeyPrefix(keyPrefix, "createScreenshotStorage");
   assertMaxBytes(maxBytes);
+  // Validate and keep private snapshots of the caller's arrays: validating the
+  // live references would let a later mutation bypass these checks.
   const normalizedContentTypes = normalizeContentTypes(allowedContentTypes);
   assertInertContentTypes(normalizedContentTypes);
   assertKeyableContentTypes(normalizedContentTypes);
-  assertReclaimDelays(uncertainUploadReclaimDelaysMs);
+  const reclaimDelaysMs: readonly number[] = Object.freeze([...uncertainUploadReclaimDelaysMs]);
+  assertReclaimDelays(reclaimDelaysMs);
   const reclaimUncertainUpload = createUncertainUploadReclaimer({
     objectStore,
     logger,
-    delaysMs: uncertainUploadReclaimDelaysMs,
+    delaysMs: reclaimDelaysMs,
     schedule: scheduleReclaim,
     onUncertainUpload,
   });

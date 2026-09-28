@@ -31,7 +31,8 @@ export const scheduleWithTimer: ReclaimScheduler = (task, delayMs) => {
 };
 
 /**
- * Refuse reclaim delays that are not finite, non-negative numbers of milliseconds.
+ * Refuse reclaim delays that are not finite, non-negative numbers of
+ * milliseconds, or that exceed `maxDelayMs`.
  *
  * Iterates by index rather than with `find`: an invalid entry may itself be
  * `undefined` (a JavaScript caller's `[undefined]`, or a hole in a sparse
@@ -40,15 +41,26 @@ export const scheduleWithTimer: ReclaimScheduler = (task, delayMs) => {
  * before a late upload commits.
  *
  * @param delaysMs - The `uncertainUploadReclaimDelaysMs` option.
+ * @param maxDelayMs - Longest delay the scheduler honors: `MAX_TIMER_DELAY_MS`
+ *   for {@link scheduleWithTimer}, whose `setTimeout` clamps a larger delay to
+ *   1 ms (running the attempt before a late upload commits); `Infinity` for an
+ *   injected scheduler, which handles long delays its own way.
  * @throws Error naming the index and value of the first invalid delay.
  */
-export function assertReclaimDelays(delaysMs: readonly number[]): void {
+export function assertReclaimDelays(delaysMs: readonly number[], maxDelayMs: number): void {
   for (let index = 0; index < delaysMs.length; index++) {
     const delayMs: unknown = delaysMs[index];
     if (typeof delayMs !== "number" || !Number.isFinite(delayMs) || delayMs < 0) {
       throw new Error(
         `[siteping] createScreenshotStorage: uncertainUploadReclaimDelaysMs[${index}] is ${String(delayMs)}, ` +
           "but must be a finite, non-negative number of milliseconds",
+      );
+    }
+    if (delayMs > maxDelayMs) {
+      throw new Error(
+        `[siteping] createScreenshotStorage: uncertainUploadReclaimDelaysMs[${index}] is ${delayMs}, ` +
+          `but the default scheduler (setTimeout) cannot wait more than ${maxDelayMs} ms — ` +
+          "pass a scheduleReclaim that supports longer delays",
       );
     }
   }

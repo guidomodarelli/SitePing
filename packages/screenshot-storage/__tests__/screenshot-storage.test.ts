@@ -759,6 +759,31 @@ describe("createScreenshotStorage — uploads committed after a timeout", () => 
     ).toThrow(`uncertainUploadReclaimDelaysMs[${index}] is undefined`);
   });
 
+  it("refuses, with the default scheduler, a delay setTimeout would clamp to an immediate timer", () => {
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    expect(() =>
+      createScreenshotStorage(objectStore, { uncertainUploadReclaimDelaysMs: [5_000, thirtyDaysMs] }),
+    ).toThrow(`uncertainUploadReclaimDelaysMs[1] is ${thirtyDaysMs}`);
+    expect(() =>
+      createScreenshotStorage(objectStore, { uncertainUploadReclaimDelaysMs: [2_147_483_647] }),
+    ).not.toThrow();
+  });
+
+  it("hands a delay beyond the setTimeout limit to an injected scheduler", async () => {
+    const scheduledDelaysMs: number[] = [];
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    const { objectStore } = createLateCommittingObjectStore(0);
+    const storage = createScreenshotStorage(objectStore, {
+      uncertainUploadReclaimDelaysMs: [thirtyDaysMs],
+      scheduleReclaim: (_task, delayMs) => scheduledDelaysMs.push(delayMs),
+      logger: silentLogger(),
+    });
+
+    await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(ObjectStoreRequestError);
+    expect(scheduledDelaysMs).toEqual([thirtyDaysMs]);
+  });
+
   it("refuses reclaim delays that are not finite, non-negative milliseconds", () => {
     const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
     expect(() => createScreenshotStorage(objectStore, { uncertainUploadReclaimDelaysMs: [-1] })).toThrow(

@@ -5,6 +5,7 @@ import {
   DEFAULT_MAX_SCREENSHOT_BYTES,
   UNCERTAIN_UPLOAD_RECLAIM_DELAYS_MS,
 } from "../constants/screenshots.js";
+import { MAX_TIMER_DELAY_MS } from "../constants/timers.js";
 import { assertInertContentTypes } from "./active-content.js";
 import { assertMaxBytes, assertParsableContentTypes, decodeImageDataUrl, normalizeContentTypes } from "./data-url.js";
 import { assertKeyableContentTypes, assertKeyPrefix, generateKey, isGeneratedKey } from "./generated-key.js";
@@ -47,7 +48,10 @@ export interface ScreenshotStorageOptions {
    * When an upload's outcome is unknown (timeout, 5xx), its key is removed
    * right away and again after each of these delays (ms from the failure), so
    * an upload the backend commits late is still reclaimed. Defaults to
-   * 5 s, 30 s and 2 min; `[]` keeps only the immediate removal.
+   * 5 s, 30 s and 2 min; `[]` keeps only the immediate removal. Each delay
+   * must be a finite, non-negative number and, with the default
+   * `scheduleReclaim`, at most 2,147,483,647 ms (~24.8 days, the longest
+   * `setTimeout` honors) — a custom `scheduleReclaim` lifts that cap.
    */
   uncertainUploadReclaimDelaysMs?: readonly number[];
   /**
@@ -127,7 +131,12 @@ export function createScreenshotStorage(
   assertInertContentTypes(normalizedContentTypes);
   assertKeyableContentTypes(normalizedContentTypes);
   const reclaimDelaysMs: readonly number[] = Object.freeze([...uncertainUploadReclaimDelaysMs]);
-  assertReclaimDelays(reclaimDelaysMs);
+  // Only the default `setTimeout` scheduler clamps oversized delays; an
+  // injected scheduler may honor longer ones (a durable queue, chunked timers).
+  assertReclaimDelays(
+    reclaimDelaysMs,
+    scheduleReclaim === scheduleWithTimer ? MAX_TIMER_DELAY_MS : Number.POSITIVE_INFINITY,
+  );
   const reclaimUncertainUpload = createUncertainUploadReclaimer({
     objectStore,
     logger,

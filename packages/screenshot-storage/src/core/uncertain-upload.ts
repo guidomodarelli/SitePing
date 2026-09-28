@@ -1,9 +1,7 @@
+import { type ScreenshotStorageLogger, safeWarn } from "./logger.js";
 import type { ScreenshotObjectStore } from "./object-store.js";
 
-/** Reports degraded-but-handled situations (failed reclaim of an uncertain upload, refused delete). */
-export interface ScreenshotStorageLogger {
-  warn(message: string, context: Record<string, unknown>): void;
-}
+export type { ScreenshotStorageLogger } from "./logger.js";
 
 /** Runs `task` once, `delayMs` from now, without the caller awaiting it. */
 export type ReclaimScheduler = (task: () => void, delayMs: number) => void;
@@ -78,6 +76,8 @@ export function assertReclaimDelays(delaysMs: readonly number[], maxDelayMs: num
  * removal (rejected or thrown synchronously by the backend), a scheduler that
  * throws and a failing hook (sync or async) are each logged without
  * skipping the remaining steps, and the caller rethrows the original upload error.
+ * Logging goes through {@link safeWarn}, so a logger that throws cannot break
+ * that contract either.
  *
  * Only a backend-side lifecycle rule (e.g. S3/R2 expiration under the key
  * prefix) or a durable job fed by the hook fully guarantees no orphan
@@ -101,7 +101,7 @@ export function createUncertainUploadReclaimer({
     Promise.resolve()
       .then(() => objectStore.remove(key))
       .catch((reclaimError: unknown) => {
-        logger.warn(`[siteping] ${objectStore.name}: could not reclaim an uncertain upload`, {
+        safeWarn(logger, `[siteping] ${objectStore.name}: could not reclaim an uncertain upload`, {
           key,
           attempt,
           error: reclaimError,
@@ -116,18 +116,22 @@ export function createUncertainUploadReclaimer({
       try {
         schedule(() => void removeLogged(key, `after ${delayMs} ms`), delayMs);
       } catch (scheduleError) {
-        logger.warn(`[siteping] ${objectStore.name}: could not schedule a delayed reclaim of an uncertain upload`, {
-          key,
-          delayMs,
-          error: scheduleError,
-        });
+        safeWarn(
+          logger,
+          `[siteping] ${objectStore.name}: could not schedule a delayed reclaim of an uncertain upload`,
+          {
+            key,
+            delayMs,
+            error: scheduleError,
+          },
+        );
       }
     }
     if (!onUncertainUpload) return;
     try {
       await onUncertainUpload(key);
     } catch (hookError) {
-      logger.warn(`[siteping] ${objectStore.name}: onUncertainUpload failed`, { key, error: hookError });
+      safeWarn(logger, `[siteping] ${objectStore.name}: onUncertainUpload failed`, { key, error: hookError });
     }
   };
 }

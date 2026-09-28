@@ -177,6 +177,23 @@ for (const backend of backends) {
       });
     });
 
+    it("still refuses a foreign key without throwing when the logger itself throws", async () => {
+      const { objectStore, storedBytes } = backend.open();
+      const throwingLogger = {
+        warn: vi.fn(() => {
+          throw new Error("log sink unavailable");
+        }),
+      };
+      const storage = createScreenshotStorage(objectStore, { logger: throwingLogger });
+      const foreignKey = `other-app-${"c".repeat(32)}.jpg`;
+      await objectStore.put({ key: foreignKey, bytes: JPEG_BYTES.slice(), contentType: "image/jpeg" });
+
+      await expect(storage.delete?.(objectStore.urlFor(foreignKey))).resolves.toBeUndefined();
+
+      expect(throwingLogger.warn).toHaveBeenCalledOnce();
+      expect(await storedBytes(foreignKey)).toEqual(JPEG_BYTES);
+    });
+
     if (backend.name !== "memory" && backend.name !== "filesystem") {
       it("reclaims an upload whose outcome is unknown, then reports the failure", async () => {
         const { objectStore, storedBytes, failUploadsUncertainly } = backend.open();
@@ -727,6 +744,50 @@ describe("createScreenshotStorage — uploads committed after a timeout", () => 
       attempt: "immediate",
       error: expect.objectContaining({ message: "remove client not initialized" }),
     });
+  });
+
+  it("keeps the upload error, every reclaim attempt and the hook when the logger itself throws", async () => {
+    const unhandledRejections: unknown[] = [];
+    const recordUnhandledRejection = (reason: unknown) => unhandledRejections.push(reason);
+    process.on("unhandledRejection", recordUnhandledRejection);
+    try {
+      const throwingLogger = {
+        warn: vi.fn(() => {
+          throw new Error("log sink unavailable");
+        }),
+      };
+      const scheduled: { task: () => void; delayMs: number }[] = [];
+      const uncertainKeys: string[] = [];
+      const { objectStore: lateCommittingObjectStore } = createLateCommittingObjectStore(0);
+      const removeAttempts: string[] = [];
+      const objectStore: ScreenshotObjectStore = {
+        ...lateCommittingObjectStore,
+        async remove(key) {
+          removeAttempts.push(key);
+          throw new Error("backend unavailable");
+        },
+      };
+      const storage = createScreenshotStorage(objectStore, {
+        uncertainUploadReclaimDelaysMs: [10, 20],
+        scheduleReclaim: (task, delayMs) => scheduled.push({ task, delayMs }),
+        onUncertainUpload: (key) => {
+          uncertainKeys.push(key);
+        },
+        logger: throwingLogger,
+      });
+
+      await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(ObjectStoreRequestError);
+      expect(scheduled.map(({ delayMs }) => delayMs)).toEqual([10, 20]);
+      expect(uncertainKeys).toHaveLength(1);
+
+      for (const { task } of scheduled) task();
+      await vi.waitFor(() => expect(throwingLogger.warn).toHaveBeenCalledTimes(3));
+      expect(removeAttempts).toHaveLength(3);
+      await new Promise((resolve) => setTimeout(resolve, 5)); // let any unhandled rejection surface
+      expect(unhandledRejections).toEqual([]);
+    } finally {
+      process.off("unhandledRejection", recordUnhandledRejection);
+    }
   });
 
   it("keeps the validated reclaim delays when the caller mutates its array afterwards", async () => {

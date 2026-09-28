@@ -9,6 +9,7 @@ import { MAX_TIMER_DELAY_MS } from "../constants/timers.js";
 import { assertInertContentTypes } from "./active-content.js";
 import { assertMaxBytes, assertParsableContentTypes, decodeImageDataUrl, normalizeContentTypes } from "./data-url.js";
 import { assertKeyableContentTypes, assertKeyPrefix, generateKey, isGeneratedKey } from "./generated-key.js";
+import { safeWarn } from "./logger.js";
 import { isScreenshotUploadRejected, type ScreenshotObjectStore } from "./object-store.js";
 import {
   assertReclaimDelays,
@@ -43,6 +44,11 @@ export interface ScreenshotStorageOptions {
    * the same value to `createScreenshotServeHandler`, which only serves it.
    */
   keyPrefix?: string;
+  /**
+   * Receives warnings for degraded-but-handled situations. Defaults to
+   * `console.warn`. A logger that throws is ignored: it never replaces an
+   * upload error, skips a reclaim step nor makes `delete` throw.
+   */
   logger?: ScreenshotStorageLogger;
   /**
    * When an upload's outcome is unknown (timeout, 5xx), its key is removed
@@ -165,7 +171,7 @@ export function createScreenshotStorage(
       const key = objectStore.keyFromUrl(url);
       if (!key) return;
       if (!isGeneratedKey(key, keyPrefix)) {
-        logger.warn(`[siteping] ${objectStore.name}: refusing to delete an object this storage did not generate`, {
+        safeWarn(logger, `[siteping] ${objectStore.name}: refusing to delete an object this storage did not generate`, {
           key,
           keyPrefix,
         });

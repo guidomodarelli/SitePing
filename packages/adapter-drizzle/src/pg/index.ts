@@ -9,7 +9,7 @@ import {
 import { annotationRecordColumns, selectAnnotationValues } from "../shared/annotations.js";
 import { deletedFeedbackColumns, toDeletedFeedbacks } from "../shared/deletes.js";
 import { feedbackRecordColumns, newestFeedbackFirst } from "../shared/feedbacks.js";
-import { buildFeedbackWhere } from "../shared/filters.js";
+import { buildFeedbackWhere, containsCondition } from "../shared/filters.js";
 import type { FeedbackFilter, SitepingSqlGateway } from "../shared/gateway.js";
 import { DrizzleSitepingStore, type DrizzleStore, type DrizzleStoreOptions } from "../shared/store.js";
 import { monotonicUpdatedAt } from "../shared/timestamps.js";
@@ -48,7 +48,9 @@ function createPgGateway(
   { sitepingFeedbacks, sitepingAnnotations }: SitepingPgTables,
 ): SitepingSqlGateway {
   const whereClause = (filter: FeedbackFilter) =>
-    buildFeedbackWhere(sitepingFeedbacks, filter, CASE_INSENSITIVE_LIKE_OPERATOR.postgres);
+    buildFeedbackWhere(sitepingFeedbacks, filter, (search) =>
+      containsCondition(sitepingFeedbacks.message, CASE_INSENSITIVE_LIKE_OPERATOR.postgres, search),
+    );
   const recordColumns = feedbackRecordColumns(getTableColumns(sitepingFeedbacks));
 
   return {

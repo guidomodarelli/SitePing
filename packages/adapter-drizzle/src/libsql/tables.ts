@@ -41,6 +41,12 @@ export function createSitepingSqliteTables(names: SitepingTableNames = DEFAULT_S
       // (SQLite serializes writers); rows written before this column existed, or by the host
       // application, default to 0. Internal — never part of the feedback record.
       creationSequence: integer("creation_sequence").notNull().default(0),
+      // `message` lowercased in JavaScript (`String.prototype.toLowerCase`, Unicode-aware), the
+      // column the text search reads: SQLite's LIKE folds only ASCII case, so `Échec` would not
+      // match `échec`. The store fills it on insert (a feedback's message never changes); rows
+      // written before this column existed, or by the host application, stay NULL and the search
+      // falls back to `message` with ASCII-only folding. Internal — never part of the feedback record.
+      messageSearch: text("message_search"),
     },
     (table) => [
       uniqueIndex(`${names.feedbacks}_client_id_key`).on(table.clientId),

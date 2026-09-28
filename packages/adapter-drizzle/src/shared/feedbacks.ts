@@ -7,16 +7,26 @@ export interface FeedbackOrderingColumns {
 }
 
 /**
+ * Internal feedback columns that are never part of the feedback record: the
+ * `creationSequence` ordinal (drives the ordering) and, on libSQL, the
+ * `messageSearch` normalized copy of the message (drives the text search).
+ */
+export interface InternalFeedbackColumns {
+  creationSequence: Column;
+  messageSearch?: Column;
+}
+
+/**
  * The columns a feedback row is read from — every column except the internal
- * `creationSequence` ordinal, which only drives the ordering.
+ * ones (`creationSequence`, `messageSearch`).
  *
  * @param columns - `getTableColumns(feedbacksTable)`.
- * @returns The same columns without `creationSequence`.
+ * @returns The same columns without the internal ones.
  */
-export function feedbackRecordColumns<Columns extends { creationSequence: Column }>(
+export function feedbackRecordColumns<Columns extends InternalFeedbackColumns>(
   columns: Columns,
-): Omit<Columns, "creationSequence"> {
-  const { creationSequence: _creationSequence, ...recordColumns } = columns;
+): Omit<Columns, keyof InternalFeedbackColumns> {
+  const { creationSequence: _creationSequence, messageSearch: _messageSearch, ...recordColumns } = columns;
   return recordColumns;
 }
 

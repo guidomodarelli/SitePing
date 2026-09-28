@@ -5,7 +5,7 @@ import { GREATEST_VALUE_FUNCTION } from "../constants/sql.js";
 import { annotationRecordColumns, selectAnnotationValues } from "../shared/annotations.js";
 import { deletedFeedbackColumns, toDeletedFeedbacks } from "../shared/deletes.js";
 import { feedbackRecordColumns, newestFeedbackFirst } from "../shared/feedbacks.js";
-import { buildFeedbackWhere } from "../shared/filters.js";
+import { buildFeedbackWhere, containsCondition, toSearchableText } from "../shared/filters.js";
 import type { FeedbackFilter, SitepingSqlGateway } from "../shared/gateway.js";
 import { DrizzleSitepingStore, type DrizzleStore, type DrizzleStoreOptions } from "../shared/store.js";
 import { monotonicUpdatedAt } from "../shared/timestamps.js";
@@ -30,8 +30,14 @@ function createLibSQLGateway(
   db: AnyLibSQLDatabase,
   { sitepingFeedbacks, sitepingAnnotations }: SitepingSqliteTables,
 ): SitepingSqlGateway {
+  // SQLite's LIKE folds only ASCII case: the lowercased search is matched against the
+  // message lowercased in JavaScript on insert. Rows without it (written before the
+  // column existed, or by the host application) fall back to the raw message.
+  const searchableMessage = sql`COALESCE(${sitepingFeedbacks.messageSearch}, ${sitepingFeedbacks.message})`;
   const whereClause = (filter: FeedbackFilter) =>
-    buildFeedbackWhere(sitepingFeedbacks, filter, CASE_INSENSITIVE_LIKE_OPERATOR.sqlite);
+    buildFeedbackWhere(sitepingFeedbacks, filter, (search) =>
+      containsCondition(searchableMessage, CASE_INSENSITIVE_LIKE_OPERATOR.sqlite, toSearchableText(search)),
+    );
   const recordColumns = feedbackRecordColumns(getTableColumns(sitepingFeedbacks));
   // Evaluated inside the insert statement: SQLite runs one writer at a time,
   // so concurrent inserts — from any process — never read the same maximum.
@@ -46,7 +52,11 @@ function createLibSQLGateway(
     async insertFeedback(feedback, annotations) {
       const insertFeedbackRow = db
         .insert(sitepingFeedbacks)
-        .values({ ...feedback, creationSequence: nextCreationSequence })
+        .values({
+          ...feedback,
+          messageSearch: toSearchableText(feedback.message),
+          creationSequence: nextCreationSequence,
+        })
         .onConflictDoNothing({ target: sitepingFeedbacks.clientId })
         .returning({ id: sitepingFeedbacks.id });
       if (annotations.length === 0) return (await insertFeedbackRow).length > 0;

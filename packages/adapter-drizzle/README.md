@@ -16,6 +16,27 @@ export const { sitepingFeedbacks, sitepingAnnotations } = createSitepingSqliteTa
 
 Then `drizzle-kit generate` (or `push`) as usual. The annotations table carries a `position` column (integer, default `0`) that keeps each feedback's annotations in submission order — `annotations[0]` is the primary anchor; if you created the tables with an earlier version, generate a migration to add it. The feedbacks table likewise carries an internal `creation_sequence` column that breaks `created_at` ties, so rows created in the same millisecond by different processes still list newest first and paginate stably: a `bigint` identity on PostgreSQL (existing rows are numbered when the column is added), and an indexed integer (default `0`) on libSQL that the store fills on insert — older rows keep `0` and only their `created_at` order. Generate a migration to add it too. Pass `{ feedbacks, annotations }` to rename the tables, and hand the same tables to the store through `tables`.
 
+### Text search and non-ASCII case (libSQL)
+
+`getFeedbacks({ search })` matches the message case-insensitively, folding case like the standard store filter (JavaScript's Unicode-aware `toLowerCase()`), so `échec` finds `Échec` and `äöü` finds `ÄÖÜ`. SQLite's `LIKE` folds only ASCII case, so the libSQL feedbacks table carries an internal `message_search` column (nullable text) holding the message lowercased in JavaScript: the store fills it on insert and the search reads it. If you created the tables with an earlier version, generate a migration to add it. Rows without it — written before the migration, or inserted by your application outside the store — fall back to `message` with ASCII-only case folding; backfill them once to make every row fold Unicode case:
+
+```ts
+import { eq, isNull } from "drizzle-orm";
+
+const rows = await db
+  .select({ id: sitepingFeedbacks.id, message: sitepingFeedbacks.message })
+  .from(sitepingFeedbacks)
+  .where(isNull(sitepingFeedbacks.messageSearch));
+for (const row of rows) {
+  await db
+    .update(sitepingFeedbacks)
+    .set({ messageSearch: row.message.toLowerCase() })
+    .where(eq(sitepingFeedbacks.id, row.id));
+}
+```
+
+PostgreSQL needs no extra column: `ILIKE` folds case with the database's `LC_CTYPE`, Unicode-aware under a UTF-8 locale (the default on managed PostgreSQL). A database created with `LC_CTYPE = 'C'` folds only ASCII case.
+
 ## 2. Create the store
 
 ```ts

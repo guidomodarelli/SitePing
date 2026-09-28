@@ -1,4 +1,5 @@
 import {
+  applyFeedbackFilters,
   buildFeedbackRecord,
   type FeedbackCreateInput,
   isStorePersistence,
@@ -521,6 +522,44 @@ for (const dialect of dialects) {
 
       expect(percent.feedbacks.map((feedback) => feedback.message)).toEqual(["Regex \\% breaks"]);
       expect(underscore.feedbacks.map((feedback) => feedback.message)).toEqual(["Token a\\_b is wrong"]);
+    });
+
+    it("folds non-ASCII case in search like the standard store filter", async () => {
+      const store = database.createStore({ logger });
+      const messages = [
+        "Échec du paiement",
+        "échec de connexion",
+        "Schlüssel ÄÖÜ fehlt",
+        "Größe äöü falsch",
+        "Façade Ç cassée",
+        "Checkout button is broken",
+      ];
+      const created = [];
+      for (const message of messages) created.push(await store.createFeedback(feedbackInput({ message })));
+      const searches = ["échec", "ÉCHEC", "äöü", "ÄÖÜ", "ç", "Ç", "CHECKOUT"];
+
+      for (const search of searches) {
+        const found = await store.getFeedbacks({ projectName: "site", search });
+        const expected = applyFeedbackFilters(created, { projectName: "site", search });
+        expect(found.feedbacks.map((feedback) => feedback.message).sort(), search).toEqual(
+          expected.feedbacks.map((feedback) => feedback.message).sort(),
+        );
+        expect(found.total, search).toBe(expected.total);
+      }
+      const accented = await store.getFeedbacks({ projectName: "site", search: "échec" });
+      expect(accented.feedbacks.map((feedback) => feedback.message).sort()).toEqual([
+        "Échec du paiement",
+        "échec de connexion",
+      ]);
+    });
+
+    it("searches feedbacks the host application wrote without the store", async () => {
+      await database.writeAsApplication();
+      const store = database.createStore({ logger });
+
+      const found = await store.getFeedbacks({ projectName: "site", search: "CHECKOUT BUTTON" });
+
+      expect(found.total).toBe(1);
     });
 
     it("lets the host application write through the same database while the store writes", async () => {

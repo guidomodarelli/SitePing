@@ -11,8 +11,11 @@ export const LIKE_ESCAPE_CHARACTER = "\\";
 export const LIKE_SPECIAL_CHARACTERS = /[\\%_]/g;
 
 /**
- * Case-insensitive substring operator per dialect. PostgreSQL's LIKE is
- * case-sensitive, so it needs ILIKE; SQLite's LIKE already ignores ASCII case.
+ * Substring operator per dialect. PostgreSQL's LIKE is case-sensitive, so it
+ * needs ILIKE, which folds case with the database's `LC_CTYPE` (Unicode-aware
+ * under a UTF-8 locale). SQLite's LIKE folds only ASCII case, so the libSQL
+ * store matches the lowercased search against the `message_search` column,
+ * which holds the message already lowercased in JavaScript.
  */
 export const CASE_INSENSITIVE_LIKE_OPERATOR = {
   postgres: "ILIKE",

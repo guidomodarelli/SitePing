@@ -174,8 +174,7 @@ export class DrizzleSitepingStore implements DrizzleStore {
 
     // Lost a race against the same clientId: the stored row keeps its own
     // screenshot, uploaded under its own id, so the one just uploaded is an
-    // orphan. The reference check only matters for storages that ignore the id
-    // (e.g. a content-addressed key), where both uploads can share the winner's URL.
+    // orphan no row references (screenshot URLs are unique per feedback id).
     const winner = await this.findByClientId(data.clientId);
     if (!winner) {
       throw new Error(
@@ -312,14 +311,20 @@ export class DrizzleSitepingStore implements DrizzleStore {
 
   /**
    * Best-effort cleanup through `ScreenshotStorage.delete` of the screenshots
-   * no stored feedback references any more. A storage may hand one URL to
-   * several feedbacks (content-addressed or id-ignoring keys), so each URL is
-   * removed only once the database confirms no row — of any project or
-   * `clientId` — still points at it; inline data URLs were never uploaded and
-   * are skipped. When the check itself fails, every object is kept (an orphan
-   * is acceptable, a row pointing at a deleted screenshot is not). A row that
-   * starts referencing a URL between the check and the delete is not covered:
-   * storages that share URLs across feedbacks accept that window.
+   * no stored feedback references any more; inline data URLs were never
+   * uploaded and are skipped.
+   *
+   * The `ScreenshotStorage` contract makes every URL unique to the feedback id
+   * it was uploaded for, and each create attempt uploads under a fresh id, so
+   * a URL passed here belongs to one row only and no concurrent create can
+   * acquire it: deleting it after the reference check cannot race with a new
+   * reference. The check still runs because the owning row may exist after
+   * all — an insert that committed although the driver reported a failure —
+   * and, as defense in depth, it keeps objects a contract-breaking storage
+   * shares across rows (a concurrent create that reuses such a URL after the
+   * check is outside the contract and not covered). When the check itself
+   * fails, every object is kept (an orphan is acceptable, a row pointing at a
+   * deleted screenshot is not).
    *
    * Failures are logged, never thrown. Each delete runs inside its own
    * promise, so a hook that throws synchronously is settled like a rejection:

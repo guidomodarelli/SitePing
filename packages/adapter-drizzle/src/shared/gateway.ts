@@ -67,9 +67,10 @@ export interface SitepingSqlGateway {
   deleteByProject(projectName: string, options: DeleteFeedbacksOptions): Promise<DeletedFeedbacks>;
   /**
    * The given screenshot URLs that some stored feedback row still references —
-   * a storage may return one URL for several feedbacks (content-addressed or
-   * id-ignoring keys), and such an object must outlive every row but the last.
-   * The caller bounds the list size.
+   * e.g. the row of an insert that committed although the driver reported a
+   * failure. Screenshot URLs are unique per feedback (`ScreenshotStorage`
+   * contract); this lookup also keeps objects a contract-breaking storage
+   * shares across rows. The caller bounds the list size.
    */
   findReferencedScreenshotUrls(screenshotUrls: readonly string[]): Promise<Set<string>>;
 }

@@ -184,10 +184,14 @@ const dialects: DialectUnderTest[] = [
   },
 ];
 
-/** URL a content-addressed storage returns for every upload of the same screenshot. */
+/** URL a contract-breaking storage returns for every upload, whatever the feedback id. */
 const SHARED_SCREENSHOT_URL = "https://cdn.example.com/content-addressed.jpg";
 
-/** A storage that ignores the feedback id and returns one URL for every upload, as content-addressed keys do. */
+/**
+ * A storage that breaks the `ScreenshotStorage` URL ownership rule by ignoring the
+ * feedback id (as content-addressed keys do) — the store's reference check is its
+ * only defense, outside the contract.
+ */
 function sharedUrlStorage() {
   return recordingStorage({
     async upload() {
@@ -352,7 +356,7 @@ for (const dialect of dialects) {
       expect([...objects.keys()]).toEqual([winnerScreenshotUrl]);
     });
 
-    it("keeps the winner's screenshot when racing uploads share one URL because the storage ignores the id", async () => {
+    it("keeps the winner's screenshot when a contract-breaking storage shares one URL across racing uploads", async () => {
       const { storage, deletions } = sharedUrlStorage();
       const stores = [1, 2, 3].map(() => database.createStore({ screenshotStorage: storage, logger }));
       const input = feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL });
@@ -430,7 +434,7 @@ for (const dialect of dialects) {
       expect((await store.getFeedbacks({ projectName: "other-site" })).total).toBe(1);
     });
 
-    it("keeps a screenshot shared by several feedbacks until the last one referencing it is deleted", async () => {
+    it("keeps a screenshot a contract-breaking storage shares across feedbacks until the last one referencing it is deleted", async () => {
       const { storage, deletions } = sharedUrlStorage();
       const store = database.createStore({ screenshotStorage: storage, logger });
       const first = await store.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL }));
@@ -444,7 +448,7 @@ for (const dialect of dialects) {
       expect(deletions).toEqual([SHARED_SCREENSHOT_URL]);
     });
 
-    it("keeps a screenshot another project references on deleteAllFeedbacks, and deletes it once when the last project goes", async () => {
+    it("keeps a screenshot a contract-breaking storage shares with another project on deleteAllFeedbacks, and deletes it once when the last project goes", async () => {
       const { storage, deletions } = sharedUrlStorage();
       const store = database.createStore({ screenshotStorage: storage, logger });
       await store.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL }));
@@ -769,7 +773,7 @@ for (const dialect of dialects) {
         expect(deletions).toHaveLength(1);
       });
 
-      it("keeps the screenshot of a failed insert when another feedback references the same URL", async () => {
+      it("keeps the screenshot of a failed insert when a contract-breaking storage shares its URL with another feedback", async () => {
         const { storage, deletions } = sharedUrlStorage();
         const store = database.createStore({ screenshotStorage: storage, logger });
         const stored = await store.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL }));

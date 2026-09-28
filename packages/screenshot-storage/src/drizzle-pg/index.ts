@@ -1,6 +1,10 @@
 import { eq } from "drizzle-orm";
 import { customType, type PgDatabase, type PgQueryResultHKT, pgTable, text, timestamp } from "drizzle-orm/pg-core";
-import { DEFAULT_SCREENSHOTS_TABLE_NAME, POSTGRES_OBJECT_STORE_NAME } from "../constants/database.js";
+import {
+  DEFAULT_SCREENSHOTS_TABLE_NAME,
+  POSTGRES_OBJECT_STORE_NAME,
+  SCREENSHOTS_TABLE_COLUMNS,
+} from "../constants/database.js";
 import { toBytes } from "../core/binary.js";
 import { createDatabaseObjectStore } from "../core/database-object-store.js";
 import type { ScreenshotObjectStore } from "../core/object-store.js";
@@ -27,10 +31,12 @@ const bytea = customType<{ data: Uint8Array<ArrayBuffer>; driverData: unknown }>
  */
 export function createSitepingScreenshotsPgTable(name: string = DEFAULT_SCREENSHOTS_TABLE_NAME) {
   return pgTable(name, {
-    key: text("key").primaryKey(),
-    contentType: text("content_type").notNull(),
-    bytes: bytea("bytes").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, precision: 3 }).notNull().defaultNow(),
+    key: text(SCREENSHOTS_TABLE_COLUMNS.key).primaryKey(),
+    contentType: text(SCREENSHOTS_TABLE_COLUMNS.contentType).notNull(),
+    bytes: bytea(SCREENSHOTS_TABLE_COLUMNS.bytes).notNull(),
+    createdAt: timestamp(SCREENSHOTS_TABLE_COLUMNS.createdAt, { withTimezone: true, precision: 3 })
+      .notNull()
+      .defaultNow(),
   });
 }
 

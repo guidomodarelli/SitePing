@@ -1,7 +1,11 @@
 import { eq } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { customType, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { DEFAULT_SCREENSHOTS_TABLE_NAME, LIBSQL_OBJECT_STORE_NAME } from "../constants/database.js";
+import {
+  DEFAULT_SCREENSHOTS_TABLE_NAME,
+  LIBSQL_OBJECT_STORE_NAME,
+  SCREENSHOTS_TABLE_COLUMNS,
+} from "../constants/database.js";
 import { toBytes } from "../core/binary.js";
 import { createDatabaseObjectStore } from "../core/database-object-store.js";
 import type { ScreenshotObjectStore } from "../core/object-store.js";
@@ -23,10 +27,10 @@ const blob = customType<{ data: Uint8Array<ArrayBuffer>; driverData: unknown }>(
  */
 export function createSitepingScreenshotsSqliteTable(name: string = DEFAULT_SCREENSHOTS_TABLE_NAME) {
   return sqliteTable(name, {
-    key: text("key").primaryKey(),
-    contentType: text("content_type").notNull(),
-    bytes: blob("bytes").notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" })
+    key: text(SCREENSHOTS_TABLE_COLUMNS.key).primaryKey(),
+    contentType: text(SCREENSHOTS_TABLE_COLUMNS.contentType).notNull(),
+    bytes: blob(SCREENSHOTS_TABLE_COLUMNS.bytes).notNull(),
+    createdAt: integer(SCREENSHOTS_TABLE_COLUMNS.createdAt, { mode: "timestamp_ms" })
       .notNull()
       .$defaultFn(() => new Date()),
   });

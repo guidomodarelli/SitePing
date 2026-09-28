@@ -1,3 +1,5 @@
+import { formatUnexpectedBinaryColumnDataMessage } from "../constants/database.js";
+
 /**
  * Normalize what database drivers return for binary columns — Node `Buffer`
  * (node-postgres), `Uint8Array` (PGlite, postgres.js) or `ArrayBuffer`
@@ -8,7 +10,5 @@ export function toBytes(value: unknown): Uint8Array<ArrayBuffer> {
   if (ArrayBuffer.isView(value)) {
     return new Uint8Array(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength) as ArrayBuffer);
   }
-  throw new TypeError(
-    `[siteping] database screenshot store: expected binary column data (Buffer, Uint8Array or ArrayBuffer), got ${typeof value}`,
-  );
+  throw new TypeError(formatUnexpectedBinaryColumnDataMessage(typeof value));
 }

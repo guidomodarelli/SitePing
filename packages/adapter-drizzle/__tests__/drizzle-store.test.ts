@@ -345,6 +345,25 @@ for (const dialect of dialects) {
       });
     });
 
+    it("leaves degraded-path reporting to the host application when no logger is injected", async () => {
+      const consoleWarn = vi.spyOn(console, "warn");
+      try {
+        const { storage } = recordingStorage({ upload: () => Promise.reject(new Error("storage unavailable")) });
+        const withFailingStorage = database.createStore({ screenshotStorage: storage });
+        const withInlineScreenshots = database.createStore();
+
+        const created = await withFailingStorage.createFeedback(
+          feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL }),
+        );
+        await withInlineScreenshots.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL }));
+
+        expect(created.screenshotUrl).toBeNull();
+        expect(consoleWarn).not.toHaveBeenCalled();
+      } finally {
+        consoleWarn.mockRestore();
+      }
+    });
+
     it("cleans up every uploaded screenshot of a project on deleteAllFeedbacks", async () => {
       const { storage, deletions } = recordingStorage();
       const store = database.createStore({ screenshotStorage: storage, logger });

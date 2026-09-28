@@ -32,7 +32,10 @@ import type {
 export type DrizzleStore = SitepingStore &
   Required<Pick<SitepingStore, "verifyProjectOwnership" | "createFeedbackIfAbsent">>;
 
-/** Where the store reports degraded-but-non-fatal situations. Defaults to `console.warn`. */
+/**
+ * Where the store reports degraded-but-non-fatal situations (failed
+ * screenshot uploads or cleanups, inline screenshots). `console` satisfies it.
+ */
 export interface DrizzleStoreLogger {
   warn(message: string, context: Record<string, unknown>): void;
 }
@@ -44,14 +47,17 @@ export interface DrizzleStoreOptions {
    * inline (warned once) — fine for development, heavy for production.
    */
   screenshotStorage?: ScreenshotStorage | undefined;
-  /** Degraded-path reporting (failed uploads/cleanups, inline screenshots). */
+  /**
+   * Degraded-path reporting (failed uploads/cleanups, inline screenshots).
+   * The store never picks a logging backend itself: without one these events
+   * are dropped, so pass your application's logger (or `console`) to see them.
+   */
   logger?: DrizzleStoreLogger | undefined;
 }
 
-const defaultLogger: DrizzleStoreLogger = {
-  warn(message, context) {
-    console.warn(message, context);
-  },
+/** Logger of stores created without one: drops every event, leaving the logging policy to the host application. */
+const silentLogger: DrizzleStoreLogger = {
+  warn() {},
 };
 
 /** Whether a store error already carries its contract meaning and must propagate untouched. */
@@ -109,7 +115,7 @@ export class DrizzleSitepingStore implements DrizzleStore {
     options: DrizzleStoreOptions = {},
   ) {
     this.screenshotStorage = options.screenshotStorage;
-    this.logger = options.logger ?? defaultLogger;
+    this.logger = options.logger ?? silentLogger;
   }
 
   async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {

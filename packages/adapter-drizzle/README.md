@@ -37,6 +37,12 @@ Serve it with `createSitepingHandler({ store, … })` from `@siteping/server`. W
 
 The store implements the whole contract, including `verifyProjectOwnership` (needed by project-scoped `access.authorize`) and an atomic `createFeedbackIfAbsent`: the unique `client_id` index arbitrates concurrent submissions of the same feedback, even across processes, so creation webhooks fire once. The store never opens an interactive `db.transaction`: on PostgreSQL every write is a single statement (so Neon HTTP works), and on libSQL multi-statement writes go through `db.batch`, which never holds the write lock across an `await` — your application can keep writing to the same database concurrently. When several processes share one local libSQL **file**, set the client's busy `timeout` so their writes queue instead of failing with `SQLITE_BUSY`.
 
+The store reports degraded-but-non-fatal events — a failed screenshot upload (the feedback is saved without it), a failed cleanup, inline screenshots — through the `logger` option (`{ warn(message, context) }`). It never chooses a logging backend itself: without `logger` those events are dropped, so pass your application's logger, or `console`:
+
+```ts
+const store = createPgSitepingStore(db, { screenshotStorage, logger: console });
+```
+
 Database failures on writes (read-only or full database, lost connection…) surface as `StorePersistenceError` (detect it with `isStorePersistence`, exported by both entries), with the driver error as `cause`; a missing record stays `StoreNotFoundError`.
 
 Requires `drizzle-orm` ≥ 0.45. The libSQL entry targets `drizzle-orm/libsql` (Turso, embedded replicas, local files); other SQLite drivers (better-sqlite3, Cloudflare D1) are not supported.

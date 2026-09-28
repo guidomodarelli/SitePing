@@ -1,17 +1,11 @@
 /**
- * `Cache-Control` of the list endpoint under the shared-secret policy —
- * short private cache, the panel refetches often. The response depends only
- * on the request itself (the `Authorization` key), never on a session.
+ * `Cache-Control` of the list endpoint, whatever the access policy. The
+ * response depends on the caller's credentials — the `Authorization` key
+ * (authentication, `authorEmail` redaction) or a session cookie (principal,
+ * `presentFeedback`) — none of which the browser cache varies on, so a
+ * cached copy could be replayed to a request that lost those credentials.
  */
-export const LIST_CACHE_CONTROL = "private, max-age=5";
-
-/**
- * `Cache-Control` of the list endpoint under a custom `access` policy: the
- * response depends on the principal (email visibility, `presentFeedback`),
- * often resolved from a cookie the browser cache cannot vary on, so a cached
- * copy could be served to whoever holds the session next.
- */
-export const PRINCIPAL_SCOPED_LIST_CACHE_CONTROL = "no-store";
+export const LIST_CACHE_CONTROL = "no-store";
 
 /** `Cache-Control` of the identity endpoint — depends on the session, never cached. */
 export const IDENTITY_CACHE_CONTROL = "no-store";

@@ -56,7 +56,7 @@ Un endpoint, cinq méthodes. Tous les corps sont en JSON.
 | Méthode | Rôle | Succès |
 |---|---|---|
 | `POST` | Créer un feedback (envois du widget) | `201` + l'enregistrement. Un `clientId` rejoué renvoie l'enregistrement existant au lieu d'échouer (et ne notifie jamais les webhooks deux fois) ; un `clientId` déjà utilisé par **un autre** projet est refusé avec `409` |
-| `GET` | Lister les feedbacks | `200` + `{ feedbacks, total }`, avec `Cache-Control: private, max-age=5` |
+| `GET` | Lister les feedbacks | `200` + `{ feedbacks, total }`, avec `Cache-Control: no-store` |
 | `PATCH` | Changer un statut | `200` + l'enregistrement mis à jour |
 | `DELETE` | Supprimer un ou tous | `200` + `{ deleted: true }` |
 | `OPTIONS` | Préflight CORS | `204` |

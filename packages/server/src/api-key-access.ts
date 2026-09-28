@@ -1,6 +1,5 @@
 import type { AccessGate, SitepingHttpMethod } from "./access.js";
 import { SITEPING_ERROR_MESSAGES } from "./constants/error-messages.js";
-import { LIST_CACHE_CONTROL } from "./constants/http.js";
 
 /** Options of the built-in shared-secret policy (the historical `adapter-prisma` behavior). */
 export interface ApiKeyAccessOptions {
@@ -98,6 +97,5 @@ export function createApiKeyGate({
     async authorize() {
       return true;
     },
-    listCacheControl: LIST_CACHE_CONTROL,
   };
 }

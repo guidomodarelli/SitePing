@@ -145,13 +145,24 @@ describe("createSitepingHandler — access control", () => {
     expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
 
-  it("keeps the short private list cache under the shared-secret policy", async () => {
+  it("never lets the browser cache a list response that depends on the API key", async () => {
+    const handler = createSitepingHandler({ store: new MemoryStore(), apiKey: "secret-key" });
+
+    const response = await handler.GET(
+      new Request(`${ENDPOINT}?projectName=test-project`, { headers: { Authorization: "Bearer secret-key" } }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+  });
+
+  it("never lets the browser cache an open list response of the shared-secret policy", async () => {
     const handler = createSitepingHandler({ store: new MemoryStore(), requireAuthForDestructive: false });
 
     const response = await handler.GET(listRequest("test-project"));
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("Cache-Control")).toBe("private, max-age=5");
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
 
   it("does not require an apiKey in production when a custom access policy is passed", () => {

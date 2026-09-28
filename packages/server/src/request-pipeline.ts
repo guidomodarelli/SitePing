@@ -162,9 +162,6 @@ export function createRequestPipeline<Principal>({
     },
 
     logger,
-
-    /** `Cache-Control` of list responses, as the access policy allows. */
-    listCacheControl: gate.listCacheControl,
   };
 }
 

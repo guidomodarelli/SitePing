@@ -1,5 +1,4 @@
 import { SITEPING_ERROR_MESSAGES } from "./constants/error-messages.js";
-import { PRINCIPAL_SCOPED_LIST_CACHE_CONTROL } from "./constants/http.js";
 /** HTTP methods served by `createSitepingHandler`. */
 export type SitepingHttpMethod = "GET" | "POST" | "PATCH" | "DELETE" | "OPTIONS";
 
@@ -54,8 +53,6 @@ export type AuthenticationOutcome<Principal> =
 export interface AccessGate<Principal> {
   authenticate(request: Request, method: SitepingHttpMethod): Promise<AuthenticationOutcome<Principal>>;
   authorize(context: SitepingAuthorizationContext<Principal>): Promise<boolean>;
-  /** `Cache-Control` of list responses — only cacheable when they cannot depend on a session. */
-  listCacheControl: string;
 }
 
 /** Wrap a public `SitepingAccessControl` into the handler's gate. @internal */
@@ -69,6 +66,5 @@ export function accessGateFromControl<Principal>(access: SitepingAccessControl<P
     async authorize(context) {
       return access.authorize ? access.authorize(context) : true;
     },
-    listCacheControl: PRINCIPAL_SCOPED_LIST_CACHE_CONTROL,
   };
 }

@@ -11,6 +11,7 @@ import {
   hasOwn,
   isStoreDuplicate,
   isStoreNotFound,
+  isUnreachableOffset,
   type ScreenshotStorage,
   type SitepingStore,
   StoreDuplicateError,
@@ -438,6 +439,13 @@ export class PrismaStore implements SitepingStore {
     if (urlPattern) where.urlPattern = urlPattern;
     if (search) {
       where.message = this.caseInsensitiveSearch ? { contains: search, mode: "insensitive" } : { contains: search };
+    }
+
+    // A huge `page` from a direct caller yields a `skip` Prisma rejects
+    // (non-integer or past 64 bits): answer the empty page the in-memory
+    // stores return, with the real total, without issuing `findMany`.
+    if (isUnreachableOffset(skip)) {
+      return { feedbacks: [], total: await this.prisma.sitepingFeedback.count({ where }) };
     }
 
     const [feedbacks, total] = await Promise.all([

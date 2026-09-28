@@ -3,12 +3,11 @@ import {
   DEFAULT_ALLOWED_CONTENT_TYPES,
   DEFAULT_KEY_PREFIX,
   DEFAULT_MAX_SCREENSHOT_BYTES,
-  KEY_PREFIX_PATTERN,
   UNCERTAIN_UPLOAD_RECLAIM_DELAYS_MS,
 } from "../constants/screenshots.js";
 import { assertInertContentTypes } from "./active-content.js";
 import { decodeImageDataUrl } from "./data-url.js";
-import { assertKeyableContentTypes, generateKey, isGeneratedKey } from "./generated-key.js";
+import { assertKeyableContentTypes, assertKeyPrefix, generateKey, isGeneratedKey } from "./generated-key.js";
 import { isScreenshotUploadRejected, type ScreenshotObjectStore } from "./object-store.js";
 import {
   assertReclaimDelays,
@@ -34,7 +33,8 @@ export interface ScreenshotStorageOptions {
   /**
    * Prefix of generated keys (lowercase letters, digits, `-`, `_`). Defaults to
    * `siteping-`. `delete` only removes keys with this prefix, so keep it
-   * distinctive when the bucket or CDN is shared with other objects.
+   * distinctive when the bucket or CDN is shared with other objects, and pass
+   * the same value to `createScreenshotServeHandler`, which only serves it.
    */
   keyPrefix?: string;
   logger?: ScreenshotStorageLogger;
@@ -107,9 +107,7 @@ export function createScreenshotStorage(
     onUncertainUpload,
   }: ScreenshotStorageOptions = {},
 ): ScreenshotStorage {
-  if (!KEY_PREFIX_PATTERN.test(keyPrefix)) {
-    throw new Error(`[siteping] createScreenshotStorage: keyPrefix "${keyPrefix}" must match [a-z0-9_-]{0,64}`);
-  }
+  assertKeyPrefix(keyPrefix, "createScreenshotStorage");
   assertInertContentTypes(allowedContentTypes);
   assertKeyableContentTypes(allowedContentTypes);
   assertReclaimDelays(uncertainUploadReclaimDelaysMs);

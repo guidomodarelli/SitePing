@@ -385,6 +385,45 @@ describe("createScreenshotServeHandler", () => {
     expect(afterRevocation.status).toBe(403);
   });
 
+  it("only serves its own keyPrefix namespace from a filesystem directory shared with another app", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "siteping-shared-"));
+    temporaryDirectories.push(directory);
+    const objectStore = createFilesystemObjectStore({ directory, publicBaseUrl: PUBLIC_BASE_URL });
+    const appA = createScreenshotStorage(objectStore, { keyPrefix: "app-a-" });
+    const appB = createScreenshotStorage(objectStore, { keyPrefix: "app-b-" });
+    const { url: urlOfA } = await appA.upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
+    const { url: urlOfB } = await appB.upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
+    const authorizedKeys: string[] = [];
+    const handlerOfA = createScreenshotServeHandler(objectStore, {
+      keyPrefix: "app-a-",
+      authorize: (_request, { key }) => {
+        authorizedKeys.push(key);
+        return true;
+      },
+    });
+
+    expect((await handlerOfA.GET(new Request(urlOfA))).status).toBe(200);
+    expect((await handlerOfA.GET(new Request(urlOfB))).status).toBe(404);
+    expect(authorizedKeys).toEqual([objectStore.keyFromUrl(urlOfA)]);
+  });
+
+  it("serves only the default siteping- namespace when no keyPrefix is given", async () => {
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+    const { url } = await createScreenshotStorage(objectStore, { keyPrefix: "other-" }).upload(
+      JPEG_DATA_URL,
+      UPLOAD_CONTEXT,
+    );
+
+    expect((await createScreenshotServeHandler(objectStore).GET(new Request(url))).status).toBe(404);
+  });
+
+  it("refuses a serve keyPrefix that is unsafe in paths or URLs", () => {
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
+    expect(() => createScreenshotServeHandler(objectStore, { keyPrefix: "../" })).toThrow(
+      /createScreenshotServeHandler: keyPrefix/,
+    );
+  });
+
   it("refuses backends that serve their own URLs", () => {
     const objectStore = createCloudflareImagesObjectStore({ accountId: "a", apiToken: "t", accountHash: "h" });
     expect(() => createScreenshotServeHandler(objectStore)).toThrow(/serves screenshots from its own URLs/);

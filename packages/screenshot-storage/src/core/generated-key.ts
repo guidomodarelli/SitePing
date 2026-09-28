@@ -2,8 +2,24 @@ import {
   CONTENT_TYPE_EXTENSIONS,
   GENERATED_KEY_SUFFIX_PATTERN,
   KEY_EXTENSION_PATTERN,
+  KEY_PREFIX_PATTERN,
   KEY_RANDOM_BYTES,
 } from "../constants/screenshots.js";
+
+/**
+ * Refuse a `keyPrefix` that is unsafe in file names, URLs or object keys. Shared
+ * by `createScreenshotStorage` and `createScreenshotServeHandler`, which must
+ * agree on the namespace they write and serve.
+ *
+ * @param keyPrefix - The `keyPrefix` option.
+ * @param caller - Public factory validating it, named in the error.
+ * @throws Error naming the caller and the refused prefix.
+ */
+export function assertKeyPrefix(keyPrefix: string, caller: string): void {
+  if (!KEY_PREFIX_PATTERN.test(keyPrefix)) {
+    throw new Error(`[siteping] ${caller}: keyPrefix "${keyPrefix}" must match ${KEY_PREFIX_PATTERN.source}`);
+  }
+}
 
 /**
  * Extension a generated key gets for `contentType`: the conventional one when
@@ -56,10 +72,11 @@ export function generateKey(keyPrefix: string, contentType: string): string {
 
 /**
  * Whether `key` could have been produced by {@link generateKey} with
- * `keyPrefix` — the namespace a storage may delete from. Anything else behind
- * the same public base (another app's asset, a legacy import) is not ours.
+ * `keyPrefix` — the namespace a storage may delete from and a serve handler
+ * may serve. Anything else behind the same public base or directory (another
+ * app's asset or screenshots, a legacy import) is not ours.
  *
- * @param key - Key recovered from a URL by the backend's `keyFromUrl`.
+ * @param key - Key recovered from a URL (the backend's `keyFromUrl`, or the serve handler's request path).
  * @param keyPrefix - Validated `keyPrefix` option.
  */
 export function isGeneratedKey(key: string, keyPrefix: string): boolean {

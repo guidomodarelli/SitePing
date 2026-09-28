@@ -29,4 +29,8 @@ export {
   type ScreenshotStorageOptions,
   type UncertainUploadHook,
 } from "./core/screenshot-storage.js";
-export { createScreenshotServeHandler, type ScreenshotServeHandlerOptions } from "./core/serve-handler.js";
+export {
+  createScreenshotServeHandler,
+  type ScreenshotServeHandlerOptions,
+  type ScreenshotServeRequestTarget,
+} from "./core/serve-handler.js";

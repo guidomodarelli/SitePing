@@ -35,8 +35,13 @@ Backends without a public URL are served from your app:
 
 ```ts
 // app/api/siteping/screenshots/[key]/route.ts
-export const { GET } = createScreenshotServeHandler(objectStore, { authorize: (request) => hasSession(request) });
+export const { GET } = createScreenshotServeHandler(objectStore, {
+  keyPrefix: "siteping-", // the same keyPrefix as createScreenshotStorage (this is the default)
+  authorize: (request, { key }) => hasSession(request),
+});
 ```
+
+The handler only serves keys generated under its `keyPrefix` (default `siteping-`) and answers `404` to anything else, so applications sharing a directory or bucket under distinct prefixes cannot read each other's screenshots through it — pass it the same `keyPrefix` as `createScreenshotStorage`. `authorize` receives the requested key for per-screenshot decisions.
 
 Responses are `Cache-Control: public, max-age=31536000, immutable` (keys are unguessable and never reused). With `authorize`, they are `private, no-cache` instead: a CDN or proxy never hands an authorized screenshot to a request that skipped the check, and the browser revalidates every reuse, so a logout or a revoked access applies at once. Each response carries an `ETag`, so revalidating an unchanged screenshot costs a `304`, not its bytes.
 

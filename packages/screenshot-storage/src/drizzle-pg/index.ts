@@ -1,9 +1,9 @@
 import { eq } from "drizzle-orm";
 import { customType, type PgDatabase, type PgQueryResultHKT, pgTable, text, timestamp } from "drizzle-orm/pg-core";
-import { DEFAULT_SCREENSHOTS_TABLE_NAME } from "../constants/database.js";
+import { DEFAULT_SCREENSHOTS_TABLE_NAME, POSTGRES_OBJECT_STORE_NAME } from "../constants/database.js";
 import { toBytes } from "../core/binary.js";
+import { createDatabaseObjectStore } from "../core/database-object-store.js";
 import type { ScreenshotObjectStore } from "../core/object-store.js";
-import { createPublicUrlMapping } from "../core/public-url.js";
 
 /**
  * `bytea` column. node-postgres only serializes Node `Buffer`s as binary, so
@@ -55,24 +55,26 @@ export function createPgScreenshotObjectStore(
   db: AnyPgDatabase,
   { publicBaseUrl, table = createSitepingScreenshotsPgTable() }: PgScreenshotObjectStoreOptions,
 ): ScreenshotObjectStore {
-  return {
-    name: "PostgreSQL",
-    ...createPublicUrlMapping(publicBaseUrl),
-    async put({ key, bytes, contentType }) {
-      await db.insert(table).values({ key, bytes, contentType });
+  return createDatabaseObjectStore({
+    name: POSTGRES_OBJECT_STORE_NAME,
+    publicBaseUrl,
+    gateway: {
+      async insertRow({ key, bytes, contentType }) {
+        await db.insert(table).values({ key, bytes, contentType });
+      },
+      async deleteRowByKey(key) {
+        await db.delete(table).where(eq(table.key, key));
+      },
+      async findRowByKey(key) {
+        const [row] = await db
+          .select({ bytes: table.bytes, contentType: table.contentType })
+          .from(table)
+          .where(eq(table.key, key))
+          .limit(1);
+        return row;
+      },
     },
-    async remove(key) {
-      await db.delete(table).where(eq(table.key, key));
-    },
-    async get(key) {
-      const [row] = await db
-        .select({ bytes: table.bytes, contentType: table.contentType })
-        .from(table)
-        .where(eq(table.key, key))
-        .limit(1);
-      return row ?? null;
-    },
-  };
+  });
 }
 
 export type { ScreenshotObjectStore } from "../core/object-store.js";

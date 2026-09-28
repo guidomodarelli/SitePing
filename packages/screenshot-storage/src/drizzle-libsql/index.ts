@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { customType, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { DEFAULT_SCREENSHOTS_TABLE_NAME } from "../constants/database.js";
+import { DEFAULT_SCREENSHOTS_TABLE_NAME, LIBSQL_OBJECT_STORE_NAME } from "../constants/database.js";
 import { toBytes } from "../core/binary.js";
+import { createDatabaseObjectStore } from "../core/database-object-store.js";
 import type { ScreenshotObjectStore } from "../core/object-store.js";
-import { createPublicUrlMapping } from "../core/public-url.js";
 
 /** `blob` column read back as `Uint8Array` (libSQL returns `ArrayBuffer`); no Node `Buffer` needed. */
 const blob = customType<{ data: Uint8Array<ArrayBuffer>; driverData: unknown }>({
@@ -52,24 +52,26 @@ export function createLibSQLScreenshotObjectStore(
   db: AnyLibSQLDatabase,
   { publicBaseUrl, table = createSitepingScreenshotsSqliteTable() }: LibSQLScreenshotObjectStoreOptions,
 ): ScreenshotObjectStore {
-  return {
-    name: "libSQL",
-    ...createPublicUrlMapping(publicBaseUrl),
-    async put({ key, bytes, contentType }) {
-      await db.insert(table).values({ key, bytes, contentType });
+  return createDatabaseObjectStore({
+    name: LIBSQL_OBJECT_STORE_NAME,
+    publicBaseUrl,
+    gateway: {
+      async insertRow({ key, bytes, contentType }) {
+        await db.insert(table).values({ key, bytes, contentType });
+      },
+      async deleteRowByKey(key) {
+        await db.delete(table).where(eq(table.key, key));
+      },
+      async findRowByKey(key) {
+        const [row] = await db
+          .select({ bytes: table.bytes, contentType: table.contentType })
+          .from(table)
+          .where(eq(table.key, key))
+          .limit(1);
+        return row;
+      },
     },
-    async remove(key) {
-      await db.delete(table).where(eq(table.key, key));
-    },
-    async get(key) {
-      const [row] = await db
-        .select({ bytes: table.bytes, contentType: table.contentType })
-        .from(table)
-        .where(eq(table.key, key))
-        .limit(1);
-      return row ?? null;
-    },
-  };
+  });
 }
 
 export type { ScreenshotObjectStore } from "../core/object-store.js";

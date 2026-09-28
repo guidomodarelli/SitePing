@@ -69,6 +69,10 @@ export function createSitepingSqliteTables(names: SitepingTableNames = DEFAULT_S
       viewportW: integer("viewport_w").notNull(),
       viewportH: integer("viewport_h").notNull(),
       devicePixelRatio: real("device_pixel_ratio").notNull().default(1),
+      // Submission index within the feedback: `annotations[0]` is the primary anchor, and
+      // every annotation of a feedback shares one `createdAt`. Rows written before this
+      // column existed default to 0 and keep their `createdAt` order.
+      position: integer("position").notNull().default(0),
       createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
     },
     (table) => [index(`${names.annotations}_feedback_id_idx`).on(table.feedbackId)],

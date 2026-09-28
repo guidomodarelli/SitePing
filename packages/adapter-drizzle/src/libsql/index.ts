@@ -1,14 +1,16 @@
-import { count, desc, eq, inArray } from "drizzle-orm";
+import { count, desc, eq, getTableColumns, inArray, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { CASE_INSENSITIVE_LIKE_OPERATOR } from "../constants/search.js";
+import { GREATEST_VALUE_FUNCTION } from "../constants/sql.js";
+import { annotationRecordColumns, selectAnnotationValues } from "../shared/annotations.js";
 import { buildFeedbackWhere } from "../shared/filters.js";
 import type { FeedbackFilter, SitepingSqlGateway } from "../shared/gateway.js";
 import { DrizzleSitepingStore, type DrizzleStore, type DrizzleStoreOptions } from "../shared/store.js";
+import { monotonicUpdatedAt } from "../shared/timestamps.js";
 import { createSitepingSqliteTables, type SitepingSqliteTables } from "./tables.js";
-import { enqueueWrite } from "./write-queue.js";
 
 export type { FeedbackRecord, ScreenshotStorage, SitepingStore } from "@siteping/core";
-export { StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@siteping/core";
+export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@siteping/core";
 export { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../constants/table-names.js";
 export type { DrizzleStore, DrizzleStoreLogger, DrizzleStoreOptions } from "../shared/store.js";
 export { createSitepingSqliteTables, type SitepingSqliteTables } from "./tables.js";
@@ -29,20 +31,34 @@ function createLibSQLGateway(
   const whereClause = (filter: FeedbackFilter) =>
     buildFeedbackWhere(sitepingFeedbacks, filter, CASE_INSENSITIVE_LIKE_OPERATOR.sqlite);
 
+  // Multi-statement writes go through `db.batch`, never an interactive
+  // `db.transaction`: libSQL runs a batch as one transaction without yielding
+  // between its statements, so no write lock is held across an `await` and
+  // the host application's own writes on the same database never hit
+  // SQLITE_BUSY because of the store.
   return {
     async insertFeedback(feedback, annotations) {
-      return enqueueWrite(db, () =>
-        db.transaction(async (transaction) => {
-          const inserted = await transaction
-            .insert(sitepingFeedbacks)
-            .values(feedback)
-            .onConflictDoNothing({ target: sitepingFeedbacks.clientId })
-            .returning({ id: sitepingFeedbacks.id });
-          if (inserted.length === 0) return false;
-          if (annotations.length > 0) await transaction.insert(sitepingAnnotations).values([...annotations]);
-          return true;
-        }),
-      );
+      const insertFeedbackRow = db
+        .insert(sitepingFeedbacks)
+        .values(feedback)
+        .onConflictDoNothing({ target: sitepingFeedbacks.clientId })
+        .returning({ id: sitepingFeedbacks.id });
+      if (annotations.length === 0) return (await insertFeedbackRow).length > 0;
+
+      // The feedback id is fresh, so it exists only when this batch inserted it.
+      const [inserted] = await db.batch([
+        insertFeedbackRow,
+        db
+          .insert(sitepingAnnotations)
+          .select(
+            selectAnnotationValues(
+              sitepingAnnotations,
+              annotations,
+              sql`EXISTS (SELECT 1 FROM ${sitepingFeedbacks} WHERE ${sitepingFeedbacks.id} = ${feedback.id})`,
+            ),
+          ),
+      ]);
+      return inserted.length > 0;
     },
     async findFeedbacks(filter, { limit, offset }) {
       const where = whereClause(filter);
@@ -60,10 +76,10 @@ function createLibSQLGateway(
     },
     async findAnnotations(feedbackIds) {
       return db
-        .select()
+        .select(annotationRecordColumns(getTableColumns(sitepingAnnotations)))
         .from(sitepingAnnotations)
         .where(inArray(sitepingAnnotations.feedbackId, [...feedbackIds]))
-        .orderBy(sitepingAnnotations.createdAt);
+        .orderBy(sitepingAnnotations.createdAt, sitepingAnnotations.position);
     },
     async findByClientId(clientId) {
       const [row] = await db.select().from(sitepingFeedbacks).where(eq(sitepingFeedbacks.clientId, clientId)).limit(1);
@@ -73,40 +89,40 @@ function createLibSQLGateway(
       const [row] = await db.select().from(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).limit(1);
       return row ?? null;
     },
-    async updateStatus(id, update) {
-      const [row] = await enqueueWrite(db, () =>
-        db.update(sitepingFeedbacks).set(update).where(eq(sitepingFeedbacks.id, id)).returning(),
-      );
+    async updateStatus(id, { status, resolvedAt, updatedAt }) {
+      const [row] = await db
+        .update(sitepingFeedbacks)
+        .set({
+          status,
+          resolvedAt,
+          updatedAt: monotonicUpdatedAt(sitepingFeedbacks, updatedAt, GREATEST_VALUE_FUNCTION.sqlite),
+        })
+        .where(eq(sitepingFeedbacks.id, id))
+        .returning();
       return row ?? null;
     },
     async deleteById(id) {
       // Annotations cascade only with `PRAGMA foreign_keys = ON`, which libSQL
-      // does not guarantee — delete them explicitly in the same transaction.
-      return enqueueWrite(db, () =>
-        db.transaction(async (transaction) => {
-          await transaction.delete(sitepingAnnotations).where(eq(sitepingAnnotations.feedbackId, id));
-          const [row] = await transaction.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).returning();
-          return row ?? null;
-        }),
-      );
+      // does not guarantee — delete them explicitly in the same batch.
+      const [, deleted] = await db.batch([
+        db.delete(sitepingAnnotations).where(eq(sitepingAnnotations.feedbackId, id)),
+        db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.id, id)).returning(),
+      ]);
+      return deleted[0] ?? null;
     },
     async deleteByProject(projectName) {
-      return enqueueWrite(db, () =>
-        db.transaction(async (transaction) => {
-          const projectFeedbackIds = transaction
-            .select({ id: sitepingFeedbacks.id })
-            .from(sitepingFeedbacks)
-            .where(eq(sitepingFeedbacks.projectName, projectName));
-          await transaction
-            .delete(sitepingAnnotations)
-            .where(inArray(sitepingAnnotations.feedbackId, projectFeedbackIds));
-          const rows = await transaction
-            .delete(sitepingFeedbacks)
-            .where(eq(sitepingFeedbacks.projectName, projectName))
-            .returning({ screenshotUrl: sitepingFeedbacks.screenshotUrl });
-          return rows.map((row) => row.screenshotUrl);
-        }),
-      );
+      const projectFeedbackIds = db
+        .select({ id: sitepingFeedbacks.id })
+        .from(sitepingFeedbacks)
+        .where(eq(sitepingFeedbacks.projectName, projectName));
+      const [, deleted] = await db.batch([
+        db.delete(sitepingAnnotations).where(inArray(sitepingAnnotations.feedbackId, projectFeedbackIds)),
+        db
+          .delete(sitepingFeedbacks)
+          .where(eq(sitepingFeedbacks.projectName, projectName))
+          .returning({ screenshotUrl: sitepingFeedbacks.screenshotUrl }),
+      ]);
+      return deleted.map((row) => row.screenshotUrl);
     },
   };
 }

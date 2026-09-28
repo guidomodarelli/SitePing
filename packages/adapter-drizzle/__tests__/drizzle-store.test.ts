@@ -1,5 +1,11 @@
-import type { FeedbackCreateInput, ScreenshotStorage } from "@siteping/core";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  buildFeedbackRecord,
+  type FeedbackCreateInput,
+  isStorePersistence,
+  type ScreenshotStorage,
+} from "@siteping/core";
+import { getTableName, sql } from "drizzle-orm";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SitepingTableNames } from "../src/constants/table-names.js";
 import { createLibSQLSitepingStore, createSitepingSqliteTables } from "../src/libsql/index.js";
 import { createPgSitepingStore, createSitepingPgTables } from "../src/pg/index.js";
@@ -46,11 +52,35 @@ function feedbackInput(overrides: Partial<FeedbackCreateInput> = {}): FeedbackCr
   };
 }
 
+/** A feedback row written by the host application itself, bypassing the store. */
+function applicationFeedbackRow() {
+  const { annotations: _annotations, ...row } = buildFeedbackRecord(feedbackInput(), {
+    id: crypto.randomUUID(),
+    annotationId: () => crypto.randomUUID(),
+  });
+  return row;
+}
+
+/** Annotation inputs told apart by their selector, to check the stored order. */
+function orderedAnnotations(count: number): FeedbackCreateInput["annotations"] {
+  const [template] = feedbackInput().annotations;
+  if (!template) throw new Error("feedbackInput() must provide an annotation template");
+  return Array.from({ length: count }, (_, index) => ({ ...template, cssSelector: `li:nth-child(${index + 1})` }));
+}
+
+const REJECTED_WRITE_OPERATIONS = ["INSERT", "UPDATE", "DELETE"] as const;
+
 interface DialectUnderTest {
   name: string;
   open(names?: SitepingTableNames): Promise<{
     createStore(options?: DrizzleStoreOptions): DrizzleStore;
     countAnnotations(): Promise<number>;
+    /** Write through the same `db` as the host application would — an insert and a bulk update, outside the store. */
+    writeAsApplication(): Promise<void>;
+    /** Re-insert every annotation row in reverse physical order, as a dump/restore or a table rewrite may. */
+    reverseAnnotationStorageOrder(): Promise<void>;
+    /** Make the database reject writes to the feedback table; resolves to the undo. */
+    rejectFeedbackWrites(): Promise<() => Promise<void>>;
     reset(): Promise<void>;
     close(): Promise<void>;
   }>;
@@ -65,6 +95,22 @@ const dialects: DialectUnderTest[] = [
       return {
         createStore: (options) => createPgSitepingStore(database.db, { ...options, tables }),
         countAnnotations: async () => (await database.db.select().from(tables.sitepingAnnotations)).length,
+        async writeAsApplication() {
+          await database.db.insert(tables.sitepingFeedbacks).values(applicationFeedbackRow());
+          await database.db.update(tables.sitepingFeedbacks).set({ authorName: "Edited by the application" });
+        },
+        async reverseAnnotationStorageOrder() {
+          const rows = await database.db.select().from(tables.sitepingAnnotations);
+          await database.db.delete(tables.sitepingAnnotations);
+          for (const row of rows.reverse()) await database.db.insert(tables.sitepingAnnotations).values(row);
+        },
+        async rejectFeedbackWrites() {
+          // PGlite is a single session: every later statement runs read-only.
+          await database.db.execute(sql`SET default_transaction_read_only = on`);
+          return async () => {
+            await database.db.execute(sql`SET default_transaction_read_only = off`);
+          };
+        },
         reset: database.reset,
         close: database.close,
       };
@@ -78,6 +124,29 @@ const dialects: DialectUnderTest[] = [
       return {
         createStore: (options) => createLibSQLSitepingStore(database.db, { ...options, tables }),
         countAnnotations: async () => (await database.db.select().from(tables.sitepingAnnotations)).length,
+        async writeAsApplication() {
+          await database.db.insert(tables.sitepingFeedbacks).values(applicationFeedbackRow());
+          await database.db.update(tables.sitepingFeedbacks).set({ authorName: "Edited by the application" });
+        },
+        async reverseAnnotationStorageOrder() {
+          const rows = await database.db.select().from(tables.sitepingAnnotations);
+          await database.db.delete(tables.sitepingAnnotations);
+          for (const row of rows.reverse()) await database.db.insert(tables.sitepingAnnotations).values(row);
+        },
+        async rejectFeedbackWrites() {
+          const feedbackTable = sql.identifier(getTableName(tables.sitepingFeedbacks));
+          const triggerName = (operation: string) => sql.identifier(`reject_feedback_${operation.toLowerCase()}`);
+          for (const operation of REJECTED_WRITE_OPERATIONS) {
+            await database.db.run(
+              sql`CREATE TRIGGER ${triggerName(operation)} BEFORE ${sql.raw(operation)} ON ${feedbackTable} BEGIN SELECT RAISE(ABORT, 'database is read-only'); END`,
+            );
+          }
+          return async () => {
+            for (const operation of REJECTED_WRITE_OPERATIONS) {
+              await database.db.run(sql`DROP TRIGGER ${triggerName(operation)}`);
+            }
+          };
+        },
         reset: database.reset,
         close: database.close,
       };
@@ -259,6 +328,106 @@ for (const dialect of dialects) {
 
       expect(percent.feedbacks.map((feedback) => feedback.message)).toEqual(["Discount shows 100% off"]);
       expect(underscore.feedbacks.map((feedback) => feedback.message)).toEqual(["Field user_name is empty"]);
+    });
+
+    it("lets the host application write through the same database while the store writes", async () => {
+      const store = database.createStore({ logger });
+      const existing = await store.createFeedback(feedbackInput());
+
+      // Interleaved at every await: a store write that held the database's
+      // write lock across an await would make the application's writes fail
+      // with SQLITE_BUSY (or block the event loop) on local libSQL.
+      await Promise.all([
+        store.createFeedback(feedbackInput({ annotations: orderedAnnotations(3) })),
+        database.writeAsApplication(),
+        store.createFeedbackIfAbsent(feedbackInput()),
+        database.writeAsApplication(),
+        store.deleteFeedback(existing.id),
+        database.writeAsApplication(),
+        store.createFeedback(feedbackInput()),
+      ]);
+
+      expect((await store.getFeedbacks({ projectName: "site" })).total).toBe(6);
+    });
+
+    it("returns annotations in submission order even when the rows are stored in another order", async () => {
+      const store = database.createStore({ logger });
+      const annotations = orderedAnnotations(4);
+      const created = await store.createFeedback(feedbackInput({ annotations }));
+
+      await database.reverseAnnotationStorageOrder();
+      const [reloaded] = (await store.getFeedbacks({ projectName: "site" })).feedbacks;
+
+      const submittedSelectors = annotations.map((annotation) => annotation.cssSelector);
+      expect(created.annotations.map((annotation) => annotation.cssSelector)).toEqual(submittedSelectors);
+      expect(reloaded?.annotations.map((annotation) => annotation.cssSelector)).toEqual(submittedSelectors);
+      expect(reloaded?.annotations[0]).not.toHaveProperty("position");
+    });
+
+    describe("with a frozen wall clock", () => {
+      beforeEach(() => {
+        // Only Date is faked: the database drivers keep their real timers.
+        vi.useFakeTimers({ toFake: ["Date"] });
+        vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+      });
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it("never stamps updatedAt before the createdAt issued during a same-millisecond burst", async () => {
+        const store = database.createStore({ logger });
+        await store.createFeedback(feedbackInput());
+        await store.createFeedback(feedbackInput());
+        const newest = await store.createFeedback(feedbackInput());
+
+        const updated = await store.updateFeedback(newest.id, { status: "in_progress", resolvedAt: null });
+
+        expect(newest.createdAt.getTime()).toBeGreaterThan(Date.now());
+        expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(updated.createdAt.getTime());
+        expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(newest.updatedAt.getTime());
+      });
+    });
+
+    describe("when the database rejects writes", () => {
+      let restoreWrites: (() => Promise<void>) | undefined;
+      afterEach(async () => {
+        await restoreWrites?.();
+        restoreWrites = undefined;
+      });
+
+      it("reports every failed mutation as a StorePersistenceError carrying the driver error", async () => {
+        const { storage, deletions } = recordingStorage();
+        const store = database.createStore({ screenshotStorage: storage, logger });
+        const stored = await store.createFeedback(feedbackInput());
+        const annotationsBefore = await database.countAnnotations();
+        restoreWrites = await database.rejectFeedbackWrites();
+
+        const failures = await Promise.all(
+          [
+            () => store.createFeedback(feedbackInput({ screenshotDataUrl: SCREENSHOT_DATA_URL })),
+            () => store.updateFeedback(stored.id, { status: "in_progress", resolvedAt: null }),
+            () => store.deleteFeedback(stored.id),
+            () => store.deleteAllFeedbacks("site"),
+          ].map((mutation) =>
+            mutation().then(
+              () => null,
+              (error: unknown) => error,
+            ),
+          ),
+        );
+
+        for (const failure of failures) {
+          expect(isStorePersistence(failure)).toBe(true);
+          expect((failure as Error).cause).toBeInstanceOf(Error);
+        }
+        expect((failures[1] as Error).message).toContain(stored.id);
+        // Nothing half-applied, and the screenshot uploaded for the lost insert is dropped.
+        await restoreWrites();
+        restoreWrites = undefined;
+        expect(await database.countAnnotations()).toBe(annotationsBefore);
+        expect((await store.getFeedbacks({ projectName: "site" })).total).toBe(1);
+        expect(deletions).toHaveLength(1);
+      });
     });
   });
 

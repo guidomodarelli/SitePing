@@ -66,3 +66,22 @@ export async function createLibSQLTestDatabase(names?: SitepingTableNames): Prom
     },
   };
 }
+
+/**
+ * The same database, minus interactive transactions: `db.transaction(callback)`
+ * throws exactly as it does on drivers without them (`drizzle-orm/neon-http`,
+ * Cloudflare D1…). No such driver runs locally, so this test-owned wrapper
+ * stands in for one while every statement still executes on the real engine.
+ */
+export function withoutInteractiveTransactions<Database extends object>(db: Database): Database {
+  return new Proxy(db, {
+    get(target, property, receiver) {
+      if (property === "transaction") {
+        return () => {
+          throw new Error("No transactions support in this driver (interactive transactions are unavailable)");
+        };
+      }
+      return Reflect.get(target, property, receiver);
+    },
+  });
+}

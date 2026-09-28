@@ -67,6 +67,10 @@ export function createSitepingPgTables(names: SitepingTableNames = DEFAULT_SITEP
       viewportW: integer("viewport_w").notNull(),
       viewportH: integer("viewport_h").notNull(),
       devicePixelRatio: doublePrecision("device_pixel_ratio").notNull().default(1),
+      // Submission index within the feedback: `annotations[0]` is the primary anchor, and
+      // every annotation of a feedback shares one `createdAt`. Rows written before this
+      // column existed default to 0 and keep their `createdAt` order.
+      position: integer("position").notNull().default(0),
       createdAt: timestamp("created_at", { withTimezone: true, precision: 3 }).notNull().defaultNow(),
     },
     (table) => [index(`${names.annotations}_feedback_id_idx`).on(table.feedbackId)],

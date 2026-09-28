@@ -14,7 +14,7 @@ import { createSitepingSqliteTables } from "@siteping/adapter-drizzle/libsql";
 export const { sitepingFeedbacks, sitepingAnnotations } = createSitepingSqliteTables();
 ```
 
-Then `drizzle-kit generate` (or `push`) as usual. Pass `{ feedbacks, annotations }` to rename the tables, and hand the same tables to the store through `tables`.
+Then `drizzle-kit generate` (or `push`) as usual. The annotations table carries a `position` column (integer, default `0`) that keeps each feedback's annotations in submission order — `annotations[0]` is the primary anchor; if you created the tables with an earlier version, generate a migration to add it. Pass `{ feedbacks, annotations }` to rename the tables, and hand the same tables to the store through `tables`.
 
 ## 2. Create the store
 
@@ -35,8 +35,10 @@ const store = createLibSQLSitepingStore(
 
 Serve it with `createSitepingHandler({ store, … })` from `@siteping/server`. Without `screenshotStorage`, screenshots are stored inline as base64.
 
-The store implements the whole contract, including `verifyProjectOwnership` (needed by project-scoped `access.authorize`) and an atomic `createFeedbackIfAbsent`: the unique `client_id` index arbitrates concurrent submissions of the same feedback, even across processes, so creation webhooks fire once. When several processes share one local libSQL **file**, set the client's busy `timeout` so their writes queue instead of failing with `SQLITE_BUSY`.
+The store implements the whole contract, including `verifyProjectOwnership` (needed by project-scoped `access.authorize`) and an atomic `createFeedbackIfAbsent`: the unique `client_id` index arbitrates concurrent submissions of the same feedback, even across processes, so creation webhooks fire once. The store never opens an interactive `db.transaction`: on PostgreSQL every write is a single statement (so Neon HTTP works), and on libSQL multi-statement writes go through `db.batch`, which never holds the write lock across an `await` — your application can keep writing to the same database concurrently. When several processes share one local libSQL **file**, set the client's busy `timeout` so their writes queue instead of failing with `SQLITE_BUSY`.
 
-Requires `drizzle-orm` ≥ 0.45. The libSQL entry uses interactive transactions, so synchronous SQLite drivers (better-sqlite3) and Cloudflare D1 are not supported.
+Database failures on writes (read-only or full database, lost connection…) surface as `StorePersistenceError` (detect it with `isStorePersistence`, exported by both entries), with the driver error as `cause`; a missing record stays `StoreNotFoundError`.
+
+Requires `drizzle-orm` ≥ 0.45. The libSQL entry targets `drizzle-orm/libsql` (Turso, embedded replicas, local files); other SQLite drivers (better-sqlite3, Cloudflare D1) are not supported.
 
 MIT

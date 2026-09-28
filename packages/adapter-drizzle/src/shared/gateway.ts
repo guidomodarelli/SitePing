@@ -3,7 +3,12 @@ import type { AnnotationRecord, FeedbackQuery, FeedbackRecord, FeedbackStatus } 
 /** A stored feedback row — the record without its annotations relation. */
 export type FeedbackRow = Omit<FeedbackRecord, "annotations">;
 
-/** A stored annotation row — identical to the record. */
+/**
+ * An annotation row as the store reads and writes it — identical to the
+ * record. The tables also hold an internal `position` (submission index),
+ * which the gateway writes from the array order and reads back only as the
+ * ordering.
+ */
 export type AnnotationRow = AnnotationRecord;
 
 /** Filters of `getFeedbacks`, already normalized (bucket vs exact status resolved). */
@@ -24,17 +29,25 @@ export interface FeedbackFilter {
  */
 export interface SitepingSqlGateway {
   /**
-   * Insert the feedback and its annotations atomically. Returns `false`
-   * without writing when a row with the same `clientId` already exists.
+   * Insert the feedback and its annotations atomically — without an
+   * interactive `db.transaction` (one statement or one batch), so no driver
+   * lock is held across an `await`. Returns `false` without writing when a
+   * row with the same `clientId` already exists. Annotations keep their
+   * array order when read back.
    */
   insertFeedback(feedback: FeedbackRow, annotations: readonly AnnotationRow[]): Promise<boolean>;
   findFeedbacks(
     filter: FeedbackFilter,
     page: { limit: number; offset: number },
   ): Promise<{ rows: FeedbackRow[]; total: number }>;
+  /** Annotations of the given feedbacks, each feedback's in submission order. */
   findAnnotations(feedbackIds: readonly string[]): Promise<AnnotationRow[]>;
   findByClientId(clientId: string): Promise<FeedbackRow | null>;
   findById(id: string): Promise<FeedbackRow | null>;
+  /**
+   * Update one row's status. `updatedAt` is the wall clock: the stored value
+   * is never earlier than the row's own `createdAt` / `updatedAt`.
+   */
   updateStatus(
     id: string,
     update: { status: FeedbackStatus; resolvedAt: Date | null; updatedAt: Date },

@@ -7,10 +7,15 @@ import {
   type FeedbackQuery,
   type FeedbackRecord,
   type FeedbackUpdateInput,
+  isStoreDuplicate,
+  isStoreNotFound,
+  isStorePersistence,
   type ScreenshotStorage,
   type SitepingStore,
   StoreNotFoundError,
+  StorePersistenceError,
 } from "@siteping/core";
+import { DRIZZLE_STORE_MESSAGE_PREFIX, type DrizzleStoreMutation } from "../constants/errors.js";
 import { INLINE_SCREENSHOT_URL_PREFIX, SCREENSHOT_MIME_TYPE } from "../constants/screenshots.js";
 import type { AnnotationRow, FeedbackFilter, FeedbackRow, SitepingSqlGateway } from "./gateway.js";
 
@@ -42,6 +47,38 @@ const defaultLogger: DrizzleStoreLogger = {
     console.warn(message, context);
   },
 };
+
+/** Whether a store error already carries its contract meaning and must propagate untouched. */
+function isStoreContractError(error: unknown): boolean {
+  return isStoreNotFound(error) || isStoreDuplicate(error) || isStorePersistence(error);
+}
+
+/**
+ * Run a gateway write, reporting any database failure (read-only or full
+ * database, lost connection, rejected statement…) as `StorePersistenceError`
+ * — the `SitepingStore` mutation contract — with the driver error as `cause`.
+ *
+ * @param mutation - Store method being served, for the message.
+ * @param identifiers - Minimal ids to debug the failure (never payload data).
+ * @param write - The gateway write.
+ */
+async function persistMutation<Result>(
+  mutation: DrizzleStoreMutation,
+  identifiers: Record<string, string>,
+  write: () => Promise<Result>,
+): Promise<Result> {
+  try {
+    return await write();
+  } catch (error) {
+    if (isStoreContractError(error)) throw error;
+    const context = Object.entries(identifiers)
+      .map(([name, value]) => `${name}=${value}`)
+      .join(" ");
+    throw new StorePersistenceError(`${DRIZZLE_STORE_MESSAGE_PREFIX}.${mutation} failed to write (${context})`, {
+      cause: error,
+    });
+  }
+}
 
 /** Whether a stored `screenshotUrl` points at an object the storage owns (inline data URLs were never uploaded). */
 function isUploadedScreenshotUrl(url: string | null | undefined): url is string {
@@ -91,7 +128,16 @@ export class DrizzleSitepingStore implements DrizzleStore {
     });
     const row: FeedbackRow = { ...feedback, screenshotUrl };
 
-    if (await this.gateway.insertFeedback(row, annotations)) {
+    let inserted: boolean;
+    try {
+      inserted = await persistMutation("createFeedback", { clientId: data.clientId }, () =>
+        this.gateway.insertFeedback(row, annotations),
+      );
+    } catch (error) {
+      await this.discardUnreferencedScreenshot(screenshotUrl, data.clientId);
+      throw error;
+    }
+    if (inserted) {
       return { feedback: { ...row, annotations }, created: true };
     }
 
@@ -130,18 +176,22 @@ export class DrizzleSitepingStore implements DrizzleStore {
   }
 
   async updateFeedback(id: string, data: FeedbackUpdateInput): Promise<FeedbackRecord> {
-    const row = await this.gateway.updateStatus(id, {
-      status: data.status,
-      resolvedAt: data.resolvedAt,
-      updatedAt: new Date(),
-    });
+    // The gateway clamps updatedAt to the row's createdAt, which a burst of
+    // creates may have pushed a few milliseconds ahead of the wall clock.
+    const row = await persistMutation("updateFeedback", { id }, () =>
+      this.gateway.updateStatus(id, {
+        status: data.status,
+        resolvedAt: data.resolvedAt,
+        updatedAt: new Date(),
+      }),
+    );
     if (!row) throw new StoreNotFoundError();
     const [record] = await this.withAnnotations([row]);
     return record as FeedbackRecord;
   }
 
   async deleteFeedback(id: string): Promise<void> {
-    const deleted = await this.gateway.deleteById(id);
+    const deleted = await persistMutation("deleteFeedback", { id }, () => this.gateway.deleteById(id));
     if (!deleted) throw new StoreNotFoundError();
     await this.discardScreenshots([deleted.screenshotUrl]);
   }
@@ -149,7 +199,10 @@ export class DrizzleSitepingStore implements DrizzleStore {
   async deleteAllFeedbacks(projectName: string): Promise<void> {
     // Rows first, storage second: orphaned objects are acceptable, rows
     // pointing at deleted screenshots are not.
-    await this.discardScreenshots(await this.gateway.deleteByProject(projectName));
+    const screenshotUrls = await persistMutation("deleteAllFeedbacks", { projectName }, () =>
+      this.gateway.deleteByProject(projectName),
+    );
+    await this.discardScreenshots(screenshotUrls);
   }
 
   async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> {
@@ -209,6 +262,31 @@ export class DrizzleSitepingStore implements DrizzleStore {
       );
     }
     return dataUrl;
+  }
+
+  /**
+   * After a failed insert, drop the screenshot uploaded for it — but only
+   * once the database confirms no row holds that `clientId`: a failure
+   * reported after the commit (e.g. a dropped connection) may have stored a
+   * row that points at it. When the check itself fails, the object is kept
+   * (an orphan is acceptable, a dangling row is not).
+   */
+  private async discardUnreferencedScreenshot(screenshotUrl: string | null, clientId: string): Promise<void> {
+    if (!isUploadedScreenshotUrl(screenshotUrl)) return;
+    try {
+      if (await this.gateway.findByClientId(clientId)) return;
+    } catch (lookupError) {
+      this.logger.warn(
+        `${DRIZZLE_STORE_MESSAGE_PREFIX}: insert failed and its row could not be checked — screenshot kept`,
+        {
+          clientId,
+          screenshotUrl,
+          error: lookupError,
+        },
+      );
+      return;
+    }
+    await this.discardScreenshots([screenshotUrl]);
   }
 
   /** Best-effort cleanup through `ScreenshotStorage.delete`; failures are logged, never thrown. */

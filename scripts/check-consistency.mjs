@@ -6,9 +6,9 @@
 //      already enforces the loader entries at compile time);
 //   2. a doc/README states a "N built-in locales" count that no longer
 //      matches BUILTIN_LOCALES.length;
-//   3. a non-private packages/* package is missing from the release-please
-//      config/manifest, or a manifest package is missing its release.yml
-//      wiring (output + publish job);
+//   3. a published package has no CHANGELOG.md with the `## [Unreleased]`
+//      block `beez-rp create-version` releases from, or lacks the
+//      `prepublishOnly` guard that keeps `bun publish` from bypassing it;
 //   4. a published package's build script forgot the fix-dts chain its
 //      declarations need (cli is exempt: it ships no .d.ts);
 //   5. the root esbuild override drifted from the widget's esbuild spec.
@@ -16,6 +16,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { listPublicPackages } from "./public-packages.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (p) => readFileSync(join(root, p), "utf8");
@@ -60,35 +61,25 @@ for (const file of localeCountFiles) {
   }
 }
 
-// --- 3. Package registration ------------------------------------------------
+// --- 3. Release changelogs ---------------------------------------------------
 
-const manifest = JSON.parse(read(".release-please-manifest.json"));
-const releaseConfig = JSON.parse(read("release-please-config.json"));
-const releaseYml = read(".github/workflows/release.yml");
+// `bun run create-version` moves each package's `## [Unreleased]` block into
+// the released version, so a package without it cannot be released.
+const publicPackages = listPublicPackages().map(({ path }) => path);
+const UNRELEASED_HEADING = /^## \[Unreleased\]\s*$/m;
+const PUBLISH_GUARD = "beez-rp guard-publish";
 
-for (const dir of readdirSync(join(root, "packages"))) {
-  const pkgJsonPath = join(root, "packages", dir, "package.json");
-  if (!existsSync(pkgJsonPath)) continue;
-  const pkg = JSON.parse(readFileSync(pkgJsonPath, "utf8"));
-  if (pkg.private) continue;
-  const pkgPath = `packages/${dir}`;
-  if (!(pkgPath in manifest)) {
-    errors.push(`${pkgPath} is public but missing from .release-please-manifest.json`);
+for (const { path: pkgPath, manifest } of listPublicPackages()) {
+  if (manifest.scripts?.prepublishOnly !== PUBLISH_GUARD) {
+    errors.push(
+      `${pkgPath}/package.json needs "prepublishOnly": "${PUBLISH_GUARD}" (releases go through bun run create-version)`,
+    );
   }
-  if (!(pkgPath in releaseConfig.packages)) {
-    errors.push(`${pkgPath} is public but missing from release-please-config.json`);
-  }
-}
-
-for (const pkgPath of Object.keys(manifest)) {
-  if (!releaseYml.includes(`${pkgPath}--release_created`)) {
-    errors.push(`${pkgPath} has no release_created output in release.yml`);
-  }
-  if (!releaseYml.includes(`working-directory: ${pkgPath}`)) {
-    errors.push(`${pkgPath} has no publish job (working-directory) in release.yml`);
-  }
-  if (!releaseYml.includes(`${pkgPath}/dist/`)) {
-    errors.push(`${pkgPath}/dist/ is missing from the release.yml build artifact paths`);
+  const changelogPath = `${pkgPath}/CHANGELOG.md`;
+  if (!existsSync(join(root, changelogPath))) {
+    errors.push(`${changelogPath} is missing (every published package keeps its own changelog)`);
+  } else if (!UNRELEASED_HEADING.test(read(changelogPath))) {
+    errors.push(`${changelogPath} has no "## [Unreleased]" block for the next release`);
   }
 }
 
@@ -97,7 +88,7 @@ for (const pkgPath of Object.keys(manifest)) {
 // cli ships no declarations (dts: false) — the only legitimate exemption.
 const FIX_DTS_EXEMPT = new Set(["packages/cli"]);
 
-for (const pkgPath of Object.keys(manifest)) {
+for (const pkgPath of publicPackages) {
   if (FIX_DTS_EXEMPT.has(pkgPath)) continue;
   const pkg = JSON.parse(read(`${pkgPath}/package.json`));
   if (!pkg.scripts?.build?.includes("fix-dts.mjs")) {
@@ -128,4 +119,4 @@ if (errors.length > 0) {
   for (const e of errors) console.error(`  - ${e}`);
   process.exit(1);
 }
-console.log(`check-consistency: OK (${locales.length} locales, ${Object.keys(manifest).length} published packages)`);
+console.log(`check-consistency: OK (${locales.length} locales, ${publicPackages.length} published packages)`);

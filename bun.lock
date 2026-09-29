@@ -11,6 +11,7 @@
         "@radix-ui/react-dialog": "^1.1.23",
         "@types/node": "^26.6.1",
         "@vitest/coverage-istanbul": "^5.0.1",
+        "beez-rp": "github:guidomodarelli/beez-rp#2b57bda17990a8dfb88af26a8ae35baa8a8e8873",
         "fast-check": "^4.10.1",
         "jsdom": "30.1.0",
         "knip": "^6.36.0",
@@ -917,6 +918,8 @@
     "base64-arraybuffer": ["base64-arraybuffer@1.0.2", "", {}, "sha512-I3yl4r9QB5ZRY3XuJVEPfc2XhZO6YweFPI+UovAzn+8/hb3oJ6lnysaFcjVpkCPfVWFUDvoZ8kmVDP7WyRtYtQ=="],
 
     "baseline-browser-mapping": ["baseline-browser-mapping@2.11.1", "", { "bin": { "baseline-browser-mapping": "dist/cli.cjs" } }, "sha512-HYXq73DDpCtNzOmrFsm9eSwCvWCql0RzqjpDzXN9EadiLJ4DNat0nsZ/Bzmy+Ud12mb4/zKDY0cQ805ZzN+i0A=="],
+
+    "beez-rp": ["beez-rp@github:guidomodarelli/beez-rp#2b57bda", { "bin": { "beez-rp": "./bin/beez-rp.js" } }, "guidomodarelli-beez-rp-2b57bda", "sha512-ItHb8tgBEAx1sfchskNR0+Awa2+jEacs6l4RaFjqoyAmAGBSKGHZjjsW9tmC4IdsJJIp+tUxb/4a4zxpOdUsPw=="],
 
     "bidi-js": ["bidi-js@1.1.0", "", { "dependencies": { "require-from-string": "^2.0.2" } }, "sha512-fX1Onk0tdVPC7obPWB5EbJ1z7NVhLq4m2xZLq2YXBkxzMXIGRpNMU88n0EPgWseKl12J7zXs7qrDxPK4sRs2fg=="],
 

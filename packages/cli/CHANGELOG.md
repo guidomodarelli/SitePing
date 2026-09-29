@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased]
+
 ## [0.5.6](https://github.com/NeosiaNexus/SitePing/compare/cli-v0.5.5...cli-v0.5.6) (2026-09-23)
 
 

@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased]
+
 ## [0.1.1](https://github.com/NeosiaNexus/SitePing/compare/adapter-kit-v0.1.0...adapter-kit-v0.1.1) (2026-09-03)
 
 

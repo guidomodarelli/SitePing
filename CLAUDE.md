@@ -10,13 +10,14 @@
 - `bun run lint` — biome check (types domain enabled)
 - `bun run lint:fix` — biome auto-fix
 - `bun run verify` — build + check + lint + test:run (the full pre-PR gate)
-- `bun run pkg-checks` — publint + attw over published packages (list derived from release-please manifest)
-- `bun run check:consistency` — locale counts, package registration, fix-dts chains, esbuild override = widget spec (runs in CI)
+- `bun run pkg-checks` — publint + attw over published packages (list derived from the non-private workspaces)
+- `bun run check:consistency` — locale counts, release changelogs + publish guards, fix-dts chains, esbuild override = widget spec (runs in CI)
+- `bun run create-version` (alias `cv`) — local release with beez-rp (`beez-rp.config.js`): per-package versions, `CHANGELOG.md` `[Unreleased]` blocks, `{component}-v{version}` tags and npm publication. Never `bun publish`
 - `bun run new:locale <code>` / `bun run new:adapter <name>` — scaffolds (see CONTRIBUTING)
 
 ## Architecture
 - **Monorepo** with bun workspaces — 7 packages in `packages/`:
-  - `@siteping/core` — shared types, schema, store errors + helpers (internal, not published, no release-please entry, no npm publish job)
+  - `@siteping/core` — shared types, schema, store errors + helpers (internal, `private`: never released; its changes release the packages that bundle it)
   - `@siteping/widget` — browser feedback widget (Shadow DOM, closed mode). Accepts `store` option for client-side mode (no server needed)
   - `@siteping/dashboard` — Linear-style triage inbox React component (`<SitepingInbox />` + headless `useSitepingInbox()`); no Shadow DOM — scoped `spd-` classes + `--spd-*` CSS vars injected once
   - `@siteping/adapter-prisma` — server-side Prisma request handlers

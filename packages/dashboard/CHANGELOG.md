@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased]
+
 ## [0.2.7](https://github.com/NeosiaNexus/SitePing/compare/dashboard-v0.2.6...dashboard-v0.2.7) (2026-09-23)
 
 

@@ -99,7 +99,9 @@ describe("generateRoute", () => {
   // Permission error
   // -------------------------------------------------------------------------
 
-  it("throws descriptive error message on EACCES permission error", () => {
+  // A read-only mode on a directory blocks writes only on POSIX: Windows ignores
+  // it for directories, so the permission error cannot be produced there.
+  it.skipIf(process.platform === "win32")("throws descriptive error message on EACCES permission error", () => {
     mkdirSync(join(tmpDir, "app"), { recursive: true });
 
     // Create the directory structure so mkdirSync succeeds, but writeFileSync will fail

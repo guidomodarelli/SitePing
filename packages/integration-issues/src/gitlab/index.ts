@@ -91,7 +91,8 @@ export function createGitLabTracker({
 
     async findSitepingIssues(marker) {
       const matches: TrackedIssue[] = [];
-      for (let page = 1; page <= TRACKER_MAX_LISTED_PAGES; page++) {
+      // No page cap: a truncated list would make status sync and deleteAll skip issues.
+      for (let page = 1; ; page++) {
         const issues = await request<GitLabIssue[]>({
           method: "GET",
           path: issuesPath,

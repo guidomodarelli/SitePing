@@ -134,7 +134,8 @@ export function createGitHubTracker({
     // Listed by label (consistent right after creation, unlike the search index).
     async findSitepingIssues(marker) {
       const matches: TrackedIssue[] = [];
-      for (let page = 1; page <= TRACKER_MAX_LISTED_PAGES; page++) {
+      // No page cap: a truncated list would make status sync and deleteAll skip issues.
+      for (let page = 1; ; page++) {
         const issues = await request<GitHubIssue[]>({
           method: "GET",
           path: issuesPath,

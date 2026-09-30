@@ -240,6 +240,29 @@ for (const provider of providers) {
       expect(fake.issues.map((issue) => issue.isOpen)).toEqual([false, false, true]);
     });
 
+    it("finds the issue of a feedback past the first thousand labelled issues", async () => {
+      const unrelatedIssueCount = 1_000;
+      for (let index = 1; index <= unrelatedIssueCount; index++) {
+        fake.issues.push({
+          key: String(index),
+          title: `unrelated ${index}`,
+          body: "created outside this feedback",
+          labels: ["siteping"],
+          isOpen: true,
+          stateReason: null,
+          comments: [],
+        });
+      }
+      const handler = createHandler();
+      const feedback = await send(handler);
+
+      await patch(handler, feedback.id, "resolved");
+
+      const feedbackIssue = fake.issues[unrelatedIssueCount];
+      expect(feedbackIssue?.title).not.toMatch(/^unrelated/);
+      provider.expectClosedAs(feedbackIssue as FakeTracker["issues"][number], "resolved");
+    });
+
     it("still creates the feedback when opening the issue fails", async () => {
       fake.failWhen(/^POST /, 500);
       const handler = createHandler();

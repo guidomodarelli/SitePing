@@ -6,9 +6,13 @@ import {
   GITHUB_PAGE_SIZE,
   GITHUB_STATE_REASON,
 } from "../constants/github.js";
-import { TRACKER_MAX_LISTED_PAGES } from "../constants/http.js";
+import {
+  HTTP_STATUS_NOT_FOUND,
+  HTTP_STATUS_UNPROCESSABLE_ENTITY,
+  TRACKER_MAX_LISTED_PAGES,
+} from "../constants/http.js";
 import { SITEPING_ISSUE_LABEL } from "../constants/issue-format.js";
-import { createJsonHttpClient } from "../core/http-client.js";
+import { createJsonHttpClient, IssueTrackerRequestError } from "../core/http-client.js";
 import type { IssueTracker, TrackedIssue } from "../core/issue-tracker.js";
 
 export interface GitHubTrackerOptions {
@@ -61,11 +65,46 @@ export function createGitHubTracker({
     ...(timeoutMs === undefined ? {} : { timeoutMs }),
   });
   const issuesPath = `/repos/${repository}/issues`;
+  const labelsPath = `/repos/${repository}/labels`;
+  const ensuredLabels = new Map<string, Promise<void>>();
+
+  const isHttpStatus = (error: unknown, status: number): boolean =>
+    error instanceof IssueTrackerRequestError && error.status === status;
+
+  /** Create the label when missing — issue creation does not reliably do it — tolerating a concurrent creation. */
+  const createLabelIfMissing = async (name: string): Promise<void> => {
+    try {
+      await request({ method: "GET", path: `${labelsPath}/${encodeURIComponent(name)}` });
+      return;
+    } catch (error) {
+      if (!isHttpStatus(error, HTTP_STATUS_NOT_FOUND)) throw error;
+    }
+    try {
+      await request({ method: "POST", path: labelsPath, body: { name } });
+    } catch (error) {
+      if (!isHttpStatus(error, HTTP_STATUS_UNPROCESSABLE_ENTITY)) throw error;
+    }
+  };
+
+  /** Checked once per label and tracker instance; a failed check is retried on the next issue. */
+  const ensureLabel = (name: string): Promise<void> => {
+    let ensured = ensuredLabels.get(name);
+    if (!ensured) {
+      ensured = createLabelIfMissing(name).catch((error: unknown) => {
+        ensuredLabels.delete(name);
+        throw error;
+      });
+      ensuredLabels.set(name, ensured);
+    }
+    return ensured;
+  };
 
   return {
     name: "GitHub",
 
+    // Lookups filter by the `siteping` label, so it must exist before the first issue.
     async createIssue({ title, body, labels }) {
+      await Promise.all(labels.map(ensureLabel));
       const issue = await request<GitHubIssue>({ method: "POST", path: issuesPath, body: { title, body, labels } });
       return { key: String(issue.number), url: issue.html_url };
     },

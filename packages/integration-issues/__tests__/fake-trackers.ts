@@ -61,9 +61,17 @@ function page<Item>(items: Item[], url: URL): Item[] {
   return items.slice((pageNumber - 1) * perPage, pageNumber * perPage);
 }
 
-export function createFakeGitHub(repository: string): FakeTracker {
+/**
+ * GitHub leaves out of a new issue the labels the repository does not have
+ * (as it does for tokens that cannot create them), and filtering by an
+ * unknown label matches nothing — so labels must be created up front.
+ */
+export function createFakeGitHub(repository: string): FakeTracker & { labels: Set<string> } {
+  const escapeForPattern = (path: string) => path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const base = `/repos/${repository}/issues`;
-  const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escapedBase = escapeForPattern(base);
+  const escapedLabelsBase = escapeForPattern(`/repos/${repository}/labels`);
+  const labels = new Set<string>();
   let server: ReturnType<typeof createFakeServer>;
   const find = (key: string | undefined) => server.issues.find((issue) => issue.key === key);
   const toGitHub = (issue: FakeIssue) => ({
@@ -79,12 +87,12 @@ export function createFakeGitHub(repository: string): FakeTracker {
         "POST",
         new RegExp(`^${escapedBase}$`),
         async (request) => {
-          const { title, body, labels } = (await request.json()) as { title: string; body: string; labels: string[] };
+          const draft = (await request.json()) as { title: string; body: string; labels: string[] };
           const issue: FakeIssue = {
             key: String(server.issues.length + 1),
-            title,
-            body,
-            labels,
+            title: draft.title,
+            body: draft.body,
+            labels: draft.labels.filter((label) => labels.has(label)),
             isOpen: true,
             stateReason: null,
             comments: [],
@@ -100,6 +108,30 @@ export function createFakeGitHub(repository: string): FakeTracker {
           const label = url.searchParams.get("labels");
           const labelled = server.issues.filter((issue) => !label || issue.labels.includes(label));
           return Response.json(page(labelled, url).map(toGitHub));
+        },
+      ],
+      [
+        "GET",
+        new RegExp(`^${escapedLabelsBase}/([^/]+)$`),
+        (_request, match) => {
+          const name = decodeURIComponent(match[1] ?? "");
+          if (!labels.has(name)) return Response.json({ message: "Not Found" }, { status: 404 });
+          return Response.json({ name });
+        },
+      ],
+      [
+        "POST",
+        new RegExp(`^${escapedLabelsBase}$`),
+        async (request) => {
+          const { name } = (await request.json()) as { name: string };
+          if (labels.has(name)) {
+            return Response.json(
+              { message: "Validation Failed", errors: [{ code: "already_exists" }] },
+              { status: 422 },
+            );
+          }
+          labels.add(name);
+          return Response.json({ name }, { status: 201 });
         },
       ],
       [
@@ -131,7 +163,7 @@ export function createFakeGitHub(repository: string): FakeTracker {
     ],
     "authorization",
   );
-  return server;
+  return { ...server, labels };
 }
 
 export function createFakeGitLab(project: string): FakeTracker {

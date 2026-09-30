@@ -31,6 +31,11 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
 | GitHub (github.com, Enterprise Server via `apiBaseUrl`) | `./github` | resolved → closed as completed, won't fix → closed as not planned, open → reopened |
 | GitLab (gitlab.com, self-managed via `apiBaseUrl`) | `./gitlab` | resolved / won't fix → closed, open → reopened |
 
+Issues are found again through the `siteping` label, so the tracker applies it to every issue:
+
+- **GitHub** creates the `siteping` label and your extra `labels` when the repository lacks them (checked once per tracker instance, before the first issue). The token must be able to manage labels and issues (`issues: write` fine-grained, or `repo`); otherwise the issue is not opened and the error is logged.
+- **GitLab** creates missing labels itself when the issue is opened; the token's user needs at least the Planner or Reporter role, or GitLab ignores the labels.
+
 Any other tracker: implement the `IssueTracker` interface and pass it as `tracker`.
 
 Reviewer emails are left out of issues unless `includeAuthorEmail: true` — issues are often public.

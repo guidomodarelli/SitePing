@@ -30,7 +30,9 @@
     "check:consistency": "node scripts/check-consistency.mjs",
     "knip": "knip",
     "new:locale": "node scripts/new-locale.mjs",
-    "new:adapter": "node scripts/new-adapter.mjs"
+    "new:adapter": "node scripts/new-adapter.mjs",
+    "create-version": "beez-rp create-version",
+    "cv": "beez-rp create-version"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.5",
@@ -39,6 +41,7 @@
     "@radix-ui/react-dialog": "^1.1.23",
     "@types/node": "^26.6.1",
     "@vitest/coverage-istanbul": "^5.0.1",
+    "beez-rp": "^0.6.0",
     "fast-check": "^4.10.1",
     "jsdom": "30.1.0",
     "knip": "^6.36.0",

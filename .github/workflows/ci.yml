@@ -1,6 +1,9 @@
 name: CI
 
 on:
+  # Also on main: release commits are pushed straight to it by `create-version`.
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_call:
@@ -219,8 +222,8 @@ jobs:
 
       - name: Package health (publint + attw)
         # Same script contributors run locally (`bun run pkg-checks`); the
-        # package list derives from .release-please-manifest.json, so a new
-        # package can never be silently skipped by this gate.
+        # package list derives from the non-private workspaces (the same rule
+        # the release uses), so a new package can never be silently skipped.
         run: bun run pkg-checks
 
       - name: Consistency check (locales, package registration, fix-dts chains, esbuild override)

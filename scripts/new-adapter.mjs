@@ -4,14 +4,14 @@
 // Creates packages/adapter-<name>/ with the exact layout the CI gates
 // expect (dual-exports package.json with the fix-dts build chain, shared
 // tsup preset, tsconfig, a SitepingStore skeleton, a test file pre-wired to
-// the conformance suite) and registers it in the release-please config +
-// manifest. The remaining manual step — release.yml wiring — is printed at
-// the end and enforced by scripts/check-consistency.mjs until done.
+// the conformance suite, a CHANGELOG with the `## [Unreleased]` block and
+// the publish guard). `bun run create-version` picks it up from the
+// workspaces on its first release; nothing else registers it.
 //
 // Third-party adapters (outside this repo) should depend on
 // @siteping/adapter-kit instead — see docs/adapters/writing-an-adapter.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -65,6 +65,7 @@ writeFileSync(
         build: "tsup && node ../../scripts/fix-dts.mjs dist",
         check: "tsc --noEmit",
         clean: "rm -rf dist",
+        prepublishOnly: "beez-rp guard-publish",
       },
       keywords: ["siteping", name, "adapter", "feedback", "typescript"],
       author: "neosianexus",
@@ -191,37 +192,18 @@ MIT
 `,
 );
 
-writeFileSync(abs(`${pkgDir}/CHANGELOG.md`), "# Changelog\n");
-
-// --- release-please registration --------------------------------------------
-
-const rpConfigPath = abs("release-please-config.json");
-const rpConfig = JSON.parse(readFileSync(rpConfigPath, "utf8"));
-rpConfig.packages[pkgDir] = {
-  "release-type": "node",
-  component: `adapter-${name}`,
-  "bump-minor-pre-major": true,
-};
-writeFileSync(rpConfigPath, `${JSON.stringify(rpConfig, null, 2)}\n`);
-
-const manifestPath = abs(".release-please-manifest.json");
-const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-manifest[pkgDir] = "0.0.0";
-writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-
-// -----------------------------------------------------------------------------
+writeFileSync(abs(`${pkgDir}/CHANGELOG.md`), "# Changelog\n\n## [Unreleased]\n");
 
 console.log(`
-Created ${pkgDir}/ and registered it in release-please (config + manifest).
+Created ${pkgDir}/ (released by \`bun run create-version\` once it has changes).
 
 Next steps:
   1. bun install                          # link the new workspace
   2. Implement the store in ${pkgDir}/src/index.ts
      until the conformance suite passes:
        ./node_modules/.bin/vitest run ${pkgDir}
-  3. Wire .github/workflows/release.yml (4 spots — copy an existing
-     publish job): release_created output, artifact path, publish job,
-     verify-publish needs. \`bun run check:consistency\` fails until done.
-  4. Docs page: apps/demo/content/docs/adapters/ (EN + FR).
-  5. bun run verify && bun run pkg-checks
+  3. Docs page: apps/demo/content/docs/adapters/ (EN + FR).
+  4. Describe it for its consumers under "## [Unreleased]" in
+     ${pkgDir}/CHANGELOG.md.
+  5. bun run verify && bun run pkg-checks && bun run check:consistency
 `);

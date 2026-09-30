@@ -5,10 +5,9 @@
 // enforces. Requires a prior `bun run build`.
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { listPublicPackages } from "./public-packages.mjs";
 
-const manifest = JSON.parse(readFileSync(new URL("../.release-please-manifest.json", import.meta.url), "utf8"));
-const packages = Object.keys(manifest);
+const packages = listPublicPackages().map(({ path }) => path);
 
 let failed = false;
 

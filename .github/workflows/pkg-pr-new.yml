@@ -45,8 +45,8 @@ jobs:
         run: bun run build
 
       - name: Publish previews
-        # Package paths derive from the release-please manifest — one place
-        # to register a package, previews included automatically.
+        # Package paths derive from the non-private workspaces — the same
+        # rule the release uses, previews included automatically.
         run: |
           mapfile -t pkgs < <(node scripts/list-public-packages.mjs | sed 's|^|./|')
           bun x pkg-pr-new@0.0.80 publish --comment=update "${pkgs[@]}"

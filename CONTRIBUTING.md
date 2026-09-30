@@ -112,7 +112,7 @@ New pages are picked up automatically — the sitemap, the search index, and the
 ## Adding a New Package
 
 For an adapter, use the scaffold — it writes every file below in the correct
-final shape and registers the package in release-please:
+final shape (including its `CHANGELOG.md` and publish guard):
 
 ```bash
 bun run new:adapter drizzle -- --platform=node   # node | browser | neutral
@@ -138,18 +138,16 @@ is the smallest). The pieces that matter:
 
    export default defineConfig(sitepingLibrary({ platform: "node" }));
    ```
-4. **Register in release-please** — add the package to
-   `release-please-config.json` (release-type `node`, `bump-minor-pre-major`)
-   and to `.release-please-manifest.json` with the pre-first-release
-   placeholder version `"0.0.0"` (the post-release npm check knows to skip it).
-5. **Wire `.github/workflows/release.yml`** (4 spots — copy an existing
-   publish job): the `release_created` output, the build-artifact path, the
-   publish job itself, and the `verify-publish` needs list.
-6. **Verify** — `bun install`, then `bun run verify && bun run pkg-checks && bun run check:consistency`.
+4. **Release files** — version `"0.0.0"`, `"prepublishOnly": "beez-rp guard-publish"`
+   in `package.json`, and a `CHANGELOG.md` holding `# Changelog` and `## [Unreleased]`.
+   Every non-private workspace is released by `bun run create-version`; there
+   is no other list to register it in.
+5. **Verify** — `bun install`, then `bun run verify && bun run pkg-checks && bun run check:consistency`.
 
-The publint/attw gates and pkg-pr-new previews derive their package list from
-the manifest automatically, and `check:consistency` fails CI until every
-registration above is complete — nothing can be *silently* forgotten anymore.
+The publint/attw gates, pkg-pr-new previews and releases all derive their
+package list from the non-private workspaces, and `check:consistency` fails CI
+while a published package lacks its changelog or publish guard — nothing can
+be *silently* forgotten.
 
 ## Creating a New Adapter
 
@@ -312,33 +310,34 @@ inaccurately for the same reason. Trust the published report for those.)
 
 ## Releases & Versioning
 
-Releases are **fully automated** via [Release Please](https://github.com/googleapis/release-please) + Turborepo.
+Releases are cut locally by a maintainer with [beez-rp](https://github.com/guidomodarelli/beez-rp) (`beez-rp.config.js`):
+
+```bash
+bun run create-version              # alias: bun run cv
+bun run create-version --dry-run    # show the plan without changing anything
+```
 
 **How it works:**
 
-1. Write code using [Conventional Commits](https://www.conventionalcommits.org/)
-2. Push to `main` (via squash-merged PR)
-3. Release Please detects which packages changed (by file paths) and opens a release PR
-4. Merge the release PR → GitHub Release + npm publish happen automatically
+1. Write code using [Conventional Commits](https://www.conventionalcommits.org/) and describe consumer-facing changes under `## [Unreleased]` in the `CHANGELOG.md` of each package you touch (optional: an empty block is filled from the commits by Codex at release time).
+2. Merge to `main` (via squash-merged PR).
+3. `create-version` finds the packages with commits since their last release — by the **files** each commit touches, plus the packages that bundle a changed `@siteping/core` — runs `bun run verify`, `check:consistency` and `pkg-checks`, and asks the version of each one (patch, minor or major, with the one its commits suggest marked; "don't publish now" skips it).
+4. One commit on `main` (`release: @siteping/widget@0.11.0, @siteping/server@0.1.0`) carries every `package.json`, `CHANGELOG.md` (`## [Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`) and the CLI version, with one annotated tag per package (`widget-v0.11.0`); `main` and the tags are pushed atomically.
+5. Each package is rebuilt on that commit and published with npm from its folder, in dependency order. If a publication fails, the next run publishes the tagged release before anything new.
 
-**Version bumps are determined by your commit messages:**
+**Version suggestions follow your commit messages:**
 
-| Commit prefix | Version bump (1.0+) | Pre-1.0 bump | Example |
-|--------------|---------------------|-------------|---------|
-| `fix(scope):` | Patch | Patch | `fix(widget): prevent double submit` |
+| Commit prefix | Suggested bump (1.0+) | Pre-1.0 | Example |
+|--------------|-----------------------|---------|---------|
+| `fix(scope):` / `docs:` / `test:` / `chore:` | Patch | Patch | `fix(widget): prevent double submit` |
 | `feat(scope):` | Minor | Patch | `feat(panel): add dark mode` |
 | `feat(scope)!:` | Major | Minor | `feat(api)!: redesign payload format` |
-| `docs:` / `test:` / `chore:` | — (included in next release) | — | `docs(widget): clarify config` |
 
-> **Note:** The commit scope (`widget`, `cli`) is cosmetic. Release-please routes commits to packages based on which **files** the commit touches, not the scope name.
-
-> **Pre-1.0 behavior** (all current packages): `feat` bumps **patch** instead of minor, breaking changes (`!`) bump **minor** instead of major. `docs` / `test` / `chore` commits don't trigger releases on their own — they're included in the next release triggered by `feat` or `fix`.
+> **Note:** The commit scope (`widget`, `cli`) is cosmetic. Commits are routed to packages by the **files** they touch, not the scope name.
 
 **What you don't need to do:**
-- Edit `package.json` version — Release Please does it
-- Write `CHANGELOG.md` — auto-generated from commits
-- Create git tags — auto-created on release
-- Run `npm publish` — CI handles it
+- Edit `package.json` versions or create git tags — `create-version` does it
+- Run `npm publish` — `create-version` publishes; `bun publish` is blocked by each package's `prepublishOnly` guard
 
 ## Pull Request Guidelines
 

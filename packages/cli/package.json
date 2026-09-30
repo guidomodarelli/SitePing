@@ -12,7 +12,8 @@
   "scripts": {
     "build": "tsup",
     "check": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "beez-rp guard-publish"
   },
   "keywords": [
     "siteping",

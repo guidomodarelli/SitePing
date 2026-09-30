@@ -40,4 +40,6 @@ Any other tracker: implement the `IssueTracker` interface and pass it as `tracke
 
 Reviewer emails are left out of issues unless `includeAuthorEmail: true` — issues are often public.
 
+`redact` runs on every free-text value copied into the issue: message, author, page and deep-link URLs, screenshot URL, user agent and diagnostics. A screenshot is embedded only while its redacted URL is still a valid HTTPS URL.
+
 MIT

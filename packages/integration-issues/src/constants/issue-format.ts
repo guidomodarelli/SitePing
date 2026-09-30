@@ -29,7 +29,8 @@ export const EMBEDDABLE_SCREENSHOT_URL_PREFIX = "https://";
 export const ISSUE_REFERENCE_MARKER = {
   prefix: "<!-- siteping-feedback ",
   suffix: " -->",
-  pattern: /<!-- siteping-feedback (\{.*?\}) -->/,
+  /** Global: a body may quote other markers — the last one is authoritative. */
+  pattern: /<!-- siteping-feedback (\{.*?\}) -->/g,
 } as const;
 
 /** Section headings of the default issue body. */

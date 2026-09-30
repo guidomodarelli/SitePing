@@ -19,7 +19,7 @@ export interface IssueContent {
 }
 
 export interface IssueFormatOptions {
-  /** Applied to every free-text value copied from the feedback (message, URLs, user agent, diagnostics). */
+  /** Applied to every free-text value copied from the feedback (message, author, URLs, screenshot URL, user agent, diagnostics). */
   redact: (text: string) => string;
   /** Query parameter of the widget's deep link, or `false` to omit the link. */
   deepLinkParam: string | false;
@@ -53,6 +53,19 @@ function buildDeepLink(feedback: FeedbackRecord, param: string): string | null {
   }
 }
 
+/** Screenshot section, or `null` when the (redacted) URL is not a public HTTPS URL GitHub can embed. */
+function buildScreenshot(feedback: FeedbackRecord, redact: (text: string) => string): string | null {
+  if (!feedback.screenshotUrl) return null;
+  const screenshotUrl = redact(feedback.screenshotUrl);
+  if (!screenshotUrl.startsWith(EMBEDDABLE_SCREENSHOT_URL_PREFIX)) return null;
+  try {
+    new URL(screenshotUrl);
+  } catch {
+    return null; // Redaction left something that is no longer a URL — do not embed it.
+  }
+  return section(ISSUE_SECTION_HEADINGS.screenshot, `![${ISSUE_SECTION_HEADINGS.screenshot}](${screenshotUrl})`);
+}
+
 function buildDiagnostics(feedback: FeedbackRecord, redact: (text: string) => string): string[] {
   if (!feedback.diagnostics) return [];
   const consoleLines = feedback.diagnostics.console
@@ -74,11 +87,11 @@ export function formatIssue(feedback: FeedbackRecord, options: IssueFormatOption
   const titleBudget = ISSUE_TITLE_MAX_LENGTH - ISSUE_TITLE_PREFIX.length - 1;
   const title = `${ISSUE_TITLE_PREFIX} ${truncate(message.replace(/\s+/g, " ").trim(), titleBudget)}`;
 
-  const author = options.includeAuthorEmail ? `${feedback.authorName} <${feedback.authorEmail}>` : feedback.authorName;
+  const author = redact(
+    options.includeAuthorEmail ? `${feedback.authorName} <${feedback.authorEmail}>` : feedback.authorName,
+  );
   const deepLink = options.deepLinkParam === false ? null : buildDeepLink(feedback, options.deepLinkParam);
-  const screenshot = feedback.screenshotUrl?.startsWith(EMBEDDABLE_SCREENSHOT_URL_PREFIX)
-    ? section(ISSUE_SECTION_HEADINGS.screenshot, `![${ISSUE_SECTION_HEADINGS.screenshot}](${feedback.screenshotUrl})`)
-    : null;
+  const screenshot = buildScreenshot(feedback, redact);
 
   const sections = [
     section(ISSUE_SECTION_HEADINGS.message, message),
@@ -117,12 +130,16 @@ export function projectMarkerFragment(projectName: string): string {
   return `"project":${toMarkerJson(projectName)}`;
 }
 
-/** The link stored in an issue body, or `null` when it has no (valid) marker. */
+/**
+ * The link stored in an issue body, or `null` when it has no (valid) marker.
+ * Only the last marker counts: the genuine one is appended after the formatted
+ * content, so an earlier one may come from user-controlled text.
+ */
 export function parseIssueMarker(body: string): IssueLink | null {
-  const match = ISSUE_REFERENCE_MARKER.pattern.exec(body);
-  if (!match?.[1]) return null;
+  const markerJson = Array.from(body.matchAll(ISSUE_REFERENCE_MARKER.pattern)).at(-1)?.[1];
+  if (!markerJson) return null;
   try {
-    const parsed: unknown = JSON.parse(match[1]);
+    const parsed: unknown = JSON.parse(markerJson);
     if (typeof parsed !== "object" || parsed === null) return null;
     const { id, project } = parsed as { id?: unknown; project?: unknown };
     return typeof id === "string" && typeof project === "string" ? { feedbackId: id, projectName: project } : null;

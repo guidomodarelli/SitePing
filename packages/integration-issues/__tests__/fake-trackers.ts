@@ -63,7 +63,7 @@ function page<Item>(items: Item[], url: URL): Item[] {
 
 export function createFakeGitHub(repository: string): FakeTracker {
   const base = `/repos/${repository}/issues`;
-  const escapedBase = base.replace(/[/.]/g, "\\$&");
+  const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   let server: ReturnType<typeof createFakeServer>;
   const find = (key: string | undefined) => server.issues.find((issue) => issue.key === key);
   const toGitHub = (issue: FakeIssue) => ({

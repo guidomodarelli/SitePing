@@ -136,7 +136,7 @@ export function createFakeGitHub(repository: string): FakeTracker {
 
 export function createFakeGitLab(project: string): FakeTracker {
   const base = `/api/v4/projects/${encodeURIComponent(project)}/issues`;
-  const escapedBase = base.replace(/[/.%]/g, "\\$&");
+  const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   let server: ReturnType<typeof createFakeServer>;
   const find = (key: string | undefined) => server.issues.find((issue) => issue.key === key);
   const toGitLab = (issue: FakeIssue) => ({

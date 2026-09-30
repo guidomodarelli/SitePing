@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-30
+
+### Added
+
+- Add optional `SitepingStore.createFeedbackIfAbsent` and the exported `FeedbackCreateOutcome` type to distinguish new feedback from duplicate submissions; `createCollectionStore` provides this method.
+- Export `isUnreachableOffset` so custom adapters can return empty pages with the correct total for pagination offsets beyond the safe integer range.
+- Extend `@siteping/adapter-kit/testing` conformance checks to cover concurrent feedback deduplication and pagination far beyond the last page.
+
+### Changed
+
+- Clarify that `ScreenshotStorage.upload` must return a URL unique to the supplied feedback ID, and that `delete` may also clean up uploads whose feedback was not stored.
+- Document that stores used with custom authorization in `@siteping/server` must implement `verifyProjectOwnership`.
+
+### Fixed
+
+- Prevent concurrent mutations on a single `createCollectionStore` instance from losing changes or creating duplicate feedback.
+- Make `isStoreNotFound` and `isStoreDuplicate` recognize store errors across separately bundled Siteping packages by their stable error codes.
+
 ## [0.1.1](https://github.com/NeosiaNexus/SitePing/compare/adapter-kit-v0.1.0...adapter-kit-v0.1.1) (2026-09-03)
 
 

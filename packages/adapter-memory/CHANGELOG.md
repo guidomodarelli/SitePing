@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-30
+
+### Added
+
+- Add `MemoryStore.createFeedbackIfAbsent()` to return the feedback and indicate whether it was newly created or already existed for the same `clientId`.
+- Allow `StoreNotFoundError` and `StoreDuplicateError` to preserve an underlying error through the `cause` option.
+
+### Fixed
+
+- Prevent concurrent writes on the same `MemoryStore` instance from losing feedback or creating duplicates for the same `clientId`.
+- Normalize fractional and non-finite pagination values, and return an empty page with the correct total when the requested offset exceeds the safe integer range.
+
 ## [0.5.3](https://github.com/NeosiaNexus/SitePing/compare/adapter-memory-v0.5.2...adapter-memory-v0.5.3) (2026-07-28)
 
 

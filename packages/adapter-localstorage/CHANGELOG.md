@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-30
+
+### Added
+
+- Add `LocalStorageStore.createFeedbackIfAbsent()` to return the feedback and report whether it was newly created or already existed for the same `clientId`.
+
+### Fixed
+
+- Prevent concurrent feedback writes on the same `LocalStorageStore` instance from losing changes or creating duplicate records for the same `clientId`.
+- Return an empty feedback page with the correct total when the requested pagination offset exceeds the safe integer range.
+
 ## [0.5.4](https://github.com/NeosiaNexus/SitePing/compare/adapter-localstorage-v0.5.3...adapter-localstorage-v0.5.4) (2026-09-03)
 
 

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-30
+
+### Changed
+
+- Publishing @siteping/cli now requires the repository's create-version command.
+
 ## [0.5.6](https://github.com/NeosiaNexus/SitePing/compare/cli-v0.5.5...cli-v0.5.6) (2026-09-23)
 
 

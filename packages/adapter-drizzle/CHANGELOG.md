@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-30
+
 ### Added
 
 - First release: a Drizzle ORM `SitepingStore` for PostgreSQL (`@siteping/adapter-drizzle/pg`) and Turso/libSQL (`@siteping/adapter-drizzle/libsql`), with the schema to add to your Drizzle migrations.
+

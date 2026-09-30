@@ -1,6 +1,6 @@
 {
   "name": "@siteping/server",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Framework- and database-agnostic HTTP API for Siteping — pluggable auth, lifecycle hooks and any SitepingStore",
   "type": "module",
   "sideEffects": false,

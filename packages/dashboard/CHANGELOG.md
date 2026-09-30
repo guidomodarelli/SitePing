@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-30
+
+### Added
+
+- Add the `credentials` option to `SitepingInbox`, `useSitepingInbox`, and `createEndpointSource` to control cookies on endpoint requests, including cross-origin session authentication with `"include"`; defaults to `"same-origin"`.
+
 ## [0.2.7](https://github.com/NeosiaNexus/SitePing/compare/dashboard-v0.2.6...dashboard-v0.2.7) (2026-09-23)
 
 

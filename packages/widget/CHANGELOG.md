@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-09-30
+
+### Added
+
+- Added the HTTP-mode `credentials` option (`omit`, `same-origin`, or `include`) to control cookies for all requests, including queued retries; defaults to `same-origin`.
+
+### Fixed
+
+- Kept the widget visible and interactive while host-page modals are open, without dismissing those modals when using the widget.
+- Kept the comment popup within the viewport and clear of the annotation toolbar.
+- Closed the comment popup when cancelling an annotation session with Escape or the toolbar Cancel button.
+- Preserved queued feedback when localStorage reaches its quota by dropping screenshots first, then the oldest queued entries if needed.
+
 ## [0.10.10](https://github.com/NeosiaNexus/SitePing/compare/widget-v0.10.9...widget-v0.10.10) (2026-09-23)
 
 

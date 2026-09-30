@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-30
+
+### Added
+
+- Support for using PrismaStore with @siteping/server for custom authentication, authorization, lifecycle hooks, and feedback transformations.
+
+### Fixed
+
+- Return an empty feedback page with the correct total for excessively large page numbers instead of failing with a Prisma error.
+
+### Security
+
+- Require Content-Type: application/json for POST, PATCH, and DELETE requests to protect against cross-site request forgery.
+- Reject POST, PATCH, and DELETE requests from origins outside allowedOrigins unless they match the endpoint origin.
+
 ## [0.6.6](https://github.com/NeosiaNexus/SitePing/compare/adapter-prisma-v0.6.5...adapter-prisma-v0.6.6) (2026-09-23)
 
 

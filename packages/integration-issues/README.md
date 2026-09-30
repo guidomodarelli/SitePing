@@ -1,48 +1,44 @@
+[![npm version](https://img.shields.io/npm/v/@siteping/integration-issues)](https://www.npmjs.com/package/@siteping/integration-issues)
+[![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/integrations/issues)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
+
 # @siteping/integration-issues
 
-Keep one tracker issue per [SitePing](https://siteping.dev) feedback, through `@siteping/server` lifecycle hooks:
+One **GitHub** or **GitLab** issue per [SitePing](https://github.com/NeosiaNexus/SitePing) feedback — opened, closed and reopened through `@siteping/server` lifecycle hooks.
 
-- **created** → opens an issue (Markdown body: message, page, deep link, viewport, screenshot, diagnostics), closed right away when the feedback is stored resolved or won't fix (e.g. by `beforeCreate`);
-- **resolved / won't fix / reopened** → closes or reopens it;
-- **deleted** → closes it with a comment. If the tracker is unreachable, the delete is aborted and can be retried.
+**[Documentation](https://siteping.dev/docs/integrations/issues)**
 
-Issues are linked to feedbacks by a hidden marker in their body — no extra database column.
+## Install
+
+```bash
+npm install @siteping/integration-issues @siteping/server
+```
+
+**Peer dependency:** `@siteping/server` · Node ≥ 20.
+
+## Quick start
 
 ```ts
 import { createSitepingHandler } from "@siteping/server";
 import { createIssueTrackerHooks } from "@siteping/integration-issues";
 import { createGitHubTracker } from "@siteping/integration-issues/github";
-// or: import { createGitLabTracker } from "@siteping/integration-issues/gitlab";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
   store,
   access,
   hooks: createIssueTrackerHooks({
     tracker: createGitHubTracker({ repository: "acme/site", token: process.env.GITHUB_TOKEN! }),
-    // tracker: createGitLabTracker({ project: "acme/site", token: process.env.GITLAB_TOKEN! }),
-    labels: ["feedback"],
     siteUrl: "https://acme.example",
-    redact: (text) => text.replace(/token=\S+/g, "token=[redacted]"),
   }),
 });
 ```
 
-| Provider | Entry | Status mapping |
-|---|---|---|
-| GitHub (github.com, Enterprise Server via `apiBaseUrl`) | `./github` | resolved → closed as completed, won't fix → closed as not planned, open → reopened |
-| GitLab (gitlab.com, self-managed via `apiBaseUrl`) | `./gitlab` | resolved / won't fix → closed, open → reopened |
+GitLab: same shape with `createGitLabTracker` from `@siteping/integration-issues/gitlab`.
 
-Issues are found again through the `siteping` label, so the tracker applies it to every issue:
+## Documentation
 
-- **GitHub** creates the `siteping` label and your extra `labels` when the repository lacks them (checked once per tracker instance, before the first issue). The token must be able to manage labels and issues (`issues: write` fine-grained, or `repo`); otherwise the issue is not opened and the error is logged.
-- **GitLab** creates missing labels itself when the issue is opened; the token's user needs at least the Planner or Reporter role, or GitLab ignores the labels.
+Providers and status mapping, labels and token permissions, `siteUrl` and deep links, `redact`, `syncStatus`, custom formatting and your own `IssueTracker`: **[siteping.dev/docs/integrations/issues](https://siteping.dev/docs/integrations/issues)**.
 
-Any other tracker: implement the `IssueTracker` interface and pass it as `tracker`.
+## License
 
-Reviewer emails are left out of issues unless `includeAuthorEmail: true` — issues are often public.
-
-The "Open in the page" deep link adds the `deepLinkParam` query parameter (default `siteping`, `false` to omit it) to the feedback's page URL. The widget stores only `window.location.pathname` (e.g. `/checkout`) by default, so set `siteUrl` to your site's absolute http(s) URL to resolve it; without `siteUrl`, feedbacks with a relative page URL get no deep link. An invalid `siteUrl` throws when the hooks are created.
-
-`redact` runs on every free-text value copied into the issue: message, author, page and deep-link URLs, viewport, screenshot URL, user agent and diagnostics. A screenshot is embedded only while its redacted URL is still a valid HTTPS URL.
-
-MIT
+[MIT](https://github.com/NeosiaNexus/SitePing/blob/main/LICENSE)

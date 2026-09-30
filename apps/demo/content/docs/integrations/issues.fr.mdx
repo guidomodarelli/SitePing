@@ -1,0 +1,87 @@
+---
+title: Trackers d'issues
+description: Une issue GitHub ou GitLab par feedback, ouverte, fermée et rouverte via les hooks de cycle de vie de @siteping/server.
+---
+
+`@siteping/integration-issues` maintient une issue par feedback dans votre tracker, via les hooks de cycle de vie de `@siteping/server` :
+
+- **création** → ouvre une issue (corps Markdown : message, page, deep link, viewport, capture, diagnostics), fermée aussitôt quand le feedback est enregistré résolu ou won't fix (par exemple par `beforeCreate`) ;
+- **résolu / won't fix / rouvert** → ferme ou rouvre l'issue ;
+- **suppression** → la ferme avec un commentaire. Si le tracker est injoignable, la suppression est annulée et peut être relancée.
+
+Les issues sont liées aux feedbacks par un marqueur caché dans leur corps — aucune colonne supplémentaire en base.
+
+```bash
+npm i @siteping/integration-issues @siteping/server
+```
+
+## Mise en place
+
+```ts
+import { createSitepingHandler } from "@siteping/server";
+import { createIssueTrackerHooks } from "@siteping/integration-issues";
+import { createGitHubTracker } from "@siteping/integration-issues/github";
+// ou : import { createGitLabTracker } from "@siteping/integration-issues/gitlab";
+
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
+  store,
+  access,
+  hooks: createIssueTrackerHooks({
+    tracker: createGitHubTracker({ repository: "acme/site", token: process.env.GITHUB_TOKEN! }),
+    // tracker: createGitLabTracker({ project: "acme/site", token: process.env.GITLAB_TOKEN! }),
+    labels: ["feedback"],
+    siteUrl: "https://acme.example",
+    redact: (text) => text.replace(/token=\S+/g, "token=[redacted]"),
+  }),
+});
+```
+
+## Fournisseurs
+
+| Fournisseur | Entrée | Correspondance des statuts |
+|---|---|---|
+| GitHub (github.com, Enterprise Server via `apiBaseUrl`) | `@siteping/integration-issues/github` | résolu → fermée comme terminée, won't fix → fermée comme non prévue, ouvert → rouverte |
+| GitLab (gitlab.com, auto-hébergé via `apiBaseUrl`) | `@siteping/integration-issues/gitlab` | résolu / won't fix → fermée, ouvert → rouverte |
+
+`createGitHubTracker` prend `repository` (`owner/name`) et `token` ; `createGitLabTracker` prend `project` (id numérique ou chemin complet) et `token`. Les deux acceptent `apiBaseUrl`, `fetch` et `timeoutMs`.
+
+### Labels
+
+Les issues sont retrouvées grâce au label `siteping` : le tracker l'applique à chaque issue, en plus des `labels` supplémentaires que vous passez.
+
+- **GitHub** crée le label `siteping` et vos `labels` supplémentaires quand le dépôt ne les a pas (vérifié une fois par instance de tracker, avant la première issue). Le token doit pouvoir gérer labels et issues (`issues: write` en fine-grained, ou `repo`) ; sinon l'issue n'est pas ouverte et l'erreur est journalisée.
+- **GitLab** crée lui-même les labels manquants à l'ouverture de l'issue ; l'utilisateur du token doit avoir au moins le rôle Planner ou Reporter, sinon GitLab ignore les labels.
+
+### Votre propre tracker
+
+Tout autre tracker (Jira, Linear, un outil interne…) : implémentez l'interface `IssueTracker` et passez-la comme `tracker`.
+
+## Options
+
+| Option | Défaut | Rôle |
+|---|---|---|
+| `tracker` | — | Où vivent les issues : `createGitHubTracker`, `createGitLabTracker` ou votre propre `IssueTracker` |
+| `labels` | `[]` | Labels supplémentaires ; `siteping` est toujours ajouté |
+| `siteUrl` | — | URL http(s) absolue qui résout les URLs de page relatives dans le deep link |
+| `deepLinkParam` | `"siteping"` | Paramètre de requête du lien « Open in the page », ou `false` pour l'omettre |
+| `redact` | aucune | S'applique à chaque texte libre copié dans l'issue |
+| `includeAuthorEmail` | `false` | Inclure l'email des relecteurs dans les issues |
+| `syncStatus` | `true` | Fermer / rouvrir l'issue quand le statut du feedback change, y compris pour un feedback enregistré déjà fermé |
+| `formatIssue` | Markdown intégré | Remplace le titre et le corps de l'issue ; le marqueur de liaison est ajouté à ce que vous renvoyez |
+| `deletedCommentText` | `` SitePing feedback `<id>` was deleted. `` | Commentaire laissé sur les issues dont le feedback est supprimé |
+
+### Email de l'auteur
+
+L'email des relecteurs n'apparaît pas dans les issues sauf avec `includeAuthorEmail: true` — les issues sont souvent publiques.
+
+### Deep link et `siteUrl`
+
+Le deep link « Open in the page » ajoute le paramètre de requête `deepLinkParam` (par défaut `siteping`, `false` pour l'omettre) à l'URL de la page du feedback. Par défaut, le widget n'enregistre que `window.location.pathname` (par exemple `/checkout`) : définissez `siteUrl` avec l'URL http(s) absolue de votre site pour le résoudre ; sans `siteUrl`, les feedbacks avec une URL de page relative n'ont pas de deep link. Un `siteUrl` invalide lève une erreur à la création des hooks.
+
+### Masquage
+
+`redact` s'applique à chaque texte libre copié dans l'issue : message, auteur, URLs de page et de deep link, viewport, URL de capture, user agent et diagnostics. Une capture n'est intégrée que si son URL masquée reste une URL HTTPS valide.
+
+### Synchronisation des statuts
+
+Avec `syncStatus` activé (par défaut), résoudre, rejeter ou rouvrir un feedback ferme ou rouvre son issue, et un feedback enregistré déjà fermé (par exemple par `beforeCreate`) voit son issue fermée juste après son ouverture. Passez `syncStatus: false` pour ouvrir les issues à la création et les fermer à la suppression uniquement, sans y toucher lors des changements de statut.

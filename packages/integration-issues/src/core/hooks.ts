@@ -1,4 +1,4 @@
-import type { FeedbackRecord } from "@siteping/core";
+import { type FeedbackRecord, isClosedStatus } from "@siteping/core";
 import type { SitepingDeletionTarget, SitepingLifecycleHooks } from "@siteping/server";
 import {
   DEFAULT_DEEP_LINK_PARAM,
@@ -29,7 +29,10 @@ export interface IssueTrackerHooksOptions {
   includeAuthorEmail?: boolean;
   /** Replace the default Markdown. The linking marker is appended to whatever you return. */
   formatIssue?: (feedback: FeedbackRecord, defaults: IssueFormatOptions) => IssueContent;
-  /** Close / reopen the issue when the feedback status changes. Defaults to `true`. */
+  /**
+   * Close / reopen the issue when the feedback status changes — including a
+   * feedback stored already closed (e.g. by `beforeCreate`). Defaults to `true`.
+   */
   syncStatus?: boolean;
   /** Comment left on issues whose feedback is deleted. */
   deletedCommentText?: (feedbackId: string) => string;
@@ -111,7 +114,14 @@ export function createIssueTrackerHooks({
         ? customFormatIssue(feedback, formatOptions)
         : formatIssue(feedback, formatOptions);
       const marker = buildIssueMarker({ feedbackId: feedback.id, projectName: feedback.projectName });
-      await tracker.createIssue({ title: content.title, body: `${content.body}\n\n${marker}`, labels: issueLabels });
+      const reference = await tracker.createIssue({
+        title: content.title,
+        body: `${content.body}\n\n${marker}`,
+        labels: issueLabels,
+      });
+      // `beforeCreate` may store the feedback already closed and no `onUpdated`
+      // follows, so mirror that initial status on the new (open) issue now.
+      if (syncStatus && isClosedStatus(feedback.status)) await tracker.updateIssueStatus(reference, feedback.status);
     },
     async onUpdated(feedback) {
       if (!syncStatus) return;

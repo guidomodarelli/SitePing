@@ -2,7 +2,7 @@
 
 Keep one tracker issue per [SitePing](https://siteping.dev) feedback, through `@siteping/server` lifecycle hooks:
 
-- **created** → opens an issue (Markdown body: message, page, deep link, viewport, screenshot, diagnostics);
+- **created** → opens an issue (Markdown body: message, page, deep link, viewport, screenshot, diagnostics), closed right away when the feedback is stored resolved or won't fix (e.g. by `beforeCreate`);
 - **resolved / won't fix / reopened** → closes or reopens it;
 - **deleted** → closes it with a comment. If the tracker is unreachable, the delete is aborted and can be retried.
 

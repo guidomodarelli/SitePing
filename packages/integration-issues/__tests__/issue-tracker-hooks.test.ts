@@ -146,6 +146,29 @@ for (const provider of providers) {
       expect(fake.issues[0]?.isOpen).toBe(true);
     });
 
+    it("closes the new issue when beforeCreate stores the feedback already closed", async () => {
+      const createClosingHandler = (options: Partial<IssueTrackerHooksOptions> = {}) =>
+        createSitepingHandler({
+          store,
+          requireAuthForDestructive: false,
+          logger,
+          beforeCreate: (input) => ({ ...input, status: input.message === "Declined" ? "wont_fix" : "resolved" }),
+          hooks: createIssueTrackerHooks({ tracker: provider.createTracker(fake), ...options }),
+        });
+      const handler = createClosingHandler();
+
+      const resolved = await send(handler);
+      const declined = await send(handler, { message: "Declined" });
+
+      expect(resolved.status).toBe("resolved");
+      expect(declined.status).toBe("wont_fix");
+      provider.expectClosedAs(fake.issues[0] as FakeTracker["issues"][number], "resolved");
+      provider.expectClosedAs(fake.issues[1] as FakeTracker["issues"][number], "wont_fix");
+
+      await send(createClosingHandler({ syncStatus: false }));
+      expect(fake.issues[2]?.isOpen).toBe(true);
+    });
+
     it("leaves issues untouched on status changes when syncStatus is off", async () => {
       const handler = createHandler({ syncStatus: false });
       const feedback = await send(handler);

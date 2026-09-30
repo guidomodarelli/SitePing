@@ -19,6 +19,13 @@ export const DIAGNOSTIC_ENTRIES_PER_KIND = 5;
 /** Query parameter the widget reads to focus a feedback (`SitepingConfig.deepLink`). */
 export const DEFAULT_DEEP_LINK_PARAM = "siteping";
 
+/** Protocols accepted for `siteUrl`, the base that resolves relative page URLs. */
+export const SITE_URL_PROTOCOLS: readonly string[] = ["http:", "https:"];
+
+/** Error raised by `createIssueTrackerHooks` when `siteUrl` is not an absolute http(s) URL; `{siteUrl}` is replaced. */
+export const INVALID_SITE_URL_MESSAGE_TEMPLATE =
+  'createIssueTrackerHooks: `siteUrl` must be an absolute http(s) URL, received "{siteUrl}".';
+
 /** Only public HTTPS screenshots render as images on GitHub (inline data URLs do not). */
 export const EMBEDDABLE_SCREENSHOT_URL_PREFIX = "https://";
 

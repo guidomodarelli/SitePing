@@ -21,6 +21,7 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
     tracker: createGitHubTracker({ repository: "acme/site", token: process.env.GITHUB_TOKEN! }),
     // tracker: createGitLabTracker({ project: "acme/site", token: process.env.GITLAB_TOKEN! }),
     labels: ["feedback"],
+    siteUrl: "https://acme.example",
     redact: (text) => text.replace(/token=\S+/g, "token=[redacted]"),
   }),
 });
@@ -40,6 +41,8 @@ Any other tracker: implement the `IssueTracker` interface and pass it as `tracke
 
 Reviewer emails are left out of issues unless `includeAuthorEmail: true` — issues are often public.
 
-`redact` runs on every free-text value copied into the issue: message, author, page and deep-link URLs, screenshot URL, user agent and diagnostics. A screenshot is embedded only while its redacted URL is still a valid HTTPS URL.
+The "Open in the page" deep link adds the `deepLinkParam` query parameter (default `siteping`, `false` to omit it) to the feedback's page URL. The widget stores only `window.location.pathname` (e.g. `/checkout`) by default, so set `siteUrl` to your site's absolute http(s) URL to resolve it; without `siteUrl`, feedbacks with a relative page URL get no deep link. An invalid `siteUrl` throws when the hooks are created.
+
+`redact` runs on every free-text value copied into the issue: message, author, page and deep-link URLs, viewport, screenshot URL, user agent and diagnostics. A screenshot is embedded only while its redacted URL is still a valid HTTPS URL.
 
 MIT

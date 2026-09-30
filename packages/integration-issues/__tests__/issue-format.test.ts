@@ -68,4 +68,21 @@ describe("formatIssue", () => {
     expect(body).not.toContain("## Screenshot");
     expect(body).not.toContain("cdn.example.com");
   });
+
+  it("redacts the viewport, which the schema accepts as free text", () => {
+    const { body } = formatIssue({ ...feedback, viewport: "token=viewport-secret" }, options);
+
+    expect(body).not.toContain("viewport-secret");
+    expect(body).toContain("## Viewport\n\ntoken=[redacted]");
+  });
+
+  it("resolves the widget's default pathname-only page URL against siteUrl for the deep link", () => {
+    const widgetFeedback = { ...feedback, url: "/checkout" };
+    const deepLinkOptions = { ...options, deepLinkParam: "siteping" };
+
+    expect(formatIssue(widgetFeedback, { ...deepLinkOptions, siteUrl: "https://example.com" }).body).toContain(
+      "## Open in the page\n\nhttps://example.com/checkout?siteping=feedback-1",
+    );
+    expect(formatIssue(widgetFeedback, deepLinkOptions).body).not.toContain("## Open in the page");
+  });
 });

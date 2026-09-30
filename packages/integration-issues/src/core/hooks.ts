@@ -3,6 +3,8 @@ import type { SitepingDeletionTarget, SitepingLifecycleHooks } from "@siteping/s
 import {
   DEFAULT_DEEP_LINK_PARAM,
   DELETED_FEEDBACK_COMMENT_TEMPLATE,
+  INVALID_SITE_URL_MESSAGE_TEMPLATE,
+  SITE_URL_PROTOCOLS,
   SITEPING_ISSUE_LABEL,
 } from "../constants/issue-format.js";
 import {
@@ -25,6 +27,13 @@ export interface IssueTrackerHooksOptions {
   redact?: (text: string) => string;
   /** Query parameter of the widget's deep link (`SitepingConfig.deepLink`), or `false` to omit it. */
   deepLinkParam?: string | false;
+  /**
+   * Absolute http(s) URL of your site (e.g. `https://example.com`), used to
+   * resolve relative page URLs into the deep link — the widget stores
+   * `window.location.pathname` by default. Without it, feedbacks with a
+   * relative page URL get no deep link.
+   */
+  siteUrl?: string;
   /** Include reviewer emails in issues. Defaults to `false` — issues are often public. */
   includeAuthorEmail?: boolean;
   /** Replace the default Markdown. The linking marker is appended to whatever you return. */
@@ -36,6 +45,19 @@ export interface IssueTrackerHooksOptions {
   syncStatus?: boolean;
   /** Comment left on issues whose feedback is deleted. */
   deletedCommentText?: (feedbackId: string) => string;
+}
+
+/** Throw at setup when `siteUrl` cannot resolve page URLs, instead of silently dropping deep links later. */
+function assertSiteUrl(siteUrl: string): void {
+  let protocol: string | null = null;
+  try {
+    protocol = new URL(siteUrl).protocol;
+  } catch {
+    // Not an absolute URL — reported below.
+  }
+  if (protocol === null || !SITE_URL_PROTOCOLS.includes(protocol)) {
+    throw new TypeError(INVALID_SITE_URL_MESSAGE_TEMPLATE.replace("{siteUrl}", siteUrl));
+  }
 }
 
 const noRedaction = (text: string): string => text;
@@ -70,12 +92,19 @@ export function createIssueTrackerHooks({
   labels = [],
   redact = noRedaction,
   deepLinkParam = DEFAULT_DEEP_LINK_PARAM,
+  siteUrl,
   includeAuthorEmail = false,
   formatIssue: customFormatIssue,
   syncStatus = true,
   deletedCommentText = defaultDeletedComment,
 }: IssueTrackerHooksOptions): SitepingLifecycleHooks<unknown> {
-  const formatOptions: IssueFormatOptions = { redact, deepLinkParam, includeAuthorEmail };
+  if (siteUrl !== undefined) assertSiteUrl(siteUrl);
+  const formatOptions: IssueFormatOptions = {
+    redact,
+    deepLinkParam,
+    includeAuthorEmail,
+    ...(siteUrl === undefined ? {} : { siteUrl }),
+  };
   const issueLabels = [SITEPING_ISSUE_LABEL, ...labels.filter((label) => label !== SITEPING_ISSUE_LABEL)];
 
   const issueOf = async (feedbackId: string): Promise<TrackedIssue | null> => {

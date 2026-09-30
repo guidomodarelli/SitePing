@@ -109,6 +109,22 @@ for (const provider of providers) {
       expect(fake.requests[0]?.authorization).toContain(TOKEN);
     });
 
+    it("builds the deep link from the widget's default pathname-only page URL when siteUrl is set", async () => {
+      const handler = createHandler({ siteUrl: "https://example.com" });
+
+      const feedback = await send(handler, { url: "/checkout" });
+
+      expect(fake.issues[0]?.body).toContain(`https://example.com/checkout?siteping=${feedback.id}`);
+    });
+
+    it("rejects a siteUrl that is not an absolute http(s) URL", () => {
+      for (const siteUrl of ["/checkout", "example.com", "ftp://example.com"]) {
+        expect(() => createIssueTrackerHooks({ tracker: provider.createTracker(fake), siteUrl })).toThrow(
+          `\`siteUrl\` must be an absolute http(s) URL, received "${siteUrl}"`,
+        );
+      }
+    });
+
     it("redacts free text and leaves the reviewer email out by default", async () => {
       const handler = createHandler({ redact: (text) => text.replace(/token=\S+/g, "token=[redacted]") });
 

@@ -19,10 +19,16 @@ export interface IssueContent {
 }
 
 export interface IssueFormatOptions {
-  /** Applied to every free-text value copied from the feedback (message, author, URLs, screenshot URL, user agent, diagnostics). */
+  /** Applied to every free-text value copied from the feedback (message, author, URLs, viewport, screenshot URL, user agent, diagnostics). */
   redact: (text: string) => string;
   /** Query parameter of the widget's deep link, or `false` to omit the link. */
   deepLinkParam: string | false;
+  /**
+   * Absolute URL of the site, used to resolve relative page URLs (the widget
+   * stores `window.location.pathname` by default) into the deep link. Without
+   * it, feedbacks with a relative page URL get no deep link.
+   */
+  siteUrl?: string;
   /** Include the reviewer's email next to their name. Off by default: issues are often public. */
   includeAuthorEmail: boolean;
 }
@@ -43,13 +49,13 @@ function section(heading: string, content: string): string {
   return `## ${heading}${ISSUE_SECTION_SEPARATOR}${content}`;
 }
 
-function buildDeepLink(feedback: FeedbackRecord, param: string): string | null {
+function buildDeepLink(feedback: FeedbackRecord, param: string, siteUrl: string | undefined): string | null {
   try {
-    const url = new URL(feedback.url);
+    const url = new URL(feedback.url, siteUrl);
     url.searchParams.set(param, feedback.id);
     return url.toString();
   } catch {
-    return null; // The page URL is not absolute — nothing to link to.
+    return null; // A relative page URL without `siteUrl` — nothing to link to.
   }
 }
 
@@ -90,7 +96,8 @@ export function formatIssue(feedback: FeedbackRecord, options: IssueFormatOption
   const author = redact(
     options.includeAuthorEmail ? `${feedback.authorName} <${feedback.authorEmail}>` : feedback.authorName,
   );
-  const deepLink = options.deepLinkParam === false ? null : buildDeepLink(feedback, options.deepLinkParam);
+  const deepLink =
+    options.deepLinkParam === false ? null : buildDeepLink(feedback, options.deepLinkParam, options.siteUrl);
   const screenshot = buildScreenshot(feedback, redact);
 
   const sections = [
@@ -99,7 +106,7 @@ export function formatIssue(feedback: FeedbackRecord, options: IssueFormatOption
     section(ISSUE_SECTION_HEADINGS.pageUrl, redact(feedback.url)),
     deepLink ? section(ISSUE_SECTION_HEADINGS.deepLink, redact(deepLink)) : null,
     section(ISSUE_SECTION_HEADINGS.author, author),
-    section(ISSUE_SECTION_HEADINGS.viewport, feedback.viewport),
+    section(ISSUE_SECTION_HEADINGS.viewport, redact(feedback.viewport)),
     section(ISSUE_SECTION_HEADINGS.userAgent, redact(feedback.userAgent)),
     screenshot,
     ...buildDiagnostics(feedback, redact),

@@ -1,6 +1,9 @@
 name: CI
 
 on:
+  # Also on main: release commits are pushed straight to it by `create-version`.
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_call:

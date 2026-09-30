@@ -6,14 +6,11 @@ import {
   GITHUB_PAGE_SIZE,
   GITHUB_STATE_REASON,
 } from "../constants/github.js";
-import {
-  HTTP_STATUS_NOT_FOUND,
-  HTTP_STATUS_UNPROCESSABLE_ENTITY,
-  TRACKER_MAX_LISTED_PAGES,
-} from "../constants/http.js";
+import { HTTP_STATUS_NOT_FOUND, HTTP_STATUS_UNPROCESSABLE_ENTITY } from "../constants/http.js";
 import { SITEPING_ISSUE_LABEL } from "../constants/issue-format.js";
 import { createJsonHttpClient, IssueTrackerRequestError } from "../core/http-client.js";
 import type { IssueTracker, TrackedIssue } from "../core/issue-tracker.js";
+import { collectAllPages } from "../core/paginate.js";
 
 export interface GitHubTrackerOptions {
   /** `owner/name` of the repository issues are created in. */
@@ -68,6 +65,18 @@ export function createGitHubTracker({
   const labelsPath = `/repos/${repository}/labels`;
   const ensuredLabels = new Map<string, Promise<void>>();
 
+  /** Every item of a paginated GitHub listing endpoint. */
+  const listAll = <Item>(path: string, query: Record<string, string> = {}): Promise<Item[]> =>
+    collectAllPages(
+      (pageNumber) =>
+        request<Item[]>({
+          method: "GET",
+          path,
+          query: { ...query, per_page: String(GITHUB_PAGE_SIZE), page: String(pageNumber) },
+        }),
+      GITHUB_PAGE_SIZE,
+    );
+
   const isHttpStatus = (error: unknown, status: number): boolean =>
     error instanceof IssueTrackerRequestError && error.status === status;
 
@@ -118,38 +127,21 @@ export function createGitHubTracker({
     },
 
     async listComments(reference) {
-      const bodies: string[] = [];
-      for (let page = 1; page <= TRACKER_MAX_LISTED_PAGES; page++) {
-        const comments = await request<GitHubComment[]>({
-          method: "GET",
-          path: `${issuesPath}/${reference.key}/comments`,
-          query: { per_page: String(GITHUB_PAGE_SIZE), page: String(page) },
-        });
-        bodies.push(...comments.map((comment) => comment.body ?? ""));
-        if (comments.length < GITHUB_PAGE_SIZE) break;
-      }
-      return bodies;
+      const comments = await listAll<GitHubComment>(`${issuesPath}/${reference.key}/comments`);
+      return comments.map((comment) => comment.body ?? "");
     },
 
     // Listed by label (consistent right after creation, unlike the search index).
     async findSitepingIssues(marker) {
+      const issues = await listAll<GitHubIssue>(issuesPath, { labels: SITEPING_ISSUE_LABEL, state: "all" });
       const matches: TrackedIssue[] = [];
-      // No page cap: a truncated list would make status sync and deleteAll skip issues.
-      for (let page = 1; ; page++) {
-        const issues = await request<GitHubIssue[]>({
-          method: "GET",
-          path: issuesPath,
-          query: { labels: SITEPING_ISSUE_LABEL, state: "all", per_page: String(GITHUB_PAGE_SIZE), page: String(page) },
+      for (const issue of issues) {
+        if (issue.pull_request || !issue.body?.includes(marker)) continue;
+        matches.push({
+          reference: { key: String(issue.number), url: issue.html_url },
+          body: issue.body,
+          isOpen: issue.state === "open",
         });
-        for (const issue of issues) {
-          if (issue.pull_request || !issue.body?.includes(marker)) continue;
-          matches.push({
-            reference: { key: String(issue.number), url: issue.html_url },
-            body: issue.body,
-            isOpen: issue.state === "open",
-          });
-        }
-        if (issues.length < GITHUB_PAGE_SIZE) break;
       }
       return matches;
     },

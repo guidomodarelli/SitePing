@@ -5,10 +5,10 @@ import {
   GITLAB_PAGE_SIZE,
   GITLAB_STATE_EVENT,
 } from "../constants/gitlab.js";
-import { TRACKER_MAX_LISTED_PAGES } from "../constants/http.js";
 import { SITEPING_ISSUE_LABEL } from "../constants/issue-format.js";
 import { createJsonHttpClient } from "../core/http-client.js";
 import type { IssueTracker, TrackedIssue } from "../core/issue-tracker.js";
+import { collectAllPages } from "../core/paginate.js";
 
 export interface GitLabTrackerOptions {
   /** Numeric project id or full path (`group/subgroup/project`). */
@@ -54,6 +54,18 @@ export function createGitLabTracker({
   });
   const issuesPath = `/projects/${encodeURIComponent(String(project))}/issues`;
 
+  /** Every item of a paginated GitLab listing endpoint. */
+  const listAll = <Item>(path: string, query: Record<string, string> = {}): Promise<Item[]> =>
+    collectAllPages(
+      (pageNumber) =>
+        request<Item[]>({
+          method: "GET",
+          path,
+          query: { ...query, per_page: String(GITLAB_PAGE_SIZE), page: String(pageNumber) },
+        }),
+      GITLAB_PAGE_SIZE,
+    );
+
   return {
     name: "GitLab",
 
@@ -76,37 +88,20 @@ export function createGitLabTracker({
     },
 
     async listComments(reference) {
-      const bodies: string[] = [];
-      for (let page = 1; page <= TRACKER_MAX_LISTED_PAGES; page++) {
-        const notes = await request<GitLabNote[]>({
-          method: "GET",
-          path: `${issuesPath}/${reference.key}/notes`,
-          query: { per_page: String(GITLAB_PAGE_SIZE), page: String(page) },
-        });
-        bodies.push(...notes.filter((note) => !note.system).map((note) => note.body));
-        if (notes.length < GITLAB_PAGE_SIZE) break;
-      }
-      return bodies;
+      const notes = await listAll<GitLabNote>(`${issuesPath}/${reference.key}/notes`);
+      return notes.filter((note) => !note.system).map((note) => note.body);
     },
 
     async findSitepingIssues(marker) {
+      const issues = await listAll<GitLabIssue>(issuesPath, { labels: SITEPING_ISSUE_LABEL, state: "all" });
       const matches: TrackedIssue[] = [];
-      // No page cap: a truncated list would make status sync and deleteAll skip issues.
-      for (let page = 1; ; page++) {
-        const issues = await request<GitLabIssue[]>({
-          method: "GET",
-          path: issuesPath,
-          query: { labels: SITEPING_ISSUE_LABEL, state: "all", per_page: String(GITLAB_PAGE_SIZE), page: String(page) },
+      for (const issue of issues) {
+        if (!issue.description?.includes(marker)) continue;
+        matches.push({
+          reference: { key: String(issue.iid), url: issue.web_url },
+          body: issue.description,
+          isOpen: issue.state === "opened",
         });
-        for (const issue of issues) {
-          if (!issue.description?.includes(marker)) continue;
-          matches.push({
-            reference: { key: String(issue.iid), url: issue.web_url },
-            body: issue.description,
-            isOpen: issue.state === "opened",
-          });
-        }
-        if (issues.length < GITLAB_PAGE_SIZE) break;
       }
       return matches;
     },

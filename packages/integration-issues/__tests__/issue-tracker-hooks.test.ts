@@ -213,6 +213,25 @@ for (const provider of providers) {
       ]);
     });
 
+    it("finds the deletion comment past the first thousand comments when the delete is retried", async () => {
+      const handler = createHandler();
+      const feedback = await send(handler);
+      const [issue] = fake.issues;
+      const earlierCommentCount = 1_000;
+      for (let index = 1; index <= earlierCommentCount; index++) issue?.comments.push(`earlier comment ${index}`);
+      const deletionComment = `SitePing feedback \`${feedback.id}\` was deleted.`;
+
+      // First attempt: the deletion comment lands after every earlier comment, then the delete is retried.
+      await (createIssueTrackerHooks({ tracker: provider.createTracker(fake) }).onDeleting?.(
+        { kind: "single", id: feedback.id, projectName: "site" },
+        { request: new Request(ENDPOINT), principal: null },
+      ) as Promise<void>);
+      const response = await remove(handler, { id: feedback.id, projectName: "site" });
+
+      expect(response.status).toBe(200);
+      expect(issue?.comments.filter((comment) => comment === deletionComment)).toHaveLength(1);
+    });
+
     it("aborts the delete and keeps the feedback when the tracker fails", async () => {
       const handler = createHandler();
       const feedback = await send(handler);

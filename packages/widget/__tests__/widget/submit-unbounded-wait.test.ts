@@ -3,7 +3,7 @@
 // submitting) always restores. Real launcher + Annotator + Popup + client;
 // only the DOM anchor helpers are mocked (jsdom has no layout), as in
 // annotator-popup-reentry.test.ts. Issue #342.
-import { type SitepingConfig, SitepingError, type SitepingStore } from "@siteping/core";
+import { type SitepingConfig, SitepingError, type SitepingStore } from "@beezping/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { launch } from "../../src/launcher.js";
 import { mockMatchMedia } from "../helpers.js";

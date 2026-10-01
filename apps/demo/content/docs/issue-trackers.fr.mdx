@@ -3,7 +3,7 @@ title: Gestionnaires de tickets
 description: Un ticket GitHub ou GitLab par feedback, ouvert, fermé et rouvert avec lui par les hooks de cycle de vie du serveur.
 ---
 
-`@siteping/integration-issues` construit les [hooks de cycle de vie](/fr/docs/server#points-dextension) de `@siteping/server` pour que chaque feedback ait son propre ticket sur GitHub ou GitLab :
+`@beezping/integration-issues` construit les [hooks de cycle de vie](/fr/docs/server#points-dextension) de `@beezping/server` pour que chaque feedback ait son propre ticket sur GitHub ou GitLab :
 
 - **créé** → un ticket s'ouvre, avec le label `siteping`, le message, la page, un lien direct, les éléments annotés, l'environnement du relecteur et les diagnostics ;
 - **résolu** ou **ne sera pas corrigé** → le ticket se ferme ; **rouvert** → il se rouvre ;
@@ -12,18 +12,18 @@ description: Un ticket GitHub ou GitLab par feedback, ouvert, fermé et rouvert 
 Aucune colonne n'est ajoutée à la base : la première ligne de chaque ticket est un marqueur caché qui nomme son feedback.
 
 ```bash
-npm i @siteping/integration-issues
+npm i @beezping/integration-issues
 ```
 
-Il tourne partout où tourne le [serveur](/fr/docs/server) (API Fetch uniquement) et prend `@siteping/server` en dépendance peer ; [`@siteping/adapter-prisma`](/fr/docs/adapters/prisma) l'apporte déjà, et transmet `hooks` comme toutes les autres options du serveur.
+Il tourne partout où tourne le [serveur](/fr/docs/server) (API Fetch uniquement) et prend `@beezping/server` en dépendance peer ; [`@beezping/adapter-prisma`](/fr/docs/adapters/prisma) l'apporte déjà, et transmet `hooks` comme toutes les autres options du serveur.
 
 ## GitHub
 
 ```ts
 // app/api/siteping/route.ts
-import { createSitepingHandler } from "@siteping/server";
-import { createIssueTrackerHooks } from "@siteping/integration-issues";
-import { createGitHubTracker } from "@siteping/integration-issues/github";
+import { createSitepingHandler } from "@beezping/server";
+import { createIssueTrackerHooks } from "@beezping/integration-issues";
+import { createGitHubTracker } from "@beezping/integration-issues/github";
 import { store } from "@/lib/siteping-store";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
@@ -43,7 +43,7 @@ Sur GitHub Enterprise Server, passez `apiBaseUrl: "https://github.acme.com/api/v
 ## GitLab
 
 ```ts
-import { createGitLabTracker } from "@siteping/integration-issues/gitlab";
+import { createGitLabTracker } from "@beezping/integration-issues/gitlab";
 
 createIssueTrackerHooks({
   tracker: createGitLabTracker({ project: "acme/site", token: process.env.GITLAB_TOKEN! }),
@@ -141,7 +141,7 @@ createSitepingHandler({
 Le format intégré est exporté sous le nom `formatIssue(feedback, options)`, et votre option `formatIssue` reçoit ces `options` : `redact`, `deepLinkParam`, `includeAuthorEmail` et `siteUrl`. Enveloppez-le pour ajouter au ticket par défaut plutôt que de le réécrire, et la citation du texte des visiteurs vient avec :
 
 ```ts
-import { createIssueTrackerHooks, formatIssue } from "@siteping/integration-issues";
+import { createIssueTrackerHooks, formatIssue } from "@beezping/integration-issues";
 
 createIssueTrackerHooks({
   tracker,
@@ -180,7 +180,7 @@ Seuls les tickets avec le label comptent. Sur GitHub et GitLab, une personne ext
 Implémentez `IssueTracker` pour Jira, Linear ou un outil interne. Les hooks gardent tout ce qui ne dépend pas du gestionnaire : le format, le marqueur, et des commentaires de suppression qui ne se répètent pas.
 
 ```ts
-import type { IssueTracker } from "@siteping/integration-issues";
+import type { IssueTracker } from "@beezping/integration-issues";
 
 const tracker: IssueTracker = {
   name: "Linear", // cité dans les erreurs des hooks

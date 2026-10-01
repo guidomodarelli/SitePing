@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { type FeedbackResponse, MAX_PAGE_LIMIT } from "@siteping/core";
+import { type FeedbackResponse, MAX_PAGE_LIMIT } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GetFeedbacksOptions } from "../../src/api-client.js";
 import { EventBus, type WidgetEvents } from "../../src/events.js";

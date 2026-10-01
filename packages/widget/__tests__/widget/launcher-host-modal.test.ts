@@ -4,7 +4,7 @@
 // click-through. Only the DOM anchor helpers are mocked (jsdom has no
 // layout), as in submit-unbounded-wait.test.ts.
 
-import type { SitepingStore } from "@siteping/core";
+import type { SitepingStore } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { launch } from "../../src/launcher.js";
 import { mockMatchMedia } from "../helpers.js";

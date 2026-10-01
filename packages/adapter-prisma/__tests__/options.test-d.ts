@@ -1,9 +1,9 @@
 /**
  * Type-level locks for the handler options (vitest typecheck mode — never
- * executed): every @siteping/server option, the `apiKey` policy XOR `access`.
+ * executed): every @beezping/server option, the `apiKey` policy XOR `access`.
  */
 
-import type { SitepingStore } from "@siteping/core";
+import type { SitepingStore } from "@beezping/core";
 import { describe, expectTypeOf, it } from "vitest";
 import {
   type CommentPayload,
@@ -61,7 +61,7 @@ describe("createSitepingHandler options", () => {
     createSitepingHandler({ prisma, access: { authenticate: (request) => request.headers.has("x-token") } });
   });
 
-  it("takes options assembled at runtime, either policy, like @siteping/server does", () => {
+  it("takes options assembled at runtime, either policy, like @beezping/server does", () => {
     const options: HandlerOptions | PrismaAccessHandlerOptions<{ id: string }> = process.env.SSO
       ? { prisma, access: { authenticate: sessionUser } }
       : { prisma, apiKey: "k" };
@@ -75,7 +75,7 @@ describe("server option types", () => {
     id: string;
   }
 
-  it("are re-exported, so standalone policies and hooks need no direct @siteping/server dependency", () => {
+  it("are re-exported, so standalone policies and hooks need no direct @beezping/server dependency", () => {
     const access: SitepingAccessControl<Reviewer> = {
       authenticate: sessionUser,
       authorize: ({ action }: SitepingAuthorizationContext<Reviewer>) => action !== "deleteAll",

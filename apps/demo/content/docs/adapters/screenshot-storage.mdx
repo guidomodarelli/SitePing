@@ -3,10 +3,10 @@ title: Screenshot storage
 description: Upload screenshots to Cloudflare R2, AWS S3, Cloudflare Images, your database or your disk, and keep only their URL in the feedback.
 ---
 
-Without a `screenshotStorage`, the Prisma and Drizzle stores keep each [screenshot](/docs/widget/screenshots) inline, as a base64 `data:` URL in the feedback row. That is fine to start with, but every list query then carries up to a megabyte per row. `@siteping/screenshot-storage` provides a `screenshotStorage` ready to use: the image goes to a backend of your choice, and the feedback stores only its URL.
+Without a `screenshotStorage`, the Prisma and Drizzle stores keep each [screenshot](/docs/widget/screenshots) inline, as a base64 `data:` URL in the feedback row. That is fine to start with, but every list query then carries up to a megabyte per row. `@beezping/screenshot-storage` provides a `screenshotStorage` ready to use: the image goes to a backend of your choice, and the feedback stores only its URL.
 
 ```bash
-npm i @siteping/screenshot-storage
+npm i @beezping/screenshot-storage
 ```
 
 It runs on Node 20+, Bun, Deno and edge runtimes: the S3 client signs requests with Web Crypto, with no AWS SDK and no runtime dependency. Only the filesystem backend needs Node. Its type declarations use `Uint8Array<ArrayBuffer>`, so type-checking them needs TypeScript 5.7 or later (or `skipLibCheck`).
@@ -15,19 +15,19 @@ It runs on Node 20+, Bun, Deno and edge runtimes: the S3 client signs requests w
 
 | Backend | Import from | Screenshots are served by |
 |---|---|---|
-| Cloudflare R2, AWS S3, Backblaze B2, MinIO and other S3-compatible buckets | `@siteping/screenshot-storage/s3` | The bucket's public domain or a CDN, or your app when the bucket is private |
-| Cloudflare Images | `@siteping/screenshot-storage/cloudflare-images` | `imagedelivery.net` or your own domain |
-| PostgreSQL through Drizzle | `@siteping/screenshot-storage/drizzle-pg` | Your app |
-| Turso / libSQL through Drizzle | `@siteping/screenshot-storage/drizzle-libsql` | Your app |
-| Local disk (Node) | `@siteping/screenshot-storage/filesystem` | Your app |
-| Memory (tests, demos) | `@siteping/screenshot-storage/memory` | Your app |
+| Cloudflare R2, AWS S3, Backblaze B2, MinIO and other S3-compatible buckets | `@beezping/screenshot-storage/s3` | The bucket's public domain or a CDN, or your app when the bucket is private |
+| Cloudflare Images | `@beezping/screenshot-storage/cloudflare-images` | `imagedelivery.net` or your own domain |
+| PostgreSQL through Drizzle | `@beezping/screenshot-storage/drizzle-pg` | Your app |
+| Turso / libSQL through Drizzle | `@beezping/screenshot-storage/drizzle-libsql` | Your app |
+| Local disk (Node) | `@beezping/screenshot-storage/filesystem` | Your app |
+| Memory (tests, demos) | `@beezping/screenshot-storage/memory` | Your app |
 
 Each entry exports an **object store**, which only moves bytes. `createScreenshotStorage` wraps it into the `ScreenshotStorage` your store accepts:
 
 ```ts
 // lib/siteping-screenshots.ts
-import { createScreenshotStorage } from "@siteping/screenshot-storage";
-import { createS3ObjectStore } from "@siteping/screenshot-storage/s3";
+import { createScreenshotStorage } from "@beezping/screenshot-storage";
+import { createS3ObjectStore } from "@beezping/screenshot-storage/s3";
 
 export const objectStore = createS3ObjectStore({ /* see below */ });
 export const screenshotStorage = createScreenshotStorage(objectStore);
@@ -55,7 +55,7 @@ If an upload fails, the store still saves the feedback, without its screenshot, 
 ## Cloudflare R2 and other S3-compatible buckets
 
 ```ts
-import { createS3ObjectStore } from "@siteping/screenshot-storage/s3";
+import { createS3ObjectStore } from "@beezping/screenshot-storage/s3";
 
 // Cloudflare R2, served from the bucket's custom domain
 export const objectStore = createS3ObjectStore({
@@ -120,7 +120,7 @@ Give the key access to your bucket only, and for AWS scope it to the key prefix:
 ## Cloudflare Images
 
 ```ts
-import { createCloudflareImagesObjectStore } from "@siteping/screenshot-storage/cloudflare-images";
+import { createCloudflareImagesObjectStore } from "@beezping/screenshot-storage/cloudflare-images";
 
 export const objectStore = createCloudflareImagesObjectStore({
   accountId: process.env.CF_ACCOUNT_ID!,
@@ -139,8 +139,8 @@ The filesystem, database and memory backends have no public URL of their own, an
 
 ```ts
 // lib/siteping-screenshots.ts
-import { createScreenshotStorage } from "@siteping/screenshot-storage";
-import { createFilesystemObjectStore } from "@siteping/screenshot-storage/filesystem";
+import { createScreenshotStorage } from "@beezping/screenshot-storage";
+import { createFilesystemObjectStore } from "@beezping/screenshot-storage/filesystem";
 
 export const objectStore = createFilesystemObjectStore({
   directory: "/var/lib/siteping/screenshots", // created if missing
@@ -151,7 +151,7 @@ export const screenshotStorage = createScreenshotStorage(objectStore);
 
 ```ts
 // app/api/siteping/screenshots/[key]/route.ts
-import { createScreenshotServeHandler } from "@siteping/screenshot-storage";
+import { createScreenshotServeHandler } from "@beezping/screenshot-storage";
 import { objectStore } from "@/lib/siteping-screenshots";
 
 export const { GET } = createScreenshotServeHandler(objectStore);
@@ -172,15 +172,15 @@ For a small or self-contained deployment, the Drizzle entries keep screenshots i
 
 ```ts
 // db/schema.ts
-import { createSitepingScreenshotsPgTable } from "@siteping/screenshot-storage/drizzle-pg";
+import { createSitepingScreenshotsPgTable } from "@beezping/screenshot-storage/drizzle-pg";
 
 export const sitepingScreenshots = createSitepingScreenshotsPgTable(); // "siteping_screenshots"
 ```
 
 ```ts
 // lib/siteping-screenshots.ts
-import { createScreenshotStorage } from "@siteping/screenshot-storage";
-import { createPgScreenshotObjectStore } from "@siteping/screenshot-storage/drizzle-pg";
+import { createScreenshotStorage } from "@beezping/screenshot-storage";
+import { createPgScreenshotObjectStore } from "@beezping/screenshot-storage/drizzle-pg";
 import { sitepingScreenshots } from "@/db/schema";
 import { db } from "@/db";
 
@@ -191,7 +191,7 @@ export const objectStore = createPgScreenshotObjectStore(db, {
 export const screenshotStorage = createScreenshotStorage(objectStore);
 ```
 
-Migrate the table with `drizzle-kit` like the rest of your schema, and serve it with the route above. On Turso / libSQL, use `createSitepingScreenshotsSqliteTable` and `createLibSQLScreenshotObjectStore` from `@siteping/screenshot-storage/drizzle-libsql`. Both need `drizzle-orm` 0.45 or later (below 1.0), an optional peer dependency. The table is independent from the store's tables: `createSitepingScreenshotsPgTable("my_name")` renames it, and you pass it as `table`.
+Migrate the table with `drizzle-kit` like the rest of your schema, and serve it with the route above. On Turso / libSQL, use `createSitepingScreenshotsSqliteTable` and `createLibSQLScreenshotObjectStore` from `@beezping/screenshot-storage/drizzle-libsql`. Both need `drizzle-orm` 0.45 or later (below 1.0), an optional peer dependency. The table is independent from the store's tables: `createSitepingScreenshotsPgTable("my_name")` renames it, and you pass it as `table`.
 
 A failed query (a table not migrated yet, a database out of reach) throws an `ObjectStoreRequestError` naming the statement and the key. Its `cause` is the code and message of the driver's error, never the query's parameters: those hold the whole image, which would otherwise land in your logs with every failed upload.
 
@@ -230,7 +230,7 @@ An expiration lifecycle rule on `siteping-*` does not replace this: it cannot te
 Vercel Blob, Supabase Storage, another ORM: implement `ScreenshotObjectStore` and wrap it with `createScreenshotStorage`, which keeps the validation, the random keys and the delete rules.
 
 ```ts
-import { createPublicUrlMapping, type ScreenshotObjectStore } from "@siteping/screenshot-storage";
+import { createPublicUrlMapping, type ScreenshotObjectStore } from "@beezping/screenshot-storage";
 
 export const objectStore: ScreenshotObjectStore = {
   name: "my-backend", // used in error messages

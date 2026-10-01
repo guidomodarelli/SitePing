@@ -135,13 +135,13 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/widget
+      - name: Publish @beezping/widget
         run: npm publish --access public --provenance
         working-directory: packages/widget
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  # After the server: the @siteping/server version it pins must reach npm
+  # After the server: the @beezping/server version it pins must reach npm
   # first, and a failed server publish (`!failure()`) keeps adapter-prisma
   # from shipping a dependency nobody can install. A skipped server job (no
   # server release) does not hold it back.
@@ -178,13 +178,13 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      # adapter-prisma depends on @siteping/server through `workspace:^`,
+      # adapter-prisma depends on @beezping/server through `workspace:^`,
       # which npm cannot resolve: pin the server release this commit carries.
-      - name: Pin the @siteping/server dependency
-        run: npm pkg set "dependencies.@siteping/server=^$(node -p 'require("../server/package.json").version')"
+      - name: Pin the @beezping/server dependency
+        run: npm pkg set "dependencies.@beezping/server=^$(node -p 'require("../server/package.json").version')"
         working-directory: packages/adapter-prisma
 
-      - name: Publish @siteping/adapter-prisma
+      - name: Publish @beezping/adapter-prisma
         run: npm publish --access public --provenance
         working-directory: packages/adapter-prisma
         env:
@@ -223,7 +223,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/cli
+      - name: Publish @beezping/cli
         run: npm publish --access public --provenance
         working-directory: packages/cli
         env:
@@ -262,7 +262,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/adapter-memory
+      - name: Publish @beezping/adapter-memory
         run: npm publish --access public --provenance
         working-directory: packages/adapter-memory
         env:
@@ -301,7 +301,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/dashboard
+      - name: Publish @beezping/dashboard
         run: npm publish --access public --provenance
         working-directory: packages/dashboard
         env:
@@ -340,7 +340,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/adapter-localstorage
+      - name: Publish @beezping/adapter-localstorage
         run: npm publish --access public --provenance
         working-directory: packages/adapter-localstorage
         env:
@@ -379,7 +379,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/adapter-kit
+      - name: Publish @beezping/adapter-kit
         run: npm publish --access public --provenance
         working-directory: packages/adapter-kit
         env:
@@ -418,7 +418,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/adapter-drizzle
+      - name: Publish @beezping/adapter-drizzle
         run: npm publish --access public --provenance
         working-directory: packages/adapter-drizzle
         env:
@@ -460,11 +460,11 @@ jobs:
       # Idempotent, unlike the other publish jobs: adapter-prisma waits for
       # this one, so a rescue run (workflow_dispatch) must not fail it over a
       # server version that is already on npm.
-      - name: Publish @siteping/server
+      - name: Publish @beezping/server
         run: |
           version=$(node -p 'require("./package.json").version')
-          if [ "$(npm view "@siteping/server@$version" version 2>/dev/null)" = "$version" ]; then
-            echo "@siteping/server@$version is already on npm, skipping"
+          if [ "$(npm view "@beezping/server@$version" version 2>/dev/null)" = "$version" ]; then
+            echo "@beezping/server@$version is already on npm, skipping"
           else
             npm publish --access public --provenance
           fi
@@ -505,13 +505,13 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Publish @siteping/screenshot-storage
+      - name: Publish @beezping/screenshot-storage
         run: npm publish --access public --provenance
         working-directory: packages/screenshot-storage
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  # After the server, like adapter-prisma: the @siteping/server version its
+  # After the server, like adapter-prisma: the @beezping/server version its
   # peer range pins must reach npm first.
   publish-integration-issues:
     needs: [release-please, build, publish-server]
@@ -546,7 +546,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      # The @siteping/server peer is `workspace:^`, which npm cannot resolve:
+      # The @beezping/server peer is `workspace:^`, which npm cannot resolve:
       # pin a range from the server release this commit carries up to its next
       # major. Not `^`: on 0.x it refuses the next minor, which is every
       # breaking server release, and nothing releases this package along with
@@ -554,13 +554,13 @@ jobs:
       # happened to change. Only the server's hook types are used, and a server
       # change that breaks them breaks this package's type check in CI, so it
       # ships with its fix.
-      - name: Pin the @siteping/server peer dependency
+      - name: Pin the @beezping/server peer dependency
         run: |
           range=$(node -p 'const v = require("../server/package.json").version; ">=" + v + " <" + (parseInt(v, 10) + 1) + ".0.0"')
-          npm pkg set "peerDependencies.@siteping/server=$range"
+          npm pkg set "peerDependencies.@beezping/server=$range"
         working-directory: packages/integration-issues
 
-      - name: Publish @siteping/integration-issues
+      - name: Publish @beezping/integration-issues
         run: npm publish --access public --provenance
         working-directory: packages/integration-issues
         env:

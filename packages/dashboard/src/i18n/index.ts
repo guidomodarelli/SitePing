@@ -1,11 +1,11 @@
-import type { FeedbackStatus, FeedbackType } from "@siteping/core";
+import type { FeedbackStatus, FeedbackType } from "@beezping/core";
 import {
   tWithParams as coreTWithParams,
   createI18n,
   FEEDBACK_STATUSES,
   FEEDBACK_TYPES,
   interpolate,
-} from "@siteping/core";
+} from "@beezping/core";
 import type { TFunction, TranslationKey, Translations } from "./types.js";
 
 export type { TFunction, TranslationKey, Translations } from "./types.js";

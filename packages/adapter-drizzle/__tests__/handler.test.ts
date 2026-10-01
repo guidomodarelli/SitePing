@@ -1,11 +1,11 @@
-import { createSitepingHandler, type SitepingHandler } from "@siteping/server";
+import { createSitepingHandler, type SitepingHandler } from "@beezping/server";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createLibSQLSitepingStore } from "../src/libsql/index.js";
 import { createPgSitepingStore } from "../src/pg/index.js";
 import type { DrizzleStore } from "../src/shared/store.js";
 import { createLibSQLTestDatabase, createPgTestDatabase } from "./databases.js";
 
-// The documented deployment: the Drizzle store mounted behind @siteping/server's
+// The documented deployment: the Drizzle store mounted behind @beezping/server's
 // handler, over the same real engines as the other tests.
 
 const ENDPOINT = "http://localhost/api/siteping";

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Fixes .d.ts files that reference the unpublished @siteping/core package.
+// Fixes .d.ts files that reference the unpublished @beezping/core package.
 //
 // Core is an Internal Package: its JS is bundled into consumers via tsup
 // `noExternal`, but its type declarations are emitted per-module by `tsc`
@@ -11,7 +11,7 @@
 //     renaming index.d.ts -> siteping-core.d.ts, so relative imports resolve;
 //  2. emit a .d.cts twin of each copy (specifiers rewritten .js -> .cjs) so
 //     the `require` condition resolves CJS-interpreted types end to end;
-//  3. rewrite '@siteping/core' imports in the consumer's own declarations to
+//  3. rewrite '@beezping/core' imports in the consumer's own declarations to
 //     './siteping-core.js' (in .d.ts) or './siteping-core.cjs' (in .d.cts).
 //
 // Cross-platform replacement for fix-dts.sh (no sed/cp).
@@ -45,10 +45,10 @@ if (!existsSync(coreDist)) {
 const toCjsSpecifiers = (content) => content.replace(/(["'])\.\/([^"']+)\.js\1/g, "$1./$2.cjs$1");
 
 // The consumer's declarations decide whether the testing subpath is needed
-// (only @siteping/adapter-kit re-exports it today) — scan before copying so
+// (only @beezping/adapter-kit re-exports it today) — scan before copying so
 // packages that never touch it don't ship a dead file.
 const ownDts = readdirSync(targetDir).filter((f) => f.endsWith(".d.ts") || f.endsWith(".d.cts"));
-const needsTesting = ownDts.some((f) => readFileSync(join(targetDir, f), "utf8").includes("@siteping/core/testing"));
+const needsTesting = ownDts.some((f) => readFileSync(join(targetDir, f), "utf8").includes("@beezping/core/testing"));
 
 // 1 + 2. Copy core declarations (and their .d.cts twins). testing.d.ts is
 // copied only when referenced — its relative './types.js' imports resolve
@@ -65,7 +65,7 @@ for (const file of coreFiles) {
 }
 
 // 3. Point the consumer's own declarations at the copies, per interpretation.
-// (The copies themselves never reference @siteping/core — no-op for them.)
+// (The copies themselves never reference @beezping/core — no-op for them.)
 // The '/testing' subpath rewrite MUST run before the bare-name one so the
 // residual check below still catches any other, genuinely unknown subpath.
 const dtsFiles = readdirSync(targetDir).filter((f) => f.endsWith(".d.ts") || f.endsWith(".d.cts"));
@@ -78,13 +78,13 @@ for (const file of dtsFiles) {
   const replacement = cjs ? "./siteping-core.cjs" : "./siteping-core.js";
   const testingReplacement = cjs ? "./siteping-core-testing.cjs" : "./siteping-core-testing.js";
 
-  content = content.replaceAll("'@siteping/core/testing'", `'${testingReplacement}'`);
-  content = content.replaceAll('"@siteping/core/testing"', `"${testingReplacement}"`);
-  content = content.replaceAll("'@siteping/core'", `'${replacement}'`);
-  content = content.replaceAll('"@siteping/core"', `"${replacement}"`);
+  content = content.replaceAll("'@beezping/core/testing'", `'${testingReplacement}'`);
+  content = content.replaceAll('"@beezping/core/testing"', `"${testingReplacement}"`);
+  content = content.replaceAll("'@beezping/core'", `'${replacement}'`);
+  content = content.replaceAll('"@beezping/core"', `"${replacement}"`);
 
-  if (content.includes("@siteping/core")) {
-    console.error(`  UNRESOLVED reference to @siteping/core (subpath import?) in ${file}`);
+  if (content.includes("@beezping/core")) {
+    console.error(`  UNRESOLVED reference to @beezping/core (subpath import?) in ${file}`);
     process.exit(1);
   }
 

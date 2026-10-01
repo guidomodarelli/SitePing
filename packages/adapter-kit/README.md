@@ -1,9 +1,9 @@
-# @siteping/adapter-kit
+# @beezping/adapter-kit
 
 Everything needed to build — and conformance-test — a custom [Siteping](https://siteping.dev) store adapter.
 
 ```ts
-import { createCollectionStore, type SitepingStore } from "@siteping/adapter-kit";
+import { createCollectionStore, type SitepingStore } from "@beezping/adapter-kit";
 
 // A complete adapter over any snapshot backend, in ~15 lines:
 export function createMyStore(): SitepingStore {
@@ -19,7 +19,7 @@ export function createMyStore(): SitepingStore {
 Verify it with the shared conformance suite (vitest):
 
 ```ts
-import { testSitepingStore } from "@siteping/adapter-kit/testing";
+import { testSitepingStore } from "@beezping/adapter-kit/testing";
 import { createMyStore } from "../src/index.js";
 
 testSitepingStore(() => createMyStore());

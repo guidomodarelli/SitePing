@@ -1,4 +1,4 @@
-import type { FeedbackStatus } from "@siteping/core";
+import type { FeedbackStatus } from "@beezping/core";
 import type { ComponentType, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createContext, useContext } from "react";
 import type { TFunction } from "../i18n/index.js";

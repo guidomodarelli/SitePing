@@ -85,7 +85,7 @@ export async function initCommand(): Promise<void> {
       "2. Set SITEPING_API_KEY in your environment (required in production)",
       "3. Add the widget to your layout:",
       "",
-      '   import { initSiteping } from "@siteping/widget"',
+      '   import { initSiteping } from "@beezping/widget"',
       "",
       "   initSiteping({",
       '     endpoint: "/api/siteping",',

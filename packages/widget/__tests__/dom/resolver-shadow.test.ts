@@ -5,7 +5,7 @@
 // host chain leads to, while light-DOM anchors must keep exactly the cost
 // they had before — no whole-document walk, no shadow root ever queried.
 
-import type { AnchorData } from "@siteping/core";
+import type { AnchorData } from "@beezping/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { generateAnchor } from "../../src/dom/anchor";
 import { resolveAnchor } from "../../src/dom/resolver";

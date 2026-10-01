@@ -1,8 +1,8 @@
-[![npm version](https://img.shields.io/npm/v/@siteping/screenshot-storage)](https://www.npmjs.com/package/@siteping/screenshot-storage)
+[![npm version](https://img.shields.io/npm/v/@beezping/screenshot-storage)](https://www.npmjs.com/package/@beezping/screenshot-storage)
 [![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/adapters/screenshot-storage)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
-# @siteping/screenshot-storage
+# @beezping/screenshot-storage
 
 Screenshot storage for the [SitePing](https://github.com/NeosiaNexus/SitePing) stores: upload screenshots to **Cloudflare R2, AWS S3** or any S3-compatible bucket, **Cloudflare Images**, **your database** through Drizzle, or **your disk**, and keep only their URL in the feedback. No AWS SDK and no runtime dependency: it runs on Node, Bun, Deno and edge workers.
 
@@ -11,7 +11,7 @@ Screenshot storage for the [SitePing](https://github.com/NeosiaNexus/SitePing) s
 ## Install
 
 ```bash
-npm install @siteping/screenshot-storage
+npm install @beezping/screenshot-storage
 ```
 
 Node ≥ 20, or any runtime with the Fetch and Web Crypto APIs (the `/filesystem` entry needs Node). `drizzle-orm` is an optional peer, only for the `/drizzle-pg` and `/drizzle-libsql` entries.
@@ -19,8 +19,8 @@ Node ≥ 20, or any runtime with the Fetch and Web Crypto APIs (the `/filesystem
 ## Quick start
 
 ```ts
-import { createScreenshotStorage } from "@siteping/screenshot-storage";
-import { createS3ObjectStore } from "@siteping/screenshot-storage/s3";
+import { createScreenshotStorage } from "@beezping/screenshot-storage";
+import { createS3ObjectStore } from "@beezping/screenshot-storage/s3";
 
 const screenshotStorage = createScreenshotStorage(
   createS3ObjectStore({

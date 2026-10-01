@@ -6,7 +6,7 @@ import {
   isStoreDuplicate,
   isStoreValueTooLong,
   type SitepingStore,
-} from "@siteping/core";
+} from "@beezping/core";
 import { ERROR_MESSAGES, MAX_ANNOTATIONS_PER_FEEDBACK } from "../constants.js";
 import type { SitepingHandlerBaseOptions, SitepingLifecycleHooks } from "../options.js";
 import type { Pipeline, Scope } from "../pipeline.js";

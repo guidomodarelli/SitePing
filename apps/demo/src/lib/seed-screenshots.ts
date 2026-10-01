@@ -1,4 +1,4 @@
-import type { ScreenshotRegion } from "@siteping/core";
+import type { ScreenshotRegion } from "@beezping/core";
 
 /**
  * Real JPEG captures of the demo site, taken with Playwright against /demo

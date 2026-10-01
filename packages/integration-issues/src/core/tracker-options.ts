@@ -1,4 +1,4 @@
-import { parseHttpUrl } from "@siteping/core";
+import { parseHttpUrl } from "@beezping/core";
 import { TIMER_MAX_DELAY_MS } from "../constants/http.js";
 
 /*

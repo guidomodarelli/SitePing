@@ -8,7 +8,7 @@
  * inline base64 (with a one-time warn) — fine for dev and small
  * deployments, a footgun for production Postgres.
  *
- * `@siteping/screenshot-storage` implements it over any S3-compatible
+ * `@beezping/screenshot-storage` implements it over any S3-compatible
  * bucket (AWS S3, Cloudflare R2, Backblaze B2, MinIO…), Cloudflare Images,
  * a database table, the local filesystem or memory. Implement it yourself
  * for anything else.

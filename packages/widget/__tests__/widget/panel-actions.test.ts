@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { SitepingPanelAction } from "@siteping/core";
+import type { SitepingPanelAction } from "@beezping/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { normalizePanelActions, parseActionIcon, safeHref } from "../../src/panel-actions.js";
 

@@ -1,4 +1,4 @@
-import { testSitepingStore } from "@siteping/core/testing";
+import { testSitepingStore } from "@beezping/core/testing";
 import { describe, expect, it } from "vitest";
 import { MemoryStore } from "../src/index.js";
 
@@ -205,7 +205,7 @@ describe("MemoryStore concurrency", () => {
 // classes exported by this entry: every error a store method throws must be one.
 it("re-exports every store error its methods throw", async () => {
   const { isStorePersistence, StoreDuplicateError, StoreLimitError, StoreNotFoundError, StorePersistenceError } =
-    await import("@siteping/core");
+    await import("@beezping/core");
 
   expect(await import("../src/index.js")).toMatchObject({
     isStorePersistence,

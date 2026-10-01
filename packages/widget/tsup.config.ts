@@ -11,7 +11,7 @@ import { cssLiteralsPlugin } from "./scripts/css-literals.js";
 //    incompatible with IIFE, so everything is inlined. It is the one bundle
 //    browsers run exactly as shipped (no consumer bundler minifies it again),
 //    so Terser takes a second pass after esbuild's minifier (`terserPass`).
-//  - ESM+CJS React entry (`@siteping/widget/react`): React stays external so
+//  - ESM+CJS React entry (`@beezping/widget/react`): React stays external so
 //    consumers pin their own version.
 //
 // `cssLiteralsPlugin` minifies the `/* css */`-marked template literals —
@@ -44,7 +44,7 @@ export default defineConfig([
     minify: true,
     splitting: true,
     treeshake: "recommended",
-    noExternal: ["@medv/finder", "@siteping/core"],
+    noExternal: ["@medv/finder", "@beezping/core"],
     esbuildPlugins: [cssLiteralsPlugin],
     esbuildOptions(o) {
       o.pure = [...pureCalls];
@@ -63,7 +63,7 @@ export default defineConfig([
     minify: true,
     splitting: false,
     treeshake: "recommended",
-    noExternal: ["@medv/finder", "@siteping/core"],
+    noExternal: ["@medv/finder", "@beezping/core"],
     esbuildPlugins: [cssLiteralsPlugin],
     esbuildOptions(o) {
       o.pure = [...pureCalls];
@@ -82,7 +82,7 @@ export default defineConfig([
     minify: true,
     splitting: true,
     treeshake: "recommended",
-    noExternal: ["@medv/finder", "@siteping/core"],
+    noExternal: ["@medv/finder", "@beezping/core"],
     external: ["react"],
     esbuildPlugins: [cssLiteralsPlugin],
     esbuildOptions(o) {

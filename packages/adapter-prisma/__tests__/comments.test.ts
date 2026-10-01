@@ -1,4 +1,4 @@
-import type { FeedbackResponse, FeedbackResponseList } from "@siteping/core";
+import type { FeedbackResponse, FeedbackResponseList } from "@beezping/core";
 import { describe, expect, it, vi } from "vitest";
 import { createSitepingHandler, PrismaStore } from "../src/index.js";
 import { fakePrisma } from "./fake-prisma.js";

@@ -3,7 +3,7 @@ import { createSitepingHandler } from "../src/index.js";
 import { fakePrisma } from "./fake-prisma.js";
 import { validPayloadNoAnnotations } from "./fixtures.js";
 
-// adapter-prisma's handler is @siteping/server's over a PrismaStore: these
+// adapter-prisma's handler is @beezping/server's over a PrismaStore: these
 // lock what the wrapper adds (Prisma's setup hint) and what it forwards.
 
 const LIST = "http://localhost/api/siteping?projectName=test-project";
@@ -18,7 +18,7 @@ function prismaWithoutTable(table = "SitepingFeedback") {
 
 const silentLogger = () => ({ error: vi.fn() });
 
-describe("createSitepingHandler — @siteping/server options", () => {
+describe("createSitepingHandler — @beezping/server options", () => {
   it.each([
     ["SitepingFeedback"],
     // A client generated after `sync` added threads, before the database has the table

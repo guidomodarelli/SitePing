@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { MemoryStore } from "@siteping/adapter-memory";
+import { MemoryStore } from "@beezping/adapter-memory";
 import {
   type CommentResponse,
   type FeedbackResponse,
@@ -8,7 +8,7 @@ import {
   MAX_COMMENTS_PER_FEEDBACK,
   type SitepingStore,
   StoreValueTooLongError,
-} from "@siteping/core";
+} from "@beezping/core";
 import { describe, expect, it, vi } from "vitest";
 import {
   createSitepingHandler,

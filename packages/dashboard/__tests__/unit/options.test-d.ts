@@ -3,7 +3,7 @@
  * mode — never executed).
  */
 
-import type { CommentCreateInput, CommentRecord, FeedbackPage, FeedbackRecord, SitepingStore } from "@siteping/core";
+import type { CommentCreateInput, CommentRecord, FeedbackPage, FeedbackRecord, SitepingStore } from "@beezping/core";
 import { describe, expectTypeOf, it } from "vitest";
 import type { FeedbackPermissions, InboxRecord, SitepingCapabilities } from "../../src/index.js";
 import type { InboxSource, InboxState, SitepingInboxProps, UseSitepingInboxOptions } from "../../src/types.js";

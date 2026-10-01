@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { FeedbackResponse, SitepingConfig, SitepingHttpConfig } from "@siteping/core";
+import type { FeedbackResponse, SitepingConfig, SitepingHttpConfig } from "@beezping/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockMatchMedia } from "../helpers.js";
 

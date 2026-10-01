@@ -10,7 +10,7 @@ Two paths: the **full setup** (Next.js + Prisma â€” the production shape) or the
 ### 1. Install
 
 ```bash
-npm i @siteping/widget @siteping/adapter-prisma
+npm i @beezping/widget @beezping/adapter-prisma
 ```
 
 You'll need Prisma already set up, plus a client singleton at `@/lib/prisma`. If you don't have one:
@@ -27,7 +27,7 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ### 2. Scaffold
 
 ```bash
-npx @siteping/cli init
+npx @beezping/cli init
 ```
 
 Confirm both prompts: the CLI adds the SitePing models to your Prisma schema and generates the API route (`app/api/siteping/route.ts`, or under `src/app/` if that's your layout). Then push the schema to your database:
@@ -42,7 +42,7 @@ npx prisma generate   # Prisma 7 no longer runs it from db push
 ```tsx
 // Anywhere client-side â€” e.g. your root layout
 "use client";
-import { useSiteping } from "@siteping/widget/react";
+import { useSiteping } from "@beezping/widget/react";
 
 export function Feedback() {
   useSiteping({ endpoint: "/api/siteping", projectName: "my-project" });
@@ -57,7 +57,7 @@ By default the widget shows in development but **never in production builds** â€
 ### 4. Triage what comes in
 
 ```tsx
-import { SitepingInbox } from "@siteping/dashboard";
+import { SitepingInbox } from "@beezping/dashboard";
 
 <SitepingInbox projects="my-project" endpoint="/api/siteping" theme="auto" />
 ```
@@ -69,12 +69,12 @@ That's the whole loop. From here: [widget options](/docs/widget/configuration) Â
 No backend, no database â€” feedback lives in the visitor's browser. Perfect for prototypes and demos:
 
 ```bash
-npm i @siteping/widget @siteping/adapter-localstorage
+npm i @beezping/widget @beezping/adapter-localstorage
 ```
 
 ```ts
-import { initSiteping } from "@siteping/widget";
-import { LocalStorageStore } from "@siteping/adapter-localstorage";
+import { initSiteping } from "@beezping/widget";
+import { LocalStorageStore } from "@beezping/adapter-localstorage";
 
 initSiteping({
   store: new LocalStorageStore(),

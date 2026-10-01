@@ -10,7 +10,7 @@ Deux chemins : l'**installation complète** (Next.js + Prisma — la forme de pr
 ### 1. Installer
 
 ```bash
-npm i @siteping/widget @siteping/adapter-prisma
+npm i @beezping/widget @beezping/adapter-prisma
 ```
 
 Il vous faut Prisma déjà en place, plus un singleton client dans `@/lib/prisma`. Si vous n'en avez pas :
@@ -27,7 +27,7 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ### 2. Générer
 
 ```bash
-npx @siteping/cli init
+npx @beezping/cli init
 ```
 
 Confirmez les deux questions : le CLI ajoute les modèles SitePing à votre schéma Prisma et génère la route API (`app/api/siteping/route.ts`, ou sous `src/app/` selon votre projet). Poussez ensuite le schéma vers votre base :
@@ -42,7 +42,7 @@ npx prisma generate   # Prisma 7 ne le lance plus depuis db push
 ```tsx
 // N'importe où côté client — par exemple votre layout racine
 "use client";
-import { useSiteping } from "@siteping/widget/react";
+import { useSiteping } from "@beezping/widget/react";
 
 export function Feedback() {
   useSiteping({ endpoint: "/api/siteping", projectName: "mon-projet" });
@@ -57,7 +57,7 @@ Par défaut le widget apparaît en développement mais **jamais dans un build de
 ### 4. Trier ce qui arrive
 
 ```tsx
-import { SitepingInbox } from "@siteping/dashboard";
+import { SitepingInbox } from "@beezping/dashboard";
 
 <SitepingInbox projects="mon-projet" endpoint="/api/siteping" theme="auto" />
 ```
@@ -69,12 +69,12 @@ La boucle est complète. Pour aller plus loin : [options du widget](/fr/docs/wid
 Pas de backend, pas de base — le feedback vit dans le navigateur du visiteur. Parfait pour les prototypes et démos :
 
 ```bash
-npm i @siteping/widget @siteping/adapter-localstorage
+npm i @beezping/widget @beezping/adapter-localstorage
 ```
 
 ```ts
-import { initSiteping } from "@siteping/widget";
-import { LocalStorageStore } from "@siteping/adapter-localstorage";
+import { initSiteping } from "@beezping/widget";
+import { LocalStorageStore } from "@beezping/adapter-localstorage";
 
 initSiteping({
   store: new LocalStorageStore(),

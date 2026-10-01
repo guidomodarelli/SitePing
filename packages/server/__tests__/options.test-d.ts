@@ -4,7 +4,7 @@
  * principal inferred from `access.authenticate`.
  */
 
-import type { CommentPayload, SitepingStore } from "@siteping/core";
+import type { CommentPayload, SitepingStore } from "@beezping/core";
 import { describe, expectTypeOf, it } from "vitest";
 import {
   createSitepingHandler,

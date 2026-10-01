@@ -1,8 +1,8 @@
-[![npm version](https://img.shields.io/npm/v/@siteping/server)](https://www.npmjs.com/package/@siteping/server)
+[![npm version](https://img.shields.io/npm/v/@beezping/server)](https://www.npmjs.com/package/@beezping/server)
 [![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/server)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
-# @siteping/server
+# @beezping/server
 
 The HTTP endpoint of [SitePing](https://github.com/NeosiaNexus/SitePing) over any store, for any framework — validation, auth, CORS, redaction, hooks and webhooks on the Fetch API. No Node built-in: it runs on Node, Bun, Deno and edge workers.
 
@@ -11,7 +11,7 @@ The HTTP endpoint of [SitePing](https://github.com/NeosiaNexus/SitePing) over an
 ## Install
 
 ```bash
-npm install @siteping/server
+npm install @beezping/server
 ```
 
 Node ≥ 20, or any runtime with the Fetch API.
@@ -20,7 +20,7 @@ Node ≥ 20, or any runtime with the Fetch API.
 
 ```ts
 // app/api/siteping/route.ts — Next.js App Router
-import { createSitepingHandler } from "@siteping/server";
+import { createSitepingHandler } from "@beezping/server";
 import { store } from "@/lib/siteping-store"; // Drizzle, memory, Prisma or your own
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({

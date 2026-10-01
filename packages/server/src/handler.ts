@@ -1,4 +1,4 @@
-import { hasOwn } from "@siteping/core";
+import { hasOwn } from "@beezping/core";
 import { type AccessGate, createAccessGate, createApiKeyGate } from "./access.js";
 import { DEFAULT_MAX_BODY_BYTES } from "./constants.js";
 import { preflightResponse } from "./cors.js";
@@ -88,7 +88,7 @@ function routeByBody<Principal>(
  *
  * @example Next.js App Router — `app/api/siteping/route.ts`
  * ```ts
- * import { createSitepingHandler } from '@siteping/server'
+ * import { createSitepingHandler } from '@beezping/server'
  * import { store } from '@/lib/siteping-store'
  *
  * export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({

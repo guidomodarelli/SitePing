@@ -8,7 +8,7 @@ const faqs: { q: string; a: ReactNode }[] = [
   },
   {
     q: "Does it work with frameworks other than Next.js?",
-    a: "The widget is framework-agnostic — it works with React, Vue, Svelte, Astro, or vanilla JavaScript. The CLI currently scaffolds Next.js API routes, but the server handler (@siteping/server) works with any framework that handles standard Request/Response — Hono, Express, Remix, SvelteKit and more.",
+    a: "The widget is framework-agnostic — it works with React, Vue, Svelte, Astro, or vanilla JavaScript. The CLI currently scaffolds Next.js API routes, but the server handler (@beezping/server) works with any framework that handles standard Request/Response — Hono, Express, Remix, SvelteKit and more.",
   },
   {
     q: "What happens when the page layout changes?",
@@ -18,7 +18,7 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: "Is there a dashboard to view feedback?",
     a: (
       <>
-        Yes — install @siteping/dashboard and drop the {"<SitepingInbox />"} React component into your admin page. It is
+        Yes — install @beezping/dashboard and drop the {"<SitepingInbox />"} React component into your admin page. It is
         a Linear-style triage inbox with j/k keyboard shortcuts, four statuses, and the client&apos;s annotation
         re-drawn on the screenshot.{" "}
         <Link

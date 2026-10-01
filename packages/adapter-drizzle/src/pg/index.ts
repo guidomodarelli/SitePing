@@ -3,14 +3,14 @@ import { DrizzleSitepingStore, type DrizzleStore, type DrizzleStoreOptions } fro
 import { type AnyPgDatabase, createPgGateway } from "./gateway.js";
 import { createSitepingPgTables, type SitepingPgTables } from "./tables.js";
 
-export type { FeedbackRecord, ScreenshotStorage, SitepingStore } from "@siteping/core";
+export type { FeedbackRecord, ScreenshotStorage, SitepingStore } from "@beezping/core";
 export {
   isStorePersistence,
   StoreDuplicateError,
   StoreLimitError,
   StoreNotFoundError,
   StorePersistenceError,
-} from "@siteping/core";
+} from "@beezping/core";
 export { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../constants/table-names.js";
 export type { DrizzleStore, DrizzleStoreLogger, DrizzleStoreOptions } from "../shared/store.js";
 export type { AnyPgDatabase } from "./gateway.js";
@@ -28,7 +28,7 @@ export interface PgSitepingStoreOptions extends DrizzleStoreOptions {
  * @example
  * ```ts
  * import { drizzle } from "drizzle-orm/node-postgres";
- * import { createPgSitepingStore } from "@siteping/adapter-drizzle/pg";
+ * import { createPgSitepingStore } from "@beezping/adapter-drizzle/pg";
  *
  * const store = createPgSitepingStore(drizzle(process.env.DATABASE_URL!), { screenshotStorage });
  * ```

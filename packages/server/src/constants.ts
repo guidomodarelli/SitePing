@@ -1,4 +1,4 @@
-import { MAX_COMMENTS_PER_FEEDBACK } from "@siteping/core";
+import { MAX_COMMENTS_PER_FEEDBACK } from "@beezping/core";
 
 /** Most annotations accepted on one feedback (the create schema enforces it too). */
 export const MAX_ANNOTATIONS_PER_FEEDBACK = 50;
@@ -25,7 +25,7 @@ export const DRY_RUN_CONCURRENCY = 8;
 
 /**
  * `error` strings of the HTTP API. Part of the wire contract: the widget, the
- * dashboard and existing `@siteping/adapter-prisma` consumers match on some.
+ * dashboard and existing `@beezping/adapter-prisma` consumers match on some.
  */
 export const ERROR_MESSAGES = {
   invalidJson: "Invalid JSON",

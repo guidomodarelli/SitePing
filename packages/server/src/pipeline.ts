@@ -1,4 +1,4 @@
-import type { CommentRecord, FeedbackPermissions, FeedbackRecord } from "@siteping/core";
+import type { CommentRecord, FeedbackPermissions, FeedbackRecord } from "@beezping/core";
 import type { AccessGate, AccessOutcome } from "./access.js";
 import { DRY_RUN_CONCURRENCY, ERROR_MESSAGES } from "./constants.js";
 import { buildCorsHeaders, type CorsHeaders, withCors } from "./cors.js";

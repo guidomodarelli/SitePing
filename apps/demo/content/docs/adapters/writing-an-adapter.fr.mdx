@@ -1,17 +1,17 @@
 ---
 title: Écrire un adapter
-description: Construisez votre propre adapter de stockage avec @siteping/adapter-kit — le moteur, le contrat et la suite de conformité.
+description: Construisez votre propre adapter de stockage avec @beezping/adapter-kit — le moteur, le contrat et la suite de conformité.
 ---
 
-Les quatre adapters fournis couvrent la plupart des installations, mais les stores SitePing sont enfichables : tout ce qui peut conserver des enregistrements peut alimenter le widget et le dashboard. `@siteping/adapter-kit` est le package publié pour ça — il porte le contrat `SitepingStore`, les briques sur lesquelles tournent les adapters officiels, et la suite de conformité qui prouve que votre implémentation se comporte comme les autres.
+Les quatre adapters fournis couvrent la plupart des installations, mais les stores SitePing sont enfichables : tout ce qui peut conserver des enregistrements peut alimenter le widget et le dashboard. `@beezping/adapter-kit` est le package publié pour ça — il porte le contrat `SitepingStore`, les briques sur lesquelles tournent les adapters officiels, et la suite de conformité qui prouve que votre implémentation se comporte comme les autres.
 
 ```bash
-npm i -D @siteping/adapter-kit vitest
+npm i -D @beezping/adapter-kit vitest
 ```
 
-`vitest` est une **peer dependency optionnelle**, nécessaire uniquement à l'entrée `@siteping/adapter-kit/testing`. Si vous ne lancez pas la suite de conformité, laissez-la de côté. Le kit lui-même n'a aucune dépendance runtime (`@siteping/core` est intégré dans son `dist`) : une dépendance de développement suffit si vous bundlez votre package ; si vous publiez du code non bundlé, déplacez-la dans `dependencies`.
+`vitest` est une **peer dependency optionnelle**, nécessaire uniquement à l'entrée `@beezping/adapter-kit/testing`. Si vous ne lancez pas la suite de conformité, laissez-la de côté. Le kit lui-même n'a aucune dépendance runtime (`@beezping/core` est intégré dans son `dist`) : une dépendance de développement suffit si vous bundlez votre package ; si vous publiez du code non bundlé, déplacez-la dans `dependencies`.
 
-> Pourquoi un package séparé : `@siteping/core` est un package interne — il exporte du TypeScript brut et n'est jamais publié sur npm. Le kit est la façon supportée de dépendre de ces types et helpers depuis l'extérieur de ce dépôt.
+> Pourquoi un package séparé : `@beezping/core` est un package interne — il exporte du TypeScript brut et n'est jamais publié sur npm. Le kit est la façon supportée de dépendre de ces types et helpers depuis l'extérieur de ce dépôt.
 
 ## Choisissez votre voie
 
@@ -25,7 +25,7 @@ npm i -D @siteping/adapter-kit vitest
 Si votre stockage sait rendre la liste complète des feedbacks et en reprendre une entière, `createCollectionStore` vous donne un store complet et conforme. Il implémente toutes les sémantiques du contrat — déduplication par `clientId`, tri du plus récent au plus ancien, pipeline de filtrage et de pagination, `StoreNotFoundError` sur enregistrement absent, suppression en masse cadrée au projet, et `verifyProjectOwnership` :
 
 ```ts
-import { createCollectionStore, type FeedbackRecord, type SitepingStore } from "@siteping/adapter-kit";
+import { createCollectionStore, type FeedbackRecord, type SitepingStore } from "@beezping/adapter-kit";
 
 export function createArrayStore(): SitepingStore {
   let feedbacks: FeedbackRecord[] = [];
@@ -72,7 +72,7 @@ import {
   type FeedbackCreateInput,
   type FeedbackRecord,
   type SitepingStore,
-} from "@siteping/adapter-kit";
+} from "@beezping/adapter-kit";
 
 export class PostgresStore implements SitepingStore {
   async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {
@@ -155,7 +155,7 @@ La même suite que celle des adapters officiels. Pointez-la vers une factory qui
 
 ```ts
 // __tests__/my-store.test.ts
-import { testSitepingStore } from "@siteping/adapter-kit/testing";
+import { testSitepingStore } from "@beezping/adapter-kit/testing";
 import { MyStore } from "../src/index.js";
 
 testSitepingStore(() => new MyStore());
@@ -185,11 +185,11 @@ Rien d'autre ne change. Côté serveur, passez-le aux handlers de requêtes ; c�
 
 ```ts
 // Serveur — les handlers de requêtes acceptent n'importe quel SitepingStore
-import { createSitepingHandler } from "@siteping/server";
+import { createSitepingHandler } from "@beezping/server";
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ store: new MyStore() });
 
 // Navigateur — mode côté client, aucun serveur
-import { initSiteping } from "@siteping/widget";
+import { initSiteping } from "@beezping/widget";
 initSiteping({ store: new MyStore(), projectName: "mon-app" });
 ```
 

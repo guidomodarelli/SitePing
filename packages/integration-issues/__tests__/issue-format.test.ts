@@ -1,4 +1,4 @@
-import type { AnnotationRecord, FeedbackRecord } from "@siteping/core";
+import type { AnnotationRecord, FeedbackRecord } from "@beezping/core";
 import { fromMarkdown } from "mdast-util-from-markdown";
 import { describe, expect, it } from "vitest";
 import { ISSUE_BODY_MAX_LENGTH, OVERSIZED_BODY_NOTE } from "../src/constants/issue-format.js";

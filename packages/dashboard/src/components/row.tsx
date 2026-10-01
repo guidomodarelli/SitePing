@@ -1,4 +1,4 @@
-import type { FeedbackRecord } from "@siteping/core";
+import type { FeedbackRecord } from "@beezping/core";
 import type { ReactElement } from "react";
 import { formatAbsolute, formatRelativeTime, pathFromUrl, toDateTimeAttr } from "../format.js";
 import { getStatusLabel, getTypeLabel } from "../i18n/index.js";

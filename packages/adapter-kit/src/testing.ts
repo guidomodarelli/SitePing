@@ -5,12 +5,12 @@
  *
  * @example
  * ```ts
- * import { testSitepingStore } from "@siteping/adapter-kit/testing";
+ * import { testSitepingStore } from "@beezping/adapter-kit/testing";
  * import { DrizzleStore } from "../src/index.js";
  *
  * testSitepingStore(() => new DrizzleStore(db));
  * ```
  */
 
-export type { StoreConformanceOptions } from "@siteping/core/testing";
-export { testSitepingStore } from "@siteping/core/testing";
+export type { StoreConformanceOptions } from "@beezping/core/testing";
+export { testSitepingStore } from "@beezping/core/testing";

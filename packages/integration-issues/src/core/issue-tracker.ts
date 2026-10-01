@@ -1,4 +1,4 @@
-import type { FeedbackStatus } from "@siteping/core";
+import type { FeedbackStatus } from "@beezping/core";
 
 /** An issue on the tracker. `key` is the provider's own identifier (GitHub number, GitLab iid). */
 export interface IssueReference {

@@ -4,7 +4,7 @@ import type {
   FeedbackStatus,
   FeedbackType,
   ScreenshotRegion,
-} from "@siteping/core";
+} from "@beezping/core";
 import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../constants/table-names.js";
 

@@ -300,7 +300,7 @@ function createWidgetUsage(dir: string): void {
   mkdirSync(srcDir, { recursive: true });
   writeFileSync(
     join(srcDir, "feedback.ts"),
-    'import { initSiteping } from "@siteping/widget";\ninitSiteping({ endpoint: "/api/siteping", projectName: "test" });',
+    'import { initSiteping } from "@beezping/widget";\ninitSiteping({ endpoint: "/api/siteping", projectName: "test" });',
   );
 }
 
@@ -367,7 +367,7 @@ describe("statusCommand", () => {
 
     it("reports success when schema is found and up-to-date", () => {
       createPrismaSchema(tmpDir, FULL_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -378,7 +378,7 @@ describe("statusCommand", () => {
 
     it("reports warning when models are missing from schema", () => {
       createPrismaSchema(tmpDir, PARTIAL_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -393,7 +393,7 @@ describe("statusCommand", () => {
         "\n",
       );
       createPrismaSchema(tmpDir, beforeThreads);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -414,7 +414,7 @@ describe("statusCommand", () => {
           "model SitepingAnnotation { // anchors",
         ),
       );
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -428,7 +428,7 @@ describe("statusCommand", () => {
     ])("reports %s as an error instead of crashing", (_label, setup) => {
       mkdirSync(join(tmpDir, "prisma"), { recursive: true });
       const schemaPath = setup(tmpDir);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       expect(() => statusCommand({ schema: schemaPath })).not.toThrow();
@@ -445,7 +445,7 @@ describe("statusCommand", () => {
       const [head, models] = FULL_SCHEMA.split(/(?=model SitepingFeedback)/);
       writeFileSync(join(folder, "schema.prisma"), head ?? "");
       writeFileSync(join(folder, "siteping.prisma"), models ?? "");
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -458,7 +458,7 @@ describe("statusCommand", () => {
       mkdirSync(folder, { recursive: true });
       writeFileSync(join(folder, "schema.prisma"), FULL_SCHEMA);
       writeFileSync(join(folder, "broken.prisma"), "model Broken {\n  id String @id\n");
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -473,7 +473,7 @@ describe("statusCommand", () => {
       mkdirSync(customDir, { recursive: true });
       const schemaPath = join(customDir, "schema.prisma");
       writeFileSync(schemaPath, FULL_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({ schema: schemaPath });
@@ -493,7 +493,7 @@ describe("statusCommand", () => {
 
     it("reports attribute and index drift instead of 'Up to date'", () => {
       createPrismaSchema(tmpDir, DRIFTED_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -508,7 +508,7 @@ describe("statusCommand", () => {
 
     it("reports a removed onDelete: Cascade instead of 'Up to date'", () => {
       createPrismaSchema(tmpDir, FULL_SCHEMA.replace(", onDelete: Cascade", ""));
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -520,7 +520,7 @@ describe("statusCommand", () => {
 
     it("leaves the schema file untouched", () => {
       const schemaPath = createPrismaSchema(tmpDir, DRIFTED_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -589,31 +589,31 @@ describe("statusCommand", () => {
   });
 
   describe("Package detection", () => {
-    it("reports success when @siteping/widget is in dependencies", () => {
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+    it("reports success when @beezping/widget is in dependencies", () => {
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
 
       statusCommand({});
 
       const successes = allMessages(logSuccessSpy);
-      expect(successes.some((m) => m.includes("@siteping/widget"))).toBe(true);
+      expect(successes.some((m) => m.includes("@beezping/widget"))).toBe(true);
     });
 
-    it("reports success when @siteping/widget is in devDependencies", () => {
-      createPackageJson(tmpDir, {}, { "@siteping/widget": "^1.0.0" });
+    it("reports success when @beezping/widget is in devDependencies", () => {
+      createPackageJson(tmpDir, {}, { "@beezping/widget": "^1.0.0" });
 
       statusCommand({});
 
       const successes = allMessages(logSuccessSpy);
-      expect(successes.some((m) => m.includes("@siteping/widget"))).toBe(true);
+      expect(successes.some((m) => m.includes("@beezping/widget"))).toBe(true);
     });
 
-    it("reports error when @siteping/widget is not in any dependencies", () => {
+    it("reports error when @beezping/widget is not in any dependencies", () => {
       createPackageJson(tmpDir, { "some-other-package": "^1.0.0" });
 
       statusCommand({});
 
       const errors = allMessages(logErrorSpy);
-      expect(errors.some((m) => m.includes("@siteping/widget"))).toBe(true);
+      expect(errors.some((m) => m.includes("@beezping/widget"))).toBe(true);
     });
 
     it("reports error when package.json does not exist", () => {
@@ -628,7 +628,7 @@ describe("statusCommand", () => {
 
   describe("Widget integration detection", () => {
     it("reports success when initSiteping is found in source files", () => {
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createWidgetUsage(tmpDir);
 
       statusCommand({});
@@ -638,7 +638,7 @@ describe("statusCommand", () => {
     });
 
     it("reports warning when initSiteping is not found in source files", () => {
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
 
       statusCommand({});
 
@@ -650,7 +650,7 @@ describe("statusCommand", () => {
   describe("Overall status", () => {
     it("does not exit(1) when everything is properly configured", () => {
       createPrismaSchema(tmpDir, FULL_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
       createWidgetUsage(tmpDir);
 
@@ -669,7 +669,7 @@ describe("statusCommand", () => {
 
     it("does not exit(1) when schema has warnings but no hard errors", () => {
       createPrismaSchema(tmpDir, PARTIAL_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -680,7 +680,7 @@ describe("statusCommand", () => {
 
     it("exits with code 1 when schema exists but no API route", () => {
       createPrismaSchema(tmpDir, FULL_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       // No API route
 
       statusCommand({});
@@ -723,12 +723,12 @@ describe("statusCommand", () => {
       // Same for .next, which Next.js generates during dev/build.
       const nodeModulesDir = join(tmpDir, "src", "node_modules");
       mkdirSync(nodeModulesDir, { recursive: true });
-      writeFileSync(join(nodeModulesDir, "trap.ts"), 'import { initSiteping } from "@siteping/widget";');
+      writeFileSync(join(nodeModulesDir, "trap.ts"), 'import { initSiteping } from "@beezping/widget";');
       const nextDir = join(tmpDir, "src", ".next");
       mkdirSync(nextDir, { recursive: true });
-      writeFileSync(join(nextDir, "trap.ts"), 'import { initSiteping } from "@siteping/widget";');
+      writeFileSync(join(nextDir, "trap.ts"), 'import { initSiteping } from "@beezping/widget";');
 
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
 
       statusCommand({});
 
@@ -744,9 +744,9 @@ describe("statusCommand", () => {
       mkdirSync(srcDir, { recursive: true });
       writeFileSync(join(srcDir, "README.md"), "# initSiteping reference");
       writeFileSync(join(srcDir, "data.json"), '{"initSiteping": "fake"}');
-      writeFileSync(join(srcDir, "feedback.ts"), 'import { initSiteping } from "@siteping/widget";');
+      writeFileSync(join(srcDir, "feedback.ts"), 'import { initSiteping } from "@beezping/widget";');
 
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
 
       statusCommand({});
 
@@ -759,9 +759,9 @@ describe("statusCommand", () => {
       // arbitrary depth (the `if (match) return match` branch on the recursion).
       const deepDir = join(tmpDir, "src", "components", "ui", "feedback");
       mkdirSync(deepDir, { recursive: true });
-      writeFileSync(join(deepDir, "widget.ts"), 'import { initSiteping } from "@siteping/widget";');
+      writeFileSync(join(deepDir, "widget.ts"), 'import { initSiteping } from "@beezping/widget";');
 
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
 
       statusCommand({});
 
@@ -781,7 +781,7 @@ describe("statusCommand", () => {
       const unreadable = join(process.cwd(), "src", "restricted");
       unreadableDirs.add(unreadable);
 
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
 
       // Should not throw — the catch swallows the EACCES.
       statusCommand({});
@@ -797,7 +797,7 @@ describe("statusCommand", () => {
       // so checkSchema must record it as outdated and emit a warning that
       // mentions the outdated field count.
       createPrismaSchema(tmpDir, OUTDATED_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -866,7 +866,7 @@ model SitepingAnnotation {
 }
 `;
       createPrismaSchema(tmpDir, multiOutdated);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -880,7 +880,7 @@ model SitepingAnnotation {
       // Only `updatedAt` is missing — exercises the singular branch of
       // `missingCount > 1 ? "s" : ""` ("missing field" without trailing "s").
       createPrismaSchema(tmpDir, SINGLE_MISSING_FIELD_SCHEMA);
-      createPackageJson(tmpDir, { "@siteping/widget": "^1.0.0" });
+      createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
       statusCommand({});
@@ -899,7 +899,7 @@ model SitepingAnnotation {
       statusCommand({});
 
       const errors = allMessages(logErrorSpy);
-      expect(errors.some((m) => m.includes("@siteping/widget"))).toBe(true);
+      expect(errors.some((m) => m.includes("@beezping/widget"))).toBe(true);
       expect(exitSpy).toHaveBeenCalledWith(1);
     });
   });

@@ -1,4 +1,4 @@
-import type { FeedbackStatus } from "@siteping/core";
+import type { FeedbackStatus } from "@beezping/core";
 import {
   GITHUB_ACCEPT_HEADER,
   GITHUB_API_BASE_URL,

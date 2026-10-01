@@ -1,4 +1,4 @@
-import { isClosedStatus } from "@siteping/core";
+import { isClosedStatus } from "@beezping/core";
 import {
   GITLAB_API_BASE_URL,
   GITLAB_LABEL_SEPARATOR,

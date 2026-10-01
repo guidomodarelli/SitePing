@@ -1,4 +1,4 @@
-import { hasOwn } from "@siteping/core";
+import { hasOwn } from "@beezping/core";
 import { ISSUE_TRACKER_REQUEST_FAILED_CODE, UNLABELLED_ISSUE_CODE } from "../constants/errors.js";
 import { TRACKER_REQUEST_TIMEOUT_MS } from "../constants/http.js";
 

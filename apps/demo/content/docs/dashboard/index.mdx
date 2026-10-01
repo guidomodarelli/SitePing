@@ -3,14 +3,14 @@ title: Dashboard
 description: A Linear-style triage inbox for your feedback — one React component, keyboard-first.
 ---
 
-`@siteping/dashboard` gives you a complete triage UI: filter, search, change statuses, delete, undo — designed for the keyboard, styled to blend into your app.
+`@beezping/dashboard` gives you a complete triage UI: filter, search, change statuses, delete, undo — designed for the keyboard, styled to blend into your app.
 
 ```bash
-npm i @siteping/dashboard
+npm i @beezping/dashboard
 ```
 
 ```tsx
-import { SitepingInbox } from "@siteping/dashboard";
+import { SitepingInbox } from "@beezping/dashboard";
 
 export function Triage() {
   return (
@@ -89,7 +89,7 @@ Same built-in locales as the widget (`en`, `fr`, `de`, `es`, `it`, `pt`, `ru`, `
 The dashboard also accepts custom locales at runtime:
 
 ```ts
-import { registerLocale } from "@siteping/dashboard";
+import { registerLocale } from "@beezping/dashboard";
 
 registerLocale("nl", { "status.open": "Open", "status.resolved": "Opgelost" });
 // later: <SitepingInbox locale="nl" ... />

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { SitepingConfig } from "@siteping/core";
+import type { SitepingConfig } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EventBus, type WidgetEvents } from "../../src/events.js";
 import { Fab } from "../../src/fab.js";

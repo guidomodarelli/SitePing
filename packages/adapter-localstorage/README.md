@@ -1,8 +1,8 @@
-[![npm version](https://img.shields.io/npm/v/@siteping/adapter-localstorage)](https://www.npmjs.com/package/@siteping/adapter-localstorage)
+[![npm version](https://img.shields.io/npm/v/@beezping/adapter-localstorage)](https://www.npmjs.com/package/@beezping/adapter-localstorage)
 [![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/adapters/localstorage)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
-# @siteping/adapter-localstorage
+# @beezping/adapter-localstorage
 
 Client-side store for [SitePing](https://github.com/NeosiaNexus/SitePing) — the whole feedback loop in the browser, no server required. Ideal for demos, prototypes, and docs sites.
 
@@ -11,14 +11,14 @@ Client-side store for [SitePing](https://github.com/NeosiaNexus/SitePing) — th
 ## Install
 
 ```bash
-npm install @siteping/adapter-localstorage
+npm install @beezping/adapter-localstorage
 ```
 
 ## Usage
 
 ```ts
-import { initSiteping } from "@siteping/widget";
-import { LocalStorageStore } from "@siteping/adapter-localstorage";
+import { initSiteping } from "@beezping/widget";
+import { LocalStorageStore } from "@beezping/adapter-localstorage";
 
 initSiteping({
   store: new LocalStorageStore(),   // options: { key?: string } — default "siteping_feedbacks"

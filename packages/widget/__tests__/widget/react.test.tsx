@@ -8,7 +8,7 @@ import type {
   SitepingPanelActionFeedback,
   SitepingPanelButtonAction,
   SitepingPanelLinkAction,
-} from "@siteping/core";
+} from "@beezping/core";
 import { act, render } from "@testing-library/react";
 import { StrictMode, useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";

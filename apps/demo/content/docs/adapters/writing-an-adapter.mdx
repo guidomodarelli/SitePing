@@ -1,17 +1,17 @@
 ---
 title: Writing an adapter
-description: Build your own store adapter with @siteping/adapter-kit — the engine, the contract, and the conformance suite.
+description: Build your own store adapter with @beezping/adapter-kit — the engine, the contract, and the conformance suite.
 ---
 
-The four bundled adapters cover most setups, but SitePing stores are pluggable: anything that can hold records can back the widget and the dashboard. `@siteping/adapter-kit` is the published package for that — it carries the `SitepingStore` contract, the building blocks the first-party adapters run on, and the conformance suite that proves your implementation behaves like the others.
+The four bundled adapters cover most setups, but SitePing stores are pluggable: anything that can hold records can back the widget and the dashboard. `@beezping/adapter-kit` is the published package for that — it carries the `SitepingStore` contract, the building blocks the first-party adapters run on, and the conformance suite that proves your implementation behaves like the others.
 
 ```bash
-npm i -D @siteping/adapter-kit vitest
+npm i -D @beezping/adapter-kit vitest
 ```
 
-`vitest` is an **optional peer dependency**, needed only by the `@siteping/adapter-kit/testing` entry. If you don't run the conformance suite, skip it. The kit itself has no runtime dependencies (`@siteping/core` is bundled into its `dist`), so a dev dependency works when you bundle your own package; if you publish unbundled output, move it to `dependencies`.
+`vitest` is an **optional peer dependency**, needed only by the `@beezping/adapter-kit/testing` entry. If you don't run the conformance suite, skip it. The kit itself has no runtime dependencies (`@beezping/core` is bundled into its `dist`), so a dev dependency works when you bundle your own package; if you publish unbundled output, move it to `dependencies`.
 
-> Why a separate package: `@siteping/core` is an internal package — it exports raw TypeScript and is never published to npm. The kit is the supported way to depend on those types and helpers from outside this repo.
+> Why a separate package: `@beezping/core` is an internal package — it exports raw TypeScript and is never published to npm. The kit is the supported way to depend on those types and helpers from outside this repo.
 
 ## Pick your path
 
@@ -25,7 +25,7 @@ npm i -D @siteping/adapter-kit vitest
 If your storage can hand back the whole feedback list and take a whole list back, `createCollectionStore` gives you a complete, conformant store. It implements every semantic of the contract — `clientId` deduplication, newest-first ordering, the filter and pagination pipeline, `StoreNotFoundError` on missing records, project-scoped bulk delete, and `verifyProjectOwnership`:
 
 ```ts
-import { createCollectionStore, type FeedbackRecord, type SitepingStore } from "@siteping/adapter-kit";
+import { createCollectionStore, type FeedbackRecord, type SitepingStore } from "@beezping/adapter-kit";
 
 export function createArrayStore(): SitepingStore {
   let feedbacks: FeedbackRecord[] = [];
@@ -72,7 +72,7 @@ import {
   type FeedbackCreateInput,
   type FeedbackRecord,
   type SitepingStore,
-} from "@siteping/adapter-kit";
+} from "@beezping/adapter-kit";
 
 export class PostgresStore implements SitepingStore {
   async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {
@@ -155,7 +155,7 @@ The same suite the first-party adapters run. Point it at a factory that returns 
 
 ```ts
 // __tests__/my-store.test.ts
-import { testSitepingStore } from "@siteping/adapter-kit/testing";
+import { testSitepingStore } from "@beezping/adapter-kit/testing";
 import { MyStore } from "../src/index.js";
 
 testSitepingStore(() => new MyStore());
@@ -185,11 +185,11 @@ Nothing else changes. Server-side, hand it to the request handlers; client-side,
 
 ```ts
 // Server — the request handlers accept any SitepingStore
-import { createSitepingHandler } from "@siteping/server";
+import { createSitepingHandler } from "@beezping/server";
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ store: new MyStore() });
 
 // Browser — client-side mode, no server at all
-import { initSiteping } from "@siteping/widget";
+import { initSiteping } from "@beezping/widget";
 initSiteping({ store: new MyStore(), projectName: "my-app" });
 ```
 

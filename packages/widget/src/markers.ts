@@ -1,4 +1,4 @@
-import { type AnchorData, type FeedbackResponse, isClosedStatus, type RectData } from "@siteping/core";
+import { type AnchorData, type FeedbackResponse, isClosedStatus, type RectData } from "@beezping/core";
 import { Z_INDEX_MAX } from "./constants.js";
 import { resolveAnnotation } from "./dom/resolver.js";
 import { classifyVisibility } from "./dom/visibility.js";

@@ -22,10 +22,10 @@ initSiteping({
 
 ## Locales personnalisées
 
-`registerLocale(code, translations)` ajoute une langue que le widget ne fournit pas, et `loadLocale(code)` charge un dictionnaire intégré à l'avance. Les deux sont des exports runtime de `@siteping/widget` :
+`registerLocale(code, translations)` ajoute une langue que le widget ne fournit pas, et `loadLocale(code)` charge un dictionnaire intégré à l'avance. Les deux sont des exports runtime de `@beezping/widget` :
 
 ```ts
-import { initSiteping, registerLocale, type Translations } from "@siteping/widget";
+import { initSiteping, registerLocale, type Translations } from "@beezping/widget";
 
 registerLocale("nl", { "panel.title": "Feedbacks", "fab.annotate": "Nieuwe annotatie maken" });
 initSiteping({ endpoint: "/api/siteping", projectName: "mon-projet", locale: "nl" });
@@ -37,6 +37,6 @@ Faites `await loadLocale("fr")` avant l'init si vous voulez une locale intégré
 
 ## Le dashboard suit le même jeu
 
-`@siteping/dashboard` embarque les mêmes locales avec les mêmes règles de résolution, et expose son propre `registerLocale` avec le même comportement de dictionnaire partiel — voir [la documentation du dashboard](/fr/docs/dashboard#langues).
+`@beezping/dashboard` embarque les mêmes locales avec les mêmes règles de résolution, et expose son propre `registerLocale` avec le même comportement de dictionnaire partiel — voir [la documentation du dashboard](/fr/docs/dashboard#langues).
 
 Vous voulez votre langue en natif ? Les contributions de locales sont la porte d'entrée la plus accessible de ce projet — voir [CONTRIBUTING](https://github.com/NeosiaNexus/SitePing/blob/main/CONTRIBUTING.md) (« Adding a Locale »).

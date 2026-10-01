@@ -6,15 +6,15 @@ description: Set up and check SitePing from the command line — init, sync, sta
 The SitePing CLI automates project setup and health checks. It ships as a single self-contained binary with **zero runtime dependencies** and requires **Node 20 or newer**.
 
 ```bash
-npx @siteping/cli --help
+npx @beezping/cli --help
 ```
 
-> **The package name matters.** Always run `npx @siteping/cli <command>`. There is no `siteping` package on npm, so `npx siteping` only works if `@siteping/cli` is already installed in your project.
+> **The package name matters.** Always run `npx @beezping/cli <command>`. There is no `siteping` package on npm, so `npx siteping` only works if `@beezping/cli` is already installed in your project.
 
 ## `init` — interactive setup
 
 ```bash
-npx @siteping/cli init
+npx @beezping/cli init
 ```
 
 `init` walks you through two confirmations:
@@ -24,7 +24,7 @@ npx @siteping/cli init
 
 The generated route imports two things you need to provide yourself — the CLI installs nothing:
 
-- the `@siteping/adapter-prisma` package (`npm i @siteping/adapter-prisma`)
+- the `@beezping/adapter-prisma` package (`npm i @beezping/adapter-prisma`)
 - a Prisma client exported from `@/lib/prisma`
 
 If your project has no `app/` (or `src/app/`) directory, `init` exits with an error: it only scaffolds Next.js App Router routes. Other frameworks wire the adapter manually — see [Adapters](/docs/adapters).
@@ -34,8 +34,8 @@ If your project has no `app/` (or `src/app/`) directory, `init` exits with an er
 ## `sync` — non-interactive schema merge
 
 ```bash
-npx @siteping/cli sync
-npx @siteping/cli sync --schema prisma/schema.prisma
+npx @beezping/cli sync
+npx @beezping/cli sync --schema prisma/schema.prisma
 ```
 
 `sync` merges the SitePing models into your Prisma schema without prompts, which makes it safe for CI and update scripts. It works at the AST level:
@@ -52,8 +52,8 @@ When something changed, it reminds you to run `npx prisma db push` and `npx pris
 ## `status` — project health report
 
 ```bash
-npx @siteping/cli status
-npx @siteping/cli status --schema prisma/schema.prisma
+npx @beezping/cli status
+npx @beezping/cli status --schema prisma/schema.prisma
 ```
 
 `status` runs four checks and prints a report:
@@ -62,7 +62,7 @@ npx @siteping/cli status --schema prisma/schema.prisma
 |---|---|
 | Prisma schema | All three SitePing models present, every field up to date — the exact diff `sync` applies, so type, optionality, attributes and their arguments (`@unique`, `@db.Text`, `onDelete: Cascade`, …) and `@@index` blocks all count |
 | API route | `api/siteping/route.ts` (or `.tsx`, `.js`, `.jsx`) exists in the app directory Next.js serves — `app/`, or `src/app/` when there is no `app/` |
-| Package | `@siteping/widget` listed in your `package.json` |
+| Package | `@beezping/widget` listed in your `package.json` |
 | Widget integration | `initSiteping` referenced somewhere in `src/`, `app/`, or `pages/` |
 
 The API route check only knows about the Next.js App Router. If you serve the adapter from Express, Hono, or the Pages Router, that line will read "Not found" even though your setup works.
@@ -70,8 +70,8 @@ The API route check only knows about the Next.js App Router. If you serve the ad
 ## `doctor` — live endpoint check
 
 ```bash
-npx @siteping/cli doctor --url http://localhost:3000 --endpoint /api/siteping
-npx @siteping/cli doctor --url https://app.example.com --api-key "$SITEPING_API_KEY"
+npx @beezping/cli doctor --url http://localhost:3000 --endpoint /api/siteping
+npx @beezping/cli doctor --url https://app.example.com --api-key "$SITEPING_API_KEY"
 ```
 
 `doctor` sends one GET request to your running server and tells you whether a SitePing handler answered (10-second timeout). Pass **both** `--url` and `--endpoint` to run it non-interactively — either one you omit becomes a prompt. When the endpoint is configured with an `apiKey` and `GET` is not public, pass the key with `--api-key`; without it, a `401` comes with a hint.

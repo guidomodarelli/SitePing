@@ -1,7 +1,7 @@
 {
-  "name": "@siteping/integration-issues",
+  "name": "@beezping/integration-issues",
   "version": "0.0.0",
-  "description": "Issue tracker integration for Siteping — one issue per feedback on GitHub, GitLab or your own tracker, kept in sync through @siteping/server lifecycle hooks",
+  "description": "Issue tracker integration for Siteping — one issue per feedback on GitHub, GitLab or your own tracker, kept in sync through @beezping/server lifecycle hooks",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -61,11 +61,11 @@
   "homepage": "https://siteping.dev",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/SitePing.git",
     "directory": "packages/integration-issues"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/SitePing/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -74,12 +74,12 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "@siteping/adapter-memory": "workspace:*",
-    "@siteping/core": "workspace:*",
-    "@siteping/server": "workspace:*",
+    "@beezping/adapter-memory": "workspace:*",
+    "@beezping/core": "workspace:*",
+    "@beezping/server": "workspace:*",
     "mdast-util-from-markdown": "^2.0.3"
   },
   "peerDependencies": {
-    "@siteping/server": "workspace:^"
+    "@beezping/server": "workspace:^"
   }
 }

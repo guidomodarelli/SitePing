@@ -4,7 +4,7 @@ export type {
   FeedbackCreateInput,
   FeedbackRecord,
   SitepingStore,
-} from "@siteping/core";
+} from "@beezping/core";
 export { createSitepingHandler } from "./handler.js";
 export type {
   SitepingAccessControl,

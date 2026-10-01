@@ -1,10 +1,10 @@
-import { MemoryStore } from "@siteping/adapter-memory";
+import { MemoryStore } from "@beezping/adapter-memory";
 import {
   ANCHOR_ELEMENT_ID_MAX,
   ANCHOR_ELEMENT_TAG_MAX,
   type FeedbackRecord,
   IDENTITY_FIELD_MAX_LENGTH,
-} from "@siteping/core";
+} from "@beezping/core";
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_MAX_BODY_BYTES, MAX_VALIDATION_ISSUES } from "../src/constants.js";
 import { createSitepingHandler, type SitepingLogger, type SitepingStore } from "../src/index.js";

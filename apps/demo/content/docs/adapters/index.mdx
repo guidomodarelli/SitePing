@@ -7,14 +7,14 @@ An adapter is the storage layer behind SitePing. All four implement the same `Si
 
 | Adapter | Where data lives | Use it for |
 |---|---|---|
-| [`@siteping/adapter-prisma`](/docs/adapters/prisma) | Your database, via Prisma | Production — the standard setup |
-| [`@siteping/adapter-drizzle`](/docs/adapters/drizzle) | PostgreSQL or Turso / libSQL, via Drizzle ORM | Production on a Drizzle codebase — tables in your schema, serverless drivers like Neon HTTP |
-| [`@siteping/adapter-memory`](/docs/adapters/memory) | An in-process array | Tests, previews, throwaway demos |
-| [`@siteping/adapter-localstorage`](/docs/adapters/localstorage) | The visitor's browser | Client-side demos and prototypes — no server at all |
+| [`@beezping/adapter-prisma`](/docs/adapters/prisma) | Your database, via Prisma | Production — the standard setup |
+| [`@beezping/adapter-drizzle`](/docs/adapters/drizzle) | PostgreSQL or Turso / libSQL, via Drizzle ORM | Production on a Drizzle codebase — tables in your schema, serverless drivers like Neon HTTP |
+| [`@beezping/adapter-memory`](/docs/adapters/memory) | An in-process array | Tests, previews, throwaway demos |
+| [`@beezping/adapter-localstorage`](/docs/adapters/localstorage) | The visitor's browser | Client-side demos and prototypes — no server at all |
 
-Need a different backend? [Write your own](/docs/adapters/writing-an-adapter) with `@siteping/adapter-kit`.
+Need a different backend? [Write your own](/docs/adapters/writing-an-adapter) with `@beezping/adapter-kit`.
 
-Screenshots stay inline in the feedback unless the Prisma or Drizzle store gets a `screenshotStorage`: [`@siteping/screenshot-storage`](/docs/adapters/screenshot-storage) sends them to Cloudflare R2, AWS S3, Cloudflare Images, your database or your disk.
+Screenshots stay inline in the feedback unless the Prisma or Drizzle store gets a `screenshotStorage`: [`@beezping/screenshot-storage`](/docs/adapters/screenshot-storage) sends them to Cloudflare R2, AWS S3, Cloudflare Images, your database or your disk.
 
 ## Two ways to mount a store
 
@@ -22,21 +22,21 @@ Screenshots stay inline in the feedback unless the Prisma or Drizzle store gets 
 
 ```ts
 // app/api/siteping/route.ts
-import { createSitepingHandler } from "@siteping/adapter-prisma";
+import { createSitepingHandler } from "@beezping/adapter-prisma";
 import { prisma } from "@/lib/prisma";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ prisma });
 ```
 
-Any other store mounts the same way with [`@siteping/server`](/docs/server): `createSitepingHandler({ store })`.
+Any other store mounts the same way with [`@beezping/server`](/docs/server): `createSitepingHandler({ store })`.
 
 **Client-side mode** — the widget writes to a store directly in the browser, no server needed:
 
 ```ts
-import { initSiteping } from "@siteping/widget";
-import { LocalStorageStore } from "@siteping/adapter-localstorage";
+import { initSiteping } from "@beezping/widget";
+import { LocalStorageStore } from "@beezping/adapter-localstorage";
 
 initSiteping({ store: new LocalStorageStore(), projectName: "my-demo" });
 ```
 
-> Writing your own adapter? Install `@siteping/adapter-kit`: snapshot backends get a complete store from `createCollectionStore`, query backends implement the 6 methods, and both verify with the shared conformance suite (67 tests). See [Writing an adapter](/docs/adapters/writing-an-adapter).
+> Writing your own adapter? Install `@beezping/adapter-kit`: snapshot backends get a complete store from `createCollectionStore`, query backends implement the 6 methods, and both verify with the shared conformance suite (67 tests). See [Writing an adapter](/docs/adapters/writing-an-adapter).

@@ -1,8 +1,8 @@
-[![npm version](https://img.shields.io/npm/v/@siteping/cli)](https://www.npmjs.com/package/@siteping/cli)
+[![npm version](https://img.shields.io/npm/v/@beezping/cli)](https://www.npmjs.com/package/@beezping/cli)
 [![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/cli)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
-# @siteping/cli
+# @beezping/cli
 
 Set up and check [SitePing](https://github.com/NeosiaNexus/SitePing) from the command line. Single self-contained binary, zero runtime dependencies, Node ≥ 20.
 
@@ -11,10 +11,10 @@ Set up and check [SitePing](https://github.com/NeosiaNexus/SitePing) from the co
 ## Usage
 
 ```bash
-npx @siteping/cli init
+npx @beezping/cli init
 ```
 
-> Always `npx @siteping/cli …` — there is no `siteping` package on npm, so `npx siteping` only works once `@siteping/cli` is installed locally.
+> Always `npx @beezping/cli …` — there is no `siteping` package on npm, so `npx siteping` only works once `@beezping/cli` is installed locally.
 
 ## Commands
 

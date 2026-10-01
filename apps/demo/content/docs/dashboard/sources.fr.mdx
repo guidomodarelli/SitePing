@@ -28,7 +28,7 @@ Fonctionne avec n'importe quel `SitepingStore` en mémoire du processus — les 
 Pour tRPC, GraphQL ou les server actions, implémentez le contrat `InboxSource` à trois méthodes et passez-le en `source` :
 
 ```ts
-import type { InboxSource } from "@siteping/dashboard";
+import type { InboxSource } from "@beezping/dashboard";
 
 const source: InboxSource = {
   async list(query) {
@@ -73,7 +73,7 @@ Les deux briques qui sous-tendent les modes intégrés sont également exportée
 
 ## Des types sans dépendance supplémentaire
 
-`@siteping/dashboard` réexporte tout ce qu'il faut pour typer un composant qui l'enrobe — vous n'installez jamais rien d'autre :
+`@beezping/dashboard` réexporte tout ce qu'il faut pour typer un composant qui l'enrobe — vous n'installez jamais rien d'autre :
 
 | Ce que vous typez | Exports |
 |---|---|

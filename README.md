@@ -12,9 +12,9 @@ Draw rectangles, leave comments, track bugs — directly on the live site.
 [![Website](https://img.shields.io/badge/website-siteping.dev-000000?style=flat&colorA=000000&colorB=000000)](https://siteping.dev)
 [![Live Demo](https://img.shields.io/badge/demo-try%20it%20live-22c55e?style=flat&colorA=000000)](https://siteping.dev/demo)
 [![Docs](https://img.shields.io/badge/docs-siteping.dev%2Fdocs-0066ff?style=flat&colorA=000000)](https://siteping.dev/docs)
-[![npm version](https://img.shields.io/npm/v/@siteping/widget?style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@siteping/widget)
-[![npm downloads](https://img.shields.io/npm/dm/@siteping/widget?style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@siteping/widget)
-[![license](https://img.shields.io/npm/l/@siteping/widget?style=flat&colorA=000000&colorB=000000)](./LICENSE)
+[![npm version](https://img.shields.io/npm/v/@beezping/widget?style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@beezping/widget)
+[![npm downloads](https://img.shields.io/npm/dm/@beezping/widget?style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@beezping/widget)
+[![license](https://img.shields.io/npm/l/@beezping/widget?style=flat&colorA=000000&colorB=000000)](./LICENSE)
 [![build](https://img.shields.io/github/actions/workflow/status/NeosiaNexus/SitePing/ci.yml?style=flat&colorA=000000&colorB=000000)](https://github.com/NeosiaNexus/SitePing/actions)
 [![CodeQL](https://img.shields.io/github/actions/workflow/status/NeosiaNexus/SitePing/codeql.yml?label=CodeQL&style=flat&colorA=000000&colorB=000000)](https://github.com/NeosiaNexus/SitePing/security/code-scanning)
 [![coverage](https://img.shields.io/codecov/c/github/NeosiaNexus/SitePing?style=flat&colorA=000000&colorB=000000)](https://app.codecov.io/gh/NeosiaNexus/SitePing)
@@ -50,7 +50,7 @@ Stop chasing client feedback across Slack threads, email chains, and Notion docs
 - **Instant right-click comments** — opt-in, and it never hijacks keyboard or modifier-key context menus
 - **Screenshots + diagnostics** — opt-in JPEG of the annotated area (with privacy masking) and console/network capture
 - **Panel actions** — your own buttons and links in the feedback detail view: create a ticket, hand a feedback to an agent, open it in your tracker
-- **Triage inbox** — `<SitepingInbox />` (`@siteping/dashboard`): Linear-style, keyboard-first, light/dark, 8 locales
+- **Triage inbox** — `<SitepingInbox />` (`@beezping/dashboard`): Linear-style, keyboard-first, light/dark, 8 locales
 - **Reliability built in** — retry with backoff plus a localStorage queue; a flaky network never loses a comment
 - **Shadow DOM isolation** — widget CSS never leaks into your site, and your site CSS never breaks the widget
 - **Dev-only by default** — auto-hides in production builds unless `forceShow: true`
@@ -59,14 +59,14 @@ Stop chasing client feedback across Slack threads, email chains, and Notion docs
 ## Quickstart
 
 ```bash
-npm i @siteping/widget @siteping/adapter-prisma
-npx @siteping/cli init   # adds the Prisma models + generates the API route
+npm i @beezping/widget @beezping/adapter-prisma
+npx @beezping/cli init   # adds the Prisma models + generates the API route
 npx prisma db push
 ```
 
 ```tsx
 "use client";
-import { useSiteping } from "@siteping/widget/react";
+import { useSiteping } from "@beezping/widget/react";
 
 export function Feedback() {
   useSiteping({ endpoint: "/api/siteping", projectName: "my-app" });
@@ -77,7 +77,7 @@ export function Feedback() {
 Your clients can now draw rectangles on the site and leave feedback. Triage it with one component:
 
 ```tsx
-import { SitepingInbox } from "@siteping/dashboard";
+import { SitepingInbox } from "@beezping/dashboard";
 
 <SitepingInbox projects="my-app" endpoint="/api/siteping" theme="auto" />
 ```
@@ -90,16 +90,16 @@ The full documentation lives at **[siteping.dev/docs](https://siteping.dev/docs)
 
 | Package | | Docs |
 |---|---|---|
-| [`@siteping/widget`](./packages/widget) | The feedback widget (framework-agnostic + React hook) | [Widget](https://siteping.dev/docs/widget) · [Configuration](https://siteping.dev/docs/widget/configuration) · [Screenshots](https://siteping.dev/docs/widget/screenshots) |
-| [`@siteping/dashboard`](./packages/dashboard) | Triage inbox component + headless hook | [Dashboard](https://siteping.dev/docs/dashboard) · [Theming](https://siteping.dev/docs/dashboard/theming) |
-| [`@siteping/server`](./packages/server) | HTTP endpoint over any store, any framework (auth, CORS, hooks, webhooks) | [Server](https://siteping.dev/docs/server) |
-| [`@siteping/adapter-prisma`](./packages/adapter-prisma) | Production server adapter: the endpoint with a Prisma store built in | [Prisma adapter](https://siteping.dev/docs/adapters/prisma) |
-| [`@siteping/adapter-drizzle`](./packages/adapter-drizzle) | Drizzle ORM store (PostgreSQL, Turso/libSQL) | [Drizzle adapter](https://siteping.dev/docs/adapters/drizzle) |
-| [`@siteping/integration-issues`](./packages/integration-issues) | One GitHub or GitLab issue per feedback, kept in sync through the server's hooks | [Issue trackers](https://siteping.dev/docs/issue-trackers) |
-| [`@siteping/screenshot-storage`](./packages/screenshot-storage) | Screenshot storage for the stores (S3-compatible, Cloudflare Images, database, filesystem, custom) | [Screenshot storage](https://siteping.dev/docs/adapters/screenshot-storage) |
-| [`@siteping/adapter-memory`](./packages/adapter-memory) | In-memory store (tests, demos) | [Memory adapter](https://siteping.dev/docs/adapters/memory) |
-| [`@siteping/adapter-localstorage`](./packages/adapter-localstorage) | Client-side store (zero server) | [localStorage adapter](https://siteping.dev/docs/adapters/localstorage) |
-| [`@siteping/cli`](./packages/cli) | `init` / `sync` / `status` / `doctor` | [CLI](https://siteping.dev/docs/cli) |
+| [`@beezping/widget`](./packages/widget) | The feedback widget (framework-agnostic + React hook) | [Widget](https://siteping.dev/docs/widget) · [Configuration](https://siteping.dev/docs/widget/configuration) · [Screenshots](https://siteping.dev/docs/widget/screenshots) |
+| [`@beezping/dashboard`](./packages/dashboard) | Triage inbox component + headless hook | [Dashboard](https://siteping.dev/docs/dashboard) · [Theming](https://siteping.dev/docs/dashboard/theming) |
+| [`@beezping/server`](./packages/server) | HTTP endpoint over any store, any framework (auth, CORS, hooks, webhooks) | [Server](https://siteping.dev/docs/server) |
+| [`@beezping/adapter-prisma`](./packages/adapter-prisma) | Production server adapter: the endpoint with a Prisma store built in | [Prisma adapter](https://siteping.dev/docs/adapters/prisma) |
+| [`@beezping/adapter-drizzle`](./packages/adapter-drizzle) | Drizzle ORM store (PostgreSQL, Turso/libSQL) | [Drizzle adapter](https://siteping.dev/docs/adapters/drizzle) |
+| [`@beezping/integration-issues`](./packages/integration-issues) | One GitHub or GitLab issue per feedback, kept in sync through the server's hooks | [Issue trackers](https://siteping.dev/docs/issue-trackers) |
+| [`@beezping/screenshot-storage`](./packages/screenshot-storage) | Screenshot storage for the stores (S3-compatible, Cloudflare Images, database, filesystem, custom) | [Screenshot storage](https://siteping.dev/docs/adapters/screenshot-storage) |
+| [`@beezping/adapter-memory`](./packages/adapter-memory) | In-memory store (tests, demos) | [Memory adapter](https://siteping.dev/docs/adapters/memory) |
+| [`@beezping/adapter-localstorage`](./packages/adapter-localstorage) | Client-side store (zero server) | [localStorage adapter](https://siteping.dev/docs/adapters/localstorage) |
+| [`@beezping/cli`](./packages/cli) | `init` / `sync` / `status` / `doctor` | [CLI](https://siteping.dev/docs/cli) |
 
 ## Contributing
 

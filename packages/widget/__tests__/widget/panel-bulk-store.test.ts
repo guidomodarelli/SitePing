@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { LocalStorageStore } from "@siteping/adapter-localstorage";
-import { MemoryStore } from "@siteping/adapter-memory";
-import type { SitepingStore } from "@siteping/core";
+import { LocalStorageStore } from "@beezping/adapter-localstorage";
+import { MemoryStore } from "@beezping/adapter-memory";
+import type { SitepingStore } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EventBus, type WidgetEvents } from "../../src/events.js";
 import { createT } from "../../src/i18n/index.js";

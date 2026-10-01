@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { MemoryStore } from "@siteping/adapter-memory";
-import type { CommentResponse, FeedbackPermissions, FeedbackResponse, FeedbackResponseList } from "@siteping/core";
+import { MemoryStore } from "@beezping/adapter-memory";
+import type { CommentResponse, FeedbackPermissions, FeedbackResponse, FeedbackResponseList } from "@beezping/core";
 import { type BetterAuthOptions, betterAuth } from "better-auth";
 import { memoryAdapter } from "better-auth/adapters/memory";
 import { admin, bearer, jwt } from "better-auth/plugins";

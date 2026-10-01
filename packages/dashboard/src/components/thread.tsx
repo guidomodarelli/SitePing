@@ -1,4 +1,4 @@
-import { COMMENT_BODY_MAX_LENGTH, type FeedbackRecord, newClientId } from "@siteping/core";
+import { COMMENT_BODY_MAX_LENGTH, type FeedbackRecord, newClientId } from "@beezping/core";
 import type { ReactElement, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useCallback, useId, useRef, useState } from "react";
 import { formatAbsolute, formatRelativeTime, toDateTimeAttr } from "../format.js";

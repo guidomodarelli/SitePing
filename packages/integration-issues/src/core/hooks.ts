@@ -1,5 +1,5 @@
-import { type FeedbackRecord, isClosedStatus, parseHttpUrl } from "@siteping/core";
-import type { SitepingDeletionTarget } from "@siteping/server";
+import { type FeedbackRecord, isClosedStatus, parseHttpUrl } from "@beezping/core";
+import type { SitepingDeletionTarget } from "@beezping/server";
 import {
   DEFAULT_DEEP_LINK_PARAM,
   DELETED_FEEDBACK_COMMENT_TEMPLATE,
@@ -88,7 +88,7 @@ const defaultDeletedComment = (feedbackId: string): string =>
   DELETED_FEEDBACK_COMMENT_TEMPLATE.replace("{feedbackId}", feedbackId);
 
 /**
- * Keep one tracker issue per feedback through `@siteping/server` hooks:
+ * Keep one tracker issue per feedback through `@beezping/server` hooks:
  * create it on `onCreated`, sync its state on `onUpdated`, and close it with
  * a comment on `onDeleting` — a failure there aborts the delete, so the
  * feedback survives until its issue could be cleaned up.
@@ -98,8 +98,8 @@ const defaultDeletedComment = (feedbackId: string): string =>
  *
  * @example
  * ```ts
- * import { createIssueTrackerHooks } from "@siteping/integration-issues";
- * import { createGitHubTracker } from "@siteping/integration-issues/github";
+ * import { createIssueTrackerHooks } from "@beezping/integration-issues";
+ * import { createGitHubTracker } from "@beezping/integration-issues/github";
  *
  * createSitepingHandler({
  *   store,

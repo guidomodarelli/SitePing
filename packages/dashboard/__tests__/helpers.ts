@@ -8,8 +8,8 @@ import type {
   FeedbackResponse,
   FeedbackStatus,
   ScreenshotRegion,
-} from "@siteping/core";
-import { isClosedStatus, StoreNotFoundError } from "@siteping/core";
+} from "@beezping/core";
+import { isClosedStatus, StoreNotFoundError } from "@beezping/core";
 import { type Mock, vi } from "vitest";
 import type { InboxSource } from "../src/types.js";
 

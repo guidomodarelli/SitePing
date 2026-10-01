@@ -1,4 +1,4 @@
-import { type AnnotationPayload, type FeedbackType, newClientId, type ScreenshotRegion } from "@siteping/core";
+import { type AnnotationPayload, type FeedbackType, newClientId, type ScreenshotRegion } from "@beezping/core";
 import { INSTANT_ANNOTATION_SIZE, Z_INDEX_MAX } from "./constants.js";
 import { deepElementFromPoint, findAnchorElement, generateAnchor, rectToPercentages } from "./dom/anchor.js";
 import { el, setText } from "./dom-utils.js";

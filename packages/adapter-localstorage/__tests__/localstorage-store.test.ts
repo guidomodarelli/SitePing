@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { testSitepingStore } from "@siteping/core/testing";
+import { testSitepingStore } from "@beezping/core/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { LocalStorageStore, StorePersistenceError } from "../src/index.js";
 
@@ -545,7 +545,7 @@ describe("LocalStorageStore specific", () => {
 // classes exported by this entry: every error a store method throws must be one.
 it("re-exports every store error its methods throw", async () => {
   const { isStorePersistence, StoreDuplicateError, StoreLimitError, StoreNotFoundError, StorePersistenceError } =
-    await import("@siteping/core");
+    await import("@beezping/core");
 
   expect(await import("../src/index.js")).toMatchObject({
     isStorePersistence,

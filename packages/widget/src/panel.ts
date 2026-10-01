@@ -10,7 +10,7 @@ import {
   MAX_PAGE_LIMIT,
   type PageScope,
   type SitepingPanelAction,
-} from "@siteping/core";
+} from "@beezping/core";
 import type { GetFeedbacksOptions, WidgetClient } from "./api-client.js";
 import { SegmentedControl } from "./components/segmented-control.js";
 import { PAGE_SIZE } from "./constants.js";

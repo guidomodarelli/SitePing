@@ -239,7 +239,7 @@ export interface SitepingBaseConfig {
    * - it embeds page content in the feedback (privacy/GDPR consideration —
    *   inform end users in your widget host UI when enabling).
    *
-   * `html2canvas-pro` ships as a regular dependency of `@siteping/widget` so the
+   * `html2canvas-pro` ships as a regular dependency of `@beezping/widget` so the
    * dynamic import always resolves; you don't need to install anything extra.
    *
    * **Masking sensitive elements:** add `data-siteping-ignore="true"` to any
@@ -419,7 +419,7 @@ export interface SitepingBaseConfig {
 
 /**
  * HTTP mode — the widget talks to a server endpoint backed by a store
- * adapter (e.g. `@siteping/adapter-prisma` request handlers).
+ * adapter (e.g. `@beezping/adapter-prisma` request handlers).
  */
 export interface SitepingHttpConfig extends SitepingBaseConfig {
   /** HTTP endpoint that receives feedbacks (e.g. '/api/siteping'). */
@@ -1321,11 +1321,11 @@ export interface AnnotationPayload {
  */
 export type FeedbackResponse = Prettify<
   Serialized<Omit<FeedbackRecord, "clientId" | "comments">> & {
-    /** The thread, oldest first — always sent by `@siteping/server`, absent from servers that predate comments. */
+    /** The thread, oldest first — always sent by `@beezping/server`, absent from servers that predate comments. */
     comments?: CommentResponse[] | undefined;
     /**
      * What the requester may do with this feedback — always sent by
-     * `@siteping/server`. Absent from servers that predate it, and in store
+     * `@beezping/server`. Absent from servers that predate it, and in store
      * mode: nothing is refused then.
      */
     permissions?: FeedbackPermissions | undefined;
@@ -1373,7 +1373,7 @@ export interface SitepingCapabilities {
   comments: boolean;
   /**
    * Whether comments can be deleted: the store implements `deleteComment`.
-   * Sent by `@siteping/server`; a client that does not delete (the widget)
+   * Sent by `@beezping/server`; a client that does not delete (the widget)
    * leaves it out.
    */
   deleteComments?: boolean | undefined;
@@ -1383,8 +1383,8 @@ export interface SitepingCapabilities {
 export interface FeedbackResponseList {
   feedbacks: FeedbackResponse[];
   total: number;
-  /** Always sent by `@siteping/server` — absent from servers that predate it. */
+  /** Always sent by `@beezping/server` — absent from servers that predate it. */
   capabilities?: SitepingCapabilities | undefined;
-  /** Always sent by `@siteping/server` — absent from servers that predate it. */
+  /** Always sent by `@beezping/server` — absent from servers that predate it. */
   permissions?: FeedbackListPermissions | undefined;
 }

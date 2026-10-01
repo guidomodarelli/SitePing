@@ -1,4 +1,4 @@
-import type { ConsoleDiagnosticEntry, DiagnosticsSnapshot, NetworkDiagnosticEntry } from "@siteping/core";
+import type { ConsoleDiagnosticEntry, DiagnosticsSnapshot, NetworkDiagnosticEntry } from "@beezping/core";
 import type { ReactElement } from "react";
 import { useMemo, useState } from "react";
 import { tWithParams } from "../i18n/index.js";

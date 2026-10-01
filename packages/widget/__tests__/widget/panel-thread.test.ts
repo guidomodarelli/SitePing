@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { type CommentResponse, type FeedbackResponse, StoreLimitError } from "@siteping/core";
+import { type CommentResponse, type FeedbackResponse, StoreLimitError } from "@beezping/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createT } from "../../src/i18n/index.js";
 import { buildThread, type ThreadOptions } from "../../src/panel-thread.js";

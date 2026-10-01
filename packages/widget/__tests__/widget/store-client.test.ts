@@ -4,7 +4,7 @@ import type {
   FeedbackPayload,
   FeedbackRecord,
   SitepingStore,
-} from "@siteping/core";
+} from "@beezping/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StoreClient } from "../../src/store-client.js";
 

@@ -1,9 +1,9 @@
-# @siteping/server
+# @beezping/server
 
 Framework- and database-agnostic HTTP API for [SitePing](https://siteping.dev). Built on the Fetch API (`Request` / `Response`), it runs on Next.js route handlers, Hono, Remix, SvelteKit, Bun, Deno and edge workers, over any `SitepingStore` (Prisma, Drizzle, memory, your own).
 
 ```ts
-import { createSitepingHandler, createSitepingIdentityHandler } from "@siteping/server";
+import { createSitepingHandler, createSitepingIdentityHandler } from "@beezping/server";
 
 const access = {
   authenticate: (request: Request) => getSessionUser(request), // null → 401
@@ -66,6 +66,6 @@ CORS only hides responses from foreign pages; it does not stop a browser from *s
 
 `access.canReadAuthorEmail(principal)` decides whether `authorEmail` (reviewer PII) appears in responses — the `GET` list, the `PATCH` answer and the `POST` answer, fresh or replayed on a duplicate `clientId`. A principal it refuses gets `authorEmail: ""`, even when `beforeCreate` replaced the submitted email. Defaults to `true`; a throw answers `500`.
 
-Without `access`, the handler keeps the shared-secret policy of `@siteping/adapter-prisma` (`apiKey`, `publicEndpoints`, `requireAuthForDestructive`, `redactUnauthenticatedEmails`) — including its `POST` answer that echoes `authorEmail` back to the submitter.
+Without `access`, the handler keeps the shared-secret policy of `@beezping/adapter-prisma` (`apiKey`, `publicEndpoints`, `requireAuthForDestructive`, `redactUnauthenticatedEmails`) — including its `POST` answer that echoes `authorEmail` back to the submitter.
 
 MIT

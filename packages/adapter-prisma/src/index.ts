@@ -16,29 +16,29 @@ import {
   type SitepingStore,
   StoreDuplicateError,
   StoreNotFoundError,
-} from "@siteping/core";
+} from "@beezping/core";
 import {
   type ApiKeyAccessOptions,
   createSitepingHandler as createServerHandler,
   type SitepingHandler,
   type WebhookConfig,
-} from "@siteping/server";
+} from "@beezping/server";
 
-export type { ScreenshotStorage, SitepingStore } from "@siteping/core";
+export type { ScreenshotStorage, SitepingStore } from "@beezping/core";
 export {
   flattenAnnotation,
   isStorePersistence,
   StoreDuplicateError,
   StoreNotFoundError,
   StorePersistenceError,
-} from "@siteping/core";
+} from "@beezping/core";
 export type {
   FeedbackDeleteInput,
   FeedbackPatchInput,
   GetQueryInput,
   SitepingHandler,
   SitepingHttpMethod,
-} from "@siteping/server";
+} from "@beezping/server";
 
 /**
  * @deprecated The create wire shape is core's `FeedbackPayload` — import
@@ -52,8 +52,8 @@ export type {
   WebhookConfig,
   WebhookPayloadMap,
   WebhookType,
-} from "@siteping/server";
-export { dispatchWebhook, dispatchWebhooks } from "@siteping/server";
+} from "@beezping/server";
+export { dispatchWebhook, dispatchWebhooks } from "@beezping/server";
 
 // ---------------------------------------------------------------------------
 // Minimal PrismaClient shape expected by this adapter
@@ -514,7 +514,7 @@ export class PrismaStore implements SitepingStore {
 }
 
 // ---------------------------------------------------------------------------
-// Handler — thin Prisma wrapper over the store-agnostic @siteping/server
+// Handler — thin Prisma wrapper over the store-agnostic @beezping/server
 // ---------------------------------------------------------------------------
 
 export interface HandlerOptions extends ApiKeyAccessOptions {
@@ -552,14 +552,14 @@ export interface HandlerOptions extends ApiKeyAccessOptions {
  * Accepts either a `store` (abstract) or a `prisma` client (backwards compatible).
  * When `prisma` is provided without `store`, it is wrapped in a `PrismaStore`.
  * For custom auth (sessions, roles), lifecycle hooks or input transforms use
- * `createSitepingHandler` from `@siteping/server` with a `PrismaStore`.
+ * `createSitepingHandler` from `@beezping/server` with a `PrismaStore`.
  *
  * **Rate limiting** is not handled by this library. Apply rate limiting at the
  * framework or reverse-proxy level (e.g. Next.js middleware, Nginx, Cloudflare).
  *
  * @example Next.js App Router — `app/api/siteping/route.ts`
  * ```ts
- * import { createSitepingHandler } from '@siteping/adapter-prisma'
+ * import { createSitepingHandler } from '@beezping/adapter-prisma'
  * import { prisma } from '@/lib/prisma'
  *
  * export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ prisma })

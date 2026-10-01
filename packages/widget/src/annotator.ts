@@ -1,4 +1,4 @@
-import type { AnnotationPayload, FeedbackType, ScreenshotRegion } from "@siteping/core";
+import type { AnnotationPayload, FeedbackType, ScreenshotRegion } from "@beezping/core";
 import { INSTANT_ANNOTATION_SIZE, Z_INDEX_MAX } from "./constants.js";
 import { findAnchorElement, generateAnchor, rectToPercentages } from "./dom/anchor.js";
 import { el, setText } from "./dom-utils.js";

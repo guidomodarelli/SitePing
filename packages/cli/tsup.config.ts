@@ -19,5 +19,5 @@ export default defineConfig({
   dts: false,
   sourcemap: true,
   clean: true,
-  noExternal: ["@siteping/core", "commander", "@clack/prompts", "@mrleebo/prisma-ast"],
+  noExternal: ["@beezping/core", "commander", "@clack/prompts", "@mrleebo/prisma-ast"],
 });

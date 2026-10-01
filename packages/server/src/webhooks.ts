@@ -18,7 +18,7 @@
  *   surfaced without crashing the request.
  */
 
-import type { FeedbackRecord, FeedbackType } from "@siteping/core";
+import type { FeedbackRecord, FeedbackType } from "@beezping/core";
 
 /** Supported webhook integrations — drives the JSON body shape. */
 export type WebhookType = "slack" | "discord" | "generic";

@@ -27,7 +27,7 @@ initSiteping({ projectName: "x" });                                   // ✗ auc
 Les deux moitiés sont exportées sous les noms `SitepingHttpConfig` et `SitepingStoreConfig` — exactement ce qu'il vous faut quand un composant d'enrobage reçoit la config en prop et ne gère qu'un seul mode :
 
 ```ts
-import type { SitepingHttpConfig } from "@siteping/widget";
+import type { SitepingHttpConfig } from "@beezping/widget";
 
 function mountFeedback(config: SitepingHttpConfig) { /* endpoint garanti */ }
 ```
@@ -46,7 +46,7 @@ initSiteping({
 });
 ```
 
-Le serveur doit répondre avec un CORS « avec identifiants » pour cette origine exacte (`Access-Control-Allow-Origin: https://client-site.com` et `Access-Control-Allow-Credentials: true` — une origine `*` ne fonctionne jamais avec les cookies) ; `@siteping/server` le fait quand l'origine figure dans `allowedOrigins`. Le cookie de session doit lui-même pouvoir circuler entre sites (`SameSite=None; Secure`). La valeur par défaut reste volontairement `"same-origin"` : n'incluez les identifiants que pour une API que vous contrôlez, car les requêtes cross-origin authentifiées par cookie reposent sur la liste d'origines autorisées du serveur pour se protéger du CSRF.
+Le serveur doit répondre avec un CORS « avec identifiants » pour cette origine exacte (`Access-Control-Allow-Origin: https://client-site.com` et `Access-Control-Allow-Credentials: true` — une origine `*` ne fonctionne jamais avec les cookies) ; `@beezping/server` le fait quand l'origine figure dans `allowedOrigins`. Le cookie de session doit lui-même pouvoir circuler entre sites (`SameSite=None; Secure`). La valeur par défaut reste volontairement `"same-origin"` : n'incluez les identifiants que pour une API que vous contrôlez, car les requêtes cross-origin authentifiées par cookie reposent sur la liste d'origines autorisées du serveur pour se protéger du CSRF.
 
 ## Visibilité
 

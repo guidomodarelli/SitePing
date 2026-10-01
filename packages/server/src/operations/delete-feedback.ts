@@ -1,4 +1,4 @@
-import { isStoreNotFound, type SitepingStore } from "@siteping/core";
+import { isStoreNotFound, type SitepingStore } from "@beezping/core";
 import { SITEPING_ERROR_MESSAGES } from "../constants/error-messages.js";
 import type { SitepingDeletionTarget, SitepingHandlerBaseOptions } from "../options.js";
 import type { RequestPipeline } from "../request-pipeline.js";

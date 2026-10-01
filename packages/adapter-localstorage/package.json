@@ -1,5 +1,5 @@
 {
-  "name": "@siteping/adapter-localstorage",
+  "name": "@beezping/adapter-localstorage",
   "version": "0.6.0",
   "description": "localStorage adapter for Siteping — client-side feedback persistence without a server",
   "type": "module",
@@ -43,11 +43,11 @@
   "homepage": "https://siteping.dev",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/SitePing.git",
     "directory": "packages/adapter-localstorage"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/SitePing/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -56,6 +56,6 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "@siteping/core": "workspace:*"
+    "@beezping/core": "workspace:*"
   }
 }

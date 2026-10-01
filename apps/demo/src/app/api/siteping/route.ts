@@ -1,4 +1,4 @@
-import { createSitepingHandler } from "@siteping/adapter-prisma";
+import { createSitepingHandler } from "@beezping/adapter-prisma";
 import { memoryStore } from "@/lib/memory-store";
 
 // Webhook notifications — uncomment to ping Slack/Discord on each new feedback.

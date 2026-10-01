@@ -1,4 +1,4 @@
-import type { SitepingStore } from "@siteping/core";
+import type { SitepingStore } from "@beezping/core";
 import { LIST_CACHE_CONTROL, LIST_QUERY_KEYS } from "../constants/http.js";
 import type { RequestPipeline } from "../request-pipeline.js";
 import { getQuerySchema } from "../validation.js";

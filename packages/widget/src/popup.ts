@@ -1,4 +1,4 @@
-import type { FeedbackType } from "@siteping/core";
+import type { FeedbackType } from "@beezping/core";
 import { POPUP_HIDE_TRANSITION_MS, Z_INDEX_MAX } from "./constants.js";
 import { el, parseSvg, setText } from "./dom-utils.js";
 import {

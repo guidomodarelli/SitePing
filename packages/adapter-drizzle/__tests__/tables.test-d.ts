@@ -1,4 +1,4 @@
-import type { AnnotationRecord, FeedbackRecord } from "@siteping/core";
+import type { AnnotationRecord, FeedbackRecord } from "@beezping/core";
 import { expectTypeOf, test } from "vitest";
 import type { SitepingSqliteTables } from "../src/libsql/index.js";
 import type { SitepingPgTables } from "../src/pg/index.js";

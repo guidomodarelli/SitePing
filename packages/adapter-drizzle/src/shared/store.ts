@@ -15,7 +15,7 @@ import {
   type SitepingStore,
   StoreNotFoundError,
   StorePersistenceError,
-} from "@siteping/core";
+} from "@beezping/core";
 import { PROJECT_DELETE_CHUNK_SIZE } from "../constants/deletes.js";
 import { DRIZZLE_STORE_MESSAGE_PREFIX, type DrizzleStoreMutation } from "../constants/errors.js";
 import {

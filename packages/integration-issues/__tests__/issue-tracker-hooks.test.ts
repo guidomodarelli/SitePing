@@ -1,6 +1,6 @@
-import { MemoryStore } from "@siteping/adapter-memory";
-import type { FeedbackRecord } from "@siteping/core";
-import { createSitepingHandler, type SitepingHandler } from "@siteping/server";
+import { MemoryStore } from "@beezping/adapter-memory";
+import type { FeedbackRecord } from "@beezping/core";
+import { createSitepingHandler, type SitepingHandler } from "@beezping/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createGitHubTracker } from "../src/github/index.js";
 import { createGitLabTracker } from "../src/gitlab/index.js";

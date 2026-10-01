@@ -1,5 +1,5 @@
 {
-  "name": "@siteping/adapter-prisma",
+  "name": "@beezping/adapter-prisma",
   "version": "0.7.0",
   "description": "Prisma adapter for Siteping — server-side request handlers",
   "type": "module",
@@ -44,11 +44,11 @@
   "homepage": "https://siteping.dev",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/SitePing.git",
     "directory": "packages/adapter-prisma"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/SitePing/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -60,8 +60,8 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@siteping/core": "workspace:*",
-    "@siteping/server": "workspace:*"
+    "@beezping/core": "workspace:*",
+    "@beezping/server": "workspace:*"
   },
   "peerDependencies": {
     "@prisma/client": "^5.0.0 || ^6.0.0 || ^7.0.0"

@@ -1,5 +1,5 @@
+import type { AnchorData, RectData } from "@beezping/core";
 import { finder } from "@medv/finder";
-import type { AnchorData, RectData } from "@siteping/core";
 import { generateFingerprint } from "./fingerprint.js";
 import { adjacentText, neighborText } from "./text-context.js";
 import { generateXPath } from "./xpath.js";

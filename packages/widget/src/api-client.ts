@@ -13,7 +13,7 @@ import {
   type SitepingHeadersOption,
   SitepingNetworkError,
   type SitepingRequestCredentials,
-} from "@siteping/core";
+} from "@beezping/core";
 import type { Identity } from "./identity.js";
 
 /**

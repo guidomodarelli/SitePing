@@ -1,9 +1,9 @@
 ---
 title: Trackers d'issues
-description: Une issue GitHub ou GitLab par feedback, ouverte, fermée et rouverte via les hooks de cycle de vie de @siteping/server.
+description: Une issue GitHub ou GitLab par feedback, ouverte, fermée et rouverte via les hooks de cycle de vie de @beezping/server.
 ---
 
-`@siteping/integration-issues` maintient une issue par feedback dans votre tracker, via les hooks de cycle de vie de `@siteping/server` :
+`@beezping/integration-issues` maintient une issue par feedback dans votre tracker, via les hooks de cycle de vie de `@beezping/server` :
 
 - **création** → ouvre une issue (corps Markdown : message, page, deep link, viewport, capture, diagnostics), fermée aussitôt quand le feedback est enregistré résolu ou won't fix (par exemple par `beforeCreate`) ;
 - **résolu / won't fix / rouvert** → ferme ou rouvre l'issue ;
@@ -12,16 +12,16 @@ description: Une issue GitHub ou GitLab par feedback, ouverte, fermée et rouver
 Les issues sont liées aux feedbacks par un marqueur caché dans leur corps — aucune colonne supplémentaire en base.
 
 ```bash
-npm i @siteping/integration-issues @siteping/server
+npm i @beezping/integration-issues @beezping/server
 ```
 
 ## Mise en place
 
 ```ts
-import { createSitepingHandler } from "@siteping/server";
-import { createIssueTrackerHooks } from "@siteping/integration-issues";
-import { createGitHubTracker } from "@siteping/integration-issues/github";
-// ou : import { createGitLabTracker } from "@siteping/integration-issues/gitlab";
+import { createSitepingHandler } from "@beezping/server";
+import { createIssueTrackerHooks } from "@beezping/integration-issues";
+import { createGitHubTracker } from "@beezping/integration-issues/github";
+// ou : import { createGitLabTracker } from "@beezping/integration-issues/gitlab";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
   store,
@@ -40,8 +40,8 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
 
 | Fournisseur | Entrée | Correspondance des statuts |
 |---|---|---|
-| GitHub (github.com, Enterprise Server via `apiBaseUrl`) | `@siteping/integration-issues/github` | résolu → fermée comme terminée, won't fix → fermée comme non prévue, ouvert → rouverte |
-| GitLab (gitlab.com, auto-hébergé via `apiBaseUrl`) | `@siteping/integration-issues/gitlab` | résolu / won't fix → fermée, ouvert → rouverte |
+| GitHub (github.com, Enterprise Server via `apiBaseUrl`) | `@beezping/integration-issues/github` | résolu → fermée comme terminée, won't fix → fermée comme non prévue, ouvert → rouverte |
+| GitLab (gitlab.com, auto-hébergé via `apiBaseUrl`) | `@beezping/integration-issues/gitlab` | résolu / won't fix → fermée, ouvert → rouverte |
 
 `createGitHubTracker` prend `repository` (`owner/name`) et `token` ; `createGitLabTracker` prend `project` (id numérique ou chemin complet) et `token`. Les deux acceptent `apiBaseUrl`, `fetch` et `timeoutMs`.
 

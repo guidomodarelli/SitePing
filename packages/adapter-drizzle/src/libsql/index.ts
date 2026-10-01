@@ -11,8 +11,8 @@ import { DrizzleSitepingStore, type DrizzleStore, type DrizzleStoreOptions } fro
 import { monotonicUpdatedAt } from "../shared/timestamps.js";
 import { createSitepingSqliteTables, type SitepingSqliteTables } from "./tables.js";
 
-export type { FeedbackRecord, ScreenshotStorage, SitepingStore } from "@siteping/core";
-export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@siteping/core";
+export type { FeedbackRecord, ScreenshotStorage, SitepingStore } from "@beezping/core";
+export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@beezping/core";
 export { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../constants/table-names.js";
 export type { DrizzleStore, DrizzleStoreLogger, DrizzleStoreOptions } from "../shared/store.js";
 export { createSitepingSqliteTables, type SitepingSqliteTables } from "./tables.js";
@@ -182,7 +182,7 @@ function createLibSQLGateway(
  * @example
  * ```ts
  * import { drizzle } from "drizzle-orm/libsql";
- * import { createLibSQLSitepingStore } from "@siteping/adapter-drizzle/libsql";
+ * import { createLibSQLSitepingStore } from "@beezping/adapter-drizzle/libsql";
  *
  * const db = drizzle({ connection: { url: process.env.TURSO_DATABASE_URL!, authToken: process.env.TURSO_AUTH_TOKEN! } });
  * const store = createLibSQLSitepingStore(db, { screenshotStorage });

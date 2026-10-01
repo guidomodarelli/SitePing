@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { FeedbackRecord } from "@siteping/core";
+import type { FeedbackRecord } from "@beezping/core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { SitepingInbox } from "../../src/components/inbox.js";

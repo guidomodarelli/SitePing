@@ -2,9 +2,9 @@
 import "../utils/object-group-by-polyfill.js";
 import { type Dirent, existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
+import { hasOwn } from "@beezping/core";
 import * as p from "@clack/prompts";
 import { getSchema } from "@mrleebo/prisma-ast";
-import { hasOwn } from "@siteping/core";
 import { reconcileSitepingModels } from "../generators/prisma.js";
 import { findPrismaSchema } from "../utils/find-schema.js";
 
@@ -49,7 +49,7 @@ function dependencyVersion(pkg: PackageJsonSnapshot, name: string): string | und
 function findWidgetUsage(cwd: string): string | null {
   const searchDirs = [join(cwd, "src"), join(cwd, "app"), join(cwd, "pages")];
   const extensions = [".ts", ".tsx", ".js", ".jsx"] as const;
-  const patterns = ["initSiteping", "@siteping/widget"] as const;
+  const patterns = ["initSiteping", "@beezping/widget"] as const;
 
   for (const dir of searchDirs) {
     if (!existsSync(dir)) continue;
@@ -174,14 +174,14 @@ export function statusCommand(options: StatusCommandOptions): void {
 
   // 3. Package in dependencies
   const pkg = readPackageJson(cwd);
-  const widgetVersion = pkg ? dependencyVersion(pkg, "@siteping/widget") : undefined;
+  const widgetVersion = pkg ? dependencyVersion(pkg, "@beezping/widget") : undefined;
 
   if (!pkg) {
     p.log.error(`${pad("Package", 25)}package.json not found`);
   } else if (widgetVersion) {
-    p.log.success(`${pad("Package", 25)}@siteping/widget@${widgetVersion}`);
+    p.log.success(`${pad("Package", 25)}@beezping/widget@${widgetVersion}`);
   } else {
-    p.log.error(`${pad("Package", 25)}@siteping/widget not found in package.json`);
+    p.log.error(`${pad("Package", 25)}@beezping/widget not found in package.json`);
   }
 
   // 4. Widget integration

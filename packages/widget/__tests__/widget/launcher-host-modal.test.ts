@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { MemoryStore } from "@siteping/adapter-memory";
+import { MemoryStore } from "@beezping/adapter-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { launch } from "../../src/launcher.js";
 import { mockMatchMedia } from "../helpers.js";

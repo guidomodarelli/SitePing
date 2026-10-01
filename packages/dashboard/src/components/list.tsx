@@ -1,4 +1,4 @@
-import type { FeedbackRecord } from "@siteping/core";
+import type { FeedbackRecord } from "@beezping/core";
 import type { ReactElement } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import type { InboxState } from "../types.js";

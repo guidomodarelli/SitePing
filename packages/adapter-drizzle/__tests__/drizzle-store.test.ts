@@ -4,7 +4,7 @@ import {
   type FeedbackCreateInput,
   isStorePersistence,
   type ScreenshotStorage,
-} from "@siteping/core";
+} from "@beezping/core";
 import { getTableName, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { PROJECT_DELETE_CHUNK_SIZE } from "../src/constants/deletes.js";

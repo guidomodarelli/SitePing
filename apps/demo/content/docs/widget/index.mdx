@@ -6,11 +6,11 @@ description: Install the feedback widget, understand when it shows, and control 
 The widget is the part your clients see: a floating button that lets them draw a rectangle on the page, type a comment, and send it — pinned to the exact element.
 
 ```bash
-npm i @siteping/widget
+npm i @beezping/widget
 ```
 
 ```ts
-import { initSiteping } from "@siteping/widget";
+import { initSiteping } from "@beezping/widget";
 
 const siteping = initSiteping({
   endpoint: "/api/siteping",
@@ -59,7 +59,7 @@ Use the dedicated hook — it survives StrictMode double-mounts and lets callbac
 
 ```tsx
 "use client";
-import { useSiteping } from "@siteping/widget/react";
+import { useSiteping } from "@beezping/widget/react";
 
 export function Feedback() {
   const siteping = useSiteping({

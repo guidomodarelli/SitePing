@@ -84,7 +84,7 @@ describe("generateRoute", () => {
     const result = generateRoute(tmpDir);
     const content = readFileSync(result.path, "utf-8");
 
-    expect(content).toContain('import { createSitepingHandler } from "@siteping/adapter-prisma"');
+    expect(content).toContain('import { createSitepingHandler } from "@beezping/adapter-prisma"');
     expect(content).toContain('import { prisma } from "@/lib/prisma"');
     expect(content).toContain("export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({");
     expect(content).toContain("prisma,");

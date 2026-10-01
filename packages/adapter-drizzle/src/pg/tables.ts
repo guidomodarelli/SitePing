@@ -1,4 +1,4 @@
-import type { DiagnosticsSnapshot, FeedbackStatus, FeedbackType, ScreenshotRegion } from "@siteping/core";
+import type { DiagnosticsSnapshot, FeedbackStatus, FeedbackType, ScreenshotRegion } from "@beezping/core";
 import {
   bigint,
   doublePrecision,

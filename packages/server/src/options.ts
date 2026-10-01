@@ -1,4 +1,4 @@
-import type { FeedbackCreateInput, FeedbackRecord, SitepingStore } from "@siteping/core";
+import type { FeedbackCreateInput, FeedbackRecord, SitepingStore } from "@beezping/core";
 import type { SitepingAccessControl, SitepingRequestContext } from "./access.js";
 import type { ApiKeyAccessOptions } from "./api-key-access.js";
 import type { WebhookConfig } from "./webhooks.js";

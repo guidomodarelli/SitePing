@@ -1,5 +1,5 @@
 /**
- * React helper for `@siteping/widget`.
+ * React helper for `@beezping/widget`.
  *
  * `useSiteping` initialises the widget once for the lifetime of the component
  * tree, even under React.StrictMode's double-invoke effect dance. Returns the
@@ -17,10 +17,10 @@
  *   `onFeedbackSent`) read closure values without re-initialising the widget.
  *
  * Peer dep on react ≥ 18 (declared as optional in package.json), so projects
- * that never import `@siteping/widget/react` don't need React installed.
+ * that never import `@beezping/widget/react` don't need React installed.
  */
 
-import type { SitepingConfig, SitepingInstance } from "@siteping/core";
+import type { SitepingConfig, SitepingInstance } from "@beezping/core";
 import { useEffect, useRef, useState } from "react";
 import { initSiteping } from "./index.js";
 
@@ -34,7 +34,7 @@ import { initSiteping } from "./index.js";
  * @example Next.js App Router
  * ```tsx
  * "use client"
- * import { useSiteping } from "@siteping/widget/react"
+ * import { useSiteping } from "@beezping/widget/react"
  *
  * export function FeedbackProvider({ children }: { children: React.ReactNode }) {
  *   useSiteping({
@@ -48,7 +48,7 @@ import { initSiteping } from "./index.js";
  * @example Driving the panel programmatically
  * ```tsx
  * "use client"
- * import { useSiteping } from "@siteping/widget/react"
+ * import { useSiteping } from "@beezping/widget/react"
  *
  * export function HelpButton() {
  *   const widget = useSiteping({ endpoint: "/api/siteping", projectName: "my-app" })

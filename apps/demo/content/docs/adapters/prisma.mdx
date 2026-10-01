@@ -3,10 +3,10 @@ title: Prisma adapter
 description: The production adapter — HTTP handlers backed by your database, with auth, CORS, redaction, and webhooks.
 ---
 
-`@siteping/adapter-prisma` turns one URL of your app into a complete feedback API. It supports Prisma Client v5, v6, and v7, and requires Node 20+.
+`@beezping/adapter-prisma` turns one URL of your app into a complete feedback API. It supports Prisma Client v5, v6, and v7, and requires Node 20+.
 
 ```bash
-npm i @siteping/adapter-prisma
+npm i @beezping/adapter-prisma
 ```
 
 ## Mounting
@@ -15,7 +15,7 @@ The factory returns one Web-standard handler (`Request` → `Response`) per HTTP
 
 ```ts
 // app/api/siteping/route.ts — Next.js App Router
-import { createSitepingHandler } from "@siteping/adapter-prisma";
+import { createSitepingHandler } from "@beezping/adapter-prisma";
 import { prisma } from "@/lib/prisma";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ prisma });
@@ -76,7 +76,7 @@ One endpoint, five methods. All bodies are JSON.
 
 ## Database schema
 
-This is the exact schema the adapter needs — it's what `npx @siteping/cli sync` generates. Prefer the CLI; if you write it by hand, don't drop columns: the adapter writes `urlPattern`, `screenshotUrl`, and `anchorKey` on every insert, so a partial schema fails on the first submission.
+This is the exact schema the adapter needs — it's what `npx @beezping/cli sync` generates. Prefer the CLI; if you write it by hand, don't drop columns: the adapter writes `urlPattern`, `screenshotUrl`, and `anchorKey` on every insert, so a partial schema fails on the first submission.
 
 ```prisma
 model SitepingFeedback {

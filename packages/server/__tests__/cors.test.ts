@@ -1,4 +1,4 @@
-import { MemoryStore } from "@siteping/adapter-memory";
+import { MemoryStore } from "@beezping/adapter-memory";
 import { describe, expect, it } from "vitest";
 import { createSitepingHandler, createSitepingIdentityHandler, type SitepingAccessControl } from "../src/index.js";
 

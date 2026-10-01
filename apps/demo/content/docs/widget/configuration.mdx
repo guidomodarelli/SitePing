@@ -27,7 +27,7 @@ initSiteping({ projectName: "x" });                                   // ✗ no 
 The two halves are exported as `SitepingHttpConfig` and `SitepingStoreConfig`, which is what you want when a wrapper component takes the config as a prop and only supports one mode:
 
 ```ts
-import type { SitepingHttpConfig } from "@siteping/widget";
+import type { SitepingHttpConfig } from "@beezping/widget";
 
 function mountFeedback(config: SitepingHttpConfig) { /* endpoint guaranteed */ }
 ```
@@ -46,7 +46,7 @@ initSiteping({
 });
 ```
 
-The server must answer with credentialed CORS for that exact origin (`Access-Control-Allow-Origin: https://client-site.com` plus `Access-Control-Allow-Credentials: true` — a `*` origin never works with cookies); `@siteping/server` does this when the origin is listed in `allowedOrigins`. The session cookie itself must be sent cross-site (`SameSite=None; Secure`). The default stays `"same-origin"` on purpose: only include credentials for an API you control, since cookie-authenticated cross-origin requests rely on the server's origin allowlist for CSRF protection.
+The server must answer with credentialed CORS for that exact origin (`Access-Control-Allow-Origin: https://client-site.com` plus `Access-Control-Allow-Credentials: true` — a `*` origin never works with cookies); `@beezping/server` does this when the origin is listed in `allowedOrigins`. The session cookie itself must be sent cross-site (`SameSite=None; Secure`). The default stays `"same-origin"` on purpose: only include credentials for an API you control, since cookie-authenticated cross-origin requests rely on the server's origin allowlist for CSRF protection.
 
 ## Visibility
 

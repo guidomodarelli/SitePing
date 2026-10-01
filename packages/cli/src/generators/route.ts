@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-const ROUTE_TEMPLATE = `import { createSitepingHandler } from "@siteping/adapter-prisma";
+const ROUTE_TEMPLATE = `import { createSitepingHandler } from "@beezping/adapter-prisma";
 import { prisma } from "@/lib/prisma";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({

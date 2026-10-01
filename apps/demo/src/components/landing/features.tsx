@@ -486,7 +486,7 @@ export function Features() {
               Three lines of code. Works with Next.js, any framework, or vanilla JavaScript.
             </p>
             <div className="mt-4 rounded-lg border border-gray-800/60 bg-gray-950/80 px-3 py-2">
-              <code className="font-mono text-xs text-accent-light">npm i @siteping/widget</code>
+              <code className="font-mono text-xs text-accent-light">npm i @beezping/widget</code>
             </div>
           </article>
 
@@ -549,7 +549,7 @@ export function Features() {
             <div className="mt-4 rounded-lg border border-gray-800/60 bg-gray-950/80 px-3 py-2">
               <code className="font-mono text-xs">
                 <span className="text-gray-500">$</span>{" "}
-                <span className="text-accent-light">npx @siteping/cli init</span>
+                <span className="text-accent-light">npx @beezping/cli init</span>
               </code>
             </div>
           </article>

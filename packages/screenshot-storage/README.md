@@ -1,10 +1,10 @@
-# @siteping/screenshot-storage
+# @beezping/screenshot-storage
 
 Where [SitePing](https://siteping.dev) screenshots live — pick a backend, or bring your own.
 
 ```ts
-import { createScreenshotStorage } from "@siteping/screenshot-storage";
-import { createCloudflareImagesObjectStore } from "@siteping/screenshot-storage/cloudflare-images";
+import { createScreenshotStorage } from "@beezping/screenshot-storage";
+import { createCloudflareImagesObjectStore } from "@beezping/screenshot-storage/cloudflare-images";
 
 const screenshotStorage = createScreenshotStorage(
   createCloudflareImagesObjectStore({ accountId, apiToken, accountHash }),
@@ -31,7 +31,7 @@ Options: `allowedContentTypes` (default JPEG, PNG, WebP; entries are case-insens
 
 An upload that times out may still be committed by the backend after the immediate reclaim, so the key is removed again after each delay. Those attempts live in process memory: on serverless platforms, or for a hard guarantee, also enqueue the keys `onUncertainUpload` receives in a durable job, or add a lifecycle rule on the bucket that expires objects under `keyPrefix` no feedback references.
 
-Match errors with `isScreenshotUploadRejected(error)` and `isObjectStoreRequestError(error)` (stable `code` checks) rather than `instanceof`: in CommonJS each entry point (`@siteping/screenshot-storage`, `/s3`…) bundles its own copy of the error classes.
+Match errors with `isScreenshotUploadRejected(error)` and `isObjectStoreRequestError(error)` (stable `code` checks) rather than `instanceof`: in CommonJS each entry point (`@beezping/screenshot-storage`, `/s3`…) bundles its own copy of the error classes.
 
 S3 with least-privilege credentials: when the IAM policy grants `s3:GetObject` (plus `s3:PutObject` and `s3:DeleteObject`) but not `s3:ListBucket`, S3 answers a missing key with `403 AccessDenied` instead of `404`. Pass `treatAccessDeniedAsMissing: true` to `createS3ObjectStore` so `get` reads it as absent and the serve handler answers `404` rather than `500`. Only the `AccessDenied` code is mapped: credential failures (`SignatureDoesNotMatch`, `InvalidAccessKeyId`, `ExpiredToken`, `RequestTimeTooSkewed`…) still throw. The option is off by default because it also turns a policy missing `s3:GetObject` into `404`s; grant `s3:ListBucket` instead when you can.
 

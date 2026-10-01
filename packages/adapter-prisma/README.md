@@ -1,8 +1,8 @@
-[![npm version](https://img.shields.io/npm/v/@siteping/adapter-prisma)](https://www.npmjs.com/package/@siteping/adapter-prisma)
+[![npm version](https://img.shields.io/npm/v/@beezping/adapter-prisma)](https://www.npmjs.com/package/@beezping/adapter-prisma)
 [![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/adapters/prisma)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
-# @siteping/adapter-prisma
+# @beezping/adapter-prisma
 
 The production server adapter for [SitePing](https://github.com/NeosiaNexus/SitePing) — one endpoint that validates, authenticates, and persists client feedback in your database.
 
@@ -11,7 +11,7 @@ The production server adapter for [SitePing](https://github.com/NeosiaNexus/Site
 ## Install
 
 ```bash
-npm install @siteping/adapter-prisma
+npm install @beezping/adapter-prisma
 ```
 
 **Peer dependency:** `@prisma/client` ^5 || ^6 || ^7 · Node ≥ 20.
@@ -20,7 +20,7 @@ npm install @siteping/adapter-prisma
 
 ```ts
 // app/api/siteping/route.ts — Next.js App Router
-import { createSitepingHandler } from "@siteping/adapter-prisma";
+import { createSitepingHandler } from "@beezping/adapter-prisma";
 import { prisma } from "@/lib/prisma";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
@@ -30,7 +30,7 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
 });
 ```
 
-The handlers are Web-standard `Request` → `Response` — mount them from any framework (Remix, SvelteKit, Hono, …). Generate the required Prisma models with `npx @siteping/cli sync`.
+The handlers are Web-standard `Request` → `Response` — mount them from any framework (Remix, SvelteKit, Hono, …). Generate the required Prisma models with `npx @beezping/cli sync`.
 
 ## Highlights
 

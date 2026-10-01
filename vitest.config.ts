@@ -13,8 +13,8 @@ export default defineConfig({
     // tests of packages built on top of them run against the source instead,
     // so `test:run` does not depend on a prior build.
     alias: {
-      "@siteping/adapter-memory": fileURLToPath(new URL("./packages/adapter-memory/src/index.ts", import.meta.url)),
-      "@siteping/server": fileURLToPath(new URL("./packages/server/src/index.ts", import.meta.url)),
+      "@beezping/adapter-memory": fileURLToPath(new URL("./packages/adapter-memory/src/index.ts", import.meta.url)),
+      "@beezping/server": fileURLToPath(new URL("./packages/server/src/index.ts", import.meta.url)),
     },
   },
   test: {

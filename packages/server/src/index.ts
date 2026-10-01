@@ -1,4 +1,4 @@
-export type { FeedbackCreateInput, FeedbackRecord, ScreenshotStorage, SitepingStore } from "@siteping/core";
+export type { FeedbackCreateInput, FeedbackRecord, ScreenshotStorage, SitepingStore } from "@beezping/core";
 export type {
   SitepingAccessControl,
   SitepingAction,

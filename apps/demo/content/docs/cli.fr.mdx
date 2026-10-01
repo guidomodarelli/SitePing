@@ -6,15 +6,15 @@ description: Installer et vérifier SitePing en ligne de commande — init, sync
 Le CLI SitePing automatise l'installation du projet et les vérifications de santé. Il est livré comme un binaire autonome unique, avec **zéro dépendance à l'exécution**, et exige **Node 20 ou plus récent**.
 
 ```bash
-npx @siteping/cli --help
+npx @beezping/cli --help
 ```
 
-> **Le nom du package compte.** Lancez toujours `npx @siteping/cli <commande>`. Il n'existe pas de package `siteping` sur npm : `npx siteping` ne fonctionne que si `@siteping/cli` est déjà installé dans votre projet.
+> **Le nom du package compte.** Lancez toujours `npx @beezping/cli <commande>`. Il n'existe pas de package `siteping` sur npm : `npx siteping` ne fonctionne que si `@beezping/cli` est déjà installé dans votre projet.
 
 ## `init` — installation interactive
 
 ```bash
-npx @siteping/cli init
+npx @beezping/cli init
 ```
 
 `init` vous guide à travers deux confirmations :
@@ -24,7 +24,7 @@ npx @siteping/cli init
 
 La route générée importe deux choses que vous devez fournir vous-même — le CLI n'installe rien :
 
-- le package `@siteping/adapter-prisma` (`npm i @siteping/adapter-prisma`)
+- le package `@beezping/adapter-prisma` (`npm i @beezping/adapter-prisma`)
 - un client Prisma exporté depuis `@/lib/prisma`
 
 Si votre projet n'a pas de répertoire `app/` (ni `src/app/`), `init` se termine en erreur : il ne génère que des routes Next.js App Router. Les autres frameworks branchent l'adapter manuellement — voir [Adapters](/fr/docs/adapters).
@@ -34,8 +34,8 @@ Si votre projet n'a pas de répertoire `app/` (ni `src/app/`), `init` se termine
 ## `sync` — fusion de schéma non interactive
 
 ```bash
-npx @siteping/cli sync
-npx @siteping/cli sync --schema prisma/schema.prisma
+npx @beezping/cli sync
+npx @beezping/cli sync --schema prisma/schema.prisma
 ```
 
 `sync` fusionne les modèles SitePing dans votre schéma Prisma sans poser de question, ce qui le rend sûr pour la CI et les scripts de mise à jour. Il travaille au niveau de l'AST :
@@ -52,8 +52,8 @@ Quand quelque chose a changé, il vous rappelle de lancer `npx prisma db push`. 
 ## `status` — rapport de santé du projet
 
 ```bash
-npx @siteping/cli status
-npx @siteping/cli status --schema prisma/schema.prisma
+npx @beezping/cli status
+npx @beezping/cli status --schema prisma/schema.prisma
 ```
 
 `status` lance quatre vérifications et imprime un rapport :
@@ -62,7 +62,7 @@ npx @siteping/cli status --schema prisma/schema.prisma
 |---|---|
 | Schéma Prisma | Les deux modèles présents, chaque champ à jour — exactement le diff qu'applique `sync`, donc type, optionalité, attributs (`@unique`, `@db.Text`, …) et blocs `@@index` comptent tous |
 | Route API | `app/api/siteping/route.ts` ou `src/app/api/siteping/route.ts` existe |
-| Package | `@siteping/widget` listé dans votre `package.json` |
+| Package | `@beezping/widget` listé dans votre `package.json` |
 | Intégration du widget | `initSiteping` référencé quelque part dans `src/`, `app/` ou `pages/` |
 
 La vérification de la route API ne connaît que l'App Router de Next.js. Si vous servez l'adapter depuis Express, Hono ou le Pages Router, cette ligne affichera « Not found » alors même que votre installation fonctionne.
@@ -70,8 +70,8 @@ La vérification de la route API ne connaît que l'App Router de Next.js. Si vou
 ## `doctor` — vérification de l'endpoint en direct
 
 ```bash
-npx @siteping/cli doctor --url http://localhost:3000 --endpoint /api/siteping
-npx @siteping/cli doctor --url https://app.example.com --api-key "$SITEPING_API_KEY"
+npx @beezping/cli doctor --url http://localhost:3000 --endpoint /api/siteping
+npx @beezping/cli doctor --url https://app.example.com --api-key "$SITEPING_API_KEY"
 ```
 
 `doctor` envoie une requête GET à votre serveur en fonctionnement et vous dit si un handler SitePing a répondu (timeout de 10 secondes). Passez **à la fois** `--url` et `--endpoint` pour l'exécuter sans interaction — celle que vous omettez devient une question. Quand l'endpoint est configuré avec un `apiKey` et que `GET` n'est pas public, passez la clé avec `--api-key` ; sans elle, un `401` s'accompagne d'une indication.

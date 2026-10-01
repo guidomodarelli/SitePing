@@ -1,5 +1,5 @@
-import type { FeedbackQuery, FeedbackStatus, FeedbackUpdateInput, SitepingStore } from "@siteping/core";
-import { SitepingAuthError, SitepingNetworkError, SitepingValidationError } from "@siteping/core";
+import type { FeedbackQuery, FeedbackStatus, FeedbackUpdateInput, SitepingStore } from "@beezping/core";
+import { SitepingAuthError, SitepingNetworkError, SitepingValidationError } from "@beezping/core";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { createEndpointSource, createStoreSource } from "../../src/source.js";
 import { errorFetch, jsonFetch, makeAnnotationResponse, makeRecord, makeResponse } from "../helpers.js";

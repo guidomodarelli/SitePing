@@ -70,7 +70,7 @@ jobs:
           NO_COLOR: "1"
         run: |
           {
-            echo '### Bundle size — @siteping/widget'
+            echo '### Bundle size — @beezping/widget'
             echo '```'
             (cd packages/widget && bun run size)
             echo '```'
@@ -82,7 +82,7 @@ jobs:
           NO_COLOR: "1"
         run: |
           {
-            echo '### Bundle size — @siteping/dashboard'
+            echo '### Bundle size — @beezping/dashboard'
             echo '```'
             (cd packages/dashboard && bun run size)
             echo '```'
@@ -214,7 +214,7 @@ jobs:
       - name: Build
         run: bun run build
 
-      # Guards the `npx @siteping/cli` startup path: the ESM bundle once
+      # Guards the `npx @beezping/cli` startup path: the ESM bundle once
       # shipped without a require shim and crashed instantly under Node
       # (fixed in #221). A --help run catches any bundle-init regression.
       - name: CLI binary smoke test

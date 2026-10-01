@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { testSitepingStore } from "@siteping/core/testing";
+import { testSitepingStore } from "@beezping/core/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { LocalStorageStore, StorePersistenceError } from "../src/index.js";
 

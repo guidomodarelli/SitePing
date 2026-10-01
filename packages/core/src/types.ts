@@ -67,7 +67,7 @@ export type SitepingHeadersOption =
  * - `"include"`: also send cookies to a cross-origin endpoint. Required when a
  *   server on another origin authenticates with a session cookie; the server
  *   must answer with credentialed CORS (the page's exact origin plus
- *   `Access-Control-Allow-Credentials: true`, e.g. `@siteping/server`'s
+ *   `Access-Control-Allow-Credentials: true`, e.g. `@beezping/server`'s
  *   `allowedOrigins`).
  * - `"omit"`: never send cookies, even same-origin.
  */
@@ -188,7 +188,7 @@ export interface SitepingBaseConfig {
    * - it embeds page content in the feedback (privacy/GDPR consideration —
    *   inform end users in your widget host UI when enabling).
    *
-   * `html2canvas-pro` ships as a regular dependency of `@siteping/widget` so the
+   * `html2canvas-pro` ships as a regular dependency of `@beezping/widget` so the
    * dynamic import always resolves; you don't need to install anything extra.
    *
    * **Masking sensitive elements:** add `data-siteping-ignore="true"` to any
@@ -337,7 +337,7 @@ export interface SitepingBaseConfig {
 
 /**
  * HTTP mode — the widget talks to a server endpoint backed by a store
- * adapter (e.g. `@siteping/adapter-prisma` request handlers).
+ * adapter (e.g. `@beezping/adapter-prisma` request handlers).
  */
 export interface SitepingHttpConfig extends SitepingBaseConfig {
   /** HTTP endpoint that receives feedbacks (e.g. '/api/siteping'). */
@@ -368,7 +368,7 @@ export interface SitepingHttpConfig extends SitepingBaseConfig {
    *
    * Set `"include"` when `endpoint` lives on **another origin** and the
    * server authenticates with a session cookie (e.g. a custom
-   * `access.authenticate` in `@siteping/server`): without it the browser
+   * `access.authenticate` in `@beezping/server`): without it the browser
    * never attaches the cookie and every request is rejected as
    * unauthenticated. The server must allow the page's origin explicitly with
    * credentialed CORS (`allowedOrigins`) — a wildcard origin never works

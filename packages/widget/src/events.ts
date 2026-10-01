@@ -1,4 +1,4 @@
-import type { FeedbackResponse, SitepingUnsubscribe } from "@siteping/core";
+import type { FeedbackResponse, SitepingUnsubscribe } from "@beezping/core";
 import type { AnnotationComplete } from "./annotator.js";
 
 /** Listener signature for a single key of an `EventBus` event map. */
@@ -77,7 +77,7 @@ export interface WidgetEvents {
 }
 
 // NOTE: the public event surface is `SitepingPublicEvents` from
-// `@siteping/core`. The launcher bridges internal events onto the public bus
+// `@beezping/core`. The launcher bridges internal events onto the public bus
 // through a mapped object keyed by `keyof SitepingPublicEvents`, so adding a
 // public event without bridging it is a compile error there — no alias or
 // duplicate map is needed on this side.

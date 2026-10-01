@@ -3,17 +3,17 @@ title: Adapter Drizzle
 description: Un store de production sur PostgreSQL ou Turso / libSQL via Drizzle ORM — des tables qui vivent dans votre schéma, des migrations via drizzle-kit.
 ---
 
-`@siteping/adapter-drizzle` est un `SitepingStore` adossé à [Drizzle ORM](https://orm.drizzle.team). Il propose une entrée par famille de base de données :
+`@beezping/adapter-drizzle` est un `SitepingStore` adossé à [Drizzle ORM](https://orm.drizzle.team). Il propose une entrée par famille de base de données :
 
 | Entrée | Base | Drivers |
 |---|---|---|
-| `@siteping/adapter-drizzle/pg` | PostgreSQL | N'importe quel driver PostgreSQL de Drizzle — node-postgres, postgres.js, Neon (serverless et HTTP), Vercel Postgres, Supabase, PGlite… |
-| `@siteping/adapter-drizzle/libsql` | Turso / libSQL | `drizzle-orm/libsql` uniquement — Turso distant, réplicas embarqués, fichiers locaux |
+| `@beezping/adapter-drizzle/pg` | PostgreSQL | N'importe quel driver PostgreSQL de Drizzle — node-postgres, postgres.js, Neon (serverless et HTTP), Vercel Postgres, Supabase, PGlite… |
+| `@beezping/adapter-drizzle/libsql` | Turso / libSQL | `drizzle-orm/libsql` uniquement — Turso distant, réplicas embarqués, fichiers locaux |
 
 Il exige Node 20+ et `drizzle-orm` 0.45 ou plus récent (sous la 1.0), en dépendance peer :
 
 ```bash
-npm i @siteping/adapter-drizzle drizzle-orm
+npm i @beezping/adapter-drizzle drizzle-orm
 ```
 
 Ajoutez le driver de votre base (`pg`, `postgres`, `@neondatabase/serverless`, `@electric-sql/pglite`, `@libsql/client`…) et `drizzle-kit` pour les migrations.
@@ -24,14 +24,14 @@ L'adapter ne crée jamais de tables à l'exécution : il vous fournit des défin
 
 ```ts
 // db/schema.ts — PostgreSQL
-import { createSitepingPgTables } from "@siteping/adapter-drizzle/pg";
+import { createSitepingPgTables } from "@beezping/adapter-drizzle/pg";
 
 export const { sitepingFeedbacks, sitepingAnnotations } = createSitepingPgTables();
 ```
 
 ```ts
 // db/schema.ts — Turso / libSQL
-import { createSitepingSqliteTables } from "@siteping/adapter-drizzle/libsql";
+import { createSitepingSqliteTables } from "@beezping/adapter-drizzle/libsql";
 
 export const { sitepingFeedbacks, sitepingAnnotations } = createSitepingSqliteTables();
 ```
@@ -78,7 +78,7 @@ Les valeurs par défaut sont exportées sous `DEFAULT_SITEPING_TABLE_NAMES`.
 ```ts
 // PostgreSQL — node-postgres
 import { drizzle } from "drizzle-orm/node-postgres";
-import { createPgSitepingStore } from "@siteping/adapter-drizzle/pg";
+import { createPgSitepingStore } from "@beezping/adapter-drizzle/pg";
 
 export const store = createPgSitepingStore(drizzle(process.env.DATABASE_URL!), {
   screenshotStorage,
@@ -91,7 +91,7 @@ Tous les drivers PostgreSQL fonctionnent de la même façon — changez l'import
 ```ts
 // Turso / libSQL
 import { drizzle } from "drizzle-orm/libsql";
-import { createLibSQLSitepingStore } from "@siteping/adapter-drizzle/libsql";
+import { createLibSQLSitepingStore } from "@beezping/adapter-drizzle/libsql";
 
 export const store = createLibSQLSitepingStore(
   drizzle({ connection: { url: process.env.TURSO_DATABASE_URL!, authToken: process.env.TURSO_AUTH_TOKEN } }),
@@ -101,11 +101,11 @@ export const store = createLibSQLSitepingStore(
 
 ## 3. Le servir
 
-Le store ne fait que stocker. Montez-le derrière n'importe quel handler HTTP qui accepte un `store` — `createSitepingHandler({ store })` de `@siteping/server`, ou le [handler de l'adapter Prisma](/fr/docs/adapters/prisma#utiliser-un-store-personnalisé) — pour obtenir la même validation, la même auth et la même redaction :
+Le store ne fait que stocker. Montez-le derrière n'importe quel handler HTTP qui accepte un `store` — `createSitepingHandler({ store })` de `@beezping/server`, ou le [handler de l'adapter Prisma](/fr/docs/adapters/prisma#utiliser-un-store-personnalisé) — pour obtenir la même validation, la même auth et la même redaction :
 
 ```ts
 // app/api/siteping/route.ts
-import { createSitepingHandler } from "@siteping/server";
+import { createSitepingHandler } from "@beezping/server";
 import { store } from "@/lib/siteping-store";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
@@ -141,16 +141,16 @@ Les deux factories acceptent les mêmes options :
 
 **Gros projets.** Avec un `delete`, `deleteAllFeedbacks` doit relire les URLs supprimées : il supprime donc le projet par tranches de 500 lignes — chaque tranche de façon atomique, ses captures nettoyées avant la suivante — et aucune réponse du driver ni liste en mémoire ne grossit avec le projet. Si une tranche échoue, l'appel lève `StorePersistenceError` : les tranches précédentes restent supprimées et nettoyées, et relancer l'appel supprime le reste. Sans `delete`, tout le projet part en une seule instruction atomique.
 
-**Garder les captures dans votre base.** `@siteping/screenshot-storage/drizzle-pg` et `/drizzle-libsql` stockent les octets de l'image dans une table dédiée (`bytea` sur PostgreSQL, `blob` sur SQLite), à côté des feedbacks. Exportez la table depuis votre schéma pour que `drizzle-kit` la migre, puis servez les images depuis votre app avec `createScreenshotServeHandler` :
+**Garder les captures dans votre base.** `@beezping/screenshot-storage/drizzle-pg` et `/drizzle-libsql` stockent les octets de l'image dans une table dédiée (`bytea` sur PostgreSQL, `blob` sur SQLite), à côté des feedbacks. Exportez la table depuis votre schéma pour que `drizzle-kit` la migre, puis servez les images depuis votre app avec `createScreenshotServeHandler` :
 
 ```ts
 // db/schema.ts
-import { createSitepingScreenshotsPgTable } from "@siteping/screenshot-storage/drizzle-pg";
+import { createSitepingScreenshotsPgTable } from "@beezping/screenshot-storage/drizzle-pg";
 export const sitepingScreenshots = createSitepingScreenshotsPgTable(); // "siteping_screenshots"
 
 // serveur
-import { createScreenshotStorage } from "@siteping/screenshot-storage";
-import { createPgScreenshotObjectStore } from "@siteping/screenshot-storage/drizzle-pg";
+import { createScreenshotStorage } from "@beezping/screenshot-storage";
+import { createPgScreenshotObjectStore } from "@beezping/screenshot-storage/drizzle-pg";
 
 const objectStore = createPgScreenshotObjectStore(db, {
   publicBaseUrl: "https://app.example.com/api/siteping/screenshots",
@@ -168,7 +168,7 @@ La table des captures est indépendante des `tables` du store — renommez-la av
 - **Les annotations arrivent avec leur feedback, ou pas du tout.** Sur PostgreSQL, le feedback et ses annotations sont insérés par une seule requête (une CTE qui modifie les données). Sur libSQL, les écritures en plusieurs requêtes passent par `db.batch`, qui s'exécute en une transaction et ne garde jamais le verrou d'écriture à travers un `await` — votre application peut continuer d'écrire dans la même base en parallèle.
 - **L'ordre est stable.** Les listes arrivent du plus récent au plus ancien. `createdAt` est la valeur de l'horloge à l'insertion, et les feedbacks créés dans la même milliseconde — par une instance du store, par plusieurs processus ou par votre propre code qui insère via les tables exportées — sont ordonnés par un ordinal d'insertion que la base attribue elle-même à chaque insertion : l'identité interne `creation_sequence` sur PostgreSQL, le `rowid` implicite de SQLite sur libSQL. Une insertion plus tardive apparaît toujours en premier, et les pages par offset ne se chevauchent jamais et ne sautent aucune ligne.
 - **`updatedAt` ne précède jamais `createdAt`.** Les changements de statut le bornent en SQL par les dates de la ligne elle-même, ce qui tient entre processus dont les horloges divergent.
-- **Appartenance au projet.** Le store implémente `verifyProjectOwnership`, donc le handler répond `404` à un PATCH/DELETE visant un id d'un autre projet. `@siteping/server` l'exige quand vous utilisez un `access.authorize` limité par projet.
+- **Appartenance au projet.** Le store implémente `verifyProjectOwnership`, donc le handler répond `404` à un PATCH/DELETE visant un id d'un autre projet. `@beezping/server` l'exige quand vous utilisez un `access.authorize` limité par projet.
 
 ## Colonnes internes et mises à jour
 

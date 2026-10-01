@@ -4,7 +4,7 @@ import {
   flattenAnnotation,
   isStoreDuplicate,
   type SitepingStore,
-} from "@siteping/core";
+} from "@beezping/core";
 import { SITEPING_ERROR_MESSAGES } from "../constants/error-messages.js";
 import { MAX_ANNOTATIONS_PER_FEEDBACK } from "../constants/limits.js";
 import type { SitepingHandlerBaseOptions } from "../options.js";

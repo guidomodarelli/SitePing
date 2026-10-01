@@ -1,4 +1,4 @@
-import type { ScreenshotStorage } from "@siteping/core";
+import type { ScreenshotStorage } from "@beezping/core";
 import {
   DEFAULT_ALLOWED_CONTENT_TYPES,
   DEFAULT_KEY_PREFIX,
@@ -109,8 +109,8 @@ const defaultLogger: ScreenshotStorageLogger = {
  *
  * @example
  * ```ts
- * import { createScreenshotStorage } from "@siteping/screenshot-storage";
- * import { createS3ObjectStore } from "@siteping/screenshot-storage/s3";
+ * import { createScreenshotStorage } from "@beezping/screenshot-storage";
+ * import { createS3ObjectStore } from "@beezping/screenshot-storage/s3";
  *
  * const screenshotStorage = createScreenshotStorage(createS3ObjectStore({ … }));
  * const store = createPgSitepingStore(db, { screenshotStorage });

@@ -8,7 +8,7 @@ import {
   flattenAnnotation,
   type SitepingStore,
   toFeedbackUpdate,
-} from "@siteping/core";
+} from "@beezping/core";
 import type { GetFeedbacksOptions, WidgetClient } from "./api-client.js";
 
 /**

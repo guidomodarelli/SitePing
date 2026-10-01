@@ -1,4 +1,4 @@
-import type { FeedbackRecord } from "@siteping/core";
+import type { FeedbackRecord } from "@beezping/core";
 import {
   DIAGNOSTIC_ENTRIES_PER_KIND,
   DIAGNOSTIC_MESSAGE_MAX_LENGTH,

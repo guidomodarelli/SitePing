@@ -2,8 +2,8 @@
  * Issue tracker integration for SitePing. Build hooks with
  * `createIssueTrackerHooks` and pick a provider entry:
  *
- * - `@siteping/integration-issues/github` — GitHub Issues (github.com / Enterprise Server)
- * - `@siteping/integration-issues/gitlab` — GitLab Issues (gitlab.com / self-managed)
+ * - `@beezping/integration-issues/github` — GitHub Issues (github.com / Enterprise Server)
+ * - `@beezping/integration-issues/gitlab` — GitLab Issues (gitlab.com / self-managed)
  *
  * Or implement `IssueTracker` for any other tracker.
  */

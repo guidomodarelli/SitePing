@@ -1,4 +1,4 @@
-import type { FeedbackRecord, FeedbackStatus } from "@siteping/core";
+import type { FeedbackRecord, FeedbackStatus } from "@beezping/core";
 import type { ReactElement, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { buildDeepLink, formatAbsolute, formatRelativeTime, resolveRecordUrl, shortId } from "../format.js";

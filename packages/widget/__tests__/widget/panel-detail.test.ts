@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { AnnotationResponse, FeedbackResponse } from "@siteping/core";
+import type { AnnotationResponse, FeedbackResponse } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { createT } from "../../src/i18n/index.js";
 import { DETAIL_CSS, type DetailCallbacks, DetailView } from "../../src/panel-detail.js";

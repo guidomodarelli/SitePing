@@ -1,4 +1,4 @@
-import type { FeedbackRecord } from "@siteping/core";
+import type { FeedbackRecord } from "@beezping/core";
 import { describe, expect, it } from "vitest";
 import { buildIssueMarker, formatIssue, parseIssueMarker } from "../src/core/issue-format.js";
 

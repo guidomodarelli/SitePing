@@ -22,7 +22,7 @@ export function DocsWidget({ locale }: { locale: string }) {
     let destroyed = false;
     let instance: { destroy: () => void } | null = null;
 
-    Promise.all([import("@siteping/widget"), import("@siteping/adapter-localstorage")]).then(
+    Promise.all([import("@beezping/widget"), import("@beezping/adapter-localstorage")]).then(
       ([{ initSiteping }, { LocalStorageStore }]) => {
         if (destroyed) return;
         instance = initSiteping({

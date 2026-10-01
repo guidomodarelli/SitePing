@@ -1,9 +1,9 @@
 import type { Options } from "tsup";
 
 /**
- * Shared tsup defaults for `@siteping/*` library packages.
+ * Shared tsup defaults for `@beezping/*` library packages.
  *
- * Every published package builds dual ESM+CJS with bundled `@siteping/core`
+ * Every published package builds dual ESM+CJS with bundled `@beezping/core`
  * (core is an Internal Package — raw TS, never published; the regex also
  * catches its `/testing` subpath). Packages override only what genuinely
  * differs: platform, extra entries, externals, minification.
@@ -22,7 +22,7 @@ export function sitepingLibrary(overrides: Partial<Options> & Pick<Options, "pla
     dts: true,
     sourcemap: true,
     clean: true,
-    noExternal: [/^@siteping\/core(\/|$)/],
+    noExternal: [/^@beezping\/core(\/|$)/],
     ...overrides,
   };
 }

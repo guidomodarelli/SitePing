@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { SitepingConfig, SitepingHttpConfig, SitepingStore } from "@siteping/core";
+import type { SitepingConfig, SitepingHttpConfig, SitepingStore } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { withViewportWidth } from "../helpers.js";
 

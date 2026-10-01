@@ -1,6 +1,6 @@
 "use client";
 
-import type { SitepingInstance } from "@siteping/widget";
+import type { SitepingInstance } from "@beezping/widget";
 import { useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { CopyButton } from "@/components/landing/copy-button";
@@ -222,9 +222,9 @@ function buildOptionLines(state: PlaygroundState): { key: string; tokens: RawTok
 
 function buildSnippet(state: PlaygroundState): { lines: SnippetLine[]; text: string } {
   const raw: { key: string; tokens: RawToken[] }[] = [];
-  raw.push({ key: "import-widget", tokens: importLine("initSiteping", "@siteping/widget") });
+  raw.push({ key: "import-widget", tokens: importLine("initSiteping", "@beezping/widget") });
   if (state.mode === "local") {
-    raw.push({ key: "import-store", tokens: importLine("LocalStorageStore", "@siteping/adapter-localstorage") });
+    raw.push({ key: "import-store", tokens: importLine("LocalStorageStore", "@beezping/adapter-localstorage") });
   }
   raw.push({ key: "blank", tokens: [] });
   raw.push({
@@ -363,8 +363,8 @@ export function Playground() {
 
     (async () => {
       const [{ initSiteping }, storeModule] = await Promise.all([
-        import("@siteping/widget"),
-        mode === "local" ? import("@siteping/adapter-localstorage") : Promise.resolve(null),
+        import("@beezping/widget"),
+        mode === "local" ? import("@beezping/adapter-localstorage") : Promise.resolve(null),
       ]);
       if (cancelled) return;
       instance = initSiteping({

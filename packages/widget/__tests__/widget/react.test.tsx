@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { SitepingConfig, SitepingInstance } from "@siteping/core";
+import type { SitepingConfig, SitepingInstance } from "@beezping/core";
 import { act, render } from "@testing-library/react";
 import { StrictMode, useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";

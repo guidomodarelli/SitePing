@@ -7,7 +7,7 @@ import type {
   SitepingLocale,
   SitepingRequestCredentials,
   SitepingStore,
-} from "@siteping/core";
+} from "@beezping/core";
 import type { ReactNode } from "react";
 import type { InboxTheme } from "./theme.js";
 

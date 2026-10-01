@@ -3,14 +3,14 @@ title: Dashboard
 description: Une inbox de tri façon Linear pour vos feedbacks — un composant React, pilotable au clavier.
 ---
 
-`@siteping/dashboard` vous donne une interface de tri complète : filtrer, rechercher, changer les statuts, supprimer, annuler — pensée pour le clavier, stylée pour se fondre dans votre app.
+`@beezping/dashboard` vous donne une interface de tri complète : filtrer, rechercher, changer les statuts, supprimer, annuler — pensée pour le clavier, stylée pour se fondre dans votre app.
 
 ```bash
-npm i @siteping/dashboard
+npm i @beezping/dashboard
 ```
 
 ```tsx
-import { SitepingInbox } from "@siteping/dashboard";
+import { SitepingInbox } from "@beezping/dashboard";
 
 export function Triage() {
   return (
@@ -69,7 +69,7 @@ Les mêmes sept locales intégrées que le widget (`en`, `fr`, `de`, `es`, `it`,
 Le dashboard accepte aussi des locales personnalisées à l'exécution :
 
 ```ts
-import { registerLocale } from "@siteping/dashboard";
+import { registerLocale } from "@beezping/dashboard";
 
 registerLocale("nl", { "status.open": "Open", "status.resolved": "Opgelost" });
 // plus tard : <SitepingInbox locale="nl" ... />

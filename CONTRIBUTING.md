@@ -48,19 +48,19 @@ Monorepo with bun workspaces + Turborepo. Libraries live in `packages/`, the web
 
 | Package | npm | Target | Description |
 |---------|-----|--------|-------------|
-| `@siteping/core` | private | — | Shared types, schema, store errors, helpers, conformance tests |
-| `@siteping/widget` | published | Browser | Feedback widget (Shadow DOM, closed). Accepts `store` for client-side mode |
-| `@siteping/dashboard` | published | Browser (React) | Linear-style triage inbox (`<SitepingInbox />` + headless `useSitepingInbox()`) |
-| `@siteping/adapter-prisma` | published | Node | Prisma database adapter |
-| `@siteping/adapter-drizzle` | published | Node | Drizzle ORM store (PostgreSQL, Turso/libSQL) |
-| `@siteping/screenshot-storage` | published | Any (`/filesystem`: Node) | Screenshot storage backends for stores: Cloudflare Images, S3-compatible, filesystem, memory, or a custom `ScreenshotObjectStore` |
-| `@siteping/adapter-memory` | published | Any | In-memory adapter (testing, demos, serverless) |
-| `@siteping/adapter-localstorage` | published | Browser | localStorage adapter (demos, prototyping) |
-| `@siteping/adapter-kit` | published | Any | Everything third-party adapter authors need: store contract, helpers, `createCollectionStore`, and the conformance suite (`/testing`) |
-| `@siteping/cli` | published | Node | CLI tool (`npx @siteping/cli init/sync/status/doctor`) |
-| `@siteping/demo` (`apps/demo`) | private | Next.js | [siteping.dev](https://siteping.dev) — landing, live demo, **and the documentation site** ([editing it](#editing-the-documentation)) |
+| `@beezping/core` | private | — | Shared types, schema, store errors, helpers, conformance tests |
+| `@beezping/widget` | published | Browser | Feedback widget (Shadow DOM, closed). Accepts `store` for client-side mode |
+| `@beezping/dashboard` | published | Browser (React) | Linear-style triage inbox (`<SitepingInbox />` + headless `useSitepingInbox()`) |
+| `@beezping/adapter-prisma` | published | Node | Prisma database adapter |
+| `@beezping/adapter-drizzle` | published | Node | Drizzle ORM store (PostgreSQL, Turso/libSQL) |
+| `@beezping/screenshot-storage` | published | Any (`/filesystem`: Node) | Screenshot storage backends for stores: Cloudflare Images, S3-compatible, filesystem, memory, or a custom `ScreenshotObjectStore` |
+| `@beezping/adapter-memory` | published | Any | In-memory adapter (testing, demos, serverless) |
+| `@beezping/adapter-localstorage` | published | Browser | localStorage adapter (demos, prototyping) |
+| `@beezping/adapter-kit` | published | Any | Everything third-party adapter authors need: store contract, helpers, `createCollectionStore`, and the conformance suite (`/testing`) |
+| `@beezping/cli` | published | Node | CLI tool (`npx @beezping/cli init/sync/status/doctor`) |
+| `@beezping/demo` (`apps/demo`) | private | Next.js | [siteping.dev](https://siteping.dev) — landing, live demo, **and the documentation site** ([editing it](#editing-the-documentation)) |
 
-- **Core** is an Internal Package — it exports raw TypeScript (no build step). Consumers bundle it via `noExternal: ["@siteping/core"]` in their tsup config.
+- **Core** is an Internal Package — it exports raw TypeScript (no build step). Consumers bundle it via `noExternal: ["@beezping/core"]` in their tsup config.
 - **Turborepo** handles build orchestration, dependency ordering, and local caching.
 - Each published package is built independently with tsup.
 
@@ -126,7 +126,7 @@ is the smallest). The pieces that matter:
    `import`/`require` exports map with per-condition `types`, `sideEffects: false`,
    `publishConfig.access: public`, `engines.node >= 20`, and the build script
    **must** chain fix-dts: `"build": "tsup && node ../../scripts/fix-dts.mjs dist"`
-   (`bun run check:consistency` fails if it's missing). `@siteping/core` is a
+   (`bun run check:consistency` fails if it's missing). `@beezping/core` is a
    `devDependency`, never a `dependency` — it is bundled at build time and not
    published to npm.
 2. **`tsconfig.json`** — `{ "extends": "../../tsconfig.base.json", "include": ["src", "__tests__"] }`.
@@ -153,7 +153,7 @@ be *silently* forgotten.
 
 Adapters implement the `SitepingStore` interface. **Third-party adapters**
 (outside this repo) depend on the published
-[`@siteping/adapter-kit`](https://siteping.dev/docs/adapters/writing-an-adapter),
+[`@beezping/adapter-kit`](https://siteping.dev/docs/adapters/writing-an-adapter),
 which exports the contract, the building blocks and the conformance suite.
 **First-party adapters** start with the scaffold:
 
@@ -164,7 +164,7 @@ bun run new:adapter drizzle -- --platform=node
 Two implementation strategies:
 
 - **Snapshot backends** (KV, flat file, browser storage): hand
-  `createCollectionStore({ load, persist, generateId })` from `@siteping/core`
+  `createCollectionStore({ load, persist, generateId })` from `@beezping/core`
   your three storage primitives and you get the complete store — clientId
   dedup, filtering/pagination, the error contract, `verifyProjectOwnership`,
   and the screenshot-drop retry on failed persists. `adapter-memory` is the
@@ -183,7 +183,7 @@ this file):
 
 ```ts
 // __tests__/my-store.test.ts
-import { testSitepingStore } from "@siteping/core/testing";
+import { testSitepingStore } from "@beezping/core/testing";
 import { MyStore } from "../src/index.js";
 
 testSitepingStore(() => new MyStore(testConfig));
@@ -321,8 +321,8 @@ bun run create-version --dry-run    # show the plan without changing anything
 
 1. Write code using [Conventional Commits](https://www.conventionalcommits.org/) and describe consumer-facing changes under `## [Unreleased]` in the `CHANGELOG.md` of each package you touch (optional: an empty block is filled from the commits by Codex at release time).
 2. Merge to `main` (via squash-merged PR).
-3. `create-version` finds the packages with commits since their last release — by the **files** each commit touches, plus the packages that bundle a changed `@siteping/core` — runs `bun run verify`, `check:consistency` and `pkg-checks`, and asks the version of each one (patch, minor or major, with the one its commits suggest marked; "don't publish now" skips it).
-4. One commit on `main` (`release: @siteping/widget@0.11.0, @siteping/server@0.1.0`) carries every `package.json`, `CHANGELOG.md` (`## [Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`) and the CLI version, with one annotated tag per package (`widget-v0.11.0`); `main` and the tags are pushed atomically.
+3. `create-version` finds the packages with commits since their last release — by the **files** each commit touches, plus the packages that bundle a changed `@beezping/core` — runs `bun run verify`, `check:consistency` and `pkg-checks`, and asks the version of each one (patch, minor or major, with the one its commits suggest marked; "don't publish now" skips it).
+4. One commit on `main` (`release: @beezping/widget@0.11.0, @beezping/server@0.1.0`) carries every `package.json`, `CHANGELOG.md` (`## [Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`) and the CLI version, with one annotated tag per package (`widget-v0.11.0`); `main` and the tags are pushed atomically.
 5. Each package is rebuilt on that commit and published with npm from its folder, in dependency order. If a publication fails, the next run publishes the tagged release before anything new.
 
 **Version suggestions follow your commit messages:**

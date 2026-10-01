@@ -1,27 +1,27 @@
-[![npm version](https://img.shields.io/npm/v/@siteping/integration-issues)](https://www.npmjs.com/package/@siteping/integration-issues)
+[![npm version](https://img.shields.io/npm/v/@beezping/integration-issues)](https://www.npmjs.com/package/@beezping/integration-issues)
 [![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/integrations/issues)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
-# @siteping/integration-issues
+# @beezping/integration-issues
 
-One **GitHub** or **GitLab** issue per [SitePing](https://github.com/NeosiaNexus/SitePing) feedback — opened, closed and reopened through `@siteping/server` lifecycle hooks.
+One **GitHub** or **GitLab** issue per [SitePing](https://github.com/NeosiaNexus/SitePing) feedback — opened, closed and reopened through `@beezping/server` lifecycle hooks.
 
 **[Documentation](https://siteping.dev/docs/integrations/issues)**
 
 ## Install
 
 ```bash
-npm install @siteping/integration-issues @siteping/server
+npm install @beezping/integration-issues @beezping/server
 ```
 
-**Peer dependency:** `@siteping/server` · Node ≥ 20.
+**Peer dependency:** `@beezping/server` · Node ≥ 20.
 
 ## Quick start
 
 ```ts
-import { createSitepingHandler } from "@siteping/server";
-import { createIssueTrackerHooks } from "@siteping/integration-issues";
-import { createGitHubTracker } from "@siteping/integration-issues/github";
+import { createSitepingHandler } from "@beezping/server";
+import { createIssueTrackerHooks } from "@beezping/integration-issues";
+import { createGitHubTracker } from "@beezping/integration-issues/github";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
   store,
@@ -33,7 +33,7 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
 });
 ```
 
-GitLab: same shape with `createGitLabTracker` from `@siteping/integration-issues/gitlab`.
+GitLab: same shape with `createGitLabTracker` from `@beezping/integration-issues/gitlab`.
 
 ## Documentation
 

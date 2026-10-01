@@ -4,7 +4,7 @@ import {
   type FeedbackRecord,
   type FeedbackStatus,
   isClosedStatus,
-} from "@siteping/core";
+} from "@beezping/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createEndpointSource, createStoreSource } from "./source.js";
 import type { InboxSource, InboxState, InboxStatusFilter, InboxTypeFilter, UseSitepingInboxOptions } from "./types.js";

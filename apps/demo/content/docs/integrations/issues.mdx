@@ -1,9 +1,9 @@
 ---
 title: Issue trackers
-description: One GitHub or GitLab issue per feedback, opened, closed and reopened through @siteping/server lifecycle hooks.
+description: One GitHub or GitLab issue per feedback, opened, closed and reopened through @beezping/server lifecycle hooks.
 ---
 
-`@siteping/integration-issues` keeps one tracker issue per feedback, through the lifecycle hooks of `@siteping/server`:
+`@beezping/integration-issues` keeps one tracker issue per feedback, through the lifecycle hooks of `@beezping/server`:
 
 - **created** → opens an issue (Markdown body: message, page, deep link, viewport, screenshot, diagnostics), closed right away when the feedback is stored resolved or won't fix (e.g. by `beforeCreate`);
 - **resolved / won't fix / reopened** → closes or reopens it;
@@ -12,16 +12,16 @@ description: One GitHub or GitLab issue per feedback, opened, closed and reopene
 Issues are linked to feedbacks by a hidden marker in their body — no extra database column.
 
 ```bash
-npm i @siteping/integration-issues @siteping/server
+npm i @beezping/integration-issues @beezping/server
 ```
 
 ## Setup
 
 ```ts
-import { createSitepingHandler } from "@siteping/server";
-import { createIssueTrackerHooks } from "@siteping/integration-issues";
-import { createGitHubTracker } from "@siteping/integration-issues/github";
-// or: import { createGitLabTracker } from "@siteping/integration-issues/gitlab";
+import { createSitepingHandler } from "@beezping/server";
+import { createIssueTrackerHooks } from "@beezping/integration-issues";
+import { createGitHubTracker } from "@beezping/integration-issues/github";
+// or: import { createGitLabTracker } from "@beezping/integration-issues/gitlab";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
   store,
@@ -40,8 +40,8 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
 
 | Provider | Entry | Status mapping |
 |---|---|---|
-| GitHub (github.com, Enterprise Server via `apiBaseUrl`) | `@siteping/integration-issues/github` | resolved → closed as completed, won't fix → closed as not planned, open → reopened |
-| GitLab (gitlab.com, self-managed via `apiBaseUrl`) | `@siteping/integration-issues/gitlab` | resolved / won't fix → closed, open → reopened |
+| GitHub (github.com, Enterprise Server via `apiBaseUrl`) | `@beezping/integration-issues/github` | resolved → closed as completed, won't fix → closed as not planned, open → reopened |
+| GitLab (gitlab.com, self-managed via `apiBaseUrl`) | `@beezping/integration-issues/gitlab` | resolved / won't fix → closed, open → reopened |
 
 `createGitHubTracker` takes `repository` (`owner/name`) and `token`; `createGitLabTracker` takes `project` (numeric id or full path) and `token`. Both accept `apiBaseUrl`, `fetch` and `timeoutMs`.
 

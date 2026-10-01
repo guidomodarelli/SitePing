@@ -1,6 +1,6 @@
 /**
  * Everything needed to build a custom Siteping store adapter, published —
- * `@siteping/core` is an internal (unpublished) package, so this kit is the
+ * `@beezping/core` is an internal (unpublished) package, so this kit is the
  * supported dependency for third-party adapters.
  *
  * Two ways to implement a store:
@@ -16,11 +16,11 @@
  *    documents the exact error contract.
  *
  * Either way, verify with the conformance suite from
- * `@siteping/adapter-kit/testing`:
+ * `@beezping/adapter-kit/testing`:
  *
  * @example
  * ```ts
- * import { testSitepingStore } from "@siteping/adapter-kit/testing";
+ * import { testSitepingStore } from "@beezping/adapter-kit/testing";
  * import { MyStore } from "../src/index.js";
  *
  * testSitepingStore(() => new MyStore());
@@ -62,7 +62,7 @@ export type {
   ScreenshotStorage,
   Serialized,
   SitepingStore,
-} from "@siteping/core";
+} from "@beezping/core";
 // Status/type constants + helpers
 // Store errors — throw these from adapter implementations
 export {
@@ -88,4 +88,4 @@ export {
   StoreNotFoundError,
   StorePersistenceError,
   toFeedbackUpdate,
-} from "@siteping/core";
+} from "@beezping/core";

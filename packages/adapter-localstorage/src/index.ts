@@ -10,10 +10,10 @@ import {
   type Serialized,
   type SitepingStore,
   StorePersistenceError,
-} from "@siteping/core";
+} from "@beezping/core";
 
-export type { SitepingStore } from "@siteping/core";
-export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@siteping/core";
+export type { SitepingStore } from "@beezping/core";
+export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@beezping/core";
 
 const DEFAULT_KEY = "siteping_feedbacks";
 
@@ -46,8 +46,8 @@ export interface LocalStorageStoreOptions {
  *
  * @example
  * ```ts
- * import { initSiteping } from '@siteping/widget'
- * import { LocalStorageStore } from '@siteping/adapter-localstorage'
+ * import { initSiteping } from '@beezping/widget'
+ * import { LocalStorageStore } from '@beezping/adapter-localstorage'
  *
  * const store = new LocalStorageStore()
  *

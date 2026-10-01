@@ -1,5 +1,5 @@
-import { StoreDuplicateError, StoreNotFoundError } from "@siteping/core";
-import { testSitepingStore } from "@siteping/core/testing";
+import { StoreDuplicateError, StoreNotFoundError } from "@beezping/core";
+import { testSitepingStore } from "@beezping/core/testing";
 import { describe, expect, it, vi } from "vitest";
 import { PrismaStore } from "../src/index.js";
 import { fakePrisma } from "./fake-prisma.js";

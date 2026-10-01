@@ -1,4 +1,4 @@
-import { testSitepingStore } from "@siteping/core/testing";
+import { testSitepingStore } from "@beezping/core/testing";
 import { describe, expect, it } from "vitest";
 import { MemoryStore } from "../src/index.js";
 

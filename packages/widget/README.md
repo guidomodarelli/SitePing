@@ -1,9 +1,9 @@
-[![npm version](https://img.shields.io/npm/v/@siteping/widget)](https://www.npmjs.com/package/@siteping/widget)
+[![npm version](https://img.shields.io/npm/v/@beezping/widget)](https://www.npmjs.com/package/@beezping/widget)
 [![Live Demo](https://img.shields.io/badge/demo-try%20it%20live-22c55e)](https://siteping.dev/demo)
 [![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/widget)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
-# @siteping/widget
+# @beezping/widget
 
 **Client feedback, pinned to the pixel.**
 
@@ -14,7 +14,7 @@ Part of [SitePing](https://github.com/NeosiaNexus/SitePing) — **[live demo](ht
 ## Install
 
 ```bash
-npm install @siteping/widget
+npm install @beezping/widget
 ```
 
 ## Quick start
@@ -23,7 +23,7 @@ React (the hook survives StrictMode double-mounts and tears down on unmount):
 
 ```tsx
 "use client";
-import { useSiteping } from "@siteping/widget/react";
+import { useSiteping } from "@beezping/widget/react";
 
 export function Feedback() {
   useSiteping({ endpoint: "/api/siteping", projectName: "my-app" });
@@ -34,13 +34,13 @@ export function Feedback() {
 Any other framework, or none:
 
 ```ts
-import { initSiteping } from "@siteping/widget";
+import { initSiteping } from "@beezping/widget";
 
 const widget = initSiteping({ endpoint: "/api/siteping", projectName: "my-app" });
 // widget.open() / .close() / .refresh() / .focusFeedback(id) / .on(...) / .destroy()
 ```
 
-No server? Pass `store: new LocalStorageStore()` (from `@siteping/adapter-localstorage`) instead of `endpoint` and the whole loop runs in the browser.
+No server? Pass `store: new LocalStorageStore()` (from `@beezping/adapter-localstorage`) instead of `endpoint` and the whole loop runs in the browser.
 
 ## Highlights
 

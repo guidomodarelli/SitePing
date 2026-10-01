@@ -1,4 +1,4 @@
-import type { FeedbackRecord } from "@siteping/core";
+import type { FeedbackRecord } from "@beezping/core";
 import type {
   AccessGate,
   AuthenticationOutcome,

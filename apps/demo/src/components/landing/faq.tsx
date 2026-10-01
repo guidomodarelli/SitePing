@@ -18,7 +18,7 @@ const faqs: { q: string; a: ReactNode }[] = [
     q: "Is there a dashboard to view feedback?",
     a: (
       <>
-        Yes — install @siteping/dashboard and drop the {"<SitepingInbox />"} React component into your admin page. It is
+        Yes — install @beezping/dashboard and drop the {"<SitepingInbox />"} React component into your admin page. It is
         a Linear-style triage inbox with j/k keyboard shortcuts, four statuses, and the client&apos;s annotation
         re-drawn on the screenshot.{" "}
         <Link

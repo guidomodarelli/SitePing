@@ -19,7 +19,7 @@ const FAILING_STATUS = 500;
 const MARKER = "<!-- siteping-feedback";
 
 describe.skipIf(!isBuilt)("CommonJS entries", () => {
-  const root = requireFromPackage("@siteping/integration-issues") as typeof RootEntry;
+  const root = requireFromPackage("@beezping/integration-issues") as typeof RootEntry;
 
   it.each([
     [
@@ -27,7 +27,7 @@ describe.skipIf(!isBuilt)("CommonJS entries", () => {
       () => {
         const fake = createFakeGitHub("acme/site");
         fake.failWhen(/./, FAILING_STATUS);
-        const { createGitHubTracker } = requireFromPackage("@siteping/integration-issues/github") as typeof GitHubEntry;
+        const { createGitHubTracker } = requireFromPackage("@beezping/integration-issues/github") as typeof GitHubEntry;
         return createGitHubTracker({ repository: "acme/site", token: "token", fetch: fake.fetch });
       },
     ],
@@ -36,7 +36,7 @@ describe.skipIf(!isBuilt)("CommonJS entries", () => {
       () => {
         const fake = createFakeGitLab("acme/site");
         fake.failWhen(/./, FAILING_STATUS);
-        const { createGitLabTracker } = requireFromPackage("@siteping/integration-issues/gitlab") as typeof GitLabEntry;
+        const { createGitLabTracker } = requireFromPackage("@beezping/integration-issues/gitlab") as typeof GitLabEntry;
         return createGitLabTracker({ project: "acme/site", token: "token", fetch: fake.fetch });
       },
     ],

@@ -1,5 +1,5 @@
 {
-  "name": "@siteping/adapter-kit",
+  "name": "@beezping/adapter-kit",
   "version": "0.2.0",
   "description": "Everything needed to build and conformance-test a custom Siteping store adapter",
   "type": "module",
@@ -52,11 +52,11 @@
   "homepage": "https://siteping.dev",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/SitePing.git",
     "directory": "packages/adapter-kit"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/SitePing/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -73,6 +73,6 @@
     }
   },
   "devDependencies": {
-    "@siteping/core": "workspace:*"
+    "@beezping/core": "workspace:*"
   }
 }

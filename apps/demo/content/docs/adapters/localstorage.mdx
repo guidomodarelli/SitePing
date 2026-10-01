@@ -3,15 +3,15 @@ title: localStorage adapter
 description: A client-side store — run the whole feedback loop in the browser, no server required.
 ---
 
-`@siteping/adapter-localstorage` persists feedbacks in the visitor's browser. Combined with the widget's `store` option, you get a fully working feedback loop with zero backend — ideal for demos, prototypes, and docs sites (this site uses it).
+`@beezping/adapter-localstorage` persists feedbacks in the visitor's browser. Combined with the widget's `store` option, you get a fully working feedback loop with zero backend — ideal for demos, prototypes, and docs sites (this site uses it).
 
 ```bash
-npm i @siteping/adapter-localstorage
+npm i @beezping/adapter-localstorage
 ```
 
 ```ts
-import { initSiteping } from "@siteping/widget";
-import { LocalStorageStore } from "@siteping/adapter-localstorage";
+import { initSiteping } from "@beezping/widget";
+import { LocalStorageStore } from "@beezping/adapter-localstorage";
 
 initSiteping({
   store: new LocalStorageStore(),

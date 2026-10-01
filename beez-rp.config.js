@@ -5,7 +5,7 @@
  * its `CHANGELOG.md` (`## [Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`), its tag
  * (`widget-v0.11.0`, same format release-please used) and its npm publication.
  * A package is released when a commit touched its folder or the folder of a
- * private package it bundles (`@siteping/core`). All the versions go in one
+ * private package it bundles (`@beezping/core`). All the versions go in one
  * `release: …` commit on `main`, pushed with its tags atomically, and each
  * package is published with npm from its folder, in dependency order.
  */

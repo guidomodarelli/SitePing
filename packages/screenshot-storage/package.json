@@ -1,5 +1,5 @@
 {
-  "name": "@siteping/screenshot-storage",
+  "name": "@beezping/screenshot-storage",
   "version": "0.1.0",
   "description": "Screenshot storage for Siteping — Cloudflare Images, any S3-compatible bucket, your database (Drizzle: PostgreSQL, Turso/libSQL), the local filesystem, memory, or your own backend",
   "type": "module",
@@ -107,11 +107,11 @@
   "homepage": "https://siteping.dev",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/SitePing.git",
     "directory": "packages/screenshot-storage"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/SitePing/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -131,7 +131,7 @@
     "@aws-crypto/sha256-js": "^5.2.0",
     "@electric-sql/pglite": "^0.5.8",
     "@libsql/client": "^0.18.0",
-    "@siteping/core": "workspace:*",
+    "@beezping/core": "workspace:*",
     "@smithy/signature-v4": "^5.7.4",
     "drizzle-kit": "^0.31.11",
     "drizzle-orm": "^0.45.3"

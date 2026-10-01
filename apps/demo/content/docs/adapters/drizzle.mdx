@@ -3,17 +3,17 @@ title: Drizzle adapter
 description: A production store on PostgreSQL or Turso / libSQL through Drizzle ORM — tables you own in your schema, migrations through drizzle-kit.
 ---
 
-`@siteping/adapter-drizzle` is a `SitepingStore` backed by [Drizzle ORM](https://orm.drizzle.team). It has one entry per database family:
+`@beezping/adapter-drizzle` is a `SitepingStore` backed by [Drizzle ORM](https://orm.drizzle.team). It has one entry per database family:
 
 | Entry | Database | Drivers |
 |---|---|---|
-| `@siteping/adapter-drizzle/pg` | PostgreSQL | Any Drizzle PostgreSQL driver — node-postgres, postgres.js, Neon (serverless and HTTP), Vercel Postgres, Supabase, PGlite… |
-| `@siteping/adapter-drizzle/libsql` | Turso / libSQL | `drizzle-orm/libsql` only — Turso remote, embedded replicas, local files |
+| `@beezping/adapter-drizzle/pg` | PostgreSQL | Any Drizzle PostgreSQL driver — node-postgres, postgres.js, Neon (serverless and HTTP), Vercel Postgres, Supabase, PGlite… |
+| `@beezping/adapter-drizzle/libsql` | Turso / libSQL | `drizzle-orm/libsql` only — Turso remote, embedded replicas, local files |
 
 It requires Node 20+ and `drizzle-orm` 0.45 or later (below 1.0), a peer dependency:
 
 ```bash
-npm i @siteping/adapter-drizzle drizzle-orm
+npm i @beezping/adapter-drizzle drizzle-orm
 ```
 
 Add your database driver (`pg`, `postgres`, `@neondatabase/serverless`, `@electric-sql/pglite`, `@libsql/client`…) and `drizzle-kit` for migrations.
@@ -24,14 +24,14 @@ The adapter never creates tables at runtime: it gives you Drizzle table definiti
 
 ```ts
 // db/schema.ts — PostgreSQL
-import { createSitepingPgTables } from "@siteping/adapter-drizzle/pg";
+import { createSitepingPgTables } from "@beezping/adapter-drizzle/pg";
 
 export const { sitepingFeedbacks, sitepingAnnotations } = createSitepingPgTables();
 ```
 
 ```ts
 // db/schema.ts — Turso / libSQL
-import { createSitepingSqliteTables } from "@siteping/adapter-drizzle/libsql";
+import { createSitepingSqliteTables } from "@beezping/adapter-drizzle/libsql";
 
 export const { sitepingFeedbacks, sitepingAnnotations } = createSitepingSqliteTables();
 ```
@@ -78,7 +78,7 @@ The defaults are exported as `DEFAULT_SITEPING_TABLE_NAMES`.
 ```ts
 // PostgreSQL — node-postgres
 import { drizzle } from "drizzle-orm/node-postgres";
-import { createPgSitepingStore } from "@siteping/adapter-drizzle/pg";
+import { createPgSitepingStore } from "@beezping/adapter-drizzle/pg";
 
 export const store = createPgSitepingStore(drizzle(process.env.DATABASE_URL!), {
   screenshotStorage,
@@ -91,7 +91,7 @@ Every PostgreSQL driver works the same way — swap the `drizzle` import (`drizz
 ```ts
 // Turso / libSQL
 import { drizzle } from "drizzle-orm/libsql";
-import { createLibSQLSitepingStore } from "@siteping/adapter-drizzle/libsql";
+import { createLibSQLSitepingStore } from "@beezping/adapter-drizzle/libsql";
 
 export const store = createLibSQLSitepingStore(
   drizzle({ connection: { url: process.env.TURSO_DATABASE_URL!, authToken: process.env.TURSO_AUTH_TOKEN } }),
@@ -101,11 +101,11 @@ export const store = createLibSQLSitepingStore(
 
 ## 3. Serve it
 
-The store is storage only. Mount it behind any HTTP handler that accepts a `store` — `createSitepingHandler({ store })` from `@siteping/server`, or the [Prisma adapter's handler](/docs/adapters/prisma#using-a-custom-store) — to get the same validation, auth and redaction:
+The store is storage only. Mount it behind any HTTP handler that accepts a `store` — `createSitepingHandler({ store })` from `@beezping/server`, or the [Prisma adapter's handler](/docs/adapters/prisma#using-a-custom-store) — to get the same validation, auth and redaction:
 
 ```ts
 // app/api/siteping/route.ts
-import { createSitepingHandler } from "@siteping/server";
+import { createSitepingHandler } from "@beezping/server";
 import { store } from "@/lib/siteping-store";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
@@ -141,16 +141,16 @@ Both factories take the same options:
 
 **Large projects.** With a `delete` hook, `deleteAllFeedbacks` needs the removed URLs back, so it deletes the project in chunks of 500 rows — each chunk atomically, its screenshots cleaned up before the next — and no driver response or in-memory list grows with the project. If a chunk fails, the call throws `StorePersistenceError`: the earlier chunks stay deleted and cleaned up, and retrying the call removes the rest. Without a `delete` hook the whole project goes in one atomic statement.
 
-**Keeping screenshots in your database.** `@siteping/screenshot-storage/drizzle-pg` and `/drizzle-libsql` store the image bytes in a table of their own (`bytea` on PostgreSQL, `blob` on SQLite), next to the feedbacks. Export the table from your schema so `drizzle-kit` migrates it, then serve the images from your app with `createScreenshotServeHandler`:
+**Keeping screenshots in your database.** `@beezping/screenshot-storage/drizzle-pg` and `/drizzle-libsql` store the image bytes in a table of their own (`bytea` on PostgreSQL, `blob` on SQLite), next to the feedbacks. Export the table from your schema so `drizzle-kit` migrates it, then serve the images from your app with `createScreenshotServeHandler`:
 
 ```ts
 // db/schema.ts
-import { createSitepingScreenshotsPgTable } from "@siteping/screenshot-storage/drizzle-pg";
+import { createSitepingScreenshotsPgTable } from "@beezping/screenshot-storage/drizzle-pg";
 export const sitepingScreenshots = createSitepingScreenshotsPgTable(); // "siteping_screenshots"
 
 // server
-import { createScreenshotStorage } from "@siteping/screenshot-storage";
-import { createPgScreenshotObjectStore } from "@siteping/screenshot-storage/drizzle-pg";
+import { createScreenshotStorage } from "@beezping/screenshot-storage";
+import { createPgScreenshotObjectStore } from "@beezping/screenshot-storage/drizzle-pg";
 
 const objectStore = createPgScreenshotObjectStore(db, {
   publicBaseUrl: "https://app.example.com/api/siteping/screenshots",
@@ -168,7 +168,7 @@ The screenshots table is independent from the store's `tables` — rename it wit
 - **Annotations land with their feedback, or not at all.** On PostgreSQL the feedback and its annotations are inserted by one statement (a data-modifying CTE). On libSQL, multi-statement writes go through `db.batch`, which runs as one transaction and never holds the write lock across an `await` — your application can keep writing to the same database concurrently.
 - **Ordering is stable.** Lists come back newest first. `createdAt` is the clock value at insert time, and rows created in the same millisecond — by one store instance, several processes, or your own code inserting through the exported tables — are ordered by an insertion ordinal the database itself assigns on every insert: the internal `creation_sequence` identity on PostgreSQL, SQLite's implicit `rowid` on libSQL. A later insert always lists first, and offset pages never overlap or skip rows.
 - **`updatedAt` never precedes `createdAt`.** Status updates clamp it in SQL against the row's own timestamps, which holds across processes whose clocks disagree.
-- **Project ownership.** The store implements `verifyProjectOwnership`, so the handler answers `404` to a PATCH/DELETE addressing an id from another project. `@siteping/server` requires it when you use a project-scoped `access.authorize`.
+- **Project ownership.** The store implements `verifyProjectOwnership`, so the handler answers `404` to a PATCH/DELETE addressing an id from another project. `@beezping/server` requires it when you use a project-scoped `access.authorize`.
 
 ## Internal columns and upgrades
 

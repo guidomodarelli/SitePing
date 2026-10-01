@@ -3,14 +3,14 @@ title: Memory adapter
 description: An in-process store for tests, previews, and throwaway demos.
 ---
 
-`@siteping/adapter-memory` keeps everything in a plain array. No persistence, no configuration — restart the process and it's gone.
+`@beezping/adapter-memory` keeps everything in a plain array. No persistence, no configuration — restart the process and it's gone.
 
 ```bash
-npm i @siteping/adapter-memory
+npm i @beezping/adapter-memory
 ```
 
 ```ts
-import { MemoryStore } from "@siteping/adapter-memory";
+import { MemoryStore } from "@beezping/adapter-memory";
 
 const store = new MemoryStore();
 

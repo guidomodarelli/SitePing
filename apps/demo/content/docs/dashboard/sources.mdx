@@ -26,7 +26,7 @@ Runs against any `SitepingStore` in-process — the same stores the widget's cli
 For tRPC, GraphQL, or server actions, implement the three-method `InboxSource` contract and pass it as `source`:
 
 ```ts
-import type { InboxSource } from "@siteping/dashboard";
+import type { InboxSource } from "@beezping/dashboard";
 
 const source: InboxSource = {
   async list(query) {
@@ -48,7 +48,7 @@ The two building blocks behind the built-in modes are exported too — `createEn
 
 ## Types without extra dependencies
 
-`@siteping/dashboard` re-exports everything you need to type a wrapper around it, so you never install another package:
+`@beezping/dashboard` re-exports everything you need to type a wrapper around it, so you never install another package:
 
 | What you're typing | Exports |
 |---|---|

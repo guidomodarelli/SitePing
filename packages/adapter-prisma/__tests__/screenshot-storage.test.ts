@@ -1,4 +1,4 @@
-import type { ScreenshotStorage } from "@siteping/core";
+import type { ScreenshotStorage } from "@beezping/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PrismaStore } from "../src/index.js";
 

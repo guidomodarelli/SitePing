@@ -9,7 +9,7 @@ import {
   type SitepingInstance,
   type SitepingPublicEventListener,
   type SitepingPublicEvents,
-} from "@siteping/core";
+} from "@beezping/core";
 import { Annotator } from "./annotator.js";
 import { ApiClient, flushRetryQueue, type WidgetClient } from "./api-client.js";
 import { MOBILE_BREAKPOINT, PAGE_SIZE, Z_INDEX_MAX } from "./constants.js";

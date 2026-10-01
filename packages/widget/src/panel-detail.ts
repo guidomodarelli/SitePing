@@ -9,7 +9,7 @@
  * animations, accent gradients, premium micro-interactions.
  */
 
-import { type FeedbackResponse, type FeedbackStatus, isClosedStatus } from "@siteping/core";
+import { type FeedbackResponse, type FeedbackStatus, isClosedStatus } from "@beezping/core";
 import { el, parseSvg, setText } from "./dom-utils.js";
 import { getStatusLabel, type TFunction, tWithParams } from "./i18n/index.js";
 import { getTypeBgColor, getTypeColor, type ThemeColors } from "./styles/theme.js";

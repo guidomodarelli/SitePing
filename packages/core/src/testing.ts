@@ -7,7 +7,7 @@
  *
  * @example
  * ```ts
- * import { testSitepingStore } from '@siteping/core/testing'
+ * import { testSitepingStore } from '@beezping/core/testing'
  * import { DrizzleStore } from '../src/index.js'
  *
  * testSitepingStore(() => new DrizzleStore(db))

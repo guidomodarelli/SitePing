@@ -1,4 +1,4 @@
-import type { FeedbackResponse } from "@siteping/core";
+import type { FeedbackResponse } from "@beezping/core";
 import { el, parseSvg, setText } from "./dom-utils.js";
 import { isolateFromHost } from "./host-isolation.js";
 import type { TFunction } from "./i18n/index.js";

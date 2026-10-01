@@ -3,10 +3,10 @@ title: Adapter Prisma
 description: L'adapter de production — des handlers HTTP adossés à votre base, avec auth, CORS, redaction et webhooks.
 ---
 
-`@siteping/adapter-prisma` transforme une URL de votre app en API de feedback complète. Il gère Prisma Client v5, v6 et v7, et exige Node 20+.
+`@beezping/adapter-prisma` transforme une URL de votre app en API de feedback complète. Il gère Prisma Client v5, v6 et v7, et exige Node 20+.
 
 ```bash
-npm i @siteping/adapter-prisma
+npm i @beezping/adapter-prisma
 ```
 
 ## Le montage
@@ -15,7 +15,7 @@ La factory renvoie un handler standard du Web (`Request` → `Response`) par mé
 
 ```ts
 // app/api/siteping/route.ts — Next.js App Router
-import { createSitepingHandler } from "@siteping/adapter-prisma";
+import { createSitepingHandler } from "@beezping/adapter-prisma";
 import { prisma } from "@/lib/prisma";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ prisma });
@@ -76,7 +76,7 @@ Un endpoint, cinq méthodes. Tous les corps sont en JSON.
 
 ## Schéma de base de données
 
-Voici le schéma exact dont l'adapter a besoin — c'est ce que génère `npx @siteping/cli sync`. Préférez le CLI ; si vous l'écrivez à la main, ne retirez pas de colonnes : l'adapter écrit `urlPattern`, `screenshotUrl` et `anchorKey` à chaque insertion, donc un schéma partiel échoue dès le premier envoi.
+Voici le schéma exact dont l'adapter a besoin — c'est ce que génère `npx @beezping/cli sync`. Préférez le CLI ; si vous l'écrivez à la main, ne retirez pas de colonnes : l'adapter écrit `urlPattern`, `screenshotUrl` et `anchorKey` à chaque insertion, donc un schéma partiel échoue dès le premier envoi.
 
 ```prisma
 model SitepingFeedback {

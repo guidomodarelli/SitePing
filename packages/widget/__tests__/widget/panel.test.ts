@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 
 import type {
+  BeezpingPanelAction,
+  BeezpingPanelActionContext,
+  BeezpingPanelActionFeedback,
   CommentResponse,
   FeedbackResponse,
-  SitepingPanelAction,
-  SitepingPanelActionContext,
-  SitepingPanelActionFeedback,
 } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EventBus, type WidgetEvents } from "../../src/events.js";
@@ -4243,7 +4243,7 @@ describe("Panel", () => {
 
   describe("panelActions plumbing", () => {
     /** Rebuild the panel with host actions (same harness as the custom getScope test above). */
-    function rebuildWithActions(panelActions: SitepingPanelAction[]): Error[] {
+    function rebuildWithActions(panelActions: BeezpingPanelAction[]): Error[] {
       panel.destroy();
       shadow.host.remove();
       shadow = createShadowRoot();
@@ -4319,7 +4319,7 @@ describe("Panel", () => {
 
     it("context.refresh() reloads the list and re-renders the detail with the updated record", async () => {
       const fb = makeFeedback({ id: "fb-1", status: "open" });
-      const onAction = vi.fn(async (_fb: SitepingPanelActionFeedback, ctx: SitepingPanelActionContext) => {
+      const onAction = vi.fn(async (_fb: BeezpingPanelActionFeedback, ctx: BeezpingPanelActionContext) => {
         // The host moved the feedback forward server-side.
         apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [{ ...fb, status: "in_progress" }], total: 1 });
         await ctx.refresh();
@@ -4345,7 +4345,7 @@ describe("Panel", () => {
       const fb = makeFeedback({ id: "fb-1", status: "open" });
       let finish!: () => void;
       const hostWork = new Promise<void>((r) => (finish = r));
-      const onAction = vi.fn(async (_fb: SitepingPanelActionFeedback, ctx: SitepingPanelActionContext) => {
+      const onAction = vi.fn(async (_fb: BeezpingPanelActionFeedback, ctx: BeezpingPanelActionContext) => {
         apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [{ ...fb, status: "in_progress" }], total: 1 });
         await ctx.refresh();
         await hostWork; // the host keeps working after the refresh
@@ -4454,7 +4454,7 @@ describe("Panel", () => {
     });
 
     it("context.refresh() and context.close() do nothing once the panel is destroyed", async () => {
-      let ctx: SitepingPanelActionContext | undefined;
+      let ctx: BeezpingPanelActionContext | undefined;
       rebuildWithActions([
         {
           id: "keep",
@@ -4505,7 +4505,7 @@ describe("Panel", () => {
 
     function rebuild(
       resolveIdentity: () => Promise<typeof identity | null>,
-      panelActions: SitepingPanelAction[] = [],
+      panelActions: BeezpingPanelAction[] = [],
     ): void {
       panel.destroy();
       shadow.host.remove();

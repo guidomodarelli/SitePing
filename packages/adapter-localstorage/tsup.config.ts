@@ -1,4 +1,4 @@
 import { defineConfig } from "tsup";
-import { sitepingLibrary } from "../../tsup.preset.js";
+import { beezpingLibrary } from "../../tsup.preset.js";
 
-export default defineConfig(sitepingLibrary({ platform: "browser" }));
+export default defineConfig(beezpingLibrary({ platform: "browser" }));

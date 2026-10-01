@@ -1,7 +1,7 @@
 import { MemoryStore } from "@beezping/adapter-memory";
 import { createCollectionStore, type FeedbackRecord } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createSitepingHandler } from "../src/index.js";
+import { createBeezpingHandler } from "../src/index.js";
 import {
   buildWebhookPayload,
   dispatchWebhook,
@@ -111,13 +111,13 @@ describe("buildWebhookPayload", () => {
   });
 
   it("dispatched from onUpdated, sends a thread without its clientIds", async () => {
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       apiKey: "k",
       hooks: { onUpdated: (feedback) => dispatchWebhooks([{ url: "https://receiver.example/hook" }], feedback) },
     });
     const send = (method: string, body: unknown) =>
-      new Request("http://localhost/api/siteping", {
+      new Request("http://localhost/api/beezping", {
         method,
         headers: { "Content-Type": "application/json", Authorization: "Bearer k" },
         body: JSON.stringify(body),
@@ -576,12 +576,12 @@ describe("dispatchWebhooks", () => {
 // Handler integration — webhook fires after successful POST
 // ---------------------------------------------------------------------------
 
-describe("createSitepingHandler — webhooks option", () => {
+describe("createBeezpingHandler — webhooks option", () => {
   it("dispatches a single webhook after a successful POST", async () => {
     const webhook: WebhookConfig = { url: "https://hooks.example.com" };
-    const handler = createSitepingHandler({ store: new MemoryStore(), webhooks: webhook });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), webhooks: webhook });
 
-    const req = new Request("http://localhost/api/siteping", {
+    const req = new Request("http://localhost/api/beezping", {
       method: "POST",
       body: JSON.stringify(validPayloadNoAnnotations),
     });
@@ -593,7 +593,7 @@ describe("createSitepingHandler — webhooks option", () => {
   });
 
   it("dispatches every webhook in an array config", async () => {
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       webhooks: [
         { url: "https://slack.example.com", type: "slack" },
@@ -601,7 +601,7 @@ describe("createSitepingHandler — webhooks option", () => {
       ],
     });
 
-    const req = new Request("http://localhost/api/siteping", {
+    const req = new Request("http://localhost/api/beezping", {
       method: "POST",
       body: JSON.stringify(validPayloadNoAnnotations),
     });
@@ -617,7 +617,7 @@ describe("createSitepingHandler — webhooks option", () => {
     "refuses to start with a webhook timeoutMs of %s, naming the webhook by its origin only",
     (timeoutMs) => {
       const create = () =>
-        createSitepingHandler({
+        createBeezpingHandler({
           store: new MemoryStore(),
           webhooks: [
             { url: "https://hooks.example.com" },
@@ -626,14 +626,14 @@ describe("createSitepingHandler — webhooks option", () => {
         });
 
       expect(create).toThrow(
-        `[siteping] createSitepingHandler: webhook to https://hooks.slack.com: timeoutMs must be a positive integer of at most 2147483647, got ${timeoutMs}.`,
+        `[beezping] createBeezpingHandler: webhook to https://hooks.slack.com: timeoutMs must be a positive integer of at most 2147483647, got ${timeoutMs}.`,
       );
     },
   );
 
   it("starts with the longest timeoutMs a timer holds", () => {
     expect(() =>
-      createSitepingHandler({
+      createBeezpingHandler({
         store: new MemoryStore(),
         webhooks: { url: "https://hooks.example.com", timeoutMs: 2 ** 31 - 1 },
       }),
@@ -641,12 +641,12 @@ describe("createSitepingHandler — webhooks option", () => {
   });
 
   it("does not fire webhooks when POST fails validation", async () => {
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       webhooks: { url: "https://hooks.example.com" },
     });
 
-    const req = new Request("http://localhost/api/siteping", {
+    const req = new Request("http://localhost/api/beezping", {
       method: "POST",
       body: JSON.stringify({ type: "bug" }), // missing required fields
     });
@@ -662,7 +662,7 @@ describe("createSitepingHandler — webhooks option", () => {
 // Handler integration — replays never notify twice
 // ---------------------------------------------------------------------------
 
-describe("createSitepingHandler — webhooks on clientId replays", () => {
+describe("createBeezpingHandler — webhooks on clientId replays", () => {
   /**
    * An idempotent collection store on an async backend (KV, remote storage):
    * every `load`/`persist` yields, so overlapping requests both pass the
@@ -685,9 +685,9 @@ describe("createSitepingHandler — webhooks on clientId replays", () => {
     });
   }
 
-  function postClientId(handler: ReturnType<typeof createSitepingHandler>, clientId: string) {
+  function postClientId(handler: ReturnType<typeof createBeezpingHandler>, clientId: string) {
     return handler.POST(
-      new Request("http://localhost/api/siteping", {
+      new Request("http://localhost/api/beezping", {
         method: "POST",
         body: JSON.stringify({ ...validPayloadNoAnnotations, clientId }),
       }),
@@ -707,10 +707,10 @@ describe("createSitepingHandler — webhooks on clientId replays", () => {
       },
       generateId: () => `id-${feedbacks.length + 1}`,
     });
-    const handler = createSitepingHandler({ store, webhooks: { url: "https://hooks.example.com" } });
+    const handler = createBeezpingHandler({ store, webhooks: { url: "https://hooks.example.com" } });
     const post = () =>
       handler.POST(
-        new Request("http://localhost/api/siteping", {
+        new Request("http://localhost/api/beezping", {
           method: "POST",
           body: JSON.stringify({ ...validPayloadNoAnnotations, clientId: "replayed-once" }),
         }),
@@ -730,7 +730,7 @@ describe("createSitepingHandler — webhooks on clientId replays", () => {
     // report its inserts), the idempotent store resolves the second create
     // like a fresh insert: only the handler's in-flight coalescing tells.
     const { createFeedbackIfAbsent: _reportsInserts, ...store } = asyncCollectionStore();
-    const handler = createSitepingHandler({ store, webhooks: { url: "https://hooks.example.com" } });
+    const handler = createBeezpingHandler({ store, webhooks: { url: "https://hooks.example.com" } });
     const post = () => postClientId(handler, "overlapping");
 
     const [first, second] = await Promise.all([post(), post()]);
@@ -749,7 +749,7 @@ describe("createSitepingHandler — webhooks on clientId replays", () => {
     // own report of which call inserted the record keeps the second request
     // from notifying.
     const store = asyncCollectionStore();
-    const processHandler = () => createSitepingHandler({ store, webhooks: { url: "https://hooks.example.com" } });
+    const processHandler = () => createBeezpingHandler({ store, webhooks: { url: "https://hooks.example.com" } });
 
     const [first, second] = await Promise.all([
       postClientId(processHandler(), "cross-process"),
@@ -769,10 +769,10 @@ describe("createSitepingHandler — webhooks on clientId replays", () => {
 // Handler integration — deliveries handed to the runtime
 // ---------------------------------------------------------------------------
 
-describe("createSitepingHandler — waitUntil", () => {
-  const post = (handler: ReturnType<typeof createSitepingHandler>) =>
+describe("createBeezpingHandler — waitUntil", () => {
+  const post = (handler: ReturnType<typeof createBeezpingHandler>) =>
     handler.POST(
-      new Request("http://localhost/api/siteping", {
+      new Request("http://localhost/api/beezping", {
         method: "POST",
         body: JSON.stringify(validPayloadNoAnnotations),
       }),
@@ -782,7 +782,7 @@ describe("createSitepingHandler — waitUntil", () => {
     let deliver: (response: Response) => void = () => {};
     fetchSpy.mockReturnValue(new Promise<Response>((resolve) => (deliver = resolve)));
     const handedOff: Promise<unknown>[] = [];
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       webhooks: { url: "https://hooks.example.com" },
       waitUntil: (promise) => handedOff.push(promise),
@@ -803,8 +803,8 @@ describe("createSitepingHandler — waitUntil", () => {
   it("is not called for a replay, nor without webhooks", async () => {
     const waitUntil = vi.fn();
     const store = new MemoryStore();
-    const withWebhooks = createSitepingHandler({ store, webhooks: { url: "https://hooks.example.com" }, waitUntil });
-    const withoutWebhooks = createSitepingHandler({ store: new MemoryStore(), waitUntil });
+    const withWebhooks = createBeezpingHandler({ store, webhooks: { url: "https://hooks.example.com" }, waitUntil });
+    const withoutWebhooks = createBeezpingHandler({ store: new MemoryStore(), waitUntil });
 
     await post(withWebhooks);
     await post(withWebhooks);
@@ -816,7 +816,7 @@ describe("createSitepingHandler — waitUntil", () => {
   it("still answers 201 and delivers when waitUntil throws", async () => {
     const logger = { error: vi.fn() };
     const failure = new Error("after() called outside a request scope");
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       webhooks: { url: "https://hooks.example.com" },
       logger,
@@ -829,12 +829,12 @@ describe("createSitepingHandler — waitUntil", () => {
 
     expect(response.status).toBe(201);
     const { id } = (await response.json()) as FeedbackRecord;
-    expect(logger.error).toHaveBeenCalledWith("[siteping] waitUntil failed", {
+    expect(logger.error).toHaveBeenCalledWith("[beezping] waitUntil failed", {
       error: failure,
       feedbackId: id,
       projectName: validPayloadNoAnnotations.projectName,
       method: "POST",
-      path: "/api/siteping",
+      path: "/api/beezping",
     });
     await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledOnce());
   });

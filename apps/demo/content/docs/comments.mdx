@@ -22,9 +22,9 @@ The thread reads on from the message in the panel's feedback detail view, oldest
 The drawer shows the opened feedback's thread, and lets your team reply and delete once you tell the inbox who is writing:
 
 ```tsx
-<SitepingInbox
+<BeezpingInbox
   projects="my-project"
-  endpoint="/api/siteping"
+  endpoint="/api/beezping"
   apiKey={KEY}
   author={{ name: user.name, email: user.email }}
 />
@@ -33,7 +33,7 @@ The drawer shows the opened feedback's thread, and lets your team reply and dele
 - **`author`** (`{ name, email? }`) is who replies from this inbox. Without it, threads are read-only — and hidden when empty. So are they when the endpoint advertises no comments, or when the feedback's [`permissions`](/docs/server#what-each-requester-may-do) refuse replies; a reply offers no delete when the endpoint advertises no deletion, the feedback's `permissions` refuse it, or the inbox is `readOnly`.
 - **Replies ask for the `team` role**, which the server keeps only for a caller your access policy vouches for — the `apiKey`, or `canCommentAsTeam` under `access` (see [who speaks as the team](#who-speaks-as-the-team)). Any other reply is stored as `client`.
 - **Nothing is optimistic**: a reply shows once stored, and a failure keeps the draft — so does a reply the source leaves unanswered for 30 seconds, and a late answer still shows it. Escape in a draft leaves the field rather than closing the drawer. Deleting a reply asks first, and a reply someone else deleted already simply goes; like every `DELETE`, it needs the `apiKey` or your access policy's consent.
-- **Headless**: `useSitepingInbox` returns `canComment`, `canDeleteComment`, `addComment(id, body, clientId?)` and `deleteComment(id, commentId)` — see [the hook](/docs/dashboard/headless#discussion-threads). A [custom source](/docs/dashboard/sources#discussion-threads) opts in with `addComment` and `removeComment`.
+- **Headless**: `useBeezpingInbox` returns `canComment`, `canDeleteComment`, `addComment(id, body, clientId?)` and `deleteComment(id, commentId)` — see [the hook](/docs/dashboard/headless#discussion-threads). A [custom source](/docs/dashboard/sources#discussion-threads) opts in with `addComment` and `removeComment`.
 
 ## What a comment holds
 
@@ -61,7 +61,7 @@ Comments share the one endpoint: a `POST` body with a `feedbackId` is a comment,
 ### Post a comment
 
 ```http
-POST /api/siteping
+POST /api/beezping
 Content-Type: application/json
 
 {
@@ -79,7 +79,7 @@ It answers `201` with the comment. `authorRole` is optional and defaults to `cli
 ### Delete a comment
 
 ```http
-DELETE /api/siteping
+DELETE /api/beezping
 Content-Type: application/json
 
 { "projectName": "my-site", "feedbackId": "cm3f8x…", "commentId": "cm4a1k…" }
@@ -133,7 +133,7 @@ The name and email are claims too: a visitor may sign a reply with anyone's, as 
 `authorize` sees two more actions: `createComment` and `deleteComment`, with the `feedbackId` — and the `commentId` for a delete. On a `dryRun`, which fills in the feedback's [`permissions`](/docs/server#what-each-requester-may-do), `deleteComment` comes without a `commentId` and its answer covers the whole thread: guard a per-author rule with `if (!commentId) return false`, which hides the delete buttons while the real `DELETE` still goes through your rule.
 
 ```ts
-createSitepingHandler({
+createBeezpingHandler({
   store,
   access: {
     authenticate: (request) => getSessionUser(request),
@@ -161,7 +161,7 @@ A comment's `authorEmail` is redacted exactly like the feedback's: blank unless 
 
 | Store | What to do |
 |---|---|
-| [Prisma](/docs/adapters/prisma#discussion-threads) | Run `npx @beezping/cli sync` to add the `SitepingComment` model, then `npx prisma db push` (or `npx prisma migrate dev`) and `npx prisma generate` — Prisma 7 no longer generates from those. Until the client is generated with it, threads read empty and comment writes answer `501` |
-| [Drizzle](/docs/adapters/drizzle) | Nothing beyond the setup: `sitepingComments` is one of the three tables the store needs. It reads every feedback's thread, so lists fail without it |
+| [Prisma](/docs/adapters/prisma#discussion-threads) | Run `npx @beezping/cli sync` to add the `BeezpingComment` model, then `npx prisma db push` (or `npx prisma migrate dev`) and `npx prisma generate` — Prisma 7 no longer generates from those. Until the client is generated with it, threads read empty and comment writes answer `501` |
+| [Drizzle](/docs/adapters/drizzle) | Nothing beyond the setup: `beezpingComments` is one of the three tables the store needs. It reads every feedback's thread, so lists fail without it |
 | [Memory](/docs/adapters/memory), [localStorage](/docs/adapters/localstorage) | Nothing — both keep threads. localStorage data saved by an earlier version reads with empty threads |
 | [Your own](/docs/adapters/writing-an-adapter#discussion-threads) | Implement the optional `addComment` and `deleteComment` — `createCollectionStore` provides both with `comments: true` |

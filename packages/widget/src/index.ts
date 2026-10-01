@@ -1,10 +1,23 @@
-import type { SitepingConfig, SitepingInstance } from "@beezping/core";
+import type { BeezpingConfig, BeezpingInstance } from "@beezping/core";
 import { launch } from "./launcher.js";
 
 export type {
   AnchorData,
   AnnotationPayload,
   AnnotationResponse,
+  BeezpingConfig,
+  BeezpingHeadersOption,
+  BeezpingHttpConfig,
+  BeezpingInstance,
+  BeezpingLocale,
+  BeezpingPanelAction,
+  BeezpingPanelActionContext,
+  BeezpingPanelActionFeedback,
+  BeezpingPanelButtonAction,
+  BeezpingPanelLinkAction,
+  BeezpingPublicEvents,
+  BeezpingStore,
+  BeezpingStoreConfig,
   CommentResponse,
   FeedbackPayload,
   FeedbackPermissions,
@@ -12,37 +25,24 @@ export type {
   FeedbackStatus,
   FeedbackType,
   RectData,
-  SitepingConfig,
-  SitepingHeadersOption,
-  SitepingHttpConfig,
-  SitepingInstance,
-  SitepingLocale,
-  SitepingPanelAction,
-  SitepingPanelActionContext,
-  SitepingPanelActionFeedback,
-  SitepingPanelButtonAction,
-  SitepingPanelLinkAction,
-  SitepingPublicEvents,
-  SitepingStore,
-  SitepingStoreConfig,
 } from "@beezping/core";
 export type { TFunction, TranslationKey, Translations } from "./i18n/index.js";
 export { loadLocale, registerLocale } from "./i18n/index.js";
 export type { Identity } from "./identity.js";
 
 /**
- * Initialize the Siteping feedback widget.
+ * Initialize the Beezping feedback widget.
  *
  * @example
  * ```ts
- * import { initSiteping } from '@beezping/widget'
+ * import { initBeezping } from '@beezping/widget'
  *
- * const { destroy } = initSiteping({
- *   endpoint: '/api/siteping',
+ * const { destroy } = initBeezping({
+ *   endpoint: '/api/beezping',
  *   projectName: 'my-project',
  * })
  * ```
  */
-export function initSiteping(config: SitepingConfig): SitepingInstance {
+export function initBeezping(config: BeezpingConfig): BeezpingInstance {
   return launch(config);
 }

@@ -2,11 +2,11 @@ import { is } from "drizzle-orm";
 import { LibSQLDatabase } from "drizzle-orm/libsql/driver-core";
 import { DRIZZLE_STORE_MESSAGE_PREFIX } from "../constants/errors.js";
 import { primaryOf } from "../shared/replicas.js";
-import { DrizzleSitepingStore, type DrizzleStore, type DrizzleStoreOptions } from "../shared/store.js";
+import { DrizzleBeezpingStore, type DrizzleStore, type DrizzleStoreOptions } from "../shared/store.js";
 import { type AnyLibSQLDatabase, createLibSQLGateway } from "./gateway.js";
-import { createSitepingSqliteTables, type SitepingSqliteTables } from "./tables.js";
+import { type BeezpingSqliteTables, createBeezpingSqliteTables } from "./tables.js";
 
-export type { FeedbackRecord, ScreenshotStorage, SitepingStore } from "@beezping/core";
+export type { BeezpingStore, FeedbackRecord, ScreenshotStorage } from "@beezping/core";
 export {
   isStorePersistence,
   StoreDuplicateError,
@@ -14,18 +14,18 @@ export {
   StoreNotFoundError,
   StorePersistenceError,
 } from "@beezping/core";
-export { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../constants/table-names.js";
+export { type BeezpingTableNames, DEFAULT_BEEZPING_TABLE_NAMES } from "../constants/table-names.js";
 export type { DrizzleStore, DrizzleStoreLogger, DrizzleStoreOptions } from "../shared/store.js";
 export type { AnyLibSQLDatabase } from "./gateway.js";
-export { createSitepingSqliteTables, type SitepingSqliteTables } from "./tables.js";
+export { type BeezpingSqliteTables, createBeezpingSqliteTables } from "./tables.js";
 
-export interface LibSQLSitepingStoreOptions extends DrizzleStoreOptions {
-  /** Tables built with `createSitepingSqliteTables` — pass them when you customized the names. */
-  tables?: SitepingSqliteTables | undefined;
+export interface LibSQLBeezpingStoreOptions extends DrizzleStoreOptions {
+  /** Tables built with `createBeezpingSqliteTables` — pass them when you customized the names. */
+  tables?: BeezpingSqliteTables | undefined;
 }
 
 /**
- * `SitepingStore` on Turso / libSQL through Drizzle ORM. Given a database
+ * `BeezpingStore` on Turso / libSQL through Drizzle ORM. Given a database
  * built with `withReplicas`, it runs everything on the primary.
  *
  * @throws `TypeError` when `db` does not come from `drizzle-orm/libsql`.
@@ -37,22 +37,22 @@ export interface LibSQLSitepingStoreOptions extends DrizzleStoreOptions {
  * @example
  * ```ts
  * import { drizzle } from "drizzle-orm/libsql";
- * import { createLibSQLSitepingStore } from "@beezping/adapter-drizzle/libsql";
+ * import { createLibSQLBeezpingStore } from "@beezping/adapter-drizzle/libsql";
  *
  * const db = drizzle({ connection: { url: process.env.TURSO_DATABASE_URL!, authToken: process.env.TURSO_AUTH_TOKEN! } });
- * const store = createLibSQLSitepingStore(db, { screenshotStorage });
+ * const store = createLibSQLBeezpingStore(db, { screenshotStorage });
  * ```
  */
-export function createLibSQLSitepingStore(
+export function createLibSQLBeezpingStore(
   db: AnyLibSQLDatabase,
-  options: LibSQLSitepingStoreOptions = {},
+  options: LibSQLBeezpingStoreOptions = {},
 ): DrizzleStore {
   const primary = primaryOf(db);
   if (!is(primary, LibSQLDatabase)) {
     throw new TypeError(
-      `${DRIZZLE_STORE_MESSAGE_PREFIX}: createLibSQLSitepingStore needs a database from drizzle-orm/libsql — other SQLite drivers (Cloudflare D1, better-sqlite3…) are not supported`,
+      `${DRIZZLE_STORE_MESSAGE_PREFIX}: createLibSQLBeezpingStore needs a database from drizzle-orm/libsql — other SQLite drivers (Cloudflare D1, better-sqlite3…) are not supported`,
     );
   }
-  const { tables = createSitepingSqliteTables(), ...storeOptions } = options;
-  return new DrizzleSitepingStore(createLibSQLGateway(primary, tables), storeOptions);
+  const { tables = createBeezpingSqliteTables(), ...storeOptions } = options;
+  return new DrizzleBeezpingStore(createLibSQLGateway(primary, tables), storeOptions);
 }

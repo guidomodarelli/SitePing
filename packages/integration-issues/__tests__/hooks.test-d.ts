@@ -4,14 +4,14 @@
  * and optional settings take values read from the environment.
  */
 
-import type { SitepingStore } from "@beezping/core";
-import { createSitepingHandler, type SitepingHandler } from "@beezping/server";
+import type { BeezpingStore } from "@beezping/core";
+import { type BeezpingHandler, createBeezpingHandler } from "@beezping/server";
 import { describe, expectTypeOf, it } from "vitest";
 import { createIssueTrackerHooks, formatIssue, type IssueTracker } from "../src/index.js";
 import { createGitHubTracker } from "../src/providers/github.js";
 import { createGitLabTracker } from "../src/providers/gitlab.js";
 
-declare const store: SitepingStore;
+declare const store: BeezpingStore;
 declare const tracker: IssueTracker;
 
 interface Reviewer {
@@ -23,12 +23,12 @@ declare function sessionUser(request: Request): Promise<Reviewer | null>;
 describe("createIssueTrackerHooks", () => {
   it("plugs into the apiKey policy", () => {
     expectTypeOf(
-      createSitepingHandler({ store, apiKey: "k", hooks: createIssueTrackerHooks({ tracker }) }),
-    ).toEqualTypeOf<SitepingHandler>();
+      createBeezpingHandler({ store, apiKey: "k", hooks: createIssueTrackerHooks({ tracker }) }),
+    ).toEqualTypeOf<BeezpingHandler>();
   });
 
   it("keeps the principal a typed access policy infers", () => {
-    createSitepingHandler({
+    createBeezpingHandler({
       store,
       access: {
         authenticate: sessionUser,
@@ -44,7 +44,7 @@ describe("createIssueTrackerHooks", () => {
   it("lets a hook of your own call the one it replaces", () => {
     const issues = createIssueTrackerHooks({ tracker });
 
-    createSitepingHandler({
+    createBeezpingHandler({
       store,
       access: { authenticate: sessionUser },
       hooks: {
@@ -55,7 +55,7 @@ describe("createIssueTrackerHooks", () => {
         },
       },
     });
-    createSitepingHandler({
+    createBeezpingHandler({
       store,
       apiKey: "k",
       hooks: {
@@ -66,7 +66,7 @@ describe("createIssueTrackerHooks", () => {
   });
 
   it("combines with hooks of your own", () => {
-    createSitepingHandler({
+    createBeezpingHandler({
       store,
       access: { authenticate: sessionUser },
       hooks: {

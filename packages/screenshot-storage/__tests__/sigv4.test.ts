@@ -44,7 +44,7 @@ describe("signS3Request", () => {
     {
       name: "PUT with a body and content type (R2 region)",
       method: "PUT",
-      url: new URL("https://account.r2.cloudflarestorage.com/screens/siteping-0123abcd.jpg"),
+      url: new URL("https://account.r2.cloudflarestorage.com/screens/beezping-0123abcd.jpg"),
       headers: { "content-type": "image/jpeg" },
       body: new TextEncoder().encode("jpeg-bytes"),
       region: "auto",
@@ -52,7 +52,7 @@ describe("signS3Request", () => {
     {
       name: "DELETE with an empty body (AWS region)",
       method: "DELETE",
-      url: new URL("https://s3.eu-west-3.amazonaws.com/my-bucket/siteping-0123abcd.png"),
+      url: new URL("https://s3.eu-west-3.amazonaws.com/my-bucket/beezping-0123abcd.png"),
       headers: {},
       body: new Uint8Array(),
       region: "eu-west-3",
@@ -216,15 +216,15 @@ describe("createS3ObjectStore — signing clock", () => {
     });
 
     await objectStore.put({
-      key: "siteping-0123abcd.jpg",
+      key: "beezping-0123abcd.jpg",
       bytes: new TextEncoder().encode("jpeg-bytes"),
       contentType: "image/jpeg",
     });
-    await objectStore.remove("siteping-0123abcd.jpg");
+    await objectStore.remove("beezping-0123abcd.jpg");
 
     // The fake bucket re-signs each request with AWS's own signer and answers 403 on mismatch,
     // so the object round-trip proves the signatures were valid for the injected instants.
-    expect(fake.objects.has("siteping-0123abcd.jpg")).toBe(false);
+    expect(fake.objects.has("beezping-0123abcd.jpg")).toBe(false);
     expect(fake.requests.map((request) => request.headers.get("x-amz-date"))).toEqual([
       "20260927T123456Z",
       "20260927T124000Z",

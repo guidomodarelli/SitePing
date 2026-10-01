@@ -3,7 +3,7 @@ import type { Translations } from "./types.js";
 export const ja: Translations = {
   // Panel
   "panel.title": "フィードバック",
-  "panel.ariaLabel": "Siteping フィードバックパネル",
+  "panel.ariaLabel": "Beezping フィードバックパネル",
   "panel.feedbackList": "フィードバック一覧",
   "panel.loading": "フィードバックを読み込み中",
   "panel.close": "パネルを閉じる",
@@ -53,7 +53,7 @@ export const ja: Translations = {
   "panel.filterMineHint": "このブラウザから送信したフィードバックのみ",
 
   // FAB menu
-  "fab.aria": "Siteping — フィードバックメニュー",
+  "fab.aria": "Beezping — フィードバックメニュー",
   "fab.messages": "サイドバーを表示",
   "fab.annotate": "新しい注釈を作成",
   "fab.annotations": "マーカーの表示を切り替え",

@@ -4,17 +4,17 @@
  * principal inferred from `access.authenticate`.
  */
 
-import type { CommentPayload, SitepingStore } from "@beezping/core";
+import type { BeezpingStore, CommentPayload } from "@beezping/core";
 import { describe, expectTypeOf, it } from "vitest";
 import {
-  createSitepingHandler,
-  type SitepingAccessControl,
-  type SitepingAction,
-  type SitepingHandler,
-  type SitepingHandlerOptions,
+  type BeezpingAccessControl,
+  type BeezpingAction,
+  type BeezpingHandler,
+  type BeezpingHandlerOptions,
+  createBeezpingHandler,
 } from "../src/index.js";
 
-declare const store: SitepingStore;
+declare const store: BeezpingStore;
 
 interface Reviewer {
   id: string;
@@ -22,41 +22,41 @@ interface Reviewer {
 }
 declare function sessionUser(request: Request): Promise<Reviewer | null>;
 
-describe("createSitepingHandler options XOR union", () => {
+describe("createBeezpingHandler options XOR union", () => {
   it("accepts each policy on its own", () => {
-    expectTypeOf(createSitepingHandler({ store })).toEqualTypeOf<SitepingHandler>();
+    expectTypeOf(createBeezpingHandler({ store })).toEqualTypeOf<BeezpingHandler>();
     expectTypeOf(
-      createSitepingHandler({ store, apiKey: "k", publicEndpoints: ["POST"] }),
-    ).toEqualTypeOf<SitepingHandler>();
+      createBeezpingHandler({ store, apiKey: "k", publicEndpoints: ["POST"] }),
+    ).toEqualTypeOf<BeezpingHandler>();
     expectTypeOf(
-      createSitepingHandler({ store, access: { authenticate: sessionUser } }),
-    ).toEqualTypeOf<SitepingHandler>();
+      createBeezpingHandler({ store, access: { authenticate: sessionUser } }),
+    ).toEqualTypeOf<BeezpingHandler>();
   });
 
   it("accepts options assembled at runtime", () => {
-    const options: SitepingHandlerOptions<Reviewer> =
+    const options: BeezpingHandlerOptions<Reviewer> =
       Math.random() > 0.5 ? { store, apiKey: "k" } : { store, access: { authenticate: sessionUser } };
-    expectTypeOf(createSitepingHandler(options)).toEqualTypeOf<SitepingHandler>();
+    expectTypeOf(createBeezpingHandler(options)).toEqualTypeOf<BeezpingHandler>();
   });
 
   it("rejects mixed policies and a missing store", () => {
     // @ts-expect-error — apiKey and access are mutually exclusive
-    createSitepingHandler({ store, apiKey: "k", access: { authenticate: sessionUser } });
+    createBeezpingHandler({ store, apiKey: "k", access: { authenticate: sessionUser } });
 
     // @ts-expect-error — publicEndpoints belongs to the apiKey policy
-    createSitepingHandler({ store, access: { authenticate: sessionUser }, publicEndpoints: ["GET"] });
+    createBeezpingHandler({ store, access: { authenticate: sessionUser }, publicEndpoints: ["GET"] });
 
     // @ts-expect-error — redaction is access.canReadAuthorEmail's job under access
-    createSitepingHandler({ store, access: { authenticate: sessionUser }, redactUnauthenticatedEmails: false });
+    createBeezpingHandler({ store, access: { authenticate: sessionUser }, redactUnauthenticatedEmails: false });
 
     // @ts-expect-error — a store is required
-    createSitepingHandler({ apiKey: "k" });
+    createBeezpingHandler({ apiKey: "k" });
   });
 });
 
 describe("the principal", () => {
   it("is null in hooks and transforms under the apiKey policy", () => {
-    createSitepingHandler({
+    createBeezpingHandler({
       store,
       apiKey: "k",
       beforeCreate: (input, { principal }) => {
@@ -74,16 +74,16 @@ describe("the principal", () => {
 
   it("is never a boolean, whose false would read as a signed-in caller", () => {
     // @ts-expect-error — authenticate must resolve who is calling, not whether
-    createSitepingHandler({ store, access: { authenticate: (request) => request.headers.has("x-token") } });
+    createBeezpingHandler({ store, access: { authenticate: (request) => request.headers.has("x-token") } });
 
     const tokenCheck = (request: Request) => request.headers.get("x-token") === "secret";
     // @ts-expect-error — nor through a policy typed on its own
-    const standalone: SitepingAccessControl<boolean> = { authenticate: tokenCheck };
+    const standalone: BeezpingAccessControl<boolean> = { authenticate: tokenCheck };
     void standalone;
   });
 
   it("is inferred from access.authenticate, without null", () => {
-    createSitepingHandler({
+    createBeezpingHandler({
       store,
       access: {
         authenticate: sessionUser,
@@ -123,7 +123,7 @@ describe("the principal", () => {
 
 describe("the actions authorize decides about", () => {
   it("include the comment writes", () => {
-    expectTypeOf<SitepingAction>().toEqualTypeOf<
+    expectTypeOf<BeezpingAction>().toEqualTypeOf<
       "create" | "list" | "update" | "delete" | "deleteAll" | "createComment" | "deleteComment"
     >();
   });

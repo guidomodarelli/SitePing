@@ -109,7 +109,7 @@ export function createS3ObjectStore({
   // every object lands under `<bucket>/<key>`, and every screenshot URL 404s.
   if (new URL(endpointBase).pathname.endsWith(`/${encodeRfc3986(bucket)}`)) {
     console.warn(
-      `[siteping] endpoint ends with the bucket name "${bucket}": objects would be stored under "${bucket}/<key>", ` +
+      `[beezping] endpoint ends with the bucket name "${bucket}": objects would be stored under "${bucket}/<key>", ` +
         "not where publicBaseUrl reads them — remove the bucket from endpoint",
     );
   }

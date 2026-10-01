@@ -44,7 +44,7 @@ generator client {
 }
 `;
 
-/** A schema that already has the SitepingFeedback model (but incomplete). */
+/** A schema that already has the BeezpingFeedback model (but incomplete). */
 const SCHEMA_WITH_PARTIAL_MODEL = `
 datasource db {
   provider = "postgresql"
@@ -55,7 +55,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -91,7 +91,7 @@ describe("syncPrismaModels", () => {
   let schemaPath: string;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "siteping-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "beezping-test-"));
     schemaPath = join(tmpDir, "schema.prisma");
   });
 
@@ -118,33 +118,33 @@ describe("syncPrismaModels", () => {
   // Adding models to an empty schema
   // -----------------------------------------------------------------------
 
-  it("adds both SitepingFeedback and SitepingAnnotation to an empty schema", () => {
+  it("adds both BeezpingFeedback and BeezpingAnnotation to an empty schema", () => {
     writeFileSync(schemaPath, MINIMAL_SCHEMA);
 
     const result = syncPrismaModels(schemaPath);
 
-    expect(result.addedModels).toContain("SitepingFeedback");
-    expect(result.addedModels).toContain("SitepingAnnotation");
+    expect(result.addedModels).toContain("BeezpingFeedback");
+    expect(result.addedModels).toContain("BeezpingAnnotation");
     expect(result.changes).toHaveLength(0); // No field-level changes, models were created fresh
 
     // Verify the output file contains the models
     const output = readFileSync(schemaPath, "utf-8");
-    expect(output).toContain("model SitepingFeedback");
-    expect(output).toContain("model SitepingAnnotation");
+    expect(output).toContain("model BeezpingFeedback");
+    expect(output).toContain("model BeezpingAnnotation");
     expect(output).toContain("projectName");
     expect(output).toContain("cssSelector");
   });
 
-  it("adds the SitepingComment model and the feedback side of its relation", () => {
+  it("adds the BeezpingComment model and the feedback side of its relation", () => {
     writeFileSync(schemaPath, MINIMAL_SCHEMA);
 
-    expect(syncPrismaModels(schemaPath).addedModels).toContain("SitepingComment");
+    expect(syncPrismaModels(schemaPath).addedModels).toContain("BeezpingComment");
 
     const output = readFileSync(schemaPath, "utf-8");
-    expect(output).toMatch(/^\s*comments\s+SitepingComment\[\]$/m);
-    const model = output.slice(output.indexOf("model SitepingComment"));
+    expect(output).toMatch(/^\s*comments\s+BeezpingComment\[\]$/m);
+    const model = output.slice(output.indexOf("model BeezpingComment"));
     expect(model).toMatch(
-      /^\s*feedback\s+SitepingFeedback\s+@relation\(fields: \[feedbackId\], references: \[id\], onDelete: Cascade\)$/m,
+      /^\s*feedback\s+BeezpingFeedback\s+@relation\(fields: \[feedbackId\], references: \[id\], onDelete: Cascade\)$/m,
     );
     expect(model).toMatch(/^\s*body\s+String\s+@db\.Text$/m);
     expect(model).toMatch(/^\s*authorRole\s+String\s+@default\("client"\)$/m);
@@ -156,35 +156,35 @@ describe("syncPrismaModels", () => {
     writeFileSync(schemaPath, MINIMAL_SCHEMA);
     syncPrismaModels(schemaPath);
     const beforeThreads = readFileSync(schemaPath, "utf-8")
-      .replace(/^\s*comments\s+SitepingComment\[\]\r?\n/m, "")
-      .replace(/model SitepingComment \{[^}]*\}\r?\n?/, "");
+      .replace(/^\s*comments\s+BeezpingComment\[\]\r?\n/m, "")
+      .replace(/model BeezpingComment \{[^}]*\}\r?\n?/, "");
     writeFileSync(schemaPath, beforeThreads);
 
     const result = syncPrismaModels(schemaPath);
 
-    expect(result.addedModels).toEqual(["SitepingComment"]);
+    expect(result.addedModels).toEqual(["BeezpingComment"]);
     expect(result.changes).toEqual([
-      { model: "SitepingFeedback", field: "comments", action: "added", detail: "SitepingComment" },
+      { model: "BeezpingFeedback", field: "comments", action: "added", detail: "BeezpingComment" },
     ]);
     expect(syncPrismaModels(schemaPath)).toMatchObject({ addedModels: [], changes: [] });
   });
 
-  it("puts a model it adds in the database schema of the existing Siteping models", () => {
+  it("puts a model it adds in the database schema of the existing Beezping models", () => {
     writeFileSync(schemaPath, MINIMAL_SCHEMA);
     syncPrismaModels(schemaPath);
     // A multi-schema datasource, where Prisma requires @@schema on every model.
     const beforeThreads = readFileSync(schemaPath, "utf-8")
-      .replace(/^\s*comments\s+SitepingComment\[\]\r?\n/m, "")
-      .replace(/model SitepingComment \{[^}]*\}\r?\n?/, "")
-      .replace('url      = env("DATABASE_URL")', 'url      = env("DATABASE_URL")\n  schemas  = ["public", "siteping"]')
-      .replace(/^(model Siteping(Feedback|Annotation) \{[^}]*)\}/gm, '$1  @@schema("siteping")\n}');
+      .replace(/^\s*comments\s+BeezpingComment\[\]\r?\n/m, "")
+      .replace(/model BeezpingComment \{[^}]*\}\r?\n?/, "")
+      .replace('url      = env("DATABASE_URL")', 'url      = env("DATABASE_URL")\n  schemas  = ["public", "beezping"]')
+      .replace(/^(model Beezping(Feedback|Annotation) \{[^}]*)\}/gm, '$1  @@schema("beezping")\n}');
     writeFileSync(schemaPath, beforeThreads);
 
-    expect(syncPrismaModels(schemaPath).addedModels).toEqual(["SitepingComment"]);
+    expect(syncPrismaModels(schemaPath).addedModels).toEqual(["BeezpingComment"]);
 
     const output = readFileSync(schemaPath, "utf-8");
-    expect(output.match(/@@schema\("siteping"\)/g)).toHaveLength(3);
-    expect(output.slice(output.indexOf("model SitepingComment"))).toMatch(/^\s*@@schema\("siteping"\)$/m);
+    expect(output.match(/@@schema\("beezping"\)/g)).toHaveLength(3);
+    expect(output.slice(output.indexOf("model BeezpingComment"))).toMatch(/^\s*@@schema\("beezping"\)$/m);
     expect(syncPrismaModels(schemaPath)).toMatchObject({ addedModels: [], changes: [] });
   });
 
@@ -234,7 +234,7 @@ describe("syncPrismaModels", () => {
 
     const result = syncPrismaModels(schemaPath);
 
-    expect(result.addedModels).toEqual(["SitepingFeedback", "SitepingAnnotation", "SitepingComment"]);
+    expect(result.addedModels).toEqual(["BeezpingFeedback", "BeezpingAnnotation", "BeezpingComment"]);
     const output = readFileSync(schemaPath, "utf-8");
     expect(output).toContain("model User {");
     expect(output).toContain("enum Role {");
@@ -254,19 +254,19 @@ describe("syncPrismaModels", () => {
   // Adding models alongside existing models
   // -----------------------------------------------------------------------
 
-  it("adds Siteping models alongside an existing User model", () => {
+  it("adds Beezping models alongside an existing User model", () => {
     writeFileSync(schemaPath, SCHEMA_WITH_USER_MODEL);
 
     const result = syncPrismaModels(schemaPath);
 
-    expect(result.addedModels).toContain("SitepingFeedback");
-    expect(result.addedModels).toContain("SitepingAnnotation");
+    expect(result.addedModels).toContain("BeezpingFeedback");
+    expect(result.addedModels).toContain("BeezpingAnnotation");
 
     const output = readFileSync(schemaPath, "utf-8");
     // User model should still be there
     expect(output).toContain("model User");
-    expect(output).toContain("model SitepingFeedback");
-    expect(output).toContain("model SitepingAnnotation");
+    expect(output).toContain("model BeezpingFeedback");
+    expect(output).toContain("model BeezpingAnnotation");
   });
 
   // -----------------------------------------------------------------------
@@ -278,18 +278,18 @@ describe("syncPrismaModels", () => {
 
     const result = syncPrismaModels(schemaPath);
 
-    // SitepingFeedback already existed, so it shouldn't be in addedModels
-    expect(result.addedModels).not.toContain("SitepingFeedback");
-    // But SitepingAnnotation is new
-    expect(result.addedModels).toContain("SitepingAnnotation");
+    // BeezpingFeedback already existed, so it shouldn't be in addedModels
+    expect(result.addedModels).not.toContain("BeezpingFeedback");
+    // But BeezpingAnnotation is new
+    expect(result.addedModels).toContain("BeezpingAnnotation");
 
     // Should have field-level changes for the missing fields
     expect(result.changes.length).toBeGreaterThan(0);
     const addedFieldNames = result.changes
-      .filter((c) => c.action === "added" && c.model === "SitepingFeedback")
+      .filter((c) => c.action === "added" && c.model === "BeezpingFeedback")
       .map((c) => c.field);
 
-    // These fields exist in SITEPING_MODELS but not in the partial schema
+    // These fields exist in BEEZPING_MODELS but not in the partial schema
     expect(addedFieldNames).toContain("status");
     expect(addedFieldNames).toContain("url");
     expect(addedFieldNames).toContain("viewport");
@@ -308,7 +308,7 @@ describe("syncPrismaModels", () => {
   });
 
   it("adds only screenshotRegion to a schema from the previous release", () => {
-    // A schema generated before screenshotRegion existed — `siteping sync` is
+    // A schema generated before screenshotRegion existed — `beezping sync` is
     // how existing users pick the new column up, so it must be the single
     // change reported.
     writeFileSync(schemaPath, MINIMAL_SCHEMA);
@@ -321,7 +321,7 @@ describe("syncPrismaModels", () => {
 
     expect(result.addedModels).toHaveLength(0);
     expect(result.changes).toHaveLength(1);
-    expect(result.changes[0]).toMatchObject({ model: "SitepingFeedback", field: "screenshotRegion", action: "added" });
+    expect(result.changes[0]).toMatchObject({ model: "BeezpingFeedback", field: "screenshotRegion", action: "added" });
     expect(readFileSync(schemaPath, "utf-8")).toMatch(/screenshotRegion\s+Json\?/);
   });
 
@@ -397,9 +397,9 @@ describe("syncPrismaModels", () => {
 
     const output = readFileSync(schemaPath, "utf-8");
 
-    // SitepingFeedback.message should have @db.Text
+    // BeezpingFeedback.message should have @db.Text
     expect(output).toMatch(/message\s+String\s+@db\.Text/);
-    // SitepingAnnotation fields with nativeType: "Text"
+    // BeezpingAnnotation fields with nativeType: "Text"
     expect(output).toMatch(/cssSelector\s+String\s+@db\.Text/);
     expect(output).toMatch(/xpath\s+String\s+@db\.Text/);
     expect(output).toMatch(/textSnippet\s+String\s+@db\.Text/);
@@ -419,7 +419,7 @@ describe("syncPrismaModels", () => {
     const output = readFileSync(schemaPath, "utf-8");
 
     // message existed but without @db.Text — should be updated
-    const messageChange = result.changes.find((c) => c.model === "SitepingFeedback" && c.field === "message");
+    const messageChange = result.changes.find((c) => c.model === "BeezpingFeedback" && c.field === "message");
     expect(messageChange).toBeDefined();
     expect(messageChange!.action).toBe("updated");
     expect(messageChange!.detail).toContain("+@db.Text");
@@ -463,7 +463,7 @@ describe("syncPrismaModels", () => {
       const result = syncPrismaModels(schemaPath);
 
       expect(result.changes).toContainEqual({
-        model: "SitepingFeedback",
+        model: "BeezpingFeedback",
         field: "message",
         action: "updated",
         detail: "-@db.Text",
@@ -487,10 +487,10 @@ describe("syncPrismaModels", () => {
 
     const output = readFileSync(schemaPath, "utf-8");
 
-    // SitepingFeedback has a 1-to-many relation to annotations
-    expect(output).toMatch(/annotations\s+SitepingAnnotation\[\]/);
+    // BeezpingFeedback has a 1-to-many relation to annotations
+    expect(output).toMatch(/annotations\s+BeezpingAnnotation\[\]/);
 
-    // SitepingAnnotation has feedback relation with references
+    // BeezpingAnnotation has feedback relation with references
     expect(output).toContain("@relation");
     expect(output).toContain("onDelete: Cascade");
   });
@@ -535,7 +535,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -550,14 +550,14 @@ model SitepingFeedback {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation[]
+  annotations BeezpingAnnotation[]
 }
 `;
     writeFileSync(schemaPath, schemaWithWrongType);
 
     const result = syncPrismaModels(schemaPath);
 
-    const statusChange = result.changes.find((c) => c.model === "SitepingFeedback" && c.field === "status");
+    const statusChange = result.changes.find((c) => c.model === "BeezpingFeedback" && c.field === "status");
     expect(statusChange).toBeDefined();
     expect(statusChange!.action).toBe("updated");
     // Detail should contain the type change arrow
@@ -566,7 +566,7 @@ model SitepingFeedback {
   });
 
   it("updates a field whose optional state differs (required to optional)", () => {
-    // resolvedAt is optional in SITEPING_MODELS — make it required in schema
+    // resolvedAt is optional in BEEZPING_MODELS — make it required in schema
     const schemaWithReqResolvedAt = `
 datasource db {
   provider = "postgresql"
@@ -577,7 +577,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -592,14 +592,14 @@ model SitepingFeedback {
   resolvedAt  DateTime
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation[]
+  annotations BeezpingAnnotation[]
 }
 `;
     writeFileSync(schemaPath, schemaWithReqResolvedAt);
 
     const result = syncPrismaModels(schemaPath);
 
-    const resolvedChange = result.changes.find((c) => c.model === "SitepingFeedback" && c.field === "resolvedAt");
+    const resolvedChange = result.changes.find((c) => c.model === "BeezpingFeedback" && c.field === "resolvedAt");
     expect(resolvedChange).toBeDefined();
     expect(resolvedChange!.action).toBe("updated");
     // The change detail mentions optional/required transition
@@ -607,7 +607,7 @@ model SitepingFeedback {
   });
 
   it("updates a field whose optional state differs (optional to required)", () => {
-    // projectName is required in SITEPING_MODELS — make it optional in schema
+    // projectName is required in BEEZPING_MODELS — make it optional in schema
     const schemaWithOptProjectName = `
 datasource db {
   provider = "postgresql"
@@ -618,7 +618,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id          String   @id @default(cuid())
   projectName String?
   type        String
@@ -633,14 +633,14 @@ model SitepingFeedback {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation[]
+  annotations BeezpingAnnotation[]
 }
 `;
     writeFileSync(schemaPath, schemaWithOptProjectName);
 
     const result = syncPrismaModels(schemaPath);
 
-    const projectChange = result.changes.find((c) => c.model === "SitepingFeedback" && c.field === "projectName");
+    const projectChange = result.changes.find((c) => c.model === "BeezpingFeedback" && c.field === "projectName");
     expect(projectChange).toBeDefined();
     expect(projectChange!.action).toBe("updated");
     expect(projectChange!.detail).toMatch(/optional|required/);
@@ -658,7 +658,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id          String   @id @default(cuid())
   projectName String   @unique
   type        String
@@ -673,14 +673,14 @@ model SitepingFeedback {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation[]
+  annotations BeezpingAnnotation[]
 }
 `;
     writeFileSync(schemaPath, schemaWithExtraAttr);
 
     const result = syncPrismaModels(schemaPath);
 
-    const projectChange = result.changes.find((c) => c.model === "SitepingFeedback" && c.field === "projectName");
+    const projectChange = result.changes.find((c) => c.model === "BeezpingFeedback" && c.field === "projectName");
     expect(projectChange).toBeDefined();
     expect(projectChange!.action).toBe("updated");
     // Attribute should be removed: detail contains -@unique
@@ -688,7 +688,7 @@ model SitepingFeedback {
   });
 
   it("updates a field whose array state differs", () => {
-    // annotations should be SitepingAnnotation[] but defined as SitepingAnnotation
+    // annotations should be BeezpingAnnotation[] but defined as BeezpingAnnotation
     const schemaWithWrongArray = `
 datasource db {
   provider = "postgresql"
@@ -699,7 +699,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -714,20 +714,20 @@ model SitepingFeedback {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation
+  annotations BeezpingAnnotation
 }
 `;
     writeFileSync(schemaPath, schemaWithWrongArray);
 
     const result = syncPrismaModels(schemaPath);
 
-    const annotChange = result.changes.find((c) => c.model === "SitepingFeedback" && c.field === "annotations");
+    const annotChange = result.changes.find((c) => c.model === "BeezpingFeedback" && c.field === "annotations");
     expect(annotChange).toBeDefined();
     expect(annotChange!.action).toBe("updated");
   });
 
   // -----------------------------------------------------------------------
-  // User-owned parts of a Siteping field (@map, relation name, comment)
+  // User-owned parts of a Beezping field (@map, relation name, comment)
   // -----------------------------------------------------------------------
 
   describe("user-owned field parts", () => {
@@ -752,23 +752,23 @@ model SitepingFeedback {
       const result = syncPrismaModels(schemaPath);
 
       expect(result.changes).toEqual([
-        { model: "SitepingFeedback", field: "message", action: "updated", detail: "+@db.Text" },
+        { model: "BeezpingFeedback", field: "message", action: "updated", detail: "+@db.Text" },
       ]);
       expect(readFileSync(schemaPath, "utf-8")).toMatch(
         /^\s*message\s+String\s+@db\.Text @map\("body"\) \/\/ client text$/m,
       );
     });
 
-    it("removes an @ignore from a Siteping field", () => {
+    it("removes an @ignore from a Beezping field", () => {
       // @ignore drops the field from Prisma Client, but the adapter writes
-      // every Siteping column: each feedback submission would fail.
+      // every Beezping column: each feedback submission would fail.
       const synced = syncedSchema();
       writeFileSync(schemaPath, synced.replace(/^(\s*url\s+String)$/m, "$1 @ignore"));
 
       const result = syncPrismaModels(schemaPath);
 
       expect(result.changes).toEqual([
-        { model: "SitepingFeedback", field: "url", action: "updated", detail: "-@ignore" },
+        { model: "BeezpingFeedback", field: "url", action: "updated", detail: "-@ignore" },
       ]);
       expect(readFileSync(schemaPath, "utf-8")).toBe(synced);
     });
@@ -777,7 +777,7 @@ model SitepingFeedback {
       // Stripping the name from one side only leaves Prisma with "missing an
       // opposite relation field" — the schema must come back untouched.
       const schema = syncedSchema()
-        .replace(/^(\s*annotations\s+SitepingAnnotation\[\])$/m, '$1 @relation("FbAnn")')
+        .replace(/^(\s*annotations\s+BeezpingAnnotation\[\])$/m, '$1 @relation("FbAnn")')
         .replace("@relation(fields:", '@relation("FbAnn", fields:');
       writeFileSync(schemaPath, schema);
 
@@ -789,23 +789,23 @@ model SitepingFeedback {
 
     it("keeps the relation name when rewriting a drifted relation field", () => {
       const schema = syncedSchema()
-        .replace(/^(\s*)annotations\s+SitepingAnnotation\[\]$/m, '$1annotations SitepingAnnotation @relation("FbAnn")')
+        .replace(/^(\s*)annotations\s+BeezpingAnnotation\[\]$/m, '$1annotations BeezpingAnnotation @relation("FbAnn")')
         .replace(
-          /feedback(\s+)SitepingFeedback @relation\(fields:/,
-          'feedback$1SitepingFeedback? @relation(name: "FbAnn", fields:',
+          /feedback(\s+)BeezpingFeedback @relation\(fields:/,
+          'feedback$1BeezpingFeedback? @relation(name: "FbAnn", fields:',
         );
       writeFileSync(schemaPath, schema);
 
       const result = syncPrismaModels(schemaPath);
 
       expect(result.changes.map((c) => `${c.model}.${c.field}`)).toEqual([
-        "SitepingFeedback.annotations",
-        "SitepingAnnotation.feedback",
+        "BeezpingFeedback.annotations",
+        "BeezpingAnnotation.feedback",
       ]);
       const output = readFileSync(schemaPath, "utf-8");
-      expect(output).toMatch(/^\s*annotations\s+SitepingAnnotation\[\]\s+@relation\("FbAnn"\)$/m);
+      expect(output).toMatch(/^\s*annotations\s+BeezpingAnnotation\[\]\s+@relation\("FbAnn"\)$/m);
       expect(output).toMatch(
-        /^\s*feedback\s+SitepingFeedback\s+@relation\(name: "FbAnn", fields: \[feedbackId\], references: \[id\], onDelete: Cascade\)$/m,
+        /^\s*feedback\s+BeezpingFeedback\s+@relation\(name: "FbAnn", fields: \[feedbackId\], references: \[id\], onDelete: Cascade\)$/m,
       );
     });
   });
@@ -824,7 +824,7 @@ model SitepingFeedback {
 
       expect(result.changes).toEqual([
         {
-          model: "SitepingAnnotation",
+          model: "BeezpingAnnotation",
           field: "feedback",
           action: "updated",
           detail:
@@ -843,7 +843,7 @@ model SitepingFeedback {
 
       expect(result.changes).toEqual([
         {
-          model: "SitepingFeedback",
+          model: "BeezpingFeedback",
           field: "id",
           action: "updated",
           detail: "@default(uuid()) → @default(cuid())",
@@ -887,7 +887,7 @@ model SitepingFeedback {
     });
 
     it("leaves an onUpdate on the relation alone", () => {
-      // Siteping never sets it (its ids never change), and SQL Server may need
+      // Beezping never sets it (its ids never change), and SQL Server may need
       // `NoAction` there to break a cycle of cascade paths.
       const schema = syncedSchema().replace("onDelete: Cascade)", "onDelete: Cascade, onUpdate: NoAction)");
       writeFileSync(schemaPath, schema);
@@ -925,14 +925,14 @@ model SitepingFeedback {
       // attached docs must stay attached — and a detached one detached.
       writeFileSync(
         schemaPath,
-        SCHEMA_WITH_PARTIAL_MODEL.replace("model SitepingFeedback {", "/// Feedback inbox\nmodel SitepingFeedback {") +
+        SCHEMA_WITH_PARTIAL_MODEL.replace("model BeezpingFeedback {", "/// Feedback inbox\nmodel BeezpingFeedback {") +
           "\n/// Roles\nenum Role {\n  ADMIN\n}\n\n/// Not attached\n\nmodel Other {\n  id String @id\n}\n",
       );
 
       syncPrismaModels(schemaPath);
 
       const output = readFileSync(schemaPath, "utf-8");
-      expect(output).toContain("/// Feedback inbox\nmodel SitepingFeedback {");
+      expect(output).toContain("/// Feedback inbox\nmodel BeezpingFeedback {");
       expect(output).toContain("/// Roles\nenum Role {");
       expect(output).toContain("/// Not attached\n\nmodel Other {");
     });
@@ -960,7 +960,7 @@ model SitepingFeedback {
   // -----------------------------------------------------------------------
 
   it("appends new fields when existing model lacks createdAt", () => {
-    // SitepingFeedback exists but has no createdAt — fields should be appended at end
+    // BeezpingFeedback exists but has no createdAt — fields should be appended at end
     const schemaWithoutCreatedAt = `
 datasource db {
   provider = "postgresql"
@@ -971,7 +971,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -983,12 +983,12 @@ model SitepingFeedback {
 
     // Many fields should be added
     expect(result.changes.length).toBeGreaterThan(0);
-    const addedFields = result.changes.filter((c) => c.action === "added" && c.model === "SitepingFeedback");
+    const addedFields = result.changes.filter((c) => c.action === "added" && c.model === "BeezpingFeedback");
     expect(addedFields.length).toBeGreaterThan(0);
 
     // Output should still be valid and contain all the missing fields
     const output = readFileSync(schemaPath, "utf-8");
-    expect(output).toContain("model SitepingFeedback");
+    expect(output).toContain("model BeezpingFeedback");
     expect(output).toContain("createdAt");
     expect(output).toContain("clientId");
   });
@@ -998,7 +998,7 @@ model SitepingFeedback {
   // -----------------------------------------------------------------------
 
   it("treats @@index with non-array argument as missing and adds correct index", () => {
-    // SitepingFeedback exists with an unusual @@index(projectName) (non-array form)
+    // BeezpingFeedback exists with an unusual @@index(projectName) (non-array form)
     // hasBlockIndex should return false for this, and a new array-form index should be added
     const schemaWithNonArrayIndex = `
 datasource db {
@@ -1010,7 +1010,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -1025,7 +1025,7 @@ model SitepingFeedback {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation[]
+  annotations BeezpingAnnotation[]
 
   @@index(projectName)
 }
@@ -1041,7 +1041,7 @@ model SitepingFeedback {
   });
 
   it("treats empty @@index() block as missing (no firstArg)", () => {
-    // SitepingFeedback exists with @@index() (no arguments) — hasBlockIndex's firstArg is undefined.
+    // BeezpingFeedback exists with @@index() (no arguments) — hasBlockIndex's firstArg is undefined.
     // The array-form indexes should be added.
     const schemaWithEmptyIndex = `
 datasource db {
@@ -1053,7 +1053,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -1068,7 +1068,7 @@ model SitepingFeedback {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  annotations SitepingAnnotation[]
+  annotations BeezpingAnnotation[]
 
   @@index()
 }
@@ -1108,46 +1108,46 @@ model SitepingFeedback {
   describe("multi-file schema folder", () => {
     let folder: string;
     let mainPath: string;
-    let sitepingPath: string;
+    let beezpingPath: string;
 
     beforeEach(() => {
       folder = join(tmpDir, "prisma", "schema");
       mkdirSync(folder, { recursive: true });
       mainPath = join(folder, "schema.prisma");
-      sitepingPath = join(folder, "siteping.prisma");
+      beezpingPath = join(folder, "beezping.prisma");
     });
 
-    /** The two Siteping models as `sync` writes them, without the datasource/generator. */
-    function sitepingModels(): string {
+    /** The two Beezping models as `sync` writes them, without the datasource/generator. */
+    function beezpingModels(): string {
       const synced = syncedSchema();
-      return synced.slice(synced.indexOf("model SitepingFeedback"));
+      return synced.slice(synced.indexOf("model BeezpingFeedback"));
     }
 
-    it("finds the Siteping models in a sibling file instead of adding them again", () => {
-      const models = sitepingModels();
+    it("finds the Beezping models in a sibling file instead of adding them again", () => {
+      const models = beezpingModels();
       writeFileSync(mainPath, MINIMAL_SCHEMA);
-      writeFileSync(sitepingPath, models);
+      writeFileSync(beezpingPath, models);
 
       const result = syncPrismaModels(mainPath);
 
       expect(result.addedModels).toEqual([]);
       expect(result.changes).toEqual([]);
       expect(readFileSync(mainPath, "utf-8")).toBe(MINIMAL_SCHEMA);
-      expect(readFileSync(sitepingPath, "utf-8")).toBe(models);
+      expect(readFileSync(beezpingPath, "utf-8")).toBe(models);
     });
 
     it("updates a drifted model in the file that holds it", () => {
       writeFileSync(mainPath, MINIMAL_SCHEMA);
-      writeFileSync(sitepingPath, sitepingModels().replace(/^\s*screenshotRegion\s+Json\?\s*\n/m, ""));
+      writeFileSync(beezpingPath, beezpingModels().replace(/^\s*screenshotRegion\s+Json\?\s*\n/m, ""));
 
       const result = syncPrismaModels(mainPath);
 
       expect(result.changes).toEqual([
-        { model: "SitepingFeedback", field: "screenshotRegion", action: "added", detail: "Json?" },
+        { model: "BeezpingFeedback", field: "screenshotRegion", action: "added", detail: "Json?" },
       ]);
       expect(readFileSync(mainPath, "utf-8")).toBe(MINIMAL_SCHEMA);
-      expect(readFileSync(sitepingPath, "utf-8")).toMatch(/screenshotRegion\s+Json\?/);
-      expect(readFileSync(sitepingPath, "utf-8").match(/model SitepingFeedback/g)).toHaveLength(1);
+      expect(readFileSync(beezpingPath, "utf-8")).toMatch(/screenshotRegion\s+Json\?/);
+      expect(readFileSync(beezpingPath, "utf-8").match(/model BeezpingFeedback/g)).toHaveLength(1);
     });
 
     it("reads the datasource provider from a sibling file", () => {
@@ -1157,7 +1157,7 @@ model SitepingFeedback {
 
       const result = syncPrismaModels(mainPath);
 
-      expect(result.addedModels).toEqual(["SitepingFeedback", "SitepingAnnotation", "SitepingComment"]);
+      expect(result.addedModels).toEqual(["BeezpingFeedback", "BeezpingAnnotation", "BeezpingComment"]);
       expect(readFileSync(mainPath, "utf-8")).not.toContain("@db.");
     });
 
@@ -1174,12 +1174,12 @@ model SitepingFeedback {
       // prisma/schema.prisma is a single-file schema — Prisma ignores its neighbours.
       const single = join(tmpDir, "prisma", "schema.prisma");
       writeFileSync(single, MINIMAL_SCHEMA);
-      writeFileSync(join(tmpDir, "prisma", "old.prisma"), sitepingModels());
+      writeFileSync(join(tmpDir, "prisma", "old.prisma"), beezpingModels());
 
       expect(syncPrismaModels(single).addedModels).toEqual([
-        "SitepingFeedback",
-        "SitepingAnnotation",
-        "SitepingComment",
+        "BeezpingFeedback",
+        "BeezpingAnnotation",
+        "BeezpingComment",
       ]);
     });
 
@@ -1188,8 +1188,8 @@ model SitepingFeedback {
       // generated client's copy under it must be neither read nor written.
       const project = join(tmpDir, "schema");
       const rootSchema = join(project, "schema.prisma");
-      const others = [join(project, "apps", "admin", "siteping.prisma"), join(project, "node_modules", "x.prisma")];
-      const models = sitepingModels().replace(/^\s*screenshotRegion\s+Json\?\s*\n/m, "");
+      const others = [join(project, "apps", "admin", "beezping.prisma"), join(project, "node_modules", "x.prisma")];
+      const models = beezpingModels().replace(/^\s*screenshotRegion\s+Json\?\s*\n/m, "");
       mkdirSync(join(project, "apps", "admin"), { recursive: true });
       mkdirSync(join(project, "node_modules"));
       writeFileSync(join(project, "package.json"), "{}");
@@ -1198,8 +1198,8 @@ model SitepingFeedback {
 
       const result = syncPrismaModels(rootSchema);
 
-      expect(result.addedModels).toEqual(["SitepingFeedback", "SitepingAnnotation", "SitepingComment"]);
-      expect(readFileSync(rootSchema, "utf-8")).toContain("model SitepingFeedback {");
+      expect(result.addedModels).toEqual(["BeezpingFeedback", "BeezpingAnnotation", "BeezpingComment"]);
+      expect(readFileSync(rootSchema, "utf-8")).toContain("model BeezpingFeedback {");
       for (const other of others) expect(readFileSync(other, "utf-8")).toBe(models);
     });
 
@@ -1208,14 +1208,14 @@ model SitepingFeedback {
       [".generated", "client"],
     ])("ignores .prisma files under %s in a schema folder", (...segments) => {
       const copy = join(folder, ...segments, "schema.prisma");
-      const models = sitepingModels().replace(/^\s*screenshotRegion\s+Json\?\s*\n/m, "");
+      const models = beezpingModels().replace(/^\s*screenshotRegion\s+Json\?\s*\n/m, "");
       mkdirSync(dirname(copy), { recursive: true });
       writeFileSync(mainPath, MINIMAL_SCHEMA);
       writeFileSync(copy, models);
 
       const result = syncPrismaModels(mainPath);
 
-      expect(result.addedModels).toEqual(["SitepingFeedback", "SitepingAnnotation", "SitepingComment"]);
+      expect(result.addedModels).toEqual(["BeezpingFeedback", "BeezpingAnnotation", "BeezpingComment"]);
       expect(readFileSync(copy, "utf-8")).toBe(models);
     });
   });

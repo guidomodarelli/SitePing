@@ -1,16 +1,16 @@
 ---
 title: Hook headless
-description: useSitepingInbox — toute la logique de l'inbox, aucune interface. Construisez votre propre vue de tri.
+description: useBeezpingInbox — toute la logique de l'inbox, aucune interface. Construisez votre propre vue de tri.
 ---
 
-Tout ce que fait `SitepingInbox` — chargement, filtres, mutations optimistes, annulation, pagination — vit dans un hook que vous pouvez piloter depuis vos propres composants :
+Tout ce que fait `BeezpingInbox` — chargement, filtres, mutations optimistes, annulation, pagination — vit dans un hook que vous pouvez piloter depuis vos propres composants :
 
 ```tsx
-import { useSitepingInbox } from "@beezping/dashboard";
+import { useBeezpingInbox } from "@beezping/dashboard";
 
-const inbox = useSitepingInbox({
+const inbox = useBeezpingInbox({
   projects: "mon-projet",
-  endpoint: "/api/siteping",
+  endpoint: "/api/beezping",
 });
 ```
 
@@ -22,7 +22,7 @@ Les options forment une union sur les trois modes de source : fournissez **exact
 |---|---|---|---|
 | `projects` | `string` ou `string[]` | **obligatoire** | Un tableau vide lève une erreur au rendu. La première entrée est sélectionnée au départ |
 | `endpoint` | `string` | — | Mode HTTP |
-| `store` | `SitepingStore` | — | Mode store |
+| `store` | `BeezpingStore` | — | Mode store |
 | `source` | `InboxSource` | — | Source de données entièrement personnalisée ; voir [Sources de données](/fr/docs/dashboard/sources) |
 | `apiKey` | `string` | — | Mode endpoint uniquement. `Authorization: Bearer` sur chaque requête |
 | `headers` | objet ou fonction | — | Mode endpoint uniquement. Un `Authorization` explicite, quelle que soit sa casse, l'emporte sur `apiKey`. Lu en direct — le modifier ne reconstruit pas la source |
@@ -33,7 +33,7 @@ Les options forment une union sur les trois modes de source : fournissez **exact
 | `author` | `{ name, email? }` | — | Qui poste les réponses depuis cette inbox — voir [Fils de discussion](#fils-de-discussion). Sans lui, les fils sont en lecture seule |
 | `readOnly` | `boolean` | `false` | Aucun changement de statut ni aucune suppression, de feedback comme de réponse — voir [Permissions](#permissions) |
 
-Chaque mode est exporté séparément — `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions`, le socle commun `InboxSharedOptions` et l'union `UseSitepingInboxOptions` — pour qu'un composant d'enrobage n'accepte que le mode qu'il gère. En JavaScript pur, le comportement d'avant demeure : aucune source du tout lève toujours au rendu.
+Chaque mode est exporté séparément — `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions`, le socle commun `InboxSharedOptions` et l'union `UseBeezpingInboxOptions` — pour qu'un composant d'enrobage n'accepte que le mode qu'il gère. En JavaScript pur, le comportement d'avant demeure : aucune source du tout lève toujours au rendu.
 
 ## Ce que vous récupérez
 

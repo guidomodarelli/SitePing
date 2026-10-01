@@ -2,14 +2,14 @@ import { MemoryStore } from "@beezping/adapter-memory";
 import type { FeedbackRecord } from "@beezping/core";
 import { describe, expect, it, vi } from "vitest";
 import {
-  createSitepingHandler,
-  type SitepingAccessControl,
-  type SitepingHandler,
-  type SitepingLogger,
+  type BeezpingAccessControl,
+  type BeezpingHandler,
+  type BeezpingLogger,
+  createBeezpingHandler,
 } from "../src/index.js";
 import { validPayloadNoAnnotations } from "./fixtures.js";
 
-const ENDPOINT = "http://localhost/api/siteping";
+const ENDPOINT = "http://localhost/api/beezping";
 const SAME_ORIGIN = "http://localhost";
 const ALLOWED_ORIGIN = "https://client-site.example";
 const FOREIGN_ORIGIN = "https://attacker.example";
@@ -22,7 +22,7 @@ interface Reviewer {
 }
 
 /** Cookie session policy: the browser attaches the cookie to any request, cross-site forgeries included. */
-function cookieSessionAccess(): SitepingAccessControl<Reviewer> {
+function cookieSessionAccess(): BeezpingAccessControl<Reviewer> {
   return {
     authenticate: vi.fn((request: Request) =>
       request.headers.get("Cookie") === SESSION_COOKIE ? { email: "reviewer@example.com" } : null,
@@ -45,18 +45,18 @@ function mutationRequest({ method, body, origin, contentType = JSON_CONTENT_TYPE
 }
 
 interface HandlerSetup {
-  handler: SitepingHandler;
+  handler: BeezpingHandler;
   store: MemoryStore;
-  access: SitepingAccessControl<Reviewer>;
-  logger: { error: ReturnType<typeof vi.fn<SitepingLogger["error"]>> };
+  access: BeezpingAccessControl<Reviewer>;
+  logger: { error: ReturnType<typeof vi.fn<BeezpingLogger["error"]>> };
 }
 
 /** `null` builds a handler without `allowedOrigins` (CORS disabled). */
 function setupHandler(allowedOrigins: ReadonlyArray<string> | null = [ALLOWED_ORIGIN]): HandlerSetup {
   const store = new MemoryStore();
   const access = cookieSessionAccess();
-  const logger = { error: vi.fn<SitepingLogger["error"]>() };
-  const handler = createSitepingHandler({ store, access, allowedOrigins: allowedOrigins ?? undefined, logger });
+  const logger = { error: vi.fn<BeezpingLogger["error"]>() };
+  const handler = createBeezpingHandler({ store, access, allowedOrigins: allowedOrigins ?? undefined, logger });
   return { handler, store, access, logger };
 }
 
@@ -64,7 +64,7 @@ async function storedFeedbacks(store: MemoryStore): Promise<FeedbackRecord[]> {
   return (await store.getFeedbacks({ projectName: validPayloadNoAnnotations.projectName })).feedbacks;
 }
 
-describe("createSitepingHandler — cross-site request forgery (access policy)", () => {
+describe("createBeezpingHandler — cross-site request forgery (access policy)", () => {
   it("refuses a credentialed text/plain POST from a foreign origin before authenticating", async () => {
     const { handler, store, access, logger } = setupHandler();
 
@@ -83,10 +83,10 @@ describe("createSitepingHandler — cross-site request forgery (access policy)",
     expect(response.headers.get("Vary")).toBe("Origin");
     expect(await storedFeedbacks(store)).toHaveLength(0);
     expect(access.authenticate).not.toHaveBeenCalled();
-    expect(logger.error).toHaveBeenCalledWith("[siteping] Refused a mutation from an origin outside allowedOrigins", {
+    expect(logger.error).toHaveBeenCalledWith("[beezping] Refused a mutation from an origin outside allowedOrigins", {
       origin: FOREIGN_ORIGIN,
       method: "POST",
-      path: "/api/siteping",
+      path: "/api/beezping",
     });
   });
 
@@ -262,10 +262,10 @@ describe("createSitepingHandler — cross-site request forgery (access policy)",
   });
 });
 
-describe("createSitepingHandler — no CSRF guards under the apiKey policy", () => {
+describe("createBeezpingHandler — no CSRF guards under the apiKey policy", () => {
   it("keeps serving a text/plain POST from an unlisted origin, as adapter-prisma always has", async () => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store, apiKey: "secret-key", allowedOrigins: [ALLOWED_ORIGIN] });
+    const handler = createBeezpingHandler({ store, apiKey: "secret-key", allowedOrigins: [ALLOWED_ORIGIN] });
 
     const response = await handler.POST(
       new Request(ENDPOINT, {

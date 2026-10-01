@@ -167,16 +167,16 @@ function createAnnotator() {
 
 /**
  * Find the annotator overlay — the focusable (tabindex="0") screenshot-ignored
- * div appended to body (the toolbar carries data-siteping-ignore too, but no
+ * div appended to body (the toolbar carries data-beezping-ignore too, but no
  * tabindex).
  */
 function findOverlay(): HTMLElement | null {
-  return document.body.querySelector<HTMLElement>('div[data-siteping-ignore][tabindex="0"]');
+  return document.body.querySelector<HTMLElement>('div[data-beezping-ignore][tabindex="0"]');
 }
 
 /** Count how many annotator overlays exist */
 function countOverlays(): number {
-  return document.body.querySelectorAll('div[data-siteping-ignore][tabindex="0"]').length;
+  return document.body.querySelectorAll('div[data-beezping-ignore][tabindex="0"]').length;
 }
 
 // ---------------------------------------------------------------------------
@@ -207,7 +207,7 @@ describe("Annotator", () => {
     annotator.destroy();
     // Remove any leftover overlay/toolbar DOM from async handlers that may not
     // have completed before the test ended (e.g. finishDrawing's await)
-    for (const el of document.body.querySelectorAll('div[data-siteping-ignore][tabindex="0"]')) {
+    for (const el of document.body.querySelectorAll('div[data-beezping-ignore][tabindex="0"]')) {
       el.remove();
     }
     for (const btn of document.body.querySelectorAll("button")) {
@@ -302,17 +302,17 @@ describe("Annotator", () => {
     });
 
     // Regression: issue #124 — the annotator's chrome lives on document.body
-    // (outside the siteping-widget shadow host), so the screenshot predicate
+    // (outside the beezping-widget shadow host), so the screenshot predicate
     // can't reach it via the shadow-host check. Each piece must carry
-    // `data-siteping-ignore="true"` or it gets baked into the JPEG.
-    it("overlay carries data-siteping-ignore so it is excluded from screenshots", () => {
+    // `data-beezping-ignore="true"` or it gets baked into the JPEG.
+    it("overlay carries data-beezping-ignore so it is excluded from screenshots", () => {
       bus.emit("annotation:start");
 
       const overlay = findOverlay()!;
-      expect(overlay.getAttribute("data-siteping-ignore")).toBe("true");
+      expect(overlay.getAttribute("data-beezping-ignore")).toBe("true");
     });
 
-    it("toolbar carries data-siteping-ignore so it is excluded from screenshots", () => {
+    it("toolbar carries data-beezping-ignore so it is excluded from screenshots", () => {
       bus.emit("annotation:start");
 
       // The toolbar is the sibling of the overlay — pick the one that hosts
@@ -320,12 +320,12 @@ describe("Annotator", () => {
       const cancelBtn = Array.from(document.body.querySelectorAll("button")).find(
         (btn) => btn.textContent === t("annotator.cancel"),
       )!;
-      const toolbar = cancelBtn.closest("div[data-siteping-ignore]");
+      const toolbar = cancelBtn.closest("div[data-beezping-ignore]");
       expect(toolbar).not.toBeNull();
-      expect(toolbar!.getAttribute("data-siteping-ignore")).toBe("true");
+      expect(toolbar!.getAttribute("data-beezping-ignore")).toBe("true");
     });
 
-    it("drawing rect carries data-siteping-ignore so the selection border is excluded from screenshots", () => {
+    it("drawing rect carries data-beezping-ignore so the selection border is excluded from screenshots", () => {
       bus.emit("annotation:start");
 
       const overlay = findOverlay()!;
@@ -333,7 +333,7 @@ describe("Annotator", () => {
 
       const drawingRect = overlay.querySelector<HTMLElement>("div")!;
       expect(drawingRect).not.toBeNull();
-      expect(drawingRect.getAttribute("data-siteping-ignore")).toBe("true");
+      expect(drawingRect.getAttribute("data-beezping-ignore")).toBe("true");
     });
   });
 
@@ -767,7 +767,7 @@ describe("Annotator", () => {
       // Start a pointer drag, then press Enter mid-drag: the keyboard path
       // must not replace the in-progress drawingRect with its highlight.
       overlay.dispatchEvent(new MouseEvent("mousedown", { clientX: 50, clientY: 50, bubbles: true }));
-      const dragRect = overlay.querySelector("div[data-siteping-ignore]");
+      const dragRect = overlay.querySelector("div[data-beezping-ignore]");
       expect(dragRect).not.toBeNull();
 
       overlay.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
@@ -775,7 +775,7 @@ describe("Annotator", () => {
 
       expect(completeListener).not.toHaveBeenCalled();
       // The drag's rectangle is still the one in the overlay
-      expect(overlay.querySelector("div[data-siteping-ignore]")).toBe(dragRect);
+      expect(overlay.querySelector("div[data-beezping-ignore]")).toBe(dragRect);
 
       target.remove();
     });
@@ -787,7 +787,7 @@ describe("Annotator", () => {
 
   describe("keyboard: Enter with fallback target", () => {
     /**
-     * The chrome decoys below carry data-siteping-ignore + tabindex, which
+     * The chrome decoys below carry data-beezping-ignore + tabindex, which
      * collides with findOverlay()'s selector — the overlay's unique
      * role="application" disambiguates.
      */
@@ -806,7 +806,7 @@ describe("Annotator", () => {
       // FAB-launched flow: focus sits on widget chrome when the annotator
       // activates — the fallback getter supplies the real page element.
       const chrome = document.createElement("div");
-      chrome.setAttribute("data-siteping-ignore", "true");
+      chrome.setAttribute("data-beezping-ignore", "true");
       chrome.setAttribute("tabindex", "0");
       document.body.appendChild(chrome);
 
@@ -841,7 +841,7 @@ describe("Annotator", () => {
 
     it("Enter no-ops when widget chrome holds focus and the fallback returns null", async () => {
       const chrome = document.createElement("div");
-      chrome.setAttribute("data-siteping-ignore", "true");
+      chrome.setAttribute("data-beezping-ignore", "true");
       chrome.setAttribute("tabindex", "0");
       document.body.appendChild(chrome);
 
@@ -916,9 +916,9 @@ describe("Annotator", () => {
 
         overlay.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
 
-        // Screenshot-excluded (data-siteping-ignore) and positioned over the
+        // Screenshot-excluded (data-beezping-ignore) and positioned over the
         // target's bounding box.
-        const highlight = overlay.querySelector<HTMLElement>("div[data-siteping-ignore]");
+        const highlight = overlay.querySelector<HTMLElement>("div[data-beezping-ignore]");
         expect(highlight).not.toBeNull();
         expect(highlight!.style.position).toBe("fixed");
         expect(highlight!.style.left).toBe("10px");
@@ -1816,7 +1816,7 @@ describe("Annotator on touch screens", () => {
   it("a tap on the page root or on widget chrome selects nothing", async () => {
     const marker = document.createElement("div");
     const markers = document.createElement("div");
-    markers.id = "siteping-markers";
+    markers.id = "beezping-markers";
     markers.appendChild(marker);
     document.body.appendChild(markers);
     // Real boxes, as in a browser — jsdom's 0×0 rects would stop annotateElement

@@ -84,7 +84,7 @@ export function intlLocale(locale: string): string {
 }
 
 /**
- * The host's locale tag as `Intl` accepts it. `SitepingLocale` takes any
+ * The host's locale tag as `Intl` accepts it. `BeezpingLocale` takes any
  * string, and PHP / WordPress hand out POSIX-style tags (`fr_FR`, `pt_BR`)
  * that every `Intl` constructor rejects with a RangeError: `_` becomes `-`,
  * then the tag is canonicalised (`fr-FR`). Falls back to `"en"`, with a
@@ -94,7 +94,7 @@ export function intlLocale(locale: string): string {
 export function canonicalizeLocale(locale: string): string {
   const canonical = canonicalTag(locale);
   if (canonical) return canonical;
-  console.warn(`[siteping] Invalid locale "${locale}", falling back to "en"`);
+  console.warn(`[beezping] Invalid locale "${locale}", falling back to "en"`);
   return "en";
 }
 
@@ -129,7 +129,7 @@ export function createI18n<T extends Record<keyof T & string, string>>(en: T, lo
     createT(locale) {
       const lang = normaliseLang(locale);
       if (lang !== "en" && !locales[lang] && !isBuiltinNonEn(lang)) {
-        console.warn(`[siteping] Unknown locale "${locale}", falling back to "en"`);
+        console.warn(`[beezping] Unknown locale "${locale}", falling back to "en"`);
       }
       // Read the registry at call time so the returned function picks up
       // dictionaries registered/loaded after it was created.

@@ -1,10 +1,10 @@
 import { defineConfig } from "tsup";
-import { sitepingLibrary } from "../../tsup.preset.js";
+import { beezpingLibrary } from "../../tsup.preset.js";
 
 // One entry per provider so importing ./github never pulls the others.
 // @beezping/server is a peer: only its types are imported.
 export default defineConfig(
-  sitepingLibrary({
+  beezpingLibrary({
     platform: "neutral",
     entry: {
       index: "src/index.ts",

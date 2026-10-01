@@ -21,7 +21,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { DRIZZLE_STORE_MESSAGE_PREFIX } from "../constants/errors.js";
 import { POSTGRES_IDENTIFIER_MAX_BYTES } from "../constants/sql.js";
-import { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../constants/table-names.js";
+import { type BeezpingTableNames, DEFAULT_BEEZPING_TABLE_NAMES } from "../constants/table-names.js";
 
 /**
  * Refuse identifiers PostgreSQL would truncate. It cuts every name past
@@ -45,7 +45,7 @@ function assertIdentifiersFitPostgres(tables: readonly PgTable[]): void {
       const bytes = encoder.encode(identifier).length;
       if (bytes > POSTGRES_IDENTIFIER_MAX_BYTES) {
         throw new RangeError(
-          `${DRIZZLE_STORE_MESSAGE_PREFIX}: "${identifier}" is ${bytes} bytes long, over PostgreSQL's ${POSTGRES_IDENTIFIER_MAX_BYTES}-byte identifier limit — pass shorter table names to createSitepingPgTables`,
+          `${DRIZZLE_STORE_MESSAGE_PREFIX}: "${identifier}" is ${bytes} bytes long, over PostgreSQL's ${POSTGRES_IDENTIFIER_MAX_BYTES}-byte identifier limit — pass shorter table names to createBeezpingPgTables`,
         );
       }
     }
@@ -53,12 +53,12 @@ function assertIdentifiersFitPostgres(tables: readonly PgTable[]): void {
 }
 
 /**
- * Build the SitePing tables for PostgreSQL. Export them from your Drizzle
+ * Build the Beezping tables for PostgreSQL. Export them from your Drizzle
  * schema so `drizzle-kit generate` / `push` creates them:
  *
  * ```ts
  * // db/schema.ts
- * export const { sitepingFeedbacks, sitepingAnnotations, sitepingComments } = createSitepingPgTables();
+ * export const { beezpingFeedbacks, beezpingAnnotations, beezpingComments } = createBeezpingPgTables();
  * ```
  *
  * Index and foreign-key names derive from the table names, which leaves the
@@ -67,8 +67,8 @@ function assertIdentifiersFitPostgres(tables: readonly PgTable[]): void {
  * @throws `RangeError` when a table, index or foreign-key name would pass
  *   PostgreSQL's 63-byte identifier limit.
  */
-export function createSitepingPgTables(names: SitepingTableNames = DEFAULT_SITEPING_TABLE_NAMES) {
-  const sitepingFeedbacks = pgTable(
+export function createBeezpingPgTables(names: BeezpingTableNames = DEFAULT_BEEZPING_TABLE_NAMES) {
+  const beezpingFeedbacks = pgTable(
     names.feedbacks,
     {
       id: text("id").primaryKey(),
@@ -108,7 +108,7 @@ export function createSitepingPgTables(names: SitepingTableNames = DEFAULT_SITEP
     ],
   );
 
-  const sitepingAnnotations = pgTable(
+  const beezpingAnnotations = pgTable(
     names.annotations,
     {
       id: text("id").primaryKey(),
@@ -142,13 +142,13 @@ export function createSitepingPgTables(names: SitepingTableNames = DEFAULT_SITEP
       foreignKey({
         name: `${names.annotations}_feedback_id_fk`,
         columns: [table.feedbackId],
-        foreignColumns: [sitepingFeedbacks.id],
+        foreignColumns: [beezpingFeedbacks.id],
       }).onDelete("cascade"),
       index(`${names.annotations}_feedback_id_idx`).on(table.feedbackId),
     ],
   );
 
-  const sitepingComments = pgTable(
+  const beezpingComments = pgTable(
     names.comments,
     {
       id: text("id").primaryKey(),
@@ -168,15 +168,15 @@ export function createSitepingPgTables(names: SitepingTableNames = DEFAULT_SITEP
       foreignKey({
         name: `${names.comments}_feedback_id_fk`,
         columns: [table.feedbackId],
-        foreignColumns: [sitepingFeedbacks.id],
+        foreignColumns: [beezpingFeedbacks.id],
       }).onDelete("cascade"),
       uniqueIndex(`${names.comments}_client_id_key`).on(table.clientId),
       index(`${names.comments}_feedback_created_idx`).on(table.feedbackId, table.createdAt),
     ],
   );
 
-  assertIdentifiersFitPostgres([sitepingFeedbacks, sitepingAnnotations, sitepingComments]);
-  return { sitepingFeedbacks, sitepingAnnotations, sitepingComments };
+  assertIdentifiersFitPostgres([beezpingFeedbacks, beezpingAnnotations, beezpingComments]);
+  return { beezpingFeedbacks, beezpingAnnotations, beezpingComments };
 }
 
-export type SitepingPgTables = ReturnType<typeof createSitepingPgTables>;
+export type BeezpingPgTables = ReturnType<typeof createBeezpingPgTables>;

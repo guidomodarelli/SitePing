@@ -1,26 +1,26 @@
 export type {
+  BeezpingStore,
   CommentCreateInput,
   CommentPayload,
   FeedbackCreateInput,
   FeedbackRecord,
-  SitepingStore,
 } from "@beezping/core";
-export { createSitepingHandler } from "./handler.js";
+export { createBeezpingHandler } from "./handler.js";
 export type {
-  SitepingAccessControl,
-  SitepingAccessHandlerOptions,
-  SitepingAction,
-  SitepingApiKeyHandlerOptions,
-  SitepingAuthorizationContext,
-  SitepingDeletionTarget,
-  SitepingHandler,
-  SitepingHandlerBaseOptions,
-  SitepingHandlerOptions,
-  SitepingHttpMethod,
-  SitepingLifecycleHooks,
-  SitepingLogger,
-  SitepingPrincipal,
-  SitepingRequestContext,
+  BeezpingAccessControl,
+  BeezpingAccessHandlerOptions,
+  BeezpingAction,
+  BeezpingApiKeyHandlerOptions,
+  BeezpingAuthorizationContext,
+  BeezpingDeletionTarget,
+  BeezpingHandler,
+  BeezpingHandlerBaseOptions,
+  BeezpingHandlerOptions,
+  BeezpingHttpMethod,
+  BeezpingLifecycleHooks,
+  BeezpingLogger,
+  BeezpingPrincipal,
+  BeezpingRequestContext,
 } from "./options.js";
 export type { FeedbackDeleteInput, FeedbackPatchInput, GetQueryInput, ValidationIssue } from "./validation.js";
 export type {

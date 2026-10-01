@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { SitepingConfig, SitepingHttpConfig, SitepingStore } from "@beezping/core";
+import type { BeezpingConfig, BeezpingHttpConfig, BeezpingStore } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { withViewportWidth } from "../helpers.js";
 
@@ -103,9 +103,9 @@ import { Tooltip } from "../../src/tooltip.js";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function defaultConfig(overrides: Partial<Omit<SitepingHttpConfig, "store">> = {}): SitepingConfig {
+function defaultConfig(overrides: Partial<Omit<BeezpingHttpConfig, "store">> = {}): BeezpingConfig {
   return {
-    endpoint: "/api/siteping",
+    endpoint: "/api/beezping",
     projectName: "test-project",
     forceShow: true, // bypass production guard in tests
     ...overrides,
@@ -118,8 +118,8 @@ function defaultConfig(overrides: Partial<Omit<SitepingHttpConfig, "store">> = {
 
 describe("launch", () => {
   afterEach(() => {
-    // Clean up any siteping-widget elements left in the DOM
-    for (const el of document.querySelectorAll("siteping-widget")) {
+    // Clean up any beezping-widget elements left in the DOM
+    for (const el of document.querySelectorAll("beezping-widget")) {
       el.remove();
     }
     for (const el of document.querySelectorAll('[role="status"]')) {
@@ -142,7 +142,7 @@ describe("launch", () => {
         const instance = launch({ endpoint: "/api", projectName: "test" });
 
         // No widget element should be added
-        const widget = document.querySelector("siteping-widget");
+        const widget = document.querySelector("beezping-widget");
         expect(widget).toBeNull();
 
         // Should return an instance with no-op methods
@@ -170,7 +170,7 @@ describe("launch", () => {
       try {
         const instance = launch(defaultConfig({ forceShow: true }));
 
-        const widget = document.querySelector("siteping-widget");
+        const widget = document.querySelector("beezping-widget");
         expect(widget).not.toBeNull();
 
         instance.destroy();
@@ -203,7 +203,7 @@ describe("launch", () => {
       const onSkip = vi.fn();
       const instance = launch({ endpoint: "/api", projectName: "test", onSkip });
       try {
-        expect(document.querySelector("siteping-widget")).not.toBeNull();
+        expect(document.querySelector("beezping-widget")).not.toBeNull();
         expect(onSkip).not.toHaveBeenCalled();
       } finally {
         instance.destroy();
@@ -226,7 +226,7 @@ describe("launch", () => {
         const onSkip = vi.fn();
         const instance = launch(defaultConfig({ forceShow: false, onSkip }));
         try {
-          expect(document.querySelector("siteping-widget")).not.toBeNull();
+          expect(document.querySelector("beezping-widget")).not.toBeNull();
           expect(onSkip).not.toHaveBeenCalled();
         } finally {
           instance.destroy();
@@ -239,7 +239,7 @@ describe("launch", () => {
         const onSkip = vi.fn();
         const instance = launch(defaultConfig({ forceShow: false, minViewportWidth: 768, onSkip }));
         try {
-          expect(document.querySelector("siteping-widget")).toBeNull();
+          expect(document.querySelector("beezping-widget")).toBeNull();
           expect(onSkip).toHaveBeenCalledWith("mobile");
         } finally {
           instance.destroy();
@@ -253,7 +253,7 @@ describe("launch", () => {
         // with the bypass active the test would pass at any width.
         const instance = launch(defaultConfig({ forceShow: false }));
         try {
-          expect(document.querySelector("siteping-widget")).not.toBeNull();
+          expect(document.querySelector("beezping-widget")).not.toBeNull();
         } finally {
           instance.destroy();
         }
@@ -265,7 +265,7 @@ describe("launch", () => {
         const onSkip = vi.fn();
         const instance = launch(defaultConfig({ forceShow: true, minViewportWidth: 768, onSkip }));
         try {
-          expect(document.querySelector("siteping-widget")).not.toBeNull();
+          expect(document.querySelector("beezping-widget")).not.toBeNull();
           expect(onSkip).not.toHaveBeenCalled();
         } finally {
           instance.destroy();
@@ -277,7 +277,7 @@ describe("launch", () => {
       withViewportWidth(600, () => {
         const instance = launch(defaultConfig({ forceShow: false, minViewportWidth: 0 }));
         try {
-          expect(document.querySelector("siteping-widget")).not.toBeNull();
+          expect(document.querySelector("beezping-widget")).not.toBeNull();
         } finally {
           instance.destroy();
         }
@@ -289,7 +289,7 @@ describe("launch", () => {
         const onSkip = vi.fn();
         const instance = launch(defaultConfig({ forceShow: false, minViewportWidth: 1200, onSkip }));
         try {
-          expect(document.querySelector("siteping-widget")).toBeNull();
+          expect(document.querySelector("beezping-widget")).toBeNull();
           expect(onSkip).toHaveBeenCalledWith("mobile");
         } finally {
           instance.destroy();
@@ -306,7 +306,7 @@ describe("launch", () => {
           const onSkip = vi.fn();
           const instance = launch(defaultConfig({ forceShow: false, minViewportWidth, onSkip }));
           try {
-            expect(document.querySelector("siteping-widget")).not.toBeNull();
+            expect(document.querySelector("beezping-widget")).not.toBeNull();
             expect(onSkip).not.toHaveBeenCalled();
           } finally {
             instance.destroy();
@@ -370,10 +370,10 @@ describe("launch", () => {
   // -------------------------------------------------------------------------
 
   describe("widget DOM structure", () => {
-    it("creates a siteping-widget custom element", () => {
+    it("creates a beezping-widget custom element", () => {
       const instance = launch(defaultConfig());
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       expect(widget).not.toBeNull();
 
       instance.destroy();
@@ -409,7 +409,7 @@ describe("launch", () => {
     it("uses open shadow mode in test environment", () => {
       const instance = launch(defaultConfig());
 
-      const widget = document.querySelector("siteping-widget")!;
+      const widget = document.querySelector("beezping-widget")!;
       expect(widget.shadowRoot).not.toBeNull();
 
       instance.destroy();
@@ -421,11 +421,11 @@ describe("launch", () => {
   // -------------------------------------------------------------------------
 
   describe("destroy", () => {
-    it("removes the siteping-widget element", () => {
+    it("removes the beezping-widget element", () => {
       const instance = launch(defaultConfig());
       instance.destroy();
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       expect(widget).toBeNull();
     });
 
@@ -454,11 +454,11 @@ describe("launch", () => {
       const w3 = launch(defaultConfig());
 
       expect(w3).toBe(w2);
-      expect(document.querySelectorAll("siteping-widget")).toHaveLength(1);
+      expect(document.querySelectorAll("beezping-widget")).toHaveLength(1);
       w2.destroy();
     });
 
-    it("keeps a remounted widget alive when another consumer destroys its stale handle (useSiteping x2)", () => {
+    it("keeps a remounted widget alive when another consumer destroys its stale handle (useBeezping x2)", () => {
       // Two components share the singleton; A unmounts (destroys it), A
       // remounts (new widget), then B unmounts and destroys its old handle.
       const shared = launch(defaultConfig());
@@ -467,7 +467,7 @@ describe("launch", () => {
       const remounted = launch(defaultConfig());
       sameForB.destroy();
 
-      expect(document.querySelectorAll("siteping-widget")).toHaveLength(1);
+      expect(document.querySelectorAll("beezping-widget")).toHaveLength(1);
       expect(launch(defaultConfig())).toBe(remounted);
       remounted.destroy();
     });
@@ -501,7 +501,7 @@ describe("launch", () => {
       // Wait for the lazy-loaded Panel to actually open before closing it —
       // otherwise close() short-circuits while the import is still in flight.
       await vi.waitFor(() => {
-        expect(document.querySelector("siteping-widget")?.shadowRoot?.querySelector(".sp-panel--open")).not.toBeNull();
+        expect(document.querySelector("beezping-widget")?.shadowRoot?.querySelector(".sp-panel--open")).not.toBeNull();
       });
       instance.close();
 
@@ -519,11 +519,11 @@ describe("launch", () => {
     it("defaults to French locale", () => {
       const instance = launch(defaultConfig());
 
-      const widget = document.querySelector("siteping-widget")!;
+      const widget = document.querySelector("beezping-widget")!;
       const shadow = widget.shadowRoot!;
       const fabBtn = shadow.querySelector<HTMLButtonElement>(".sp-fab")!;
       // French ARIA label
-      expect(fabBtn.getAttribute("aria-label")).toContain("Siteping");
+      expect(fabBtn.getAttribute("aria-label")).toContain("Beezping");
 
       instance.destroy();
     });
@@ -536,10 +536,10 @@ describe("launch", () => {
       expect(vi.mocked(Tooltip).mock.calls.at(-1)?.[1]).toBe("fr-FR");
       instance.open();
 
-      const shadow = document.querySelector("siteping-widget")!.shadowRoot!;
+      const shadow = document.querySelector("beezping-widget")!.shadowRoot!;
       await vi.waitFor(() => {
         expect(shadow.querySelector('[role="complementary"]')?.getAttribute("aria-label")).toBe(
-          "Panneau de feedback Siteping",
+          "Panneau de feedback Beezping",
         );
       });
 
@@ -551,14 +551,14 @@ describe("launch", () => {
       instance.open();
 
       // Panel is lazy-loaded — wait for it to mount into the shadow root.
-      const widget = document.querySelector("siteping-widget")!;
+      const widget = document.querySelector("beezping-widget")!;
       const shadow = widget.shadowRoot!;
       let panel: HTMLElement | null = null;
       await vi.waitFor(() => {
         panel = shadow.querySelector<HTMLElement>('[role="complementary"]');
         expect(panel).not.toBeNull();
       });
-      expect(panel!.getAttribute("aria-label")).toBe("Siteping feedback panel");
+      expect(panel!.getAttribute("aria-label")).toBe("Beezping feedback panel");
 
       instance.destroy();
     });
@@ -570,9 +570,9 @@ describe("launch", () => {
 
   describe("config validation guards", () => {
     it("returns no-op when endpoint is missing", () => {
-      const instance = launch({ projectName: "test", forceShow: true } as SitepingConfig);
+      const instance = launch({ projectName: "test", forceShow: true } as BeezpingConfig);
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       expect(widget).toBeNull();
       expect(instance.destroy).toBeTypeOf("function");
       instance.destroy();
@@ -581,15 +581,15 @@ describe("launch", () => {
     it("returns no-op when endpoint is empty string", () => {
       const instance = launch(defaultConfig({ endpoint: "" }));
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       expect(widget).toBeNull();
       instance.destroy();
     });
 
     it("returns no-op when projectName is missing", () => {
-      const instance = launch({ endpoint: "/api", forceShow: true } as SitepingConfig);
+      const instance = launch({ endpoint: "/api", forceShow: true } as BeezpingConfig);
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       expect(widget).toBeNull();
       instance.destroy();
     });
@@ -597,7 +597,7 @@ describe("launch", () => {
     it("returns no-op when projectName is empty string", () => {
       const instance = launch(defaultConfig({ projectName: "" }));
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       expect(widget).toBeNull();
       instance.destroy();
     });
@@ -605,7 +605,7 @@ describe("launch", () => {
     it("returns no-op when endpoint is not a string (number)", () => {
       const instance = launch(defaultConfig({ endpoint: 42 as unknown as string }));
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       expect(widget).toBeNull();
       instance.destroy();
     });
@@ -613,7 +613,7 @@ describe("launch", () => {
     it("returns no-op when projectName is not a string", () => {
       const instance = launch(defaultConfig({ projectName: 123 as unknown as string }));
 
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       expect(widget).toBeNull();
       instance.destroy();
     });
@@ -686,7 +686,7 @@ describe("launch", () => {
         // The first init log is fired synchronously
         expect(debugSpy).toHaveBeenCalled();
         const initialCalls = debugSpy.mock.calls.filter(
-          (c: unknown[]) => typeof c[0] === "string" && c[0].includes("[siteping]"),
+          (c: unknown[]) => typeof c[0] === "string" && c[0].includes("[beezping]"),
         );
         expect(initialCalls.length).toBeGreaterThan(0);
 
@@ -706,11 +706,11 @@ describe("launch", () => {
       try {
         const instance = launch(defaultConfig());
 
-        // No "[siteping]" debug messages should be emitted
-        const sitepingCalls = debugSpy.mock.calls.filter(
-          (c: unknown[]) => typeof c[0] === "string" && c[0].includes("[siteping]"),
+        // No "[beezping]" debug messages should be emitted
+        const beezpingCalls = debugSpy.mock.calls.filter(
+          (c: unknown[]) => typeof c[0] === "string" && c[0].includes("[beezping]"),
         );
-        expect(sitepingCalls.length).toBe(0);
+        expect(beezpingCalls.length).toBe(0);
 
         instance.destroy();
       } finally {
@@ -753,7 +753,7 @@ describe("launch", () => {
 
         // Without process.env, the production guard's typeof check returns "undefined"
         // and the guard short-circuits — widget should mount
-        const widget = document.querySelector("siteping-widget");
+        const widget = document.querySelector("beezping-widget");
         expect(widget).not.toBeNull();
 
         instance.destroy();
@@ -780,13 +780,13 @@ describe("launch", () => {
         deleteAllFeedbacks: vi.fn(),
       };
       const instance = launch({
-        store: fakeStore as unknown as SitepingStore,
+        store: fakeStore as unknown as BeezpingStore,
         projectName: "test",
         forceShow: true,
       });
 
       // Widget should be mounted (no endpoint required)
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       expect(widget).not.toBeNull();
       // store.getFeedbacks should be called for initial markers load
       expect(fakeStore.getFeedbacks).toHaveBeenCalled();
@@ -810,7 +810,7 @@ describe("launch", () => {
       await new Promise((r) => setTimeout(r, 50));
 
       // Widget should still mount even if flushRetryQueue rejects
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       expect(widget).not.toBeNull();
 
       instance.destroy();
@@ -889,7 +889,7 @@ describe("launch", () => {
       try {
         const instance = launch(defaultConfig());
 
-        const widget = document.querySelector("siteping-widget")!;
+        const widget = document.querySelector("beezping-widget")!;
         expect(widget).not.toBeNull();
         // Shadow root should have been mutated with the constructed sheet
         const shadow = widget.shadowRoot as ShadowRoot & { adoptedStyleSheets: CSSStyleSheet[] };
@@ -1008,10 +1008,10 @@ describe("launch", () => {
       instance.destroy();
     });
 
-    it("right-click on SitePing's own UI is ignored", () => {
+    it("right-click on Beezping's own UI is ignored", () => {
       const instance = launch(defaultConfig({ enableRightClickComment: true }));
 
-      // Simulate a click on the SitePing widget (or something inside it)
+      // Simulate a click on the Beezping widget (or something inside it)
       const event = new MouseEvent("contextmenu", {
         button: 2,
         clientX: 100,
@@ -1020,7 +1020,7 @@ describe("launch", () => {
         cancelable: true,
       });
 
-      const widget = document.querySelector("siteping-widget")!;
+      const widget = document.querySelector("beezping-widget")!;
       // Need composedPath() to include the widget, so dispatch from it or a shadow child
       widget.dispatchEvent(event);
 

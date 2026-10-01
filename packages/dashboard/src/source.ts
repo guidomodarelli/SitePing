@@ -1,4 +1,5 @@
 import {
+  type BeezpingStore,
   type CommentCreateInput,
   type CommentRecord,
   type CommentResponse,
@@ -10,7 +11,6 @@ import {
   type FeedbackStatus,
   feedbackQueryToSearchParams,
   networkErrorFromException,
-  type SitepingStore,
   toFeedbackUpdate,
   withSearchParams,
 } from "@beezping/core";
@@ -53,8 +53,8 @@ async function parseJsonAs<T>(response: Response): Promise<T> {
 // ---------------------------------------------------------------------------
 
 /**
- * Build an `InboxSource` talking HTTP to a Siteping endpoint (e.g. the
- * `@beezping/adapter-prisma` request handlers mounted at `/api/siteping`).
+ * Build an `InboxSource` talking HTTP to a Beezping endpoint (e.g. the
+ * `@beezping/adapter-prisma` request handlers mounted at `/api/beezping`).
  *
  * Auth: `apiKey` becomes `Authorization: Bearer <apiKey>`; `headers` (static
  * or per-request function, sync or async) are merged on top, so an explicit
@@ -156,17 +156,17 @@ export function createEndpointSource(options: EndpointSourceOptions): InboxSourc
 }
 
 // ---------------------------------------------------------------------------
-// Store source — direct SitepingStore (client-side mode, no server)
+// Store source — direct BeezpingStore (client-side mode, no server)
 // ---------------------------------------------------------------------------
 
 /**
- * Build an `InboxSource` over a `SitepingStore` directly (client-side mode).
+ * Build an `InboxSource` over a `BeezpingStore` directly (client-side mode).
  *
  * Closure semantics live at this edge: `resolvedAt` is set when a feedback
  * enters a closed status and cleared otherwise — the store persists what it
  * is given.
  */
-export function createStoreSource(store: SitepingStore): InboxSource {
+export function createStoreSource(store: BeezpingStore): InboxSource {
   const source: InboxSource = {
     list(query: FeedbackQuery) {
       return store.getFeedbacks(query);

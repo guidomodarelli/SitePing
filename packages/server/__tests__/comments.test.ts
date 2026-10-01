@@ -2,24 +2,24 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { MemoryStore } from "@beezping/adapter-memory";
 import {
+  type BeezpingStore,
   type CommentResponse,
   type FeedbackResponse,
   type FeedbackResponseList,
   MAX_COMMENTS_PER_FEEDBACK,
-  type SitepingStore,
   StoreValueTooLongError,
 } from "@beezping/core";
 import { describe, expect, it, vi } from "vitest";
 import {
-  createSitepingHandler,
-  type SitepingAccessControl,
-  type SitepingAuthorizationContext,
-  type SitepingHandler,
-  type SitepingLogger,
+  type BeezpingAccessControl,
+  type BeezpingAuthorizationContext,
+  type BeezpingHandler,
+  type BeezpingLogger,
+  createBeezpingHandler,
 } from "../src/index.js";
 import { validPayloadNoAnnotations } from "./fixtures.js";
 
-const ENDPOINT = "http://localhost/api/siteping";
+const ENDPOINT = "http://localhost/api/beezping";
 const API_KEY = "a-secret-key";
 const PROJECT = validPayloadNoAnnotations.projectName;
 const BEARER = { Authorization: `Bearer ${API_KEY}` };
@@ -54,7 +54,7 @@ function commentBody(feedbackId: string, overrides: Record<string, unknown> = {}
 }
 
 async function createFeedback(
-  handler: SitepingHandler,
+  handler: BeezpingHandler,
   headers: Record<string, string> = {},
   clientId = validPayloadNoAnnotations.clientId,
 ) {
@@ -64,7 +64,7 @@ async function createFeedback(
 }
 
 async function postComment(
-  handler: SitepingHandler,
+  handler: BeezpingHandler,
   body: Record<string, unknown>,
   headers: Record<string, string> = {},
 ): Promise<CommentResponse> {
@@ -73,14 +73,14 @@ async function postComment(
   return (await response.json()) as CommentResponse;
 }
 
-async function list(handler: SitepingHandler, headers: Record<string, string> = {}): Promise<FeedbackResponseList> {
+async function list(handler: BeezpingHandler, headers: Record<string, string> = {}): Promise<FeedbackResponseList> {
   const response = await handler.GET(listRequest(headers));
   expect(response.status).toBe(200);
   return (await response.json()) as FeedbackResponseList;
 }
 
 /** A hand-written store that predates comments: no `addComment` / `deleteComment`, no `comments` on its records. */
-function storeWithoutComments(): SitepingStore {
+function storeWithoutComments(): BeezpingStore {
   const memory = new MemoryStore();
   const withoutThread = <Record extends { comments?: unknown }>({ comments: _, ...record }: Record) => record;
   return {
@@ -100,11 +100,11 @@ function storeWithoutComments(): SitepingStore {
   };
 }
 
-const silentLogger = () => ({ error: vi.fn<SitepingLogger["error"]>() });
+const silentLogger = () => ({ error: vi.fn<BeezpingLogger["error"]>() });
 
 describe("comments — POST", () => {
   it("adds a comment, answers it without its clientId, and serves the thread oldest first", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore() });
+    const handler = createBeezpingHandler({ store: new MemoryStore() });
     const feedback = await createFeedback(handler);
 
     const first = await postComment(handler, commentBody(feedback.id, { body: "  first  " }));
@@ -127,7 +127,7 @@ describe("comments — POST", () => {
 
   it("stores a retried post once and refuses a clientId already used on another feedback", async () => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store });
+    const handler = createBeezpingHandler({ store });
     const feedback = await createFeedback(handler);
     const other = await createFeedback(handler, {}, "other");
     const body = commentBody(feedback.id);
@@ -153,7 +153,7 @@ describe("comments — POST", () => {
     ["no clientId", { clientId: undefined }],
   ])("answers 400 to %s and stores nothing", async (_label, overrides) => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store });
+    const handler = createBeezpingHandler({ store });
     const feedback = await createFeedback(handler);
 
     const response = await handler.POST(request("POST", commentBody(feedback.id, overrides)));
@@ -163,7 +163,7 @@ describe("comments — POST", () => {
   });
 
   it("accepts an author without an email and stamps client when no role is sent", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore() });
+    const handler = createBeezpingHandler({ store: new MemoryStore() });
     const feedback = await createFeedback(handler);
     const { authorRole: _, ...withoutRole } = commentBody(feedback.id, { authorEmail: "" });
 
@@ -173,8 +173,8 @@ describe("comments — POST", () => {
   });
 
   it("stamps client when no role is sent, even by a caller who could speak as the team", async () => {
-    const keyed = createSitepingHandler({ store: new MemoryStore(), apiKey: API_KEY });
-    const staffed = createSitepingHandler({
+    const keyed = createBeezpingHandler({ store: new MemoryStore(), apiKey: API_KEY });
+    const staffed = createBeezpingHandler({
       store: new MemoryStore(),
       access: { authenticate: () => ({ id: "staff" }), canCommentAsTeam: () => true },
     });
@@ -191,9 +191,9 @@ describe("comments — POST", () => {
 
   it("answers 404 when the store itself finds no feedback, without verifyProjectOwnership", async () => {
     // Optional on the contract, and the apiKey policy starts without it: the store's own miss answers.
-    const store: SitepingStore = Object.assign(Object.create(new MemoryStore()), { verifyProjectOwnership: undefined });
+    const store: BeezpingStore = Object.assign(Object.create(new MemoryStore()), { verifyProjectOwnership: undefined });
     const logger = silentLogger();
-    const handler = createSitepingHandler({ store, apiKey: API_KEY, logger });
+    const handler = createBeezpingHandler({ store, apiKey: API_KEY, logger });
 
     const response = await handler.POST(request("POST", commentBody("does-not-exist")));
 
@@ -204,7 +204,7 @@ describe("comments — POST", () => {
 
   it("answers 404 for an unknown feedback and for another project's, storing nothing", async () => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store });
+    const handler = createBeezpingHandler({ store });
     const feedback = await createFeedback(handler);
 
     const unknown = await handler.POST(request("POST", commentBody("does-not-exist")));
@@ -219,7 +219,7 @@ describe("comments — POST", () => {
   it(`answers 409 once the thread holds ${MAX_COMMENTS_PER_FEEDBACK} client comments — and still takes the team's`, async () => {
     const store = new MemoryStore();
     // The widget's setup: anyone reads and posts, the key holder speaks as the team.
-    const handler = createSitepingHandler({ store, apiKey: API_KEY, publicEndpoints: ["GET", "POST", "OPTIONS"] });
+    const handler = createBeezpingHandler({ store, apiKey: API_KEY, publicEndpoints: ["GET", "POST", "OPTIONS"] });
     const feedback = await createFeedback(handler);
     for (let i = 0; i < MAX_COMMENTS_PER_FEEDBACK; i++) await postComment(handler, commentBody(feedback.id));
 
@@ -238,7 +238,7 @@ describe("comments — POST", () => {
     const store = new MemoryStore();
     store.addComment = () => Promise.reject(new StoreValueTooLongError());
     const logger = silentLogger();
-    const handler = createSitepingHandler({ store, logger });
+    const handler = createBeezpingHandler({ store, logger });
     const feedback = await createFeedback(handler);
 
     const response = await handler.POST(request("POST", commentBody(feedback.id)));
@@ -246,7 +246,7 @@ describe("comments — POST", () => {
     expect(response.status).toBe(422);
     expect(await response.json()).toEqual({ error: "A value is too long for this server's database" });
     expect(logger.error).toHaveBeenCalledWith(
-      "[siteping] A value is too long for the store",
+      "[beezping] A value is too long for the store",
       expect.objectContaining({ error: expect.any(StoreValueTooLongError) }),
     );
   });
@@ -256,47 +256,47 @@ describe("comments — POST", () => {
     const failure = new Error("connection refused");
     store.addComment = () => Promise.reject(failure);
     const logger = silentLogger();
-    const handler = createSitepingHandler({ store, logger });
+    const handler = createBeezpingHandler({ store, logger });
     const feedback = await createFeedback(handler);
 
     const response = await handler.POST(request("POST", commentBody(feedback.id)));
 
     expect(response.status).toBe(500);
-    expect(logger.error).toHaveBeenCalledWith("[siteping] Failed to add comment", {
+    expect(logger.error).toHaveBeenCalledWith("[beezping] Failed to add comment", {
       error: failure,
       method: "POST",
-      path: "/api/siteping",
+      path: "/api/beezping",
     });
   });
 });
 
 describe("comments — the team role", () => {
-  async function claimTeam(handler: SitepingHandler, headers: Record<string, string> = {}) {
+  async function claimTeam(handler: BeezpingHandler, headers: Record<string, string> = {}) {
     const feedback = await createFeedback(handler, headers);
     return (await postComment(handler, commentBody(feedback.id, { authorRole: "team" }), headers)).authorRole;
   }
 
   it("is kept for a request carrying the apiKey", async () => {
-    expect(await claimTeam(createSitepingHandler({ store: new MemoryStore(), apiKey: API_KEY }), BEARER)).toBe("team");
+    expect(await claimTeam(createBeezpingHandler({ store: new MemoryStore(), apiKey: API_KEY }), BEARER)).toBe("team");
   });
 
   it("is downgraded to client on the public POST, with no key, a wrong key, or no apiKey configured", async () => {
-    expect(await claimTeam(createSitepingHandler({ store: new MemoryStore(), apiKey: API_KEY }))).toBe("client");
+    expect(await claimTeam(createBeezpingHandler({ store: new MemoryStore(), apiKey: API_KEY }))).toBe("client");
     expect(
-      await claimTeam(createSitepingHandler({ store: new MemoryStore(), apiKey: API_KEY }), {
+      await claimTeam(createBeezpingHandler({ store: new MemoryStore(), apiKey: API_KEY }), {
         Authorization: "Bearer wrong-key",
       }),
     ).toBe("client");
-    expect(await claimTeam(createSitepingHandler({ store: new MemoryStore() }), BEARER)).toBe("client");
+    expect(await claimTeam(createBeezpingHandler({ store: new MemoryStore() }), BEARER)).toBe("client");
   });
 
   describe("under a custom access policy", () => {
-    const access = (overrides: Partial<SitepingAccessControl<{ staff: boolean }>> = {}) => ({
+    const access = (overrides: Partial<BeezpingAccessControl<{ staff: boolean }>> = {}) => ({
       authenticate: (req: Request) => ({ staff: req.headers.get("x-staff") === "yes" }),
       ...overrides,
     });
-    const handlerWith = (overrides?: Partial<SitepingAccessControl<{ staff: boolean }>>) =>
-      createSitepingHandler({ store: new MemoryStore(), access: access(overrides) });
+    const handlerWith = (overrides?: Partial<BeezpingAccessControl<{ staff: boolean }>>) =>
+      createBeezpingHandler({ store: new MemoryStore(), access: access(overrides) });
 
     it("follows canCommentAsTeam", async () => {
       const canCommentAsTeam = ({ staff }: { staff: boolean }) => staff;
@@ -333,7 +333,7 @@ describe("comments — email redaction", () => {
   /** A feedback with a team reply, both carrying an email, behind an apiKey with a public GET. */
   async function threadWithEmails() {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store, apiKey: API_KEY, publicEndpoints: ["GET", "POST", "OPTIONS"] });
+    const handler = createBeezpingHandler({ store, apiKey: API_KEY, publicEndpoints: ["GET", "POST", "OPTIONS"] });
     const feedback = await createFeedback(handler);
     await postComment(handler, commentBody(feedback.id, { authorRole: "team" }), BEARER);
     return { store, handler, feedback };
@@ -368,7 +368,7 @@ describe("comments — email redaction", () => {
   });
 
   it("blanks comment emails in a PATCH answer to an unauthenticated caller", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), requireAuthForDestructive: false });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), requireAuthForDestructive: false });
     const feedback = await createFeedback(handler);
     await postComment(handler, commentBody(feedback.id));
 
@@ -380,7 +380,7 @@ describe("comments — email redaction", () => {
   });
 
   it("follows canReadAuthorEmail under a custom access policy, POST answers included", async () => {
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: { authenticate: () => ({ id: "visitor" }), canReadAuthorEmail: () => false },
     });
@@ -394,7 +394,7 @@ describe("comments — email redaction", () => {
 });
 
 describe("comments — DELETE", () => {
-  async function seedThread(handler: SitepingHandler) {
+  async function seedThread(handler: BeezpingHandler) {
     const feedback = await createFeedback(handler);
     const doomed = await postComment(handler, commentBody(feedback.id));
     const kept = await postComment(handler, commentBody(feedback.id));
@@ -402,7 +402,7 @@ describe("comments — DELETE", () => {
   }
 
   it("deletes one comment, keeps the feedback and the rest of the thread, and requires the apiKey", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), apiKey: API_KEY });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), apiKey: API_KEY });
     const { feedback, doomed, kept } = await seedThread(handler);
     const body = { projectName: PROJECT, feedbackId: feedback.id, commentId: doomed.id };
 
@@ -417,7 +417,7 @@ describe("comments — DELETE", () => {
 
   it("answers 404 for a comment of another thread or an unknown one, and for another project", async () => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store, requireAuthForDestructive: false });
+    const handler = createBeezpingHandler({ store, requireAuthForDestructive: false });
     const { doomed } = await seedThread(handler);
     const other = await createFeedback(handler, {}, "other");
 
@@ -440,7 +440,7 @@ describe("comments — DELETE", () => {
 
   it("answers 400 to a comment delete missing its feedbackId, never deleting the feedback", async () => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store, requireAuthForDestructive: false });
+    const handler = createBeezpingHandler({ store, requireAuthForDestructive: false });
     const { feedback, doomed } = await seedThread(handler);
 
     const response = await handler.DELETE(
@@ -454,7 +454,7 @@ describe("comments — DELETE", () => {
 
 describe("comments — a store without them", () => {
   it("serves empty threads, advertises no comments, and answers comment writes with 501", async () => {
-    const handler = createSitepingHandler({ store: storeWithoutComments(), requireAuthForDestructive: false });
+    const handler = createBeezpingHandler({ store: storeWithoutComments(), requireAuthForDestructive: false });
     const feedback = await createFeedback(handler);
 
     const listed = await list(handler);
@@ -481,7 +481,7 @@ describe("comments — a store that cannot delete them", () => {
     const store = new MemoryStore();
     // Append-only threads: replies are kept, never deleted.
     Object.assign(store, { deleteComment: undefined });
-    const handler = createSitepingHandler({ store, requireAuthForDestructive: false });
+    const handler = createBeezpingHandler({ store, requireAuthForDestructive: false });
     const feedback = await createFeedback(handler);
     const reply = await postComment(handler, commentBody(feedback.id));
 
@@ -498,8 +498,8 @@ describe("comments — a store that cannot delete them", () => {
 describe("comments — authorization", () => {
   it("asks authorize about createComment and deleteComment with their targets, and stores nothing on a refusal", async () => {
     const store = new MemoryStore();
-    const authorize = vi.fn(({ action }: SitepingAuthorizationContext<{ id: string }>) => !action.endsWith("Comment"));
-    const handler = createSitepingHandler({ store, access: { authenticate: () => ({ id: "u" }), authorize } });
+    const authorize = vi.fn(({ action }: BeezpingAuthorizationContext<{ id: string }>) => !action.endsWith("Comment"));
+    const handler = createBeezpingHandler({ store, access: { authenticate: () => ({ id: "u" }), authorize } });
     const feedback = await createFeedback(handler);
     const kept = await store.addComment(feedback.id, {
       body: "b",
@@ -532,7 +532,7 @@ describe("comments — authorization", () => {
   });
 
   it("guards comment writes against CSRF like every other mutation", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), access: { authenticate: () => ({ id: "u" }) } });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), access: { authenticate: () => ({ id: "u" }) } });
     const feedback = await createFeedback(handler);
 
     const response = await handler.POST(
@@ -556,8 +556,8 @@ describe("comments — beforeComment", () => {
   const MALLORY: Member = { name: "Mallory", email: "mallory@corp.example", project: PROJECT };
 
   /** The recipes' shape: the author and the project come from the session, secrets leave the body. */
-  function stampingHandler(store: SitepingStore, authorize = vi.fn(() => true)) {
-    return createSitepingHandler<Member>({
+  function stampingHandler(store: BeezpingStore, authorize = vi.fn(() => true)) {
+    return createBeezpingHandler<Member>({
       store,
       access: { authenticate: () => MALLORY, authorize, canCommentAsTeam: () => false },
       beforeComment: (input, { principal }) => ({
@@ -594,7 +594,7 @@ describe("comments — beforeComment", () => {
     const store = new MemoryStore();
     const authorize = vi.fn(() => true);
     const handler = stampingHandler(store, authorize);
-    const foreignResponse = await createSitepingHandler({ store }).POST(
+    const foreignResponse = await createBeezpingHandler({ store }).POST(
       request("POST", { ...validPayloadNoAnnotations, projectName: "other-tenant", clientId: "foreign" }),
     );
     const foreign = (await foreignResponse.json()) as FeedbackResponse;
@@ -607,7 +607,7 @@ describe("comments — beforeComment", () => {
   });
 
   it("leaves the team role a claim the policy must vouch for", async () => {
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       apiKey: API_KEY,
       beforeComment: (input) => ({ ...input, authorRole: "team" }),
@@ -622,7 +622,7 @@ describe("comments — beforeComment", () => {
     const store = new MemoryStore();
     const failure = new Error("session store down");
     const logger = silentLogger();
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store,
       logger,
       beforeComment: () => {
@@ -635,7 +635,7 @@ describe("comments — beforeComment", () => {
 
     expect(response.status).toBe(500);
     expect(logger.error).toHaveBeenCalledWith(
-      "[siteping] Failed to add comment",
+      "[beezping] Failed to add comment",
       expect.objectContaining({ error: failure }),
     );
     expect((await store.findByClientId("uuid-123"))?.comments).toEqual([]);
@@ -646,7 +646,7 @@ describe("comments — the docs' team policy", () => {
   interface Staffer {
     isStaff: boolean;
   }
-  const policy = (): SitepingAccessControl<Staffer> => ({
+  const policy = (): BeezpingAccessControl<Staffer> => ({
     authenticate: (request) => ({ isStaff: request.headers.get("x-staff") === "yes" }),
     // Everyone submits, reads and replies; only staff triage and delete.
     authorize: ({ principal, action }) =>
@@ -658,7 +658,7 @@ describe("comments — the docs' team policy", () => {
 
   it("lets a signed-in reviewer reply, but not triage, delete or wipe the project", async () => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store, access: policy() });
+    const handler = createBeezpingHandler({ store, access: policy() });
     const feedback = await createFeedback(handler);
     const reply = await postComment(handler, commentBody(feedback.id));
     const staff = { "x-staff": "yes" };

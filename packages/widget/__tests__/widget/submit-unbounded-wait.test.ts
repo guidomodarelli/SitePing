@@ -3,7 +3,7 @@
 // submitting) always restores. Real launcher + Annotator + Popup + client;
 // only the DOM anchor helpers are mocked (jsdom has no layout), as in
 // annotator-popup-reentry.test.ts. Issue #342.
-import { type SitepingConfig, SitepingError, type SitepingStore } from "@beezping/core";
+import { type BeezpingConfig, BeezpingError, type BeezpingStore } from "@beezping/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { launch } from "../../src/launcher.js";
 import { mockMatchMedia } from "../helpers.js";
@@ -54,12 +54,12 @@ const stalledBody = (init: RequestInit, status: number) =>
 let instance: ReturnType<typeof launch> | undefined;
 
 /** Draw a rectangle through the FAB, fill the form, click Send. Fake timers start at Send. */
-async function drawAndSend(config: SitepingConfig) {
+async function drawAndSend(config: BeezpingConfig) {
   instance = launch(config);
   await flush();
   // NODE_ENV=test → the shadow root is open
   document
-    .querySelector("siteping-widget")!
+    .querySelector("beezping-widget")!
     .shadowRoot!.querySelector<HTMLButtonElement>('[data-item-id="annotate"]')!
     .click();
   await flush();
@@ -93,7 +93,7 @@ const neverStore = {
   updateFeedback: vi.fn(),
   deleteFeedback: vi.fn(),
   deleteAllFeedbacks: vi.fn(),
-} satisfies SitepingStore;
+} satisfies BeezpingStore;
 
 describe("a send that never settles", () => {
   afterEach(() => {
@@ -111,20 +111,20 @@ describe("a send that never settles", () => {
       (init) => new Promise((_, reject) => onAbort(init, () => reject(new DOMException("aborted", "AbortError")))),
     );
     const onError = vi.fn();
-    await drawAndSend({ ...base, endpoint: "/api/siteping", onError });
+    await drawAndSend({ ...base, endpoint: "/api/beezping", onError });
 
     expect(await secondsUntilRestored(120)).toBe(47); // 4 x 10 s + 1 + 2 + 4 s backoff
     expect(onError.mock.calls[0]?.[0]).toMatchObject({ code: "NETWORK", retryable: true });
   });
 
-  it.each<[string, number, () => SitepingConfig]>([
+  it.each<[string, number, () => BeezpingConfig]>([
     ["(a) store mode, createFeedback never settles", 30, () => ({ ...base, store: neverStore })],
     [
       "(b) HTTP, 201 headers arrive, then the body stalls",
       10,
       () => {
         stubFetch((init) => Promise.resolve(stalledBody(init, 201)));
-        return { ...base, endpoint: "/api/siteping" };
+        return { ...base, endpoint: "/api/beezping" };
       },
     ],
     [
@@ -135,24 +135,24 @@ describe("a send that never settles", () => {
         // Resolves for the launch-time GET; hangs for the POST, which runs while the popup is busy.
         return {
           ...base,
-          endpoint: "/api/siteping",
+          endpoint: "/api/beezping",
           headers: () => (isSending() ? new Promise(() => {}) : Promise.resolve({})),
         };
       },
     ],
   ])("%s: the popup restores at the bound and onError gets a retryable error", async (_name, bound, makeConfig) => {
     const onError = vi.fn();
-    await drawAndSend({ ...makeConfig(), onError } as SitepingConfig);
+    await drawAndSend({ ...makeConfig(), onError } as BeezpingConfig);
 
     expect(await secondsUntilRestored(120), "seconds until the popup restores").toBe(bound);
-    expect(onError.mock.calls[0]?.[0]).toBeInstanceOf(SitepingError);
+    expect(onError.mock.calls[0]?.[0]).toBeInstanceOf(BeezpingError);
     expect(onError.mock.calls[0]?.[0]).toMatchObject({ retryable: true });
   });
 
   it("(d) HTTP, 400 headers arrive, then the body stalls: the popup restores with the validation error", async () => {
     stubFetch((init) => Promise.resolve(stalledBody(init, 400)));
     const onError = vi.fn();
-    await drawAndSend({ ...base, endpoint: "/api/siteping", onError });
+    await drawAndSend({ ...base, endpoint: "/api/beezping", onError });
 
     expect(await secondsUntilRestored(120), "seconds until the popup restores").toBe(10);
     // The status is known: still the server's verdict (not retryable), only the detail is lost.

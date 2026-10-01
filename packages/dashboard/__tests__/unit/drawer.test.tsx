@@ -19,7 +19,7 @@ function renderDrawer(recordOverrides = {}, permissions: Partial<FeedbackPermiss
     <Drawer
       record={record}
       overlay={overlay}
-      deepLinkParam="siteping"
+      deepLinkParam="beezping"
       onClose={vi.fn()}
       onChangeStatus={vi.fn()}
       onDelete={vi.fn()}

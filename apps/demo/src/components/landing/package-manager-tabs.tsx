@@ -130,18 +130,18 @@ function AnnotateCode() {
     <code>
       <span className="text-purple-400">import</span>
       <span className="text-gray-300"> {"{"} </span>
-      <span className="text-yellow-300">initSiteping</span>
+      <span className="text-yellow-300">initBeezping</span>
       <span className="text-gray-300"> {"}"} </span>
       <span className="text-purple-400">from</span> <span className="text-green-400">&apos;@beezping/widget&apos;</span>
       {"\n"}
       {"\n"}
-      <span className="text-yellow-300">initSiteping</span>
+      <span className="text-yellow-300">initBeezping</span>
       <span className="text-gray-500">({"{"}</span>
       {"\n"}
       {"  "}
       <span className="text-blue-300">endpoint</span>
       <span className="text-gray-500">: </span>
-      <span className="text-green-400">&apos;/api/siteping&apos;</span>
+      <span className="text-green-400">&apos;/api/beezping&apos;</span>
       <span className="text-gray-500">,</span>
       {"\n"}
       {"  "}

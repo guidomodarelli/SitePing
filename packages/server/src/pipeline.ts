@@ -4,17 +4,17 @@ import { DRY_RUN_CONCURRENCY, ERROR_MESSAGES } from "./constants.js";
 import { buildCorsHeaders, type CorsHeaders, withCors } from "./cors.js";
 import { csrfRefusal } from "./csrf.js";
 import type {
-  SitepingAuthorizationContext,
-  SitepingHandlerBaseOptions,
-  SitepingHttpMethod,
-  SitepingLogger,
-  SitepingRequestContext,
+  BeezpingAuthorizationContext,
+  BeezpingHandlerBaseOptions,
+  BeezpingHttpMethod,
+  BeezpingLogger,
+  BeezpingRequestContext,
 } from "./options.js";
 import { formatValidationErrors } from "./validation.js";
 
 /** A request that passed the access gate — what every operation works with. */
 export interface Scope<Principal> {
-  context: SitepingRequestContext<Principal>;
+  context: BeezpingRequestContext<Principal>;
   corsHeaders: CorsHeaders;
   /** Whether responses to this request may include `authorEmail`. */
   canReadAuthorEmail: boolean;
@@ -33,9 +33,9 @@ interface Schema<Output> {
 interface PipelineDependencies<Principal> {
   gate: AccessGate<Principal>;
   allowedOrigins: ReadonlyArray<string> | undefined;
-  logger: SitepingLogger;
-  describeError: SitepingHandlerBaseOptions<Principal>["describeError"];
-  presentFeedback: SitepingHandlerBaseOptions<Principal>["presentFeedback"];
+  logger: BeezpingLogger;
+  describeError: BeezpingHandlerBaseOptions<Principal>["describeError"];
+  presentFeedback: BeezpingHandlerBaseOptions<Principal>["presentFeedback"];
   maxBodyBytes: number;
 }
 
@@ -205,8 +205,8 @@ export function createPipeline<Principal>({
    */
   const may = async (
     scope: Scope<Principal>,
-    method: SitepingHttpMethod,
-    target: Omit<SitepingAuthorizationContext<Principal>, keyof SitepingRequestContext<Principal>>,
+    method: BeezpingHttpMethod,
+    target: Omit<BeezpingAuthorizationContext<Principal>, keyof BeezpingRequestContext<Principal>>,
   ): Promise<boolean> => {
     const { request } = scope.context;
     const slots = dryRunSlots.get(request) ?? createSlots(DRY_RUN_CONCURRENCY);
@@ -219,7 +219,7 @@ export function createPipeline<Principal>({
     } catch (failure) {
       if (!loggedDryRunFailures.has(request)) {
         loggedDryRunFailures.add(request);
-        logger.error("[siteping] authorize failed on a dry run", {
+        logger.error("[beezping] authorize failed on a dry run", {
           error: failure,
           action: target.action,
           ...requestContext(request),
@@ -268,12 +268,12 @@ export function createPipeline<Principal>({
      * answers the logged 500 with CORS headers rather than rejecting, which
      * a browser would only see as an opaque network error.
      */
-    async enter(request: Request, method: SitepingHttpMethod): Promise<Step<Scope<Principal>>> {
+    async enter(request: Request, method: BeezpingHttpMethod): Promise<Step<Scope<Principal>>> {
       const corsHeaders = buildCorsHeaders(request, allowedOrigins);
       if (gate.guardsMutations) {
         const refusal = csrfRefusal(request, method, allowedOrigins);
         if (refusal?.status === 403) {
-          logger.error("[siteping] Refused a mutation from an origin outside allowedOrigins", {
+          logger.error("[beezping] Refused a mutation from an origin outside allowedOrigins", {
             origin: refusal.origin,
             ...requestContext(request),
           });
@@ -288,7 +288,7 @@ export function createPipeline<Principal>({
       } catch (failure) {
         return {
           ok: false,
-          response: fail(request, { corsHeaders }, "[siteping] Failed to authenticate request", failure),
+          response: fail(request, { corsHeaders }, "[beezping] Failed to authenticate request", failure),
         };
       }
       if (!outcome.ok) return { ok: false, response: error({ corsHeaders }, outcome.status, outcome.error) };
@@ -313,7 +313,7 @@ export function createPipeline<Principal>({
     /** `null` when the policy allows the request, its 403 otherwise. */
     async authorize(
       scope: Scope<Principal>,
-      target: Omit<SitepingAuthorizationContext<Principal>, keyof SitepingRequestContext<Principal>>,
+      target: Omit<BeezpingAuthorizationContext<Principal>, keyof BeezpingRequestContext<Principal>>,
     ): Promise<Response | null> {
       return (await gate.authorize({ ...scope.context, ...target }))
         ? null
@@ -345,7 +345,7 @@ export function createPipeline<Principal>({
      * the validation accepts, which only the operator can fix.
      */
     refuseTooLong(scope: Scope<Principal>, failure: unknown): Response {
-      logError(scope, "[siteping] A value is too long for the store", { error: failure });
+      logError(scope, "[beezping] A value is too long for the store", { error: failure });
       return error(scope, 422, ERROR_MESSAGES.valueTooLong);
     },
 
@@ -366,7 +366,7 @@ export function createPipeline<Principal>({
       try {
         await invoke();
       } catch (failure) {
-        logError(scope, `[siteping] Hook ${name} failed`, { error: failure, ...subject });
+        logError(scope, `[beezping] Hook ${name} failed`, { error: failure, ...subject });
       }
     },
 

@@ -22,10 +22,10 @@ const blob = customType<{ data: Uint8Array<ArrayBuffer>; driverData: unknown }>(
  * your Drizzle schema so `drizzle-kit` migrates it:
  *
  * ```ts
- * export const sitepingScreenshots = createSitepingScreenshotsSqliteTable();
+ * export const beezpingScreenshots = createBeezpingScreenshotsSqliteTable();
  * ```
  */
-export function createSitepingScreenshotsSqliteTable(name: string = DEFAULT_SCREENSHOTS_TABLE_NAME) {
+export function createBeezpingScreenshotsSqliteTable(name: string = DEFAULT_SCREENSHOTS_TABLE_NAME) {
   return sqliteTable(name, {
     key: text(SCREENSHOTS_TABLE_COLUMNS.key).primaryKey(),
     contentType: text(SCREENSHOTS_TABLE_COLUMNS.contentType).notNull(),
@@ -36,16 +36,16 @@ export function createSitepingScreenshotsSqliteTable(name: string = DEFAULT_SCRE
   });
 }
 
-export type SitepingScreenshotsSqliteTable = ReturnType<typeof createSitepingScreenshotsSqliteTable>;
+export type BeezpingScreenshotsSqliteTable = ReturnType<typeof createBeezpingScreenshotsSqliteTable>;
 
 // biome-ignore lint/suspicious/noExplicitAny: accepts every schema generic.
 type AnyLibSQLDatabase = LibSQLDatabase<any>;
 
 export interface LibSQLScreenshotObjectStoreOptions {
-  /** Where `createScreenshotServeHandler` is mounted, e.g. `https://app.example.com/api/siteping/screenshots`. */
+  /** Where `createScreenshotServeHandler` is mounted, e.g. `https://app.example.com/api/beezping/screenshots`. */
   publicBaseUrl: string;
-  /** The table from `createSitepingScreenshotsSqliteTable` — pass it when you renamed it. */
-  table?: SitepingScreenshotsSqliteTable | undefined;
+  /** The table from `createBeezpingScreenshotsSqliteTable` — pass it when you renamed it. */
+  table?: BeezpingScreenshotsSqliteTable | undefined;
 }
 
 /**
@@ -54,7 +54,7 @@ export interface LibSQLScreenshotObjectStoreOptions {
  */
 export function createLibSQLScreenshotObjectStore(
   db: AnyLibSQLDatabase,
-  { publicBaseUrl, table = createSitepingScreenshotsSqliteTable() }: LibSQLScreenshotObjectStoreOptions,
+  { publicBaseUrl, table = createBeezpingScreenshotsSqliteTable() }: LibSQLScreenshotObjectStoreOptions,
 ): ScreenshotObjectStore {
   return createDatabaseObjectStore({
     name: LIBSQL_OBJECT_STORE_NAME,

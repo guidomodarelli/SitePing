@@ -1,15 +1,15 @@
-import { createSitepingHandler, type SitepingHandler } from "@beezping/server";
+import { type BeezpingHandler, createBeezpingHandler } from "@beezping/server";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { createLibSQLSitepingStore } from "../src/libsql/index.js";
-import { createPgSitepingStore } from "../src/pg/index.js";
+import { createLibSQLBeezpingStore } from "../src/libsql/index.js";
+import { createPgBeezpingStore } from "../src/pg/index.js";
 import type { DrizzleStore } from "../src/shared/store.js";
 import { createLibSQLTestDatabase, createPgTestDatabase } from "./databases.js";
 
 // The documented deployment: the Drizzle store mounted behind @beezping/server's
 // handler, over the same real engines as the other tests.
 
-const ENDPOINT = "http://localhost/api/siteping";
-const WEBHOOK = { url: "https://hooks.example.com/siteping" };
+const ENDPOINT = "http://localhost/api/beezping";
+const WEBHOOK = { url: "https://hooks.example.com/beezping" };
 
 const payload = {
   projectName: "site",
@@ -57,20 +57,20 @@ const dialects: Array<{
     name: "PostgreSQL (PGlite)",
     async open() {
       const database = await createPgTestDatabase();
-      return { ...database, createStore: () => createPgSitepingStore(database.db) };
+      return { ...database, createStore: () => createPgBeezpingStore(database.db) };
     },
   },
   {
     name: "libSQL (Turso)",
     async open() {
       const database = await createLibSQLTestDatabase();
-      return { ...database, createStore: () => createLibSQLSitepingStore(database.db) };
+      return { ...database, createStore: () => createLibSQLBeezpingStore(database.db) };
     },
   },
 ];
 
 for (const dialect of dialects) {
-  describe(`createSitepingHandler over the Drizzle store — ${dialect.name}`, () => {
+  describe(`createBeezpingHandler over the Drizzle store — ${dialect.name}`, () => {
     let database: Awaited<ReturnType<(typeof dialects)[number]["open"]>>;
     let fetchSpy: ReturnType<typeof vi.fn>;
     const realFetch = globalThis.fetch;
@@ -88,8 +88,8 @@ for (const dialect of dialects) {
       globalThis.fetch = realFetch;
     });
 
-    function handler(): SitepingHandler {
-      return createSitepingHandler({
+    function handler(): BeezpingHandler {
+      return createBeezpingHandler({
         store: database.createStore(),
         requireAuthForDestructive: false,
         webhooks: WEBHOOK,

@@ -2,16 +2,16 @@ import { MemoryStore } from "@beezping/adapter-memory";
 import type { FeedbackPermissions, FeedbackResponse, FeedbackResponseList } from "@beezping/core";
 import { describe, expect, it, vi } from "vitest";
 import {
-  createSitepingHandler,
-  type SitepingAccessControl,
-  type SitepingAuthorizationContext,
-  type SitepingHandler,
-  type SitepingHttpMethod,
-  type SitepingLogger,
+  type BeezpingAccessControl,
+  type BeezpingAuthorizationContext,
+  type BeezpingHandler,
+  type BeezpingHttpMethod,
+  type BeezpingLogger,
+  createBeezpingHandler,
 } from "../src/index.js";
 import { validPayloadNoAnnotations } from "./fixtures.js";
 
-const ENDPOINT = "http://localhost/api/siteping";
+const ENDPOINT = "http://localhost/api/beezping";
 const API_KEY = "a-secret-key";
 const PROJECT = validPayloadNoAnnotations.projectName;
 const BEARER = { Authorization: `Bearer ${API_KEY}` };
@@ -35,7 +35,7 @@ function request(method: string, body: unknown, headers: Record<string, string> 
 
 let clientIds = 0;
 
-async function create(handler: SitepingHandler, headers: Record<string, string> = {}): Promise<FeedbackResponse> {
+async function create(handler: BeezpingHandler, headers: Record<string, string> = {}): Promise<FeedbackResponse> {
   clientIds += 1;
   const response = await handler.POST(
     request("POST", { ...validPayloadNoAnnotations, clientId: `perm-${clientIds}` }, headers),
@@ -44,7 +44,7 @@ async function create(handler: SitepingHandler, headers: Record<string, string> 
   return (await response.json()) as FeedbackResponse;
 }
 
-async function list(handler: SitepingHandler, headers: Record<string, string> = {}): Promise<FeedbackResponseList> {
+async function list(handler: BeezpingHandler, headers: Record<string, string> = {}): Promise<FeedbackResponseList> {
   const response = await handler.GET(new Request(`${ENDPOINT}?projectName=${PROJECT}`, { headers }));
   expect(response.status).toBe(200);
   return (await response.json()) as FeedbackResponseList;
@@ -52,7 +52,7 @@ async function list(handler: SitepingHandler, headers: Record<string, string> = 
 
 describe("permissions — apiKey policy", () => {
   it("tells an anonymous visitor they may reply but not triage", async () => {
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       apiKey: API_KEY,
       publicEndpoints: ["GET", "POST"],
@@ -67,7 +67,7 @@ describe("permissions — apiKey policy", () => {
   });
 
   it("allows everything to the key holder, on lists, creates and updates alike", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), apiKey: API_KEY });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), apiKey: API_KEY });
     const created = await create(handler, BEARER);
 
     const updated = await handler.PATCH(
@@ -81,12 +81,12 @@ describe("permissions — apiKey policy", () => {
     expect(page.permissions).toEqual({ canDeleteAll: true });
   });
 
-  it.each<[string, Array<SitepingHttpMethod>, FeedbackPermissions]>([
+  it.each<[string, Array<BeezpingHttpMethod>, FeedbackPermissions]>([
     ["PATCH", ["GET", "POST", "PATCH"], { ...VISITOR, canChangeStatus: true }],
     ["DELETE", ["GET", "POST", "DELETE"], { ...VISITOR, canDelete: true, canDeleteComment: true }],
     ["nothing but GET", ["GET"], { ...VISITOR, canComment: false }],
   ])("follows publicEndpoints opening %s to visitors", async (_label, publicEndpoints, expected) => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), apiKey: API_KEY, publicEndpoints });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), apiKey: API_KEY, publicEndpoints });
     await create(handler, BEARER);
 
     const page = await list(handler);
@@ -96,8 +96,8 @@ describe("permissions — apiKey policy", () => {
   });
 
   it("refuses PATCH and DELETE to everyone without a key, until requireAuthForDestructive is off", async () => {
-    const locked = createSitepingHandler({ store: new MemoryStore() });
-    const open = createSitepingHandler({ store: new MemoryStore(), requireAuthForDestructive: false });
+    const locked = createBeezpingHandler({ store: new MemoryStore() });
+    const open = createBeezpingHandler({ store: new MemoryStore(), requireAuthForDestructive: false });
 
     expect((await create(locked)).permissions).toEqual(VISITOR);
     expect((await create(open)).permissions).toEqual(ALL);
@@ -113,7 +113,7 @@ describe("permissions — access policy", () => {
   const OWNER: Reviewer = { email: "owner@example.com", role: "owner" };
   const VIEWER: Reviewer = { email: "viewer@example.com", role: "viewer" };
 
-  function access(authorize?: SitepingAccessControl<Reviewer>["authorize"]): SitepingAccessControl<Reviewer> {
+  function access(authorize?: BeezpingAccessControl<Reviewer>["authorize"]): BeezpingAccessControl<Reviewer> {
     return {
       authenticate: (request) => (request.headers.get("x-session") === OWNER.email ? OWNER : VIEWER),
       ...(authorize ? { authorize } : {}),
@@ -121,8 +121,8 @@ describe("permissions — access policy", () => {
   }
 
   it("asks authorize, as a dry run, for each action on each feedback and for deleteAll once", async () => {
-    const dryRuns: Array<SitepingAuthorizationContext<Reviewer>> = [];
-    const handler = createSitepingHandler({
+    const dryRuns: Array<BeezpingAuthorizationContext<Reviewer>> = [];
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: access((context) => {
         if (context.dryRun) dryRuns.push(context);
@@ -169,10 +169,10 @@ describe("permissions — access policy", () => {
 
   it("answers per feedback: an ownership rule shows on the records it matches only", async () => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store, access: access() });
+    const handler = createBeezpingHandler({ store, access: access() });
     const mine = await create(handler);
     const theirs = await create(handler);
-    const own = createSitepingHandler({
+    const own = createBeezpingHandler({
       store,
       access: access(({ action, feedbackId, principal }) =>
         action === "delete" ? feedbackId === mine.id : principal.role === "owner" || action !== "update",
@@ -189,7 +189,7 @@ describe("permissions — access policy", () => {
   it("runs a response's dry runs a few at a time, so a page cannot drain a database pool", async () => {
     let inFlight = 0;
     let peak = 0;
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: access(async ({ dryRun }) => {
         if (!dryRun) return true;
@@ -212,7 +212,7 @@ describe("permissions — access policy", () => {
 
   it("authenticates each response once, however many permissions its dry runs fill in", async () => {
     const authenticate = vi.fn(access().authenticate);
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: { ...access(() => true), authenticate },
     });
@@ -235,16 +235,16 @@ describe("permissions — access policy", () => {
   });
 
   it("allows everything to every authenticated principal without authorize", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), access: access() });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), access: access() });
 
     expect((await create(handler)).permissions).toEqual(ALL);
     expect((await list(handler)).permissions).toEqual({ canDeleteAll: true });
   });
 
   it("refuses a permission whose dry run throws, and still answers the write that already happened", async () => {
-    const logger = { error: vi.fn<SitepingLogger["error"]>() };
+    const logger = { error: vi.fn<BeezpingLogger["error"]>() };
     const failure = new Error("comment lookup failed");
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       logger,
       // A per-author rule that forgets a dry run's deleteComment has no commentId.
@@ -266,14 +266,14 @@ describe("permissions — access policy", () => {
     expect(page.permissions).toEqual({ canDeleteAll: true });
     expect(logger.error).toHaveBeenCalledTimes(3);
     expect(logger.error).toHaveBeenCalledWith(
-      "[siteping] authorize failed on a dry run",
+      "[beezping] authorize failed on a dry run",
       expect.objectContaining({ error: failure, action: "deleteComment" }),
     );
   });
 
   it("refuses everything, logged once per response, when every dry run throws", async () => {
-    const logger = { error: vi.fn<SitepingLogger["error"]>() };
-    const handler = createSitepingHandler({
+    const logger = { error: vi.fn<BeezpingLogger["error"]>() };
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       logger,
       access: access(({ dryRun }) => {

@@ -24,7 +24,7 @@ export default defineConfig({
       port: 3999,
       reuseExistingServer: false,
     },
-    // Real createSitepingHandler + MemoryStore, widget + dashboard — stack.spec.ts
+    // Real createBeezpingHandler + MemoryStore, widget + dashboard — stack.spec.ts
     {
       command: "node e2e/stack-server.mjs",
       port: 3998,

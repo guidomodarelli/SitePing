@@ -3,7 +3,7 @@ title: Choosing an adapter
 description: Where your feedback lives — Prisma or Drizzle for production, memory for tests and demos, localStorage for client-only setups.
 ---
 
-An adapter is the storage layer behind SitePing. All four implement the same `SitepingStore` contract (6 methods), so you can swap them without touching the widget.
+An adapter is the storage layer behind Beezping. All four implement the same `BeezpingStore` contract (6 methods), so you can swap them without touching the widget.
 
 | Adapter | Where data lives | Use it for |
 |---|---|---|
@@ -21,22 +21,22 @@ Screenshots stay inline in the feedback unless the Prisma or Drizzle store gets 
 **Server mode** — the widget talks to an HTTP endpoint, and the endpoint talks to the store. This is the production shape:
 
 ```ts
-// app/api/siteping/route.ts
-import { createSitepingHandler } from "@beezping/adapter-prisma";
+// app/api/beezping/route.ts
+import { createBeezpingHandler } from "@beezping/adapter-prisma";
 import { prisma } from "@/lib/prisma";
 
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ prisma });
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({ prisma });
 ```
 
-Any other store mounts the same way with [`@beezping/server`](/docs/server): `createSitepingHandler({ store })`.
+Any other store mounts the same way with [`@beezping/server`](/docs/server): `createBeezpingHandler({ store })`.
 
 **Client-side mode** — the widget writes to a store directly in the browser, no server needed:
 
 ```ts
-import { initSiteping } from "@beezping/widget";
+import { initBeezping } from "@beezping/widget";
 import { LocalStorageStore } from "@beezping/adapter-localstorage";
 
-initSiteping({ store: new LocalStorageStore(), projectName: "my-demo" });
+initBeezping({ store: new LocalStorageStore(), projectName: "my-demo" });
 ```
 
 > Writing your own adapter? Install `@beezping/adapter-kit`: snapshot backends get a complete store from `createCollectionStore`, query backends implement the 6 methods, and both verify with the shared conformance suite (67 tests). See [Writing an adapter](/docs/adapters/writing-an-adapter).

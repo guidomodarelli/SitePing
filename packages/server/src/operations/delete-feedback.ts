@@ -1,14 +1,14 @@
-import { isStoreNotFound, type SitepingStore } from "@beezping/core";
+import { type BeezpingStore, isStoreNotFound } from "@beezping/core";
 import { ERROR_MESSAGES } from "../constants.js";
-import type { SitepingDeletionTarget, SitepingLifecycleHooks } from "../options.js";
+import type { BeezpingDeletionTarget, BeezpingLifecycleHooks } from "../options.js";
 import type { Pipeline, Scope } from "../pipeline.js";
 import { feedbackDeleteSchema } from "../validation.js";
 
 interface DeleteFeedbackDependencies<Principal> {
-  store: SitepingStore;
+  store: BeezpingStore;
   pipeline: Pipeline<Principal>;
-  onDeleting: SitepingLifecycleHooks<Principal>["onDeleting"];
-  onDeleted: SitepingLifecycleHooks<Principal>["onDeleted"];
+  onDeleting: BeezpingLifecycleHooks<Principal>["onDeleting"];
+  onDeleted: BeezpingLifecycleHooks<Principal>["onDeleted"];
 }
 
 /** `DELETE` — remove one feedback, or every feedback of a project (`deleteAll`). */
@@ -21,7 +21,7 @@ export function deleteFeedbackOperation<Principal>({
   return async (scope: Scope<Principal>, body: unknown): Promise<Response> => {
     const payload = pipeline.validate(scope, feedbackDeleteSchema, body);
     if (!payload.ok) return payload.response;
-    const target: SitepingDeletionTarget =
+    const target: BeezpingDeletionTarget =
       "deleteAll" in payload.value
         ? { kind: "project", projectName: payload.value.projectName }
         : { kind: "single", id: payload.value.id, projectName: payload.value.projectName };
@@ -48,7 +48,7 @@ export function deleteFeedbackOperation<Principal>({
         try {
           await onDeleting(target, scope.context);
         } catch (error) {
-          pipeline.logError(scope, "[siteping] Hook onDeleting aborted the deletion", { error, target });
+          pipeline.logError(scope, "[beezping] Hook onDeleting aborted the deletion", { error, target });
           return pipeline.error(scope, 502, ERROR_MESSAGES.deletionAborted);
         }
       }
@@ -59,7 +59,7 @@ export function deleteFeedbackOperation<Principal>({
       return pipeline.json(scope, { deleted: true });
     } catch (error) {
       if (isStoreNotFound(error)) return pipeline.error(scope, 404, ERROR_MESSAGES.feedbackNotFound);
-      return pipeline.fail(scope, "[siteping] Failed to delete feedback", error);
+      return pipeline.fail(scope, "[beezping] Failed to delete feedback", error);
     }
   };
 }

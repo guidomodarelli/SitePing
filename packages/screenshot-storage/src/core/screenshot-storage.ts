@@ -36,7 +36,7 @@ export interface ScreenshotStorageOptions {
   maxBytes?: number | undefined;
   /**
    * Prefix of generated keys (lowercase letters, digits, `-`, `_`). Defaults to
-   * `siteping-`. `delete` only removes keys with this prefix, so keep it
+   * `beezping-`. `delete` only removes keys with this prefix, so keep it
    * distinctive when the bucket or CDN is shared with other objects, and pass
    * the same value to `createScreenshotServeHandler`, which only serves it.
    */
@@ -93,7 +93,7 @@ const defaultLogger: ScreenshotStorageLogger = {
  * import { createS3ObjectStore } from "@beezping/screenshot-storage/s3";
  *
  * const screenshotStorage = createScreenshotStorage(createS3ObjectStore({ … }));
- * const store = createPgSitepingStore(db, { screenshotStorage });
+ * const store = createPgBeezpingStore(db, { screenshotStorage });
  * ```
  */
 export function createScreenshotStorage(
@@ -136,7 +136,7 @@ export function createScreenshotStorage(
       const key = objectStore.keyFromUrl(url);
       if (!key) return;
       if (!isGeneratedKey(key, keyPrefix)) {
-        safeWarn(logger, `[siteping] ${objectStore.name}: refusing to delete an object this storage did not generate`, {
+        safeWarn(logger, `[beezping] ${objectStore.name}: refusing to delete an object this storage did not generate`, {
           key,
           keyPrefix,
         });

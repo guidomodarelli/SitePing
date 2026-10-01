@@ -1,6 +1,6 @@
 import { MemoryStore } from "@beezping/adapter-memory";
 import type { FeedbackRecord } from "@beezping/core";
-import { createSitepingHandler, type SitepingHandler } from "@beezping/server";
+import { type BeezpingHandler, createBeezpingHandler } from "@beezping/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createIssueTrackerHooks,
@@ -12,7 +12,7 @@ import { createGitHubTracker } from "../src/providers/github.js";
 import { createGitLabTracker } from "../src/providers/gitlab.js";
 import { createFakeGitHub, createFakeGitLab, type FakeTracker } from "./fake-trackers.js";
 
-const ENDPOINT = "http://localhost/api/siteping";
+const ENDPOINT = "http://localhost/api/beezping";
 const TOKEN = "tracker-secret-token";
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
@@ -71,18 +71,18 @@ const providers: ProviderUnderTest[] = [
 const silentLogger = () => ({ error: vi.fn() });
 
 /** The tracker without its optional search, like a custom one that has none. */
-const withoutSearch = ({ searchSitepingIssues: _, ...tracker }: IssueTracker): IssueTracker => tracker;
+const withoutSearch = ({ searchBeezpingIssues: _, ...tracker }: IssueTracker): IssueTracker => tracker;
 
 describe("createGitHubTracker", () => {
-  it("accepts the siteping label in the casing the repository already uses", async () => {
+  it("accepts the beezping label in the casing the repository already uses", async () => {
     const fake = createFakeGitHub("acme/site");
-    fake.useExistingLabel("SitePing");
+    fake.useExistingLabel("Beezping");
     const tracker = createGitHubTracker({ repository: "acme/site", token: TOKEN, fetch: fake.fetch });
 
-    await tracker.createIssue({ title: "Title", body: "marker", labels: ["siteping"] });
+    await tracker.createIssue({ title: "Title", body: "marker", labels: ["beezping"] });
 
-    expect(fake.issues[0]?.labels).toEqual(["SitePing"]);
-    expect((await tracker.findSitepingIssues("marker")).issues).toHaveLength(1);
+    expect(fake.issues[0]?.labels).toEqual(["Beezping"]);
+    expect((await tracker.findBeezpingIssues("marker")).issues).toHaveLength(1);
   });
 
   it("reports a search that timed out on GitHub's side as truncated", async () => {
@@ -92,7 +92,7 @@ describe("createGitHubTracker", () => {
       fetch: async () => Response.json({ total_count: 0, incomplete_results: true, items: [] }),
     });
 
-    expect(await tracker.searchSitepingIssues?.("fb-1")).toEqual({ issues: [], truncated: true });
+    expect(await tracker.searchBeezpingIssues?.("fb-1")).toEqual({ issues: [], truncated: true });
   });
 });
 
@@ -114,15 +114,15 @@ for (const provider of providers) {
     let store: MemoryStore;
     let logger: ReturnType<typeof silentLogger>;
 
-    const createHandler = (options: Partial<IssueTrackerHooksOptions> = {}): SitepingHandler =>
-      createSitepingHandler({
+    const createHandler = (options: Partial<IssueTrackerHooksOptions> = {}): BeezpingHandler =>
+      createBeezpingHandler({
         store,
         requireAuthForDestructive: false,
         logger,
         hooks: createIssueTrackerHooks({ tracker: provider.createTracker(fake), ...options }),
       });
 
-    const send = async (handler: SitepingHandler, overrides: Partial<typeof payload> = {}) => {
+    const send = async (handler: BeezpingHandler, overrides: Partial<typeof payload> = {}) => {
       const response = await handler.POST(
         new Request(ENDPOINT, {
           method: "POST",
@@ -134,7 +134,7 @@ for (const provider of providers) {
       return (await response.json()) as FeedbackRecord;
     };
 
-    const patch = (handler: SitepingHandler, id: string, status: string) =>
+    const patch = (handler: BeezpingHandler, id: string, status: string) =>
       handler.PATCH(
         new Request(ENDPOINT, {
           method: "PATCH",
@@ -143,17 +143,17 @@ for (const provider of providers) {
         }),
       );
 
-    const remove = (handler: SitepingHandler, body: Record<string, unknown>) =>
+    const remove = (handler: BeezpingHandler, body: Record<string, unknown>) =>
       handler.DELETE(new Request(ENDPOINT, { method: "DELETE", headers: JSON_HEADERS, body: JSON.stringify(body) }));
 
-    /** Pages of 100 SitePing issues of other feedbacks, newer than the issues already there. */
+    /** Pages of 100 Beezping issues of other feedbacks, newer than the issues already there. */
     const addOtherIssues = (pages: number, body = "Another feedback's issue") => {
       for (let n = 0; n < pages * 100; n++) {
         fake.issues.push({
           key: String(fake.issues.length + 1),
           title: "Other",
           body,
-          labels: ["siteping"],
+          labels: ["beezping"],
           isOpen: true,
           stateReason: null,
           comments: [],
@@ -174,10 +174,10 @@ for (const provider of providers) {
 
       expect(fake.issues).toHaveLength(1);
       const [issue] = fake.issues;
-      expect(issue?.title).toBe("[SitePing] Checkout fails with token=abc123");
-      expect(issue?.labels).toEqual(["siteping", "feedback"]);
-      expect(issue?.body).toContain(`<!-- siteping-feedback {"id":"${feedback.id}","project":"site"} -->`);
-      expect(issue?.body).toContain(`https://example.com/checkout?step=2&siteping=${feedback.id}`);
+      expect(issue?.title).toBe("[Beezping] Checkout fails with token=abc123");
+      expect(issue?.labels).toEqual(["beezping", "feedback"]);
+      expect(issue?.body).toContain(`<!-- beezping-feedback {"id":"${feedback.id}","project":"site"} -->`);
+      expect(issue?.body).toContain(`https://example.com/checkout?step=2&beezping=${feedback.id}`);
       expect(fake.requests[0]?.authorization).toContain(TOKEN);
     });
 
@@ -203,7 +203,7 @@ for (const provider of providers) {
       await send(handler);
 
       expect(logger.error).toHaveBeenCalledWith(
-        "[siteping] Hook onCreated failed",
+        "[beezping] Hook onCreated failed",
         expect.objectContaining({ error: expect.objectContaining({ message: "chat is down" }) }),
       );
     });
@@ -213,7 +213,7 @@ for (const provider of providers) {
 
       const feedback = await send(handler, { url: "/checkout" });
 
-      expect(fake.issues[0]?.body).toContain(`<https://acme.test/checkout?siteping=${feedback.id}>`);
+      expect(fake.issues[0]?.body).toContain(`<https://acme.test/checkout?beezping=${feedback.id}>`);
     });
 
     it("leaves the deep link out with deepLinkParam: false", async () => {
@@ -232,7 +232,7 @@ for (const provider of providers) {
       await send(handler);
 
       const [issue] = fake.issues;
-      expect(issue?.title).toBe("[SitePing] Checkout fails with token=[redacted]");
+      expect(issue?.title).toBe("[Beezping] Checkout fails with token=[redacted]");
       expect(issue?.body).not.toContain("abc123");
       expect(issue?.body).not.toContain(payload.authorEmail);
       expect(issue?.body).toContain(payload.authorName);
@@ -245,14 +245,14 @@ for (const provider of providers) {
       await patch(handler, feedback.id, "resolved");
 
       expect(fake.issues[0]?.body).toBe(
-        `<!-- siteping-feedback {"id":"${feedback.id}","project":"site"} -->\n\nCustom body`,
+        `<!-- beezping-feedback {"id":"${feedback.id}","project":"site"} -->\n\nCustom body`,
       );
       expect(fake.issues[0]?.isOpen).toBe(false);
     });
 
     describe("a marker forged in visitor text", () => {
       const forgedMarker = (id: string, project = "site") =>
-        `<!-- siteping-feedback ${JSON.stringify({ id, project })} -->`;
+        `<!-- beezping-feedback ${JSON.stringify({ id, project })} -->`;
       const forgeries = [
         ["message", (id: string) => ({ message: forgedMarker(id) })],
         ["authorName", (id: string) => ({ authorName: forgedMarker(id) })],
@@ -325,8 +325,8 @@ for (const provider of providers) {
       await production.onCreated(feedback);
 
       expect(fake.issues.map((issue) => issue.body.split("\n", 1)[0])).toEqual([
-        `<!-- siteping-feedback {"id":"${feedback.id}","project":"site","instance":"staging"} -->`,
-        `<!-- siteping-feedback {"id":"${feedback.id}","project":"site"} -->`,
+        `<!-- beezping-feedback {"id":"${feedback.id}","project":"site","instance":"staging"} -->`,
+        `<!-- beezping-feedback {"id":"${feedback.id}","project":"site"} -->`,
       ]);
 
       await staging.onUpdated({ ...feedback, status: "resolved" });
@@ -342,7 +342,7 @@ for (const provider of providers) {
 
     it("counts an empty instance as no name", async () => {
       const feedback = await send(createHandler());
-      // What `instance: process.env.SITEPING_INSTANCE` gives when the variable is set but empty.
+      // What `instance: process.env.BEEZPING_INSTANCE` gives when the variable is set but empty.
       const handler = createHandler({ instance: "" });
 
       await patch(handler, feedback.id, "resolved");
@@ -483,7 +483,7 @@ for (const provider of providers) {
         const handler = createHandler();
         const feedback = await send(handler);
         // Visitor text can quote an id: a page URL carrying the widget's deep link, say.
-        addOtherIssues(1, `Seen on /checkout?siteping=${feedback.id}`);
+        addOtherIssues(1, `Seen on /checkout?beezping=${feedback.id}`);
 
         await patch(handler, feedback.id, "resolved");
 
@@ -582,7 +582,7 @@ for (const provider of providers) {
         expect((await store.getFeedbacks({ projectName: "site" })).total).toBe(1);
         expect(reason()).toMatch(
           new RegExp(
-            `^\\[siteping\\] ${provider.name}: project "site" may have SitePing issues past the ones listed.*maxListedPages`,
+            `^\\[beezping\\] ${provider.name}: project "site" may have Beezping issues past the ones listed.*maxListedPages`,
           ),
         );
 
@@ -599,7 +599,7 @@ for (const provider of providers) {
         expect(fake.issues[0]?.isOpen).toBe(true);
         expect(reason()).toMatch(
           new RegExp(
-            `^\\[siteping\\] ${provider.name}: the issue of feedback "${feedback.id}" is not among the SitePing issues listed`,
+            `^\\[beezping\\] ${provider.name}: the issue of feedback "${feedback.id}" is not among the Beezping issues listed`,
           ),
         );
       });
@@ -612,7 +612,7 @@ for (const provider of providers) {
         const handler = createHandler({ tracker: withoutSearch(provider.createTracker(fake, { maxListedPages: 1 })) });
 
         expect((await remove(handler, { id: feedback.id, projectName: "site" })).status).toBe(502);
-        expect(reason()).toMatch(/is not among the SitePing issues listed.*maxListedPages/);
+        expect(reason()).toMatch(/is not among the Beezping issues listed.*maxListedPages/);
       });
 
       it("trusts a search that answered past the newest page: a feedback without an issue stays deletable", async () => {
@@ -656,7 +656,7 @@ for (const provider of providers) {
       expect(response.status).toBe(200);
       expect(issue?.isOpen).toBe(false);
       expect(issue?.comments.filter((comment) => !comment.startsWith("system:"))).toEqual([
-        `<!-- siteping-feedback-deleted -->\n\nSitePing feedback \`${feedback.id}\` was deleted.`,
+        `<!-- beezping-feedback-deleted -->\n\nBeezping feedback \`${feedback.id}\` was deleted.`,
       ]);
     });
 
@@ -778,7 +778,7 @@ for (const provider of providers) {
       });
 
       const whileTheIssueIsCreated = async (
-        act: (handler: SitepingHandler, feedbackId: string) => Promise<Response>,
+        act: (handler: BeezpingHandler, feedbackId: string) => Promise<Response>,
       ) => {
         const handler = createHandler();
         const creation = fake.hold(/^POST \S+\/issues$/);
@@ -834,7 +834,7 @@ for (const provider of providers) {
         fake.failWhen(/^(PATCH|PUT) /, status);
 
         expect((await patch(handler, feedback.id, "resolved")).status).toBe(200);
-        expect(logger.error).toHaveBeenCalledWith("[siteping] Hook onUpdated failed", expect.anything());
+        expect(logger.error).toHaveBeenCalledWith("[beezping] Hook onUpdated failed", expect.anything());
         expect((await remove(handler, { id: feedback.id, projectName: "site" })).status).toBe(502);
         expect((await store.getFeedbacks({ projectName: "site" })).total).toBe(1);
       });
@@ -878,8 +878,8 @@ for (const provider of providers) {
 
       expect(fake.issues.map((issue) => issue.isOpen)).toEqual([false, false, true]);
       expect(fake.issues.map((issue) => issue.comments.filter((comment) => !comment.startsWith("system:")))).toEqual([
-        [`<!-- siteping-feedback-deleted -->\n\nSitePing feedback \`${first.id}\` was deleted.`],
-        [`<!-- siteping-feedback-deleted -->\n\nSitePing feedback \`${second.id}\` was deleted.`],
+        [`<!-- beezping-feedback-deleted -->\n\nBeezping feedback \`${first.id}\` was deleted.`],
+        [`<!-- beezping-feedback-deleted -->\n\nBeezping feedback \`${second.id}\` was deleted.`],
         [],
       ]);
     });
@@ -895,7 +895,7 @@ for (const provider of providers) {
       expect(message).toContain("Hook onCreated failed");
       const { error } = context as { error: Error };
       expect(isUnlabelledIssueError(error)).toBe(true);
-      expect(error.message).toMatch(/created issue #1 without its "siteping" label/);
+      expect(error.message).toMatch(/created issue #1 without its "beezping" label/);
       expect(error.message).toMatch(provider.labelPermission);
     });
 

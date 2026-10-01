@@ -8,7 +8,7 @@ import { createPublicUrlMapping } from "../core/public-url.js";
 export interface FilesystemObjectStoreOptions {
   /** Directory the screenshots are written to (created when missing). */
   directory: string;
-  /** Where `createScreenshotServeHandler` is mounted, e.g. `https://app.example.com/api/siteping/screenshots`. */
+  /** Where `createScreenshotServeHandler` is mounted, e.g. `https://app.example.com/api/beezping/screenshots`. */
   publicBaseUrl: string;
 }
 
@@ -46,7 +46,7 @@ export function createFilesystemObjectStore({
 }: FilesystemObjectStoreOptions): ScreenshotObjectStore {
   /** Keys are generated, but re-check before touching the disk so no path can escape `directory`. */
   const pathOf = (key: string): string => {
-    if (!GENERATED_KEY_PATTERN.test(key)) throw new Error(`[siteping] filesystem store: refusing key "${key}"`);
+    if (!GENERATED_KEY_PATTERN.test(key)) throw new Error(`[beezping] filesystem store: refusing key "${key}"`);
     return join(directory, key);
   };
 

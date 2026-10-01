@@ -5,10 +5,10 @@ import { type AssertEqual, type DeepReadonly, hasOwn, type Prettify, type Serial
 // ---------------------------------------------------------------------------
 
 /** FAB anchor — bottom-corner placement supported by the widget. */
-export type SitepingPosition = "bottom-right" | "bottom-left";
+export type BeezpingPosition = "bottom-right" | "bottom-left";
 
 /** Visual theme — `auto` resolves to `light` or `dark` via system preference. */
-export type SitepingTheme = "light" | "dark" | "auto";
+export type BeezpingTheme = "light" | "dark" | "auto";
 
 /** Built-in UI locales shipped with the widget. */
 export const BUILTIN_LOCALES = ["en", "fr", "de", "es", "it", "pt", "ru", "ja"] as const;
@@ -19,14 +19,14 @@ export type BuiltinLocale = (typeof BUILTIN_LOCALES)[number];
  * literal strings so editors auto-complete them, but arbitrary BCP-47 tags
  * are also accepted (custom dictionaries registered via `registerLocale`).
  */
-export type SitepingLocale = BuiltinLocale | (string & {});
+export type BeezpingLocale = BuiltinLocale | (string & {});
 
 /**
- * Reasons reported through `SitepingConfig.onSkip` — production environment,
+ * Reasons reported through `BeezpingConfig.onSkip` — production environment,
  * viewport narrower than `minViewportWidth` (`"mobile"`), or server-side
  * rendering (no `window`/`document`).
  */
-export type SitepingSkipReason = "production" | "mobile" | "ssr";
+export type BeezpingSkipReason = "production" | "mobile" | "ssr";
 
 /** Per-channel + per-buffer-size diagnostics configuration. */
 export interface DiagnosticsCaptureOptions {
@@ -39,7 +39,7 @@ export interface DiagnosticsCaptureOptions {
 }
 
 /** Identity payload supplied by the host application — bypasses the modal. */
-export interface SitepingIdentity {
+export interface BeezpingIdentity {
   name: string;
   email: string;
 }
@@ -52,8 +52,8 @@ export interface SitepingIdentity {
 export const IDENTITY_FIELD_MAX_LENGTH = 200;
 
 /** Deep-link configuration — controls how a feedback id is read from the URL. */
-export interface SitepingDeepLinkOptions {
-  /** Query parameter name carrying the feedback id. Defaults to `"siteping"`. */
+export interface BeezpingDeepLinkOptions {
+  /** Query parameter name carrying the feedback id. Defaults to `"beezping"`. */
   param?: string | undefined;
 }
 
@@ -62,13 +62,13 @@ export interface SitepingDeepLinkOptions {
  * copy, typed read-only all the way down. Type your own helpers with it — a
  * `FeedbackResponse` parameter does not accept the frozen copy.
  */
-export type SitepingPanelActionFeedback = DeepReadonly<FeedbackResponse>;
+export type BeezpingPanelActionFeedback = DeepReadonly<FeedbackResponse>;
 
 /**
  * Helpers passed to a panel action's `onAction` as its second argument.
  * Both do nothing once the widget has been destroyed.
  */
-export interface SitepingPanelActionContext {
+export interface BeezpingPanelActionContext {
   /**
    * Re-fetch the panel list and markers, then re-render the detail view with
    * the updated feedback — or go back to the list when it no longer matches
@@ -81,11 +81,11 @@ export interface SitepingPanelActionContext {
 }
 
 /**
- * Fields shared by both kinds of {@link SitepingPanelAction}.
+ * Fields shared by both kinds of {@link BeezpingPanelAction}.
  *
- * Do not use this type directly — use {@link SitepingPanelAction}.
+ * Do not use this type directly — use {@link BeezpingPanelAction}.
  */
-export interface SitepingPanelActionBase {
+export interface BeezpingPanelActionBase {
   /** Stable, unique identifier — becomes `data-action-id` on the rendered control. */
   id: string;
   /**
@@ -105,11 +105,11 @@ export interface SitepingPanelActionBase {
    * for that feedback. Defaults to always visible. A throw hides the action
    * and is reported through `onError`.
    */
-  visible?: ((feedback: SitepingPanelActionFeedback) => boolean) | undefined;
+  visible?: ((feedback: BeezpingPanelActionFeedback) => boolean) | undefined;
 }
 
 /** A panel action rendered as a button that runs host code. */
-export interface SitepingPanelButtonAction extends SitepingPanelActionBase {
+export interface BeezpingPanelButtonAction extends BeezpingPanelActionBase {
   /**
    * Invoked on click. While a returned promise is pending the detail view's
    * action buttons are disabled and the clicked button shows a spinner —
@@ -118,13 +118,13 @@ export interface SitepingPanelButtonAction extends SitepingPanelActionBase {
    * Throws and rejections are reported through `onError` and restore the
    * buttons; the detail view stays open either way.
    */
-  onAction: (feedback: SitepingPanelActionFeedback, context: SitepingPanelActionContext) => void | Promise<void>;
+  onAction: (feedback: BeezpingPanelActionFeedback, context: BeezpingPanelActionContext) => void | Promise<void>;
   /** Not available on a button action — use either `onAction` or `href`, never both. */
   href?: never;
 }
 
 /** A panel action rendered as a link. */
-export interface SitepingPanelLinkAction extends SitepingPanelActionBase {
+export interface BeezpingPanelLinkAction extends BeezpingPanelActionBase {
   /**
    * Link target — a URL, or a function building one from the feedback.
    * Relative URLs resolve against the page. Only `http:`, `https:` and
@@ -133,7 +133,7 @@ export interface SitepingPanelLinkAction extends SitepingPanelActionBase {
    * returning one hides the action and is reported through `onError`. Web
    * links open in a new tab with `rel="noopener noreferrer"`.
    */
-  href: string | ((feedback: SitepingPanelActionFeedback) => string);
+  href: string | ((feedback: BeezpingPanelActionFeedback) => string);
   /** Not available on a link action — use either `onAction` or `href`, never both. */
   onAction?: never;
 }
@@ -148,28 +148,28 @@ export interface SitepingPanelLinkAction extends SitepingPanelActionBase {
  * forking the panel. Callbacks receive a detached, deeply frozen copy of
  * the feedback: read it freely, it can never alter what the panel displays.
  */
-export type SitepingPanelAction = SitepingPanelButtonAction | SitepingPanelLinkAction;
+export type BeezpingPanelAction = BeezpingPanelButtonAction | BeezpingPanelLinkAction;
 
 /**
  * Extra request headers for HTTP mode — a static map, or a factory (sync or
  * async) invoked once per request to produce fresh values (e.g. a short-lived
  * session token).
  */
-export type SitepingHeadersOption =
+export type BeezpingHeadersOption =
   | Record<string, string>
   | (() => Record<string, string> | Promise<Record<string, string>>);
 
 /**
  * Options shared by both widget modes (HTTP and direct store).
  *
- * Do not use this type directly — use {@link SitepingConfig}, the
+ * Do not use this type directly — use {@link BeezpingConfig}, the
  * discriminated union that adds the mode-specific fields.
  */
-export interface SitepingBaseConfig {
+export interface BeezpingBaseConfig {
   /** Required — project identifier used to scope feedbacks */
   projectName: string;
   /** FAB position — defaults to 'bottom-right' */
-  position?: SitepingPosition | undefined;
+  position?: BeezpingPosition | undefined;
   /**
    * Show the "toggle markers visibility" item in the FAB radial menu.
    * Defaults to `true` (current behavior). Set to `false` to hide that
@@ -208,9 +208,9 @@ export interface SitepingBaseConfig {
   /** Enable debug logging of lifecycle events — defaults to false */
   debug?: boolean | undefined;
   /** Color theme — defaults to 'light' */
-  theme?: SitepingTheme | undefined;
+  theme?: BeezpingTheme | undefined;
   /** UI locale — defaults to 'en'. Built-in: en, fr, de, es, it, pt (Brazilian), ru, ja. Any other string falls back to English. */
-  locale?: SitepingLocale | undefined;
+  locale?: BeezpingLocale | undefined;
   /**
    * Returns the current page scope for annotations and panel filtering.
    * Called on initial markers load and on `instance.refresh()`.
@@ -242,7 +242,7 @@ export interface SitepingBaseConfig {
    * `html2canvas-pro` ships as a regular dependency of `@beezping/widget` so the
    * dynamic import always resolves; you don't need to install anything extra.
    *
-   * **Masking sensitive elements:** add `data-siteping-ignore="true"` to any
+   * **Masking sensitive elements:** add `data-beezping-ignore="true"` to any
    * element you do NOT want captured (password fields, credit-card forms,
    * API tokens shown in the UI, etc.). The capture predicate skips matching
    * elements *and their descendants*. Do this BEFORE turning on screenshots
@@ -267,7 +267,7 @@ export interface SitepingBaseConfig {
    * right-clicking always falls through to the native context menu, giving
    * users (and devtools) an escape hatch regardless of this setting.
    *
-   * Right-clicks on SitePing's own UI (FAB, panel, markers, popup) are
+   * Right-clicks on Beezping's own UI (FAB, panel, markers, popup) are
    * ignored — the native menu is shown as expected.
    *
    * Note: on Android, `contextmenu` fires on long-press — touch users open the
@@ -299,7 +299,7 @@ export interface SitepingBaseConfig {
    */
   captureDiagnostics?: boolean | DiagnosticsCaptureOptions | undefined;
   /** Called when the widget is skipped (production mode, viewport under `minViewportWidth`, SSR — no DOM) */
-  onSkip?: (reason: SitepingSkipReason) => void;
+  onSkip?: (reason: BeezpingSkipReason) => void;
   /**
    * Auto-focus a specific annotation when its ID appears in the URL query
    * string. Lets hosts deeplink directly into a feedback from external
@@ -313,7 +313,7 @@ export interface SitepingBaseConfig {
    *
    * - `false` / `undefined` (default): no URL parsing. Existing behavior
    *   unchanged, no host URL inspection.
-   * - `true`: enabled with default query parameter name `siteping`.
+   * - `true`: enabled with default query parameter name `beezping`.
    * - object: enabled with a custom parameter name. Use this to avoid
    *   clashes with host-app query keys.
    *
@@ -323,7 +323,7 @@ export interface SitepingBaseConfig {
    * Hosts that need re-focus on route change can call
    * `instance.focusFeedback(id)` explicitly.
    */
-  deepLink?: boolean | SitepingDeepLinkOptions | undefined;
+  deepLink?: boolean | BeezpingDeepLinkOptions | undefined;
   /**
    * Automatically re-fetch feedbacks when the page changes during client-side
    * (SPA) navigation. Enabled by default.
@@ -362,18 +362,18 @@ export interface SitepingBaseConfig {
    * read at widget init time, not on every render. Hosts that need live
    * identity updates after sign-in/sign-out should currently remount the
    * widget (e.g. via a React `key` on the wrapping component). See
-   * https://github.com/NeosiaNexus/SitePing/issues/85 for tracking a
+   * https://github.com/guidomodarelli/beezping/issues/85 for tracking a
    * future enhancement that propagates identity updates without a remount.
    */
-  identity?: SitepingIdentity | undefined;
+  identity?: BeezpingIdentity | undefined;
   /**
    * Host-defined actions rendered in the feedback detail view, below the
    * built-in Resolve and Delete buttons. Read once when the panel loads:
    * entries without a non-empty `id` and `label`, without exactly one of
    * `onAction` / `href`, with an unsafe static `href`, or reusing an earlier
-   * `id` are skipped with a console warning. See {@link SitepingPanelAction}.
+   * `id` are skipped with a console warning. See {@link BeezpingPanelAction}.
    */
-  panelActions?: readonly SitepingPanelAction[] | undefined;
+  panelActions?: readonly BeezpingPanelAction[] | undefined;
   /**
    * Reviewer mode: hide the actions that triage feedback — resolve, reopen,
    * delete, the bulk actions, "Delete all" — and keep creating, browsing
@@ -395,8 +395,8 @@ export interface SitepingBaseConfig {
   /**
    * Called when a feedback API call fails.
    *
-   * The widget always emits a `SitepingError` (or a subclass:
-   * `SitepingNetworkError`, `SitepingValidationError`, `SitepingAuthError`)
+   * The widget always emits a `BeezpingError` (or a subclass:
+   * `BeezpingNetworkError`, `BeezpingValidationError`, `BeezpingAuthError`)
    * for HTTP-mode failures — host apps can `instanceof` to drive retry
    * logic, or read `error.code` (`"NETWORK" | "VALIDATION" | "AUTH" |
    * "SERVER"`) and `error.retryable` — and an `AUTH` error's `status`
@@ -421,8 +421,8 @@ export interface SitepingBaseConfig {
  * HTTP mode — the widget talks to a server endpoint backed by a store
  * adapter (e.g. `@beezping/adapter-prisma` request handlers).
  */
-export interface SitepingHttpConfig extends SitepingBaseConfig {
-  /** HTTP endpoint that receives feedbacks (e.g. '/api/siteping'). */
+export interface BeezpingHttpConfig extends BeezpingBaseConfig {
+  /** HTTP endpoint that receives feedbacks (e.g. '/api/beezping'). */
   endpoint: string;
   /**
    * Convenience auth for HTTP mode — sent as `Authorization: Bearer <apiKey>`
@@ -443,22 +443,22 @@ export interface SitepingHttpConfig extends SitepingBaseConfig {
    * throws, rejects, or does not settle within 10 s fails the request like a
    * network error.
    */
-  headers?: SitepingHeadersOption | undefined;
+  headers?: BeezpingHeadersOption | undefined;
   /** Not available in HTTP mode — use either `endpoint` or `store`, never both. */
   store?: never;
 }
 
 /**
- * Store mode — the widget talks to a `SitepingStore` directly in the
+ * Store mode — the widget talks to a `BeezpingStore` directly in the
  * browser, no server needed (demos, prototypes, localStorage persistence).
  */
-export interface SitepingStoreConfig extends SitepingBaseConfig {
+export interface BeezpingStoreConfig extends BeezpingBaseConfig {
   /**
    * Direct store for client-side mode. Bypasses HTTP entirely. A send stops
    * waiting on `createFeedback` after 30 s (the call itself cannot be
    * cancelled), so a network-backed store should bound its own calls.
    */
-  store: SitepingStore;
+  store: BeezpingStore;
   /** Not available in store mode — use either `endpoint` or `store`, never both. */
   endpoint?: never;
   /** HTTP-mode only — meaningless without an `endpoint`. */
@@ -468,17 +468,17 @@ export interface SitepingStoreConfig extends SitepingBaseConfig {
 }
 
 /**
- * Configuration options for the Siteping widget.
+ * Configuration options for the Beezping widget.
  *
  * A discriminated union over the two transport modes: pass `endpoint`
  * (HTTP mode, optionally with `apiKey`/`headers`) **or** `store` (direct
  * client-side mode) — never both, never neither. Invalid combinations are
  * compile errors instead of runtime warnings.
  */
-export type SitepingConfig = SitepingHttpConfig | SitepingStoreConfig;
+export type BeezpingConfig = BeezpingHttpConfig | BeezpingStoreConfig;
 
-/** Instance returned by initSiteping() with lifecycle methods. */
-export interface SitepingInstance {
+/** Instance returned by initBeezping() with lifecycle methods. */
+export interface BeezpingInstance {
   /** Remove the widget from the DOM and clean up all listeners. */
   destroy: () => void;
   /** Open the panel programmatically */
@@ -499,28 +499,28 @@ export interface SitepingInstance {
    */
   focusFeedback: (feedbackId: string) => boolean;
   /** Subscribe to a public widget event */
-  on: <K extends keyof SitepingPublicEvents>(event: K, listener: SitepingPublicEventListener<K>) => SitepingUnsubscribe;
+  on: <K extends keyof BeezpingPublicEvents>(event: K, listener: BeezpingPublicEventListener<K>) => BeezpingUnsubscribe;
   /** Unsubscribe from a public widget event */
-  off: <K extends keyof SitepingPublicEvents>(event: K, listener: SitepingPublicEventListener<K>) => void;
+  off: <K extends keyof BeezpingPublicEvents>(event: K, listener: BeezpingPublicEventListener<K>) => void;
 }
 
-/** Listener signature for a single `SitepingPublicEvents` key. */
-export type SitepingPublicEventListener<K extends keyof SitepingPublicEvents> = (
-  ...args: SitepingPublicEvents[K]
+/** Listener signature for a single `BeezpingPublicEvents` key. */
+export type BeezpingPublicEventListener<K extends keyof BeezpingPublicEvents> = (
+  ...args: BeezpingPublicEvents[K]
 ) => void;
 
-/** Disposer returned by `SitepingInstance.on` — call once to detach the listener. */
-export type SitepingUnsubscribe = () => void;
+/** Disposer returned by `BeezpingInstance.on` — call once to detach the listener. */
+export type BeezpingUnsubscribe = () => void;
 
-/** Events exposed to consumers via SitepingInstance.on / .off */
-export interface SitepingPublicEvents {
+/** Events exposed to consumers via BeezpingInstance.on / .off */
+export interface BeezpingPublicEvents {
   "feedback:sent": [FeedbackResponse];
   "feedback:deleted": [FeedbackResponse["id"]];
   /** A reply was posted from the panel's discussion thread. */
   "comment:added": [CommentResponse];
   /**
    * A feedback API call failed. Same payload contract as
-   * `SitepingConfig.onError` — a `SitepingError` subclass in HTTP mode,
+   * `BeezpingConfig.onError` — a `BeezpingError` subclass in HTTP mode,
    * possibly a raw `Error` in store mode.
    */
   "feedback:error": [Error];
@@ -570,7 +570,7 @@ export function isClosedStatus(status: FeedbackStatus): status is ClosedFeedback
 }
 
 /**
- * Page scope returned by `SitepingConfig.getPageScope()`.
+ * Page scope returned by `BeezpingConfig.getPageScope()`.
  *
  * - `url`: concrete page identifier — usually `window.location.pathname`,
  *   used as the strict scope for marker rendering.
@@ -626,7 +626,7 @@ export interface FeedbackCreateInput {
   screenshotRegion?: ScreenshotRegion | null | undefined;
   /**
    * Optional console + failed-network snapshot captured by the widget when
-   * `SitepingConfig.captureDiagnostics` is enabled. Stored as JSON on
+   * `BeezpingConfig.captureDiagnostics` is enabled. Stored as JSON on
    * `FeedbackRecord.diagnostics` so reviewers can replay the context.
    */
   diagnostics?: DiagnosticsSnapshot | null | undefined;
@@ -742,7 +742,7 @@ export interface FeedbackRecord {
   annotations: AnnotationRecord[];
   /**
    * Discussion thread, oldest first. A store that implements
-   * `SitepingStore.addComment` returns it on every record; a store without
+   * `BeezpingStore.addComment` returns it on every record; a store without
    * comments may leave it out, which reads as an empty thread (HTTP handlers
    * send `[]`).
    */
@@ -841,7 +841,7 @@ export interface CommentRecord {
   createdAt: Date;
 }
 
-/** Input of `SitepingStore.addComment`. */
+/** Input of `BeezpingStore.addComment`. */
 export interface CommentCreateInput {
   body: string;
   authorName: string;
@@ -1029,7 +1029,7 @@ export function flattenAnnotation(ann: AnnotationPayload): AnnotationCreateInput
 // ---------------------------------------------------------------------------
 
 /**
- * Outcome of `SitepingStore.createFeedbackIfAbsent` — the record plus whether
+ * Outcome of `BeezpingStore.createFeedbackIfAbsent` — the record plus whether
  * this very call inserted it.
  */
 export interface FeedbackCreateOutcome {
@@ -1042,18 +1042,18 @@ export interface FeedbackCreateOutcome {
   created: boolean;
 }
 
-/** Paginated result returned by `SitepingStore.getFeedbacks`. */
+/** Paginated result returned by `BeezpingStore.getFeedbacks`. */
 export interface FeedbackPage {
   feedbacks: FeedbackRecord[];
   total: number;
 }
 
 /**
- * Abstract storage interface for Siteping.
+ * Abstract storage interface for Beezping.
  *
  * Any adapter (Prisma, Drizzle, raw SQL, localStorage, etc.) implements this
  * interface. The HTTP handler and widget `StoreClient` operate against
- * `SitepingStore`, decoupled from the storage backend.
+ * `BeezpingStore`, decoupled from the storage backend.
  *
  * ## Error contract
  *
@@ -1070,7 +1070,7 @@ export interface FeedbackPage {
  *   a phantom success. Detect it with `isStorePersistence`.
  * - Other methods should not throw on empty results — return empty arrays or `null`.
  */
-export interface SitepingStore {
+export interface BeezpingStore {
   /** Create a feedback with its annotations. Idempotent on `clientId` — return existing record on duplicate, or throw `StoreDuplicateError`. Throws `StorePersistenceError` when the write cannot be persisted. */
   createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord>;
   /** Paginated query with optional filters. Returns empty array (not error) when no results. */
@@ -1147,7 +1147,7 @@ export interface FeedbackPayload {
   url: string;
   /**
    * Parameterized URL template (e.g. `/orders/:orderId`) supplied by
-   * `SitepingConfig.getPageScope()`. Null when the host did not provide one.
+   * `BeezpingConfig.getPageScope()`. Null when the host did not provide one.
    */
   urlPattern?: string | null | undefined;
   viewport: string;
@@ -1159,7 +1159,7 @@ export interface FeedbackPayload {
   clientId: string;
   /**
    * Base64 JPEG `data:` URL of the annotated area. Captured by the widget
-   * when `enableScreenshot: true` is set in `SitepingConfig`. Null when
+   * when `enableScreenshot: true` is set in `BeezpingConfig`. Null when
    * disabled or when capture failed silently.
    */
   screenshotDataUrl?: string | null | undefined;
@@ -1368,7 +1368,7 @@ export type AnnotationResponse = Prettify<Serialized<AnnotationRecord>>;
 export type CommentResponse = Prettify<Serialized<Omit<CommentRecord, "clientId">>>;
 
 /** What the store behind an endpoint supports — advertised on every list response. */
-export interface SitepingCapabilities {
+export interface BeezpingCapabilities {
   /** Whether comments can be posted: the store implements `addComment`. */
   comments: boolean;
   /**
@@ -1384,7 +1384,7 @@ export interface FeedbackResponseList {
   feedbacks: FeedbackResponse[];
   total: number;
   /** Always sent by `@beezping/server` — absent from servers that predate it. */
-  capabilities?: SitepingCapabilities | undefined;
+  capabilities?: BeezpingCapabilities | undefined;
   /** Always sent by `@beezping/server` — absent from servers that predate it. */
   permissions?: FeedbackListPermissions | undefined;
 }

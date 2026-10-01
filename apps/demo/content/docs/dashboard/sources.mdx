@@ -8,20 +8,20 @@ The inbox reads and writes through a small abstraction with three ways to supply
 ## Endpoint mode (production default)
 
 ```tsx
-<SitepingInbox projects="my-project" endpoint="/api/siteping" apiKey={KEY} />
+<BeezpingInbox projects="my-project" endpoint="/api/beezping" apiKey={KEY} />
 ```
 
-Talks to your [SitePing endpoint](/docs/server): `GET` for lists, `PATCH` for statuses, `DELETE` for removals, always with `cache: "no-store"`. Errors arrive typed by `code` (`AUTH` for 401/403 and `VALIDATION` for other 4xx, each with the HTTP `status`, `SERVER` for 5xx, `NETWORK` for fetch failures). There are deliberately **no retries** — a triage UI should tell you immediately.
+Talks to your [Beezping endpoint](/docs/server): `GET` for lists, `PATCH` for statuses, `DELETE` for removals, always with `cache: "no-store"`. Errors arrive typed by `code` (`AUTH` for 401/403 and `VALIDATION` for other 4xx, each with the HTTP `status`, `SERVER` for 5xx, `NETWORK` for fetch failures). There are deliberately **no retries** — a triage UI should tell you immediately.
 
 Behind your app's login, leave `apiKey` out: mounted on the endpoint's origin, the inbox sends your session cookie with every request, for a server [`access`](/docs/server#custom-access) policy to read — see the [Better Auth recipe](/docs/server#recipe-better-auth). From another origin, send a token with `headers`.
 
 ## Store mode
 
 ```tsx
-<SitepingInbox projects="my-demo" store={new LocalStorageStore()} />
+<BeezpingInbox projects="my-demo" store={new LocalStorageStore()} />
 ```
 
-Runs against any `SitepingStore` in-process — the same stores the widget's client-side mode uses. Demos and prototypes never need a server.
+Runs against any `BeezpingStore` in-process — the same stores the widget's client-side mode uses. Demos and prototypes never need a server.
 
 ## Custom source
 
@@ -33,15 +33,15 @@ import type { InboxSource } from "@beezping/dashboard";
 const source: InboxSource = {
   async list(query) {
     // query: projectName, page, limit, status?, type?, search?, url?, urlPattern?
-    const { feedbacks, total } = await trpc.siteping.list.query(query);
+    const { feedbacks, total } = await trpc.beezping.list.query(query);
     // Important: createdAt / updatedAt / resolvedAt must be real Date objects
     return { feedbacks: feedbacks.map(reviveDates), total };
   },
   async setStatus(id, projectName, status) {
-    return reviveDates(await trpc.siteping.setStatus.mutate({ id, projectName, status }));
+    return reviveDates(await trpc.beezping.setStatus.mutate({ id, projectName, status }));
   },
   async remove(id, projectName) {
-    await trpc.siteping.remove.mutate({ id, projectName });
+    await trpc.beezping.remove.mutate({ id, projectName });
   },
 };
 ```
@@ -55,10 +55,10 @@ const source: InboxSource = {
   // …list, setStatus, remove as above
   async addComment(feedbackId, projectName, input) {
     // input: body, authorName, authorEmail, authorRole ("team"), clientId
-    return reviveDates(await trpc.siteping.addComment.mutate({ feedbackId, projectName, ...input }));
+    return reviveDates(await trpc.beezping.addComment.mutate({ feedbackId, projectName, ...input }));
   },
   async removeComment(feedbackId, projectName, commentId) {
-    await trpc.siteping.removeComment.mutate({ feedbackId, projectName, commentId });
+    await trpc.beezping.removeComment.mutate({ feedbackId, projectName, commentId });
   },
 };
 ```
@@ -77,11 +77,11 @@ The two building blocks behind the built-in modes are exported too — `createEn
 
 | What you're typing | Exports |
 |---|---|
-| Feedback data | `FeedbackRecord`, `FeedbackStatus`, `FeedbackType`, `SitepingStore`, plus the `FEEDBACK_STATUSES` / `FEEDBACK_TYPES` constants and `isClosedStatus()` |
+| Feedback data | `FeedbackRecord`, `FeedbackStatus`, `FeedbackType`, `BeezpingStore`, plus the `FEEDBACK_STATUSES` / `FEEDBACK_TYPES` constants and `isClosedStatus()` |
 | Permissions | `FeedbackPermissions` (what the requester may do with a record), `InboxRecord` (a record with its optional `permissions`), `InboxPage` (what `list()` resolves) |
-| Threads | `CommentRecord` (a stored reply), `CommentCreateInput` (what `addComment` receives), `SitepingCapabilities` (what `list()` may advertise) |
-| Hook options | `UseSitepingInboxOptions` and its three members — `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions` — plus the shared `InboxSharedOptions` |
+| Threads | `CommentRecord` (a stored reply), `CommentCreateInput` (what `addComment` receives), `BeezpingCapabilities` (what `list()` may advertise) |
+| Hook options | `UseBeezpingInboxOptions` and its three members — `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions` — plus the shared `InboxSharedOptions` |
 | Hook result | `InboxState`, `InboxStatusFilter`, `InboxTypeFilter` |
 | Sources | `InboxSource`, `EndpointSourceOptions` (the argument of `createEndpointSource`) |
-| Component props | `SitepingInboxProps`, or `SitepingInboxPresentationProps` for the presentation half alone |
+| Component props | `BeezpingInboxProps`, or `BeezpingInboxPresentationProps` for the presentation half alone |
 | Theming | `InboxTheme` (`"light"` \| `"dark"` \| `"auto"`) and `ResolvedTheme` (`"light"` \| `"dark"` — what `auto` resolves to) |

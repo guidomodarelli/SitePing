@@ -18,7 +18,7 @@ describe("generateRoute", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "siteping-route-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "beezping-route-test-"));
   });
 
   afterEach(() => {
@@ -32,23 +32,23 @@ describe("generateRoute", () => {
   // Directory detection
   // -------------------------------------------------------------------------
 
-  it("creates route in app/api/siteping/route.ts when app/ exists", () => {
+  it("creates route in app/api/beezping/route.ts when app/ exists", () => {
     mkdirSync(join(tmpDir, "app"), { recursive: true });
 
     const result = generateRoute(tmpDir);
 
     expect(result.created).toBe(true);
-    expect(result.path).toBe(join(tmpDir, "app", "api", "siteping", "route.ts"));
+    expect(result.path).toBe(join(tmpDir, "app", "api", "beezping", "route.ts"));
     expect(existsSync(result.path)).toBe(true);
   });
 
-  it("creates route in src/app/api/siteping/route.ts when src/app/ exists", () => {
+  it("creates route in src/app/api/beezping/route.ts when src/app/ exists", () => {
     mkdirSync(join(tmpDir, "src", "app"), { recursive: true });
 
     const result = generateRoute(tmpDir);
 
     expect(result.created).toBe(true);
-    expect(result.path).toBe(join(tmpDir, "src", "app", "api", "siteping", "route.ts"));
+    expect(result.path).toBe(join(tmpDir, "src", "app", "api", "beezping", "route.ts"));
     expect(existsSync(result.path)).toBe(true);
   });
 
@@ -60,7 +60,7 @@ describe("generateRoute", () => {
 
     const result = generateRoute(tmpDir);
 
-    expect(result.path).toBe(join(tmpDir, "app", "api", "siteping", "route.ts"));
+    expect(result.path).toBe(join(tmpDir, "app", "api", "beezping", "route.ts"));
   });
 
   // -------------------------------------------------------------------------
@@ -90,7 +90,7 @@ describe("generateRoute", () => {
 
   it.each(["js", "jsx", "tsx"])("treats an existing route.%s as the route", (ext) => {
     // A route.ts beside it would make Next.js fail with "Duplicate page detected".
-    const routeDir = join(tmpDir, "app", "api", "siteping");
+    const routeDir = join(tmpDir, "app", "api", "beezping");
     mkdirSync(routeDir, { recursive: true });
     writeFileSync(join(routeDir, `route.${ext}`), "export const GET = () => {};");
 
@@ -110,13 +110,13 @@ describe("generateRoute", () => {
     const result = generateRoute(tmpDir);
     const content = readFileSync(result.path, "utf-8");
 
-    expect(content).toContain('import { createSitepingHandler } from "@beezping/adapter-prisma"');
+    expect(content).toContain('import { createBeezpingHandler } from "@beezping/adapter-prisma"');
     expect(content).toContain('import { prisma } from "@/lib/prisma"');
-    expect(content).toContain("export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({");
+    expect(content).toContain("export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({");
     expect(content).toContain("prisma,");
     // The key is wired, not commented out: the handler refuses to start in
     // production without one, so the generated route must not hide it.
-    expect(content).toContain("apiKey: process.env.SITEPING_API_KEY,");
+    expect(content).toContain("apiKey: process.env.BEEZPING_API_KEY,");
     expect(content).not.toContain("// apiKey");
     expect(content).toContain('// allowedOrigins: ["https://your-site.com"],');
   });
@@ -142,7 +142,7 @@ describe("generateRoute", () => {
 
   it("rethrows non-permission errors (e.g. ENOTDIR) verbatim", () => {
     // Create app/ as a directory, then create a regular file at app/api so
-    // mkdirSync recursive cannot create app/api/siteping (ENOTDIR).
+    // mkdirSync recursive cannot create app/api/beezping (ENOTDIR).
     mkdirSync(join(tmpDir, "app"), { recursive: true });
     writeFileSync(join(tmpDir, "app", "api"), "blocker");
 

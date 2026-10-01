@@ -1,9 +1,9 @@
 import type { CommentRecord, FeedbackRecord } from "@beezping/core";
-import type { SitepingPrismaClient } from "../src/index.js";
+import type { BeezpingPrismaClient } from "../src/index.js";
 
 /**
- * In-memory stand-in for the `prisma.sitepingFeedback` and
- * `prisma.sitepingComment` delegates, faithful to the Prisma semantics the
+ * In-memory stand-in for the `prisma.beezpingFeedback` and
+ * `prisma.beezpingComment` delegates, faithful to the Prisma semantics the
  * adapter relies on: a unique `clientId` (`P2002` on duplicate), `P2025` on
  * update/delete of a missing row and on a `connect` to one, `contains`
  * (case-sensitive, like Postgres `LIKE`), `{ in }` and `{ not }` filters,
@@ -79,7 +79,7 @@ function pick(row: FeedbackRecord, select: Record<string, boolean> | undefined):
 }
 
 /**
- * The `sitepingComment` delegate. Rows come back in reverse insertion order
+ * The `beezpingComment` delegate. Rows come back in reverse insertion order
  * unless the read orders them — a real database guarantees no order either,
  * so a query that forgets its `orderBy` fails here too.
  */
@@ -261,17 +261,17 @@ export class FakeFeedbackDelegate {
 }
 
 /**
- * A `SitepingPrismaClient` backed by fresh fake delegates — without the
+ * A `BeezpingPrismaClient` backed by fresh fake delegates — without the
  * comment model when `comments: false`, like a client generated from a schema
  * synced before threads.
  */
-export function fakePrisma({ comments = true }: { comments?: boolean } = {}): SitepingPrismaClient & {
-  sitepingFeedback: FakeFeedbackDelegate;
-  sitepingComment?: FakeCommentDelegate;
+export function fakePrisma({ comments = true }: { comments?: boolean } = {}): BeezpingPrismaClient & {
+  beezpingFeedback: FakeFeedbackDelegate;
+  beezpingComment?: FakeCommentDelegate;
 } {
-  const sitepingFeedback = new FakeFeedbackDelegate();
-  if (!comments) return { sitepingFeedback };
-  const sitepingComment = new FakeCommentDelegate((id) => sitepingFeedback.exists(id));
-  sitepingFeedback.comments = sitepingComment;
-  return { sitepingFeedback, sitepingComment };
+  const beezpingFeedback = new FakeFeedbackDelegate();
+  if (!comments) return { beezpingFeedback };
+  const beezpingComment = new FakeCommentDelegate((id) => beezpingFeedback.exists(id));
+  beezpingFeedback.comments = beezpingComment;
+  return { beezpingFeedback, beezpingComment };
 }

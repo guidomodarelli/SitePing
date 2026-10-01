@@ -1,5 +1,5 @@
 /**
- * HTTP wire helpers shared by every client that talks to a Siteping
+ * HTTP wire helpers shared by every client that talks to a Beezping
  * endpoint (widget `ApiClient`, dashboard `createEndpointSource`).
  *
  * One definition of the query-string encoding and the HTTP→typed-error
@@ -8,7 +8,7 @@
  * now.
  */
 
-import { SitepingAuthError, SitepingError, SitepingNetworkError, SitepingValidationError } from "./errors.js";
+import { BeezpingAuthError, BeezpingError, BeezpingNetworkError, BeezpingValidationError } from "./errors.js";
 import type { FeedbackQuery } from "./types.js";
 
 /**
@@ -66,7 +66,7 @@ export function mergeRequestHeaders(
 
 /**
  * Append `params` to `endpoint`, which may already carry a query string
- * (`/api/siteping?tenant=acme`) or a fragment — naive `${endpoint}?${params}`
+ * (`/api/beezping?tenant=acme`) or a fragment — naive `${endpoint}?${params}`
  * produced `?tenant=acme?projectName=…`, a 400. Plain string work, so
  * relative endpoints stay relative and nothing depends on `location`.
  */
@@ -81,25 +81,25 @@ export function withSearchParams(endpoint: string, params: URLSearchParams): str
 
 /**
  * Map a non-OK `Response` to the appropriate typed error:
- *   - 401 / 403 → `SitepingAuthError`, with its `status`
- *   - other 4xx → `SitepingValidationError`, with its `status`
- *   - 5xx (or anything else) → generic `SitepingError` (code `"SERVER"`)
+ *   - 401 / 403 → `BeezpingAuthError`, with its `status`
+ *   - other 4xx → `BeezpingValidationError`, with its `status`
+ *   - 5xx (or anything else) → generic `BeezpingError` (code `"SERVER"`)
  *
  * The response body is consumed via `.text()` so the caller keeps the
  * server-supplied message in the thrown error; `.text()` failures fall back
  * to `"Unknown error"` (kept verbatim — host apps grep for it).
  */
-export async function errorFromResponse(response: Response, label: string): Promise<SitepingError> {
+export async function errorFromResponse(response: Response, label: string): Promise<BeezpingError> {
   const text = await response.text().catch(() => "Unknown error");
   const detail = text ? `${response.status} ${text}` : `${response.status}`;
   const message = `${label}: ${detail}`;
-  if (response.status === 401 || response.status === 403) return new SitepingAuthError(message, response.status);
-  if (response.status >= 400 && response.status < 500) return new SitepingValidationError(message, response.status);
-  return new SitepingError(message, "SERVER", false);
+  if (response.status === 401 || response.status === 403) return new BeezpingAuthError(message, response.status);
+  if (response.status >= 400 && response.status < 500) return new BeezpingValidationError(message, response.status);
+  return new BeezpingError(message, "SERVER", false);
 }
 
 /**
- * An error's `status` (`SitepingValidationError.status`, or a custom
+ * An error's `status` (`BeezpingValidationError.status`, or a custom
  * source's) or `code` (a store error's) — read as a plain field, not through
  * `instanceof`: an instance carries its code anyway, and the store error
  * classes stay out of the browser bundles. Anything thrown is safe to read:
@@ -128,12 +128,12 @@ export function isCommentGone(error: unknown): boolean {
 
 /**
  * Normalise an exception thrown by `fetch` (or a timeout AbortController)
- * into a `SitepingNetworkError`. AbortErrors count as network failures —
- * in Siteping client code they always come from internal timeouts, never a
+ * into a `BeezpingNetworkError`. AbortErrors count as network failures —
+ * in Beezping client code they always come from internal timeouts, never a
  * user-driven cancellation.
  */
-export function networkErrorFromException(error: unknown, label: string): SitepingNetworkError {
-  if (error instanceof SitepingNetworkError) return error;
+export function networkErrorFromException(error: unknown, label: string): BeezpingNetworkError {
+  if (error instanceof BeezpingNetworkError) return error;
   const detail = error instanceof Error ? error.message : String(error);
-  return new SitepingNetworkError(`${label}: ${detail}`);
+  return new BeezpingNetworkError(`${label}: ${detail}`);
 }

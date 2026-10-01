@@ -2,11 +2,11 @@
 
 import type {
   AnnotationResponse,
+  BeezpingPanelAction,
+  BeezpingPanelActionFeedback,
+  BeezpingPanelButtonAction,
+  BeezpingPanelLinkAction,
   FeedbackResponse,
-  SitepingPanelAction,
-  SitepingPanelActionFeedback,
-  SitepingPanelButtonAction,
-  SitepingPanelLinkAction,
 } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { createT } from "../../src/i18n/index.js";
@@ -1239,19 +1239,19 @@ describe("DetailView", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Custom panel actions (host-defined buttons via SitepingPanelAction)
+// Custom panel actions (host-defined buttons via BeezpingPanelAction)
 // ---------------------------------------------------------------------------
 
 describe("custom panel actions", () => {
-  function makeAction(overrides: Partial<SitepingPanelButtonAction> = {}): SitepingPanelButtonAction {
+  function makeAction(overrides: Partial<BeezpingPanelButtonAction> = {}): BeezpingPanelButtonAction {
     return { id: "send-to-agent", label: "Send to agent", onAction: vi.fn(), ...overrides };
   }
 
-  function makeLink(overrides: Partial<SitepingPanelLinkAction> = {}): SitepingPanelLinkAction {
+  function makeLink(overrides: Partial<BeezpingPanelLinkAction> = {}): BeezpingPanelLinkAction {
     return { id: "tracker", label: "Open in tracker", href: "https://tracker.example/new", ...overrides };
   }
 
-  function buildDetail(actions: SitepingPanelAction[], callbacks: Partial<DetailCallbacks> = {}) {
+  function buildDetail(actions: BeezpingPanelAction[], callbacks: Partial<DetailCallbacks> = {}) {
     const cb: DetailCallbacks = {
       onBack: vi.fn(),
       onResolve: vi.fn().mockResolvedValue(undefined),
@@ -1318,12 +1318,12 @@ describe("custom panel actions", () => {
     expect(view.element.querySelectorAll(".sp-detail-btn-custom")).toHaveLength(1);
     expect(cb.onCustomActionError).toHaveBeenCalledTimes(2);
     expect(vi.mocked(cb.onCustomActionError).mock.calls[0]?.[0]).toEqual(
-      new Error('[siteping] Panel action "tracker": href must be an http(s) or mailto URL.'),
+      new Error('[beezping] Panel action "tracker": href must be an http(s) or mailto URL.'),
     );
   });
 
   it("builds a computed href from the frozen snapshot and keeps links clickable while a button action runs", () => {
-    const href = vi.fn((fb: SitepingPanelActionFeedback) => `https://tracker.example/fb/${fb.id}`);
+    const href = vi.fn((fb: BeezpingPanelActionFeedback) => `https://tracker.example/fb/${fb.id}`);
     const { view } = buildDetail([makeAction(), makeLink({ href })], {
       onCustomAction: vi.fn(() => new Promise<void>(() => {})),
     });
@@ -1577,7 +1577,7 @@ describe("custom panel actions", () => {
         network: [],
       },
     });
-    const seen: SitepingPanelActionFeedback[] = [];
+    const seen: BeezpingPanelActionFeedback[] = [];
     const { view, cb } = buildDetail([makeAction({ visible: (snap) => seen.push(snap) > 0 })]);
     view.show(fb, 1);
     view.element.querySelector<HTMLButtonElement>(".sp-detail-btn-custom")!.click();

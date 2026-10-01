@@ -4,7 +4,7 @@ import { p } from "../prompts.js";
 import { findPrismaSchema } from "../utils/find-schema.js";
 
 export async function initCommand(): Promise<void> {
-  p.intro("siteping — Setup");
+  p.intro("beezping — Setup");
 
   const cwd = process.cwd();
 
@@ -15,7 +15,7 @@ export async function initCommand(): Promise<void> {
     p.log.info(`Prisma schema found: ${schemaPath}`);
 
     const shouldSync = await p.confirm({
-      message: "Sync Siteping models to your Prisma schema?",
+      message: "Sync Beezping models to your Prisma schema?",
     });
 
     if (p.isCancel(shouldSync)) {
@@ -44,13 +44,13 @@ export async function initCommand(): Promise<void> {
         }
       } catch (error) {
         p.log.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        p.outro("Fix the errors above and re-run `siteping init`.");
+        p.outro("Fix the errors above and re-run `beezping init`.");
         process.exit(1);
       }
     }
   } else {
     p.log.warn("No schema.prisma file found. You will need to add the models manually.");
-    p.log.info("See the documentation: https://github.com/NeosiaNexus/SitePing#prisma-schema-1");
+    p.log.info("See the documentation: https://github.com/guidomodarelli/beezping#prisma-schema-1");
   }
 
   // Step 2: API route
@@ -73,7 +73,7 @@ export async function initCommand(): Promise<void> {
       }
     } catch (error) {
       p.log.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-      p.outro("Fix the errors above and re-run `siteping init`.");
+      p.outro("Fix the errors above and re-run `beezping init`.");
       process.exit(1);
     }
   }
@@ -82,13 +82,13 @@ export async function initCommand(): Promise<void> {
   p.note(
     [
       "1. Run: npx prisma db push && npx prisma generate",
-      "2. Set SITEPING_API_KEY in your environment (required in production)",
+      "2. Set BEEZPING_API_KEY in your environment (required in production)",
       "3. Add the widget to your layout:",
       "",
-      '   import { initSiteping } from "@beezping/widget"',
+      '   import { initBeezping } from "@beezping/widget"',
       "",
-      "   initSiteping({",
-      '     endpoint: "/api/siteping",',
+      "   initBeezping({",
+      '     endpoint: "/api/beezping",',
       '     projectName: "my-project",',
       "   })",
     ].join("\n"),

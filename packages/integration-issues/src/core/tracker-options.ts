@@ -19,7 +19,7 @@ export function checkToken(factory: string, token: string): string {
   const trimmed = typeof token === "string" ? token.trim() : "";
   if (!/^[\x21-\x7E]+$/.test(trimmed)) {
     throw new Error(
-      `[siteping] ${factory}: token must be a non-empty string of visible ASCII characters. ` +
+      `[beezping] ${factory}: token must be a non-empty string of visible ASCII characters. ` +
         "Look for a line break, space or invisible character pasted with it.",
     );
   }
@@ -30,18 +30,18 @@ export function checkToken(factory: string, token: string): string {
 export function checkApiBaseUrl(factory: string, apiBaseUrl: string): void {
   const url = parseHttpUrl(apiBaseUrl);
   if (!url) {
-    throw new Error(`[siteping] ${factory}: apiBaseUrl must be an absolute http(s) URL`);
+    throw new Error(`[beezping] ${factory}: apiBaseUrl must be an absolute http(s) URL`);
   }
   // fetch would refuse such a URL on every call, with an error quoting it that the handler logs.
   if (url.username || url.password) {
-    throw new Error(`[siteping] ${factory}: apiBaseUrl must not carry credentials. Pass the token as \`token\`.`);
+    throw new Error(`[beezping] ${factory}: apiBaseUrl must not carry credentials. Pass the token as \`token\`.`);
   }
 }
 
 /** Unset, or a positive integer. */
 export function checkPositiveInteger(factory: string, option: string, value: number | undefined): void {
   if (value !== undefined && !(Number.isSafeInteger(value) && value > 0)) {
-    throw new Error(`[siteping] ${factory}: ${option} must be a positive integer, got ${value}`);
+    throw new Error(`[beezping] ${factory}: ${option} must be a positive integer, got ${value}`);
   }
 }
 
@@ -49,6 +49,6 @@ export function checkPositiveInteger(factory: string, option: string, value: num
 export function checkTimeout(factory: string, timeoutMs: number | undefined): void {
   checkPositiveInteger(factory, "timeoutMs", timeoutMs);
   if (timeoutMs !== undefined && timeoutMs > TIMER_MAX_DELAY_MS) {
-    throw new Error(`[siteping] ${factory}: timeoutMs must be at most ${TIMER_MAX_DELAY_MS}, got ${timeoutMs}`);
+    throw new Error(`[beezping] ${factory}: timeoutMs must be at most ${TIMER_MAX_DELAY_MS}, got ${timeoutMs}`);
   }
 }

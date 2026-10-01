@@ -1,18 +1,6 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-
-const ROUTE_TEMPLATE = `import { createSitepingHandler } from "@beezping/adapter-prisma";
-import { prisma } from "@/lib/prisma";
-
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
-  prisma,
-  // Required in production — the handler refuses to start without a key.
-  // Status changes and deletes then need \`Authorization: Bearer <key>\`;
-  // feedback submissions from the widget stay open.
-  apiKey: process.env.SITEPING_API_KEY,
-  // allowedOrigins: ["https://your-site.com"],
-});
-`;
+import { ROUTE_TEMPLATE } from "../constants/route.js";
 
 /** Result of a route-generation attempt. */
 export interface RouteGenerationResult {
@@ -35,18 +23,18 @@ export function findAppDir(basePath: string): string | null {
 const ROUTE_EXTENSIONS = ["ts", "tsx", "js", "jsx"] as const;
 
 /**
- * The existing `api/siteping/route.*` under `appDir`, if any. Writing a
+ * The existing `api/beezping/route.*` under `appDir`, if any. Writing a
  * `route.ts` beside a `route.js` makes Next.js fail ("Duplicate page detected").
  */
 export function findRouteFile(appDir: string): string | null {
-  const routeDir = join(appDir, "api", "siteping");
+  const routeDir = join(appDir, "api", "beezping");
   return ROUTE_EXTENSIONS.map((ext) => join(routeDir, `route.${ext}`)).find((file) => existsSync(file)) ?? null;
 }
 
 /**
  * Generate the Next.js App Router API route file.
  *
- * Creates `app/api/siteping/route.ts` with the handler setup.
+ * Creates `app/api/beezping/route.ts` with the handler setup.
  * Skips if a route file (`route.ts`, `route.js`, …) already exists.
  */
 export function generateRoute(basePath: string = process.cwd()): RouteGenerationResult {
@@ -61,7 +49,7 @@ export function generateRoute(basePath: string = process.cwd()): RouteGeneration
     return { created: false, path: existing };
   }
 
-  const routePath = join(appDir, "api", "siteping", "route.ts");
+  const routePath = join(appDir, "api", "beezping", "route.ts");
 
   try {
     mkdirSync(dirname(routePath), { recursive: true });

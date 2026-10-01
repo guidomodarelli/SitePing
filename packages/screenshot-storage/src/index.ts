@@ -1,7 +1,7 @@
 /**
- * Screenshot storage for SitePing. Wrap any backend with
+ * Screenshot storage for Beezping. Wrap any backend with
  * `createScreenshotStorage` and hand the result to your store
- * (`createPgSitepingStore(db, { screenshotStorage })`, `new PrismaStore(prisma, { screenshotStorage })`…):
+ * (`createPgBeezpingStore(db, { screenshotStorage })`, `new PrismaStore(prisma, { screenshotStorage })`…):
  *
  * - `@beezping/screenshot-storage/cloudflare-images` — Cloudflare Images
  * - `@beezping/screenshot-storage/s3` — AWS S3, Cloudflare R2, Backblaze B2, MinIO…

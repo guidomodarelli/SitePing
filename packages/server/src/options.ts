@@ -1,22 +1,22 @@
-import type { CommentPayload, FeedbackCreateInput, FeedbackRecord, SitepingStore } from "@beezping/core";
+import type { BeezpingStore, CommentPayload, FeedbackCreateInput, FeedbackRecord } from "@beezping/core";
 import type { WebhookConfig } from "./webhooks.js";
 
-/** HTTP methods served by `createSitepingHandler`. */
-export type SitepingHttpMethod = "GET" | "POST" | "PATCH" | "DELETE" | "OPTIONS";
+/** HTTP methods served by `createBeezpingHandler`. */
+export type BeezpingHttpMethod = "GET" | "POST" | "PATCH" | "DELETE" | "OPTIONS";
 
-/** What a request does, as `SitepingAccessControl.authorize` sees it. */
-export type SitepingAction = "create" | "list" | "update" | "delete" | "deleteAll" | "createComment" | "deleteComment";
+/** What a request does, as `BeezpingAccessControl.authorize` sees it. */
+export type BeezpingAction = "create" | "list" | "update" | "delete" | "deleteAll" | "createComment" | "deleteComment";
 
 /** The request being served, and who sent it. */
-export interface SitepingRequestContext<Principal> {
+export interface BeezpingRequestContext<Principal> {
   request: Request;
   /** Whoever `access.authenticate` resolved — always `null` under the `apiKey` policy. */
   principal: Principal;
 }
 
-/** What `SitepingAccessControl.authorize` decides about. */
-export interface SitepingAuthorizationContext<Principal> extends SitepingRequestContext<Principal> {
-  action: SitepingAction;
+/** What `BeezpingAccessControl.authorize` decides about. */
+export interface BeezpingAuthorizationContext<Principal> extends BeezpingRequestContext<Principal> {
+  action: BeezpingAction;
   /** Project the request targets: the body's for writes, the query's for reads. */
   projectName: string;
   /** Target record of `update` and `delete`; the feedback whose thread `createComment` and `deleteComment` target. */
@@ -28,7 +28,7 @@ export interface SitepingAuthorizationContext<Principal> extends SitepingRequest
   commentId?: string;
   /**
    * `true` when nothing is being done: the handler fills in the
-   * `permissions` of a response — see `SitepingAccessControl.authorize`.
+   * `permissions` of a response — see `BeezpingAccessControl.authorize`.
    * `request` is then the response's own (a `GET`, `POST` or `PATCH`),
    * whatever `action` asks about: decide by `action`, not `request.method`.
    */
@@ -39,7 +39,7 @@ export interface SitepingAuthorizationContext<Principal> extends SitepingRequest
  * Who `access.authenticate` may resolve: a user object, an id, a token's
  * claims. Never a boolean — a `false` check would read as a signed-in caller.
  */
-export type SitepingPrincipal = object | string | number;
+export type BeezpingPrincipal = object | string | number;
 
 /**
  * A custom access policy — sessions, JWTs, roles — resolved from the standard
@@ -76,9 +76,9 @@ export type SitepingPrincipal = object | string | number;
  *
  * A throw from any of them answers a logged 500.
  */
-export interface SitepingAccessControl<Principal extends SitepingPrincipal> {
+export interface BeezpingAccessControl<Principal extends BeezpingPrincipal> {
   authenticate(request: Request): Principal | null | undefined | Promise<Principal | null | undefined>;
-  authorize?(context: SitepingAuthorizationContext<Principal>): boolean | Promise<boolean>;
+  authorize?(context: BeezpingAuthorizationContext<Principal>): boolean | Promise<boolean>;
   canReadAuthorEmail?(principal: Principal): boolean | Promise<boolean>;
   canCommentAsTeam?(principal: Principal): boolean | Promise<boolean>;
 }
@@ -87,7 +87,7 @@ export interface SitepingAccessControl<Principal extends SitepingPrincipal> {
  * What a DELETE removes: one record, or a whole project (`deleteAll`) —
  * never a comment, whose deletion runs no hook.
  */
-export type SitepingDeletionTarget =
+export type BeezpingDeletionTarget =
   | { kind: "single"; id: string; projectName: string }
   | { kind: "project"; projectName: string };
 
@@ -104,11 +104,11 @@ export type SitepingDeletionTarget =
  * and the request answers 502), e.g. when a resource tied to the feedback
  * could not be cleaned up and the delete must be retried.
  */
-export interface SitepingLifecycleHooks<Principal> {
-  onCreated?(feedback: FeedbackRecord, context: SitepingRequestContext<Principal>): void | Promise<void>;
-  onUpdated?(feedback: FeedbackRecord, context: SitepingRequestContext<Principal>): void | Promise<void>;
-  onDeleting?(target: SitepingDeletionTarget, context: SitepingRequestContext<Principal>): void | Promise<void>;
-  onDeleted?(target: SitepingDeletionTarget, context: SitepingRequestContext<Principal>): void | Promise<void>;
+export interface BeezpingLifecycleHooks<Principal> {
+  onCreated?(feedback: FeedbackRecord, context: BeezpingRequestContext<Principal>): void | Promise<void>;
+  onUpdated?(feedback: FeedbackRecord, context: BeezpingRequestContext<Principal>): void | Promise<void>;
+  onDeleting?(target: BeezpingDeletionTarget, context: BeezpingRequestContext<Principal>): void | Promise<void>;
+  onDeleted?(target: BeezpingDeletionTarget, context: BeezpingRequestContext<Principal>): void | Promise<void>;
 }
 
 /**
@@ -121,14 +121,14 @@ export interface SitepingLifecycleHooks<Principal> {
  * the context first and type-checks here anyway, then drops the context:
  * adapt it — `{ error: (message, { error, ...context }) => log.error({ err: error, ...context }, message) }`.
  */
-export interface SitepingLogger {
+export interface BeezpingLogger {
   error(message: string, context: Record<string, unknown>): void | Promise<void>;
 }
 
 /** Options shared by both access policies. */
-export interface SitepingHandlerBaseOptions<Principal> {
-  /** Persistence backend — any `SitepingStore` (Prisma, Drizzle, memory, your own). */
-  store: SitepingStore;
+export interface BeezpingHandlerBaseOptions<Principal> {
+  /** Persistence backend — any `BeezpingStore` (Prisma, Drizzle, memory, your own). */
+  store: BeezpingStore;
   /**
    * Allowed CORS origins (exact match) — when set, only these origins get CORS
    * headers. When unset, no CORS headers are emitted and browsers block
@@ -170,7 +170,7 @@ export interface SitepingHandlerBaseOptions<Principal> {
    */
   beforeCreate?(
     input: FeedbackCreateInput,
-    context: SitepingRequestContext<Principal>,
+    context: BeezpingRequestContext<Principal>,
   ): FeedbackCreateInput | Promise<FeedbackCreateInput>;
   /**
    * `beforeCreate` for the replies of a thread: rewrite the validated comment
@@ -184,7 +184,7 @@ export interface SitepingHandlerBaseOptions<Principal> {
    */
   beforeComment?(
     input: CommentPayload,
-    context: SitepingRequestContext<Principal>,
+    context: BeezpingRequestContext<Principal>,
   ): CommentPayload | Promise<CommentPayload>;
   /**
    * Transform each record right before it is serialized in a response, e.g.
@@ -192,11 +192,11 @@ export interface SitepingHandlerBaseOptions<Principal> {
    * when the requester may not read it, afterwards — on the record and on
    * each comment of its thread.
    */
-  presentFeedback?(feedback: FeedbackRecord, context: SitepingRequestContext<Principal>): FeedbackRecord;
-  /** Lifecycle side effects — see `SitepingLifecycleHooks`. */
-  hooks?: SitepingLifecycleHooks<Principal>;
+  presentFeedback?(feedback: FeedbackRecord, context: BeezpingRequestContext<Principal>): FeedbackRecord;
+  /** Lifecycle side effects — see `BeezpingLifecycleHooks`. */
+  hooks?: BeezpingLifecycleHooks<Principal>;
   /** Where unexpected failures are reported. Defaults to `console.error`. */
-  logger?: SitepingLogger;
+  logger?: BeezpingLogger;
   /**
    * Map an unexpected failure to the `error` string sent to the client.
    * Return `undefined` for the default (`"Internal server error"`). Store
@@ -207,7 +207,7 @@ export interface SitepingHandlerBaseOptions<Principal> {
 }
 
 /** The built-in shared-secret policy — `adapter-prisma`'s historical behaviour. */
-export interface SitepingApiKeyHandlerOptions extends SitepingHandlerBaseOptions<null> {
+export interface BeezpingApiKeyHandlerOptions extends BeezpingHandlerBaseOptions<null> {
   /**
    * Shared secret expected as `Authorization: Bearer {apiKey}`.
    *
@@ -226,7 +226,7 @@ export interface SitepingApiKeyHandlerOptions extends SitepingHandlerBaseOptions
    * Defaults to `['POST', 'OPTIONS']` when `apiKey` is set — POST must stay open
    * because the browser widget submits feedback from unauthenticated contexts.
    */
-  publicEndpoints?: ReadonlyArray<SitepingHttpMethod>;
+  publicEndpoints?: ReadonlyArray<BeezpingHttpMethod>;
   /**
    * Whether destructive endpoints (DELETE, PATCH) require `apiKey`.
    *
@@ -263,10 +263,10 @@ export interface SitepingApiKeyHandlerOptions extends SitepingHandlerBaseOptions
 }
 
 /** A custom access policy (sessions, JWTs, roles) in place of `apiKey`. */
-export interface SitepingAccessHandlerOptions<Principal extends SitepingPrincipal>
-  extends SitepingHandlerBaseOptions<Principal> {
+export interface BeezpingAccessHandlerOptions<Principal extends BeezpingPrincipal>
+  extends BeezpingHandlerBaseOptions<Principal> {
   /**
-   * Who is calling and what they may do — see `SitepingAccessControl`.
+   * Who is calling and what they may do — see `BeezpingAccessControl`.
    *
    * Such a policy may authenticate with cookies, which browsers attach to
    * forged cross-site requests too, so POST/PATCH/DELETE are guarded against
@@ -278,7 +278,7 @@ export interface SitepingAccessHandlerOptions<Principal extends SitepingPrincipa
    * in `allowedOrigins`. Lists are sent with `Cache-Control: no-store`: they
    * depend on the principal, which the browser cache cannot tell apart.
    */
-  access: SitepingAccessControl<Principal>;
+  access: BeezpingAccessControl<Principal>;
   /** `apiKey` policy only. */
   apiKey?: never;
   /** `apiKey` policy only. */
@@ -289,15 +289,15 @@ export interface SitepingAccessHandlerOptions<Principal extends SitepingPrincipa
   redactUnauthenticatedEmails?: never;
 }
 
-/** Options of `createSitepingHandler`: the `apiKey` policy XOR a custom `access` policy. */
-export type SitepingHandlerOptions<Principal extends SitepingPrincipal = SitepingPrincipal> =
-  | SitepingApiKeyHandlerOptions
-  | SitepingAccessHandlerOptions<Principal>;
+/** Options of `createBeezpingHandler`: the `apiKey` policy XOR a custom `access` policy. */
+export type BeezpingHandlerOptions<Principal extends BeezpingPrincipal = BeezpingPrincipal> =
+  | BeezpingApiKeyHandlerOptions
+  | BeezpingAccessHandlerOptions<Principal>;
 
 /**
- * Object returned by `createSitepingHandler` — one handler per HTTP method.
+ * Object returned by `createBeezpingHandler` — one handler per HTTP method.
  */
-export interface SitepingHandler {
+export interface BeezpingHandler {
   OPTIONS: (request: Request) => Response;
   POST: (request: Request) => Promise<Response>;
   GET: (request: Request) => Promise<Response>;

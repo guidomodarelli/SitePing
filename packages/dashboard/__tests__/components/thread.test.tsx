@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { type CommentRecord, SitepingValidationError } from "@beezping/core";
+import { BeezpingValidationError, type CommentRecord } from "@beezping/core";
 import { act, cleanup, fireEvent } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -181,7 +181,7 @@ describe("Thread", () => {
     // The inbox replies as the team: a 409 means the server did not take
     // this reply as the team's, which deleting replies would not fix.
     const onAdd = vi.fn(async () => {
-      throw new SitepingValidationError("Failed to post comment: 409", 409);
+      throw new BeezpingValidationError("Failed to post comment: 409", 409);
     });
     const view = renderThread({ comments: [], onAdd });
 

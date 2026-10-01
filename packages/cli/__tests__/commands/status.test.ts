@@ -29,7 +29,7 @@ vi.mock("node:fs", async (importOriginal) => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** A valid Prisma schema with every Siteping model — complete and up-to-date. */
+/** A valid Prisma schema with every Beezping model — complete and up-to-date. */
 const FULL_SCHEMA = `
 datasource db {
   provider = "postgresql"
@@ -40,7 +40,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id            String              @id @default(cuid())
   projectName   String
   type          String
@@ -59,18 +59,18 @@ model SitepingFeedback {
   resolvedAt    DateTime?
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
-  annotations   SitepingAnnotation[]
-  comments      SitepingComment[]
+  annotations   BeezpingAnnotation[]
+  comments      BeezpingComment[]
 
   @@index([projectName])
   @@index([projectName, status, createdAt])
   @@index([projectName, url])
 }
 
-model SitepingAnnotation {
+model BeezpingAnnotation {
   id               String           @id @default(cuid())
   feedbackId       String
-  feedback         SitepingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedback         BeezpingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
   cssSelector      String           @db.Text
   xpath            String           @db.Text
   textSnippet      String           @db.Text
@@ -95,10 +95,10 @@ model SitepingAnnotation {
   @@index([feedbackId])
 }
 
-model SitepingComment {
+model BeezpingComment {
   id          String           @id @default(cuid())
   feedbackId  String
-  feedback    SitepingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedback    BeezpingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
   body        String           @db.Text
   authorName  String
   authorEmail String
@@ -110,7 +110,7 @@ model SitepingComment {
 }
 `;
 
-/** Schema missing SitepingAnnotation entirely and SitepingFeedback is partial. */
+/** Schema missing BeezpingAnnotation entirely and BeezpingFeedback is partial. */
 const PARTIAL_SCHEMA = `
 datasource db {
   provider = "postgresql"
@@ -121,7 +121,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -131,9 +131,9 @@ model SitepingFeedback {
 `;
 
 /**
- * Schema where every Siteping model is present but a single field has the
+ * Schema where every Beezping model is present but a single field has the
  * wrong type — exercises the `outdatedFields.push` branch in checkSchema.
- * `SitepingFeedback.id` is declared `Int` instead of the expected `String`.
+ * `BeezpingFeedback.id` is declared `Int` instead of the expected `String`.
  */
 const OUTDATED_SCHEMA = `
 datasource db {
@@ -145,7 +145,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id           Int                 @id @default(autoincrement())
   projectName  String
   type         String
@@ -160,15 +160,15 @@ model SitepingFeedback {
   resolvedAt   DateTime?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
-  annotations  SitepingAnnotation[]
+  annotations  BeezpingAnnotation[]
 
   @@index([projectName])
 }
 
-model SitepingAnnotation {
+model BeezpingAnnotation {
   id               String           @id @default(cuid())
   feedbackId       String
-  feedback         SitepingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedback         BeezpingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
   cssSelector      String           @db.Text
   xpath            String           @db.Text
   textSnippet      String           @db.Text
@@ -209,7 +209,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id            String              @id @default(cuid())
   projectName   String
   type          String
@@ -227,18 +227,18 @@ model SitepingFeedback {
   clientId      String              @unique
   resolvedAt    DateTime?
   createdAt     DateTime            @default(now())
-  annotations   SitepingAnnotation[]
-  comments      SitepingComment[]
+  annotations   BeezpingAnnotation[]
+  comments      BeezpingComment[]
 
   @@index([projectName])
   @@index([projectName, status, createdAt])
   @@index([projectName, url])
 }
 
-model SitepingAnnotation {
+model BeezpingAnnotation {
   id               String           @id @default(cuid())
   feedbackId       String
-  feedback         SitepingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedback         BeezpingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
   cssSelector      String           @db.Text
   xpath            String           @db.Text
   textSnippet      String           @db.Text
@@ -263,10 +263,10 @@ model SitepingAnnotation {
   @@index([feedbackId])
 }
 
-model SitepingComment {
+model BeezpingComment {
   id          String           @id @default(cuid())
   feedbackId  String
-  feedback    SitepingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedback    BeezpingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
   body        String           @db.Text
   authorName  String
   authorEmail String
@@ -290,7 +290,7 @@ function createPackageJson(dir: string, deps?: Record<string, string>, devDeps?:
 }
 
 function createApiRoute(dir: string): void {
-  const routeDir = join(dir, "app", "api", "siteping");
+  const routeDir = join(dir, "app", "api", "beezping");
   mkdirSync(routeDir, { recursive: true });
   writeFileSync(join(routeDir, "route.ts"), "export const GET = () => {};");
 }
@@ -300,7 +300,7 @@ function createWidgetUsage(dir: string): void {
   mkdirSync(srcDir, { recursive: true });
   writeFileSync(
     join(srcDir, "feedback.ts"),
-    'import { initSiteping } from "@beezping/widget";\ninitSiteping({ endpoint: "/api/siteping", projectName: "test" });',
+    'import { initBeezping } from "@beezping/widget";\ninitBeezping({ endpoint: "/api/beezping", projectName: "test" });',
   );
 }
 
@@ -334,7 +334,7 @@ describe("statusCommand", () => {
   let logInfoSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "siteping-status-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "beezping-status-test-"));
     originalCwd = process.cwd();
     process.chdir(tmpDir);
     exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
@@ -388,8 +388,8 @@ describe("statusCommand", () => {
     });
 
     it("asks for a sync, without failing, on a schema synced before discussion threads", () => {
-      const beforeThreads = FULL_SCHEMA.replace("  comments      SitepingComment[]\n", "").replace(
-        /\nmodel SitepingComment \{[^}]*\}\n/,
+      const beforeThreads = FULL_SCHEMA.replace("  comments      BeezpingComment[]\n", "").replace(
+        /\nmodel BeezpingComment \{[^}]*\}\n/,
         "\n",
       );
       createPrismaSchema(tmpDir, beforeThreads);
@@ -400,7 +400,7 @@ describe("statusCommand", () => {
 
       expect(allMessages(logWarnSpy)).toContainEqual(
         expect.stringMatching(
-          /^Prisma schema\s+2 missing fields \(model SitepingComment, SitepingFeedback\.comments\)$/,
+          /^Prisma schema\s+2 missing fields \(model BeezpingComment, BeezpingFeedback\.comments\)$/,
         ),
       );
       expect(exitSpy).not.toHaveBeenCalled();
@@ -409,9 +409,9 @@ describe("statusCommand", () => {
     it("parses a valid schema with a trailing space or a comment after {", () => {
       createPrismaSchema(
         tmpDir,
-        FULL_SCHEMA.replace("model SitepingFeedback {", "model SitepingFeedback { ").replace(
-          "model SitepingAnnotation {",
-          "model SitepingAnnotation { // anchors",
+        FULL_SCHEMA.replace("model BeezpingFeedback {", "model BeezpingFeedback { ").replace(
+          "model BeezpingAnnotation {",
+          "model BeezpingAnnotation { // anchors",
         ),
       );
       createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
@@ -439,12 +439,12 @@ describe("statusCommand", () => {
       expect(exitSpy).toHaveBeenCalledWith(1);
     });
 
-    it("finds the Siteping models in a sibling file of a prisma/schema/ folder", () => {
+    it("finds the Beezping models in a sibling file of a prisma/schema/ folder", () => {
       const folder = join(tmpDir, "prisma", "schema");
       mkdirSync(folder, { recursive: true });
-      const [head, models] = FULL_SCHEMA.split(/(?=model SitepingFeedback)/);
+      const [head, models] = FULL_SCHEMA.split(/(?=model BeezpingFeedback)/);
       writeFileSync(join(folder, "schema.prisma"), head ?? "");
-      writeFileSync(join(folder, "siteping.prisma"), models ?? "");
+      writeFileSync(join(folder, "beezping.prisma"), models ?? "");
       createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createApiRoute(tmpDir);
 
@@ -500,9 +500,9 @@ describe("statusCommand", () => {
 
       const schemaLine = allMessages(logWarnSpy).find((m) => m.startsWith("Prisma schema"));
       expect(schemaLine).toBeDefined();
-      expect(schemaLine).toContain("SitepingFeedback.clientId (+@unique)");
-      expect(schemaLine).toContain("SitepingFeedback.message (+@db.Text)");
-      expect(schemaLine).toContain("SitepingFeedback.@@index([projectName, url])");
+      expect(schemaLine).toContain("BeezpingFeedback.clientId (+@unique)");
+      expect(schemaLine).toContain("BeezpingFeedback.message (+@db.Text)");
+      expect(schemaLine).toContain("BeezpingFeedback.@@index([projectName, url])");
       expect(allMessages(logSuccessSpy).some((m) => m.startsWith("Prisma schema"))).toBe(false);
     });
 
@@ -514,7 +514,7 @@ describe("statusCommand", () => {
       statusCommand({});
 
       const schemaLine = allMessages(logWarnSpy).find((m) => m.startsWith("Prisma schema"));
-      expect(schemaLine).toContain("SitepingAnnotation.feedback");
+      expect(schemaLine).toContain("BeezpingAnnotation.feedback");
       expect(allMessages(logSuccessSpy).some((m) => m.startsWith("Prisma schema"))).toBe(false);
     });
 
@@ -530,7 +530,7 @@ describe("statusCommand", () => {
   });
 
   describe("API route detection", () => {
-    it("reports success when API route exists at app/api/siteping/route.ts", () => {
+    it("reports success when API route exists at app/api/beezping/route.ts", () => {
       createPackageJson(tmpDir);
       createApiRoute(tmpDir);
 
@@ -540,9 +540,9 @@ describe("statusCommand", () => {
       expect(successes.some((m) => m.includes("API route"))).toBe(true);
     });
 
-    it("reports success when API route exists at src/app/api/siteping/route.ts", () => {
+    it("reports success when API route exists at src/app/api/beezping/route.ts", () => {
       createPackageJson(tmpDir);
-      const routeDir = join(tmpDir, "src", "app", "api", "siteping");
+      const routeDir = join(tmpDir, "src", "app", "api", "beezping");
       mkdirSync(routeDir, { recursive: true });
       writeFileSync(join(routeDir, "route.ts"), "export const GET = () => {};");
 
@@ -554,21 +554,21 @@ describe("statusCommand", () => {
 
     it("reports success when the API route is a JavaScript file", () => {
       createPackageJson(tmpDir);
-      const routeDir = join(tmpDir, "app", "api", "siteping");
+      const routeDir = join(tmpDir, "app", "api", "beezping");
       mkdirSync(routeDir, { recursive: true });
       writeFileSync(join(routeDir, "route.js"), "export const GET = () => {};");
 
       statusCommand({});
 
       expect(allMessages(logSuccessSpy)).toContainEqual(
-        expect.stringMatching(/^API route\s+app\/api\/siteping\/route\.js$/),
+        expect.stringMatching(/^API route\s+app\/api\/beezping\/route\.js$/),
       );
     });
 
     it("reports a src/app route as not found when app/ exists (Next.js ignores src/app)", () => {
       createPackageJson(tmpDir);
       mkdirSync(join(tmpDir, "app"), { recursive: true });
-      const routeDir = join(tmpDir, "src", "app", "api", "siteping");
+      const routeDir = join(tmpDir, "src", "app", "api", "beezping");
       mkdirSync(routeDir, { recursive: true });
       writeFileSync(join(routeDir, "route.ts"), "export const GET = () => {};");
 
@@ -627,7 +627,7 @@ describe("statusCommand", () => {
   });
 
   describe("Widget integration detection", () => {
-    it("reports success when initSiteping is found in source files", () => {
+    it("reports success when initBeezping is found in source files", () => {
       createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
       createWidgetUsage(tmpDir);
 
@@ -637,7 +637,7 @@ describe("statusCommand", () => {
       expect(successes.some((m) => m.includes("Widget"))).toBe(true);
     });
 
-    it("reports warning when initSiteping is not found in source files", () => {
+    it("reports warning when initBeezping is not found in source files", () => {
       createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
 
       statusCommand({});
@@ -718,15 +718,15 @@ describe("statusCommand", () => {
     });
 
     it("skips node_modules and .next directories during widget scan", () => {
-      // Place an initSiteping reference inside node_modules — the scan must
+      // Place an initBeezping reference inside node_modules — the scan must
       // skip the directory entirely rather than report a false-positive match.
       // Same for .next, which Next.js generates during dev/build.
       const nodeModulesDir = join(tmpDir, "src", "node_modules");
       mkdirSync(nodeModulesDir, { recursive: true });
-      writeFileSync(join(nodeModulesDir, "trap.ts"), 'import { initSiteping } from "@beezping/widget";');
+      writeFileSync(join(nodeModulesDir, "trap.ts"), 'import { initBeezping } from "@beezping/widget";');
       const nextDir = join(tmpDir, "src", ".next");
       mkdirSync(nextDir, { recursive: true });
-      writeFileSync(join(nextDir, "trap.ts"), 'import { initSiteping } from "@beezping/widget";');
+      writeFileSync(join(nextDir, "trap.ts"), 'import { initBeezping } from "@beezping/widget";');
 
       createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
 
@@ -742,9 +742,9 @@ describe("statusCommand", () => {
       // exercising the "extension does not match" branch of searchInDir.
       const srcDir = join(tmpDir, "src");
       mkdirSync(srcDir, { recursive: true });
-      writeFileSync(join(srcDir, "README.md"), "# initSiteping reference");
-      writeFileSync(join(srcDir, "data.json"), '{"initSiteping": "fake"}');
-      writeFileSync(join(srcDir, "feedback.ts"), 'import { initSiteping } from "@beezping/widget";');
+      writeFileSync(join(srcDir, "README.md"), "# initBeezping reference");
+      writeFileSync(join(srcDir, "data.json"), '{"initBeezping": "fake"}');
+      writeFileSync(join(srcDir, "feedback.ts"), 'import { initBeezping } from "@beezping/widget";');
 
       createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
 
@@ -759,7 +759,7 @@ describe("statusCommand", () => {
       // arbitrary depth (the `if (match) return match` branch on the recursion).
       const deepDir = join(tmpDir, "src", "components", "ui", "feedback");
       mkdirSync(deepDir, { recursive: true });
-      writeFileSync(join(deepDir, "widget.ts"), 'import { initSiteping } from "@beezping/widget";');
+      writeFileSync(join(deepDir, "widget.ts"), 'import { initBeezping } from "@beezping/widget";');
 
       createPackageJson(tmpDir, { "@beezping/widget": "^1.0.0" });
 
@@ -793,7 +793,7 @@ describe("statusCommand", () => {
     });
 
     it("reports outdated fields when a Prisma field has the wrong type", () => {
-      // SitepingFeedback.id is declared `Int` instead of the expected `String`,
+      // BeezpingFeedback.id is declared `Int` instead of the expected `String`,
       // so checkSchema must record it as outdated and emit a warning that
       // mentions the outdated field count.
       createPrismaSchema(tmpDir, OUTDATED_SCHEMA);
@@ -809,7 +809,7 @@ describe("statusCommand", () => {
     });
 
     it("uses plural 'outdated fields' when more than one is outdated", () => {
-      // Two field-type mismatches in SitepingFeedback (`id` Int instead of
+      // Two field-type mismatches in BeezpingFeedback (`id` Int instead of
       // String, `projectName` Boolean instead of String) so the warning
       // message exercises the `outdatedCount > 1 ? "s" : ""` plural branch.
       const multiOutdated = `
@@ -822,7 +822,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id           Int                 @id @default(autoincrement())
   projectName  Boolean
   type         String
@@ -837,13 +837,13 @@ model SitepingFeedback {
   resolvedAt   DateTime?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
-  annotations  SitepingAnnotation[]
+  annotations  BeezpingAnnotation[]
 }
 
-model SitepingAnnotation {
+model BeezpingAnnotation {
   id               String           @id @default(cuid())
   feedbackId       String
-  feedback         SitepingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  feedback         BeezpingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
   cssSelector      String           @db.Text
   xpath            String           @db.Text
   textSnippet      String           @db.Text

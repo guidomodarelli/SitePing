@@ -1,5 +1,5 @@
 /**
- * Issue tracker integration for SitePing. Build hooks with
+ * Issue tracker integration for Beezping. Build hooks with
  * `createIssueTrackerHooks` and pick a provider entry:
  *
  * - `@beezping/integration-issues/github` — GitHub Issues (github.com / Enterprise Server)

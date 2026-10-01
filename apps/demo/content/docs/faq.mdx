@@ -3,13 +3,13 @@ title: FAQ
 description: The questions everyone asks, answered from how the code actually behaves.
 ---
 
-## I called initSiteping and nothing shows. Why?
+## I called initBeezping and nothing shows. Why?
 
 In order of likelihood:
 
 1. **You're in a production build.** The widget skips when `NODE_ENV` is `production` (only `process.env.NODE_ENV` is read). Pass `forceShow: true` on staging, or check with `onSkip`.
 2. **Invalid config** — a missing `endpoint`/`store` or `projectName` logs a `console.error` and mounts nothing. This case does *not* fire `onSkip`, so open the console.
-3. **It's already mounted.** A second `initSiteping()` returns the existing instance instead of a second button.
+3. **It's already mounted.** A second `initBeezping()` returns the existing instance instead of a second button.
 4. **The viewport is narrower than your `minViewportWidth`.** Only when you set one — by default the widget renders at every width, phones included (before 0.11 the default was 768 px). `onSkip("mobile")` tells you.
 
 ## Do my clients need an account?
@@ -28,7 +28,7 @@ MIT license, no paid tier, no phoning home. You host one API endpoint (any frame
 
 ## What data does a feedback contain?
 
-The comment, its type and status, the page (the URL **path** only by default — query strings never leave the browser), viewport size, user agent, the author's name and email, and the DOM anchor of each annotation. Opt-in extras: a screenshot of the annotated area and recent console/network diagnostics. Mask anything sensitive with `data-siteping-ignore="true"` — masked elements are excluded from screenshots.
+The comment, its type and status, the page (the URL **path** only by default — query strings never leave the browser), viewport size, user agent, the author's name and email, and the DOM anchor of each annotation. Opt-in extras: a screenshot of the annotated area and recent console/network diagnostics. Mask anything sensitive with `data-beezping-ignore="true"` — masked elements are excluded from screenshots.
 
 ## Can anyone read my feedback API?
 
@@ -44,4 +44,4 @@ The marker hides on that page (nothing to anchor to) rather than pointing at the
 
 ## My language isn't built in.
 
-The dashboard accepts runtime locales via `registerLocale`. The widget's locales are compiled in — adding one is the friendliest first contribution to the project: see [CONTRIBUTING](https://github.com/NeosiaNexus/SitePing/blob/main/CONTRIBUTING.md).
+The dashboard accepts runtime locales via `registerLocale`. The widget's locales are compiled in — adding one is the friendliest first contribution to the project: see [CONTRIBUTING](https://github.com/guidomodarelli/beezping/blob/main/CONTRIBUTING.md).

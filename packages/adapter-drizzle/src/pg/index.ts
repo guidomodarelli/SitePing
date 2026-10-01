@@ -1,9 +1,9 @@
 import { primaryOf } from "../shared/replicas.js";
-import { DrizzleSitepingStore, type DrizzleStore, type DrizzleStoreOptions } from "../shared/store.js";
+import { DrizzleBeezpingStore, type DrizzleStore, type DrizzleStoreOptions } from "../shared/store.js";
 import { type AnyPgDatabase, createPgGateway } from "./gateway.js";
-import { createSitepingPgTables, type SitepingPgTables } from "./tables.js";
+import { type BeezpingPgTables, createBeezpingPgTables } from "./tables.js";
 
-export type { FeedbackRecord, ScreenshotStorage, SitepingStore } from "@beezping/core";
+export type { BeezpingStore, FeedbackRecord, ScreenshotStorage } from "@beezping/core";
 export {
   isStorePersistence,
   StoreDuplicateError,
@@ -11,29 +11,29 @@ export {
   StoreNotFoundError,
   StorePersistenceError,
 } from "@beezping/core";
-export { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../constants/table-names.js";
+export { type BeezpingTableNames, DEFAULT_BEEZPING_TABLE_NAMES } from "../constants/table-names.js";
 export type { DrizzleStore, DrizzleStoreLogger, DrizzleStoreOptions } from "../shared/store.js";
 export type { AnyPgDatabase } from "./gateway.js";
-export { createSitepingPgTables, type SitepingPgTables } from "./tables.js";
+export { type BeezpingPgTables, createBeezpingPgTables } from "./tables.js";
 
-export interface PgSitepingStoreOptions extends DrizzleStoreOptions {
-  /** Tables built with `createSitepingPgTables` — pass them when you customized the names. */
-  tables?: SitepingPgTables | undefined;
+export interface PgBeezpingStoreOptions extends DrizzleStoreOptions {
+  /** Tables built with `createBeezpingPgTables` — pass them when you customized the names. */
+  tables?: BeezpingPgTables | undefined;
 }
 
 /**
- * `SitepingStore` on PostgreSQL through Drizzle ORM. Given a database built
+ * `BeezpingStore` on PostgreSQL through Drizzle ORM. Given a database built
  * with `withReplicas`, it runs everything on the primary.
  *
  * @example
  * ```ts
  * import { drizzle } from "drizzle-orm/node-postgres";
- * import { createPgSitepingStore } from "@beezping/adapter-drizzle/pg";
+ * import { createPgBeezpingStore } from "@beezping/adapter-drizzle/pg";
  *
- * const store = createPgSitepingStore(drizzle(process.env.DATABASE_URL!), { screenshotStorage });
+ * const store = createPgBeezpingStore(drizzle(process.env.DATABASE_URL!), { screenshotStorage });
  * ```
  */
-export function createPgSitepingStore(db: AnyPgDatabase, options: PgSitepingStoreOptions = {}): DrizzleStore {
-  const { tables = createSitepingPgTables(), ...storeOptions } = options;
-  return new DrizzleSitepingStore(createPgGateway(primaryOf(db), tables), storeOptions);
+export function createPgBeezpingStore(db: AnyPgDatabase, options: PgBeezpingStoreOptions = {}): DrizzleStore {
+  const { tables = createBeezpingPgTables(), ...storeOptions } = options;
+  return new DrizzleBeezpingStore(createPgGateway(primaryOf(db), tables), storeOptions);
 }

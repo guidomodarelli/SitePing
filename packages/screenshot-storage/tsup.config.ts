@@ -1,5 +1,5 @@
 import { defineConfig } from "tsup";
-import { sitepingLibrary } from "../../tsup.preset.js";
+import { beezpingLibrary } from "../../tsup.preset.js";
 
 // One entry per backend so importing ./s3 never pulls node:fs and vice versa.
 // Two builds sharing dist/:
@@ -12,7 +12,7 @@ import { sitepingLibrary } from "../../tsup.preset.js";
 // The node build inlines the few pure helpers/constants it shares with the
 // neutral entries — no state or error classes are duplicated.
 export default defineConfig([
-  sitepingLibrary({
+  beezpingLibrary({
     platform: "neutral",
     clean: false,
     entry: {
@@ -25,7 +25,7 @@ export default defineConfig([
     },
     external: [/^drizzle-orm(\/|$)/],
   }),
-  sitepingLibrary({
+  beezpingLibrary({
     platform: "node",
     clean: false,
     entry: { filesystem: "src/backends/filesystem.ts" },

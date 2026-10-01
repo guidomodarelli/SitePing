@@ -3,7 +3,7 @@ title: Comment fonctionne l'ancrage
 description: Pourquoi les annotations survivent aux déploiements — sélecteurs, replis et limites assumées.
 ---
 
-Quand un client dessine un rectangle, SitePing ne stocke pas des coordonnées à l'écran — celles-ci cassent au premier changement de mise en page. Il ancre l'annotation à l'**élément du DOM** situé dessous, avec des replis en couches :
+Quand un client dessine un rectangle, Beezping ne stocke pas des coordonnées à l'écran — celles-ci cassent au premier changement de mise en page. Il ancre l'annotation à l'**élément du DOM** situé dessous, avec des replis en couches :
 
 1. **Un sélecteur CSS minimal** pour l'élément, calculé au moment de la capture.
 2. **Un XPath** vers le même élément, comme premier repli.
@@ -23,7 +23,7 @@ Quand une ancre ne peut pas être résolue lors d'une visite ultérieure, son ma
 
 ## Web components et Shadow DOM
 
-Le contenu des shadow roots **ouverts** — Lit, Stencil, Shoelace, Ionic et la plupart des composants de design system — est ancré comme n'importe quel autre élément. Un sélecteur CSS ne pouvant pas franchir la frontière d'un shadow root, SitePing enregistre un sélecteur par arbre, de l'hôte le plus externe vers l'intérieur, reliés par ` >>> ` :
+Le contenu des shadow roots **ouverts** — Lit, Stencil, Shoelace, Ionic et la plupart des composants de design system — est ancré comme n'importe quel autre élément. Un sélecteur CSS ne pouvant pas franchir la frontière d'un shadow root, Beezping enregistre un sélecteur par arbre, de l'hôte le plus externe vers l'intérieur, reliés par ` >>> ` :
 
 ```text
 #pricing >>> plan-card:nth-of-type(2) >>> .title
@@ -41,7 +41,7 @@ Les shadow roots **fermés** sont opaques par conception — la page elle-même 
 Deux réserves de timing :
 
 - Les marqueurs revérifient leur position au défilement, au redimensionnement et aux changements du DOM de la page. Un composant qui ne se re-rend qu'à l'intérieur de son propre shadow root ne signale aucun changement du DOM ; un marqueur posé dessus se recale au défilement ou au redimensionnement suivant.
-- Les marqueurs sont placés au chargement des feedbacks de la page. Un composant qui n'est pas encore rendu à ce moment-là — défini tardivement, ou un build chargé à la demande (Stencil, Ionic) qui remplit son shadow root un peu plus tard — n'offre encore rien à quoi s'ancrer : comme tout contenu qui apparaît après coup, son marqueur s'affiche au prochain chargement des feedbacks, à l'ouverture du panneau, lors d'une navigation SPA, ou quand vous appelez `siteping.refresh()` (par exemple une fois `customElements.whenDefined()` résolu).
+- Les marqueurs sont placés au chargement des feedbacks de la page. Un composant qui n'est pas encore rendu à ce moment-là — défini tardivement, ou un build chargé à la demande (Stencil, Ionic) qui remplit son shadow root un peu plus tard — n'offre encore rien à quoi s'ancrer : comme tout contenu qui apparaît après coup, son marqueur s'affiche au prochain chargement des feedbacks, à l'ouverture du panneau, lors d'une navigation SPA, ou quand vous appelez `beezping.refresh()` (par exemple une fois `customElements.whenDefined()` résolu).
 
 ## Aider les ancres à vous aider
 

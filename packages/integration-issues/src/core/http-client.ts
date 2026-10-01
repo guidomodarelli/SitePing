@@ -17,7 +17,7 @@ export class IssueTrackerRequestError extends Error {
     options?: { cause?: unknown },
   ) {
     super(
-      `[siteping] ${tracker} API ${method} ${path} failed${status === null ? "" : ` with status ${status}`}`,
+      `[beezping] ${tracker} API ${method} ${path} failed${status === null ? "" : ` with status ${status}`}`,
       options,
     );
     this.name = "IssueTrackerRequestError";
@@ -25,7 +25,7 @@ export class IssueTrackerRequestError extends Error {
 }
 
 /**
- * The tracker created the issue but dropped its `siteping` label, which
+ * The tracker created the issue but dropped its `beezping` label, which
  * every later lookup filters on: status changes and deletes would silently
  * stop reaching it. Raised so the handler logs the missing permission.
  * Match it with {@link isUnlabelledIssueError} rather than `instanceof`.
@@ -34,7 +34,7 @@ export class UnlabelledIssueError extends Error {
   readonly code = UNLABELLED_ISSUE_CODE;
   constructor(tracker: string, issue: string, remedy: string) {
     super(
-      `[siteping] ${tracker} created issue ${issue} without its "siteping" label, so status changes and deletes cannot find it. ${remedy}`,
+      `[beezping] ${tracker} created issue ${issue} without its "beezping" label, so status changes and deletes cannot find it. ${remedy}`,
     );
     this.name = "UnlabelledIssueError";
   }
@@ -62,7 +62,7 @@ export function isTrackerTimeout(error: unknown): boolean {
 }
 
 /**
- * Whether `error` reports an issue created without its `siteping` label,
+ * Whether `error` reports an issue created without its `beezping` label,
  * matched on its stable `code` for the reason given on {@link isIssueTrackerRequestError}.
  *
  * @param error - Any thrown value.

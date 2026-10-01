@@ -3,7 +3,7 @@ title: How anchoring works
 description: Why annotations survive deploys — selectors, fallbacks, and honest limits.
 ---
 
-When a client draws a rectangle, SitePing doesn't store screen coordinates — those break on the first layout change. It anchors the annotation to the **DOM element** under it, with layered fallbacks:
+When a client draws a rectangle, Beezping doesn't store screen coordinates — those break on the first layout change. It anchors the annotation to the **DOM element** under it, with layered fallbacks:
 
 1. **A minimal CSS selector** for the element, computed at capture time.
 2. **An XPath** to the same element, as the first fallback.
@@ -23,7 +23,7 @@ When an anchor can't be resolved on a later visit, its marker stays hidden rathe
 
 ## Web components and Shadow DOM
 
-Content inside **open** shadow roots — Lit, Stencil, Shoelace, Ionic, and most design-system components — is anchored like any other element. A CSS selector can't see across a shadow boundary, so SitePing records one selector per tree, from the outermost host inward, joined by ` >>> `:
+Content inside **open** shadow roots — Lit, Stencil, Shoelace, Ionic, and most design-system components — is anchored like any other element. A CSS selector can't see across a shadow boundary, so Beezping records one selector per tree, from the outermost host inward, joined by ` >>> `:
 
 ```text
 #pricing >>> plan-card:nth-of-type(2) >>> .title
@@ -41,7 +41,7 @@ On a later visit, resolution follows that host chain back down: it looks for the
 Two timing caveats:
 
 - Markers re-check their position on scroll, resize, and page-level DOM changes. A component that re-renders only inside its own shadow root signals no DOM change, so a marker on it catches up on the next scroll or resize.
-- Markers are placed when the page's feedback loads. A component that isn't rendered yet at that moment — defined late, or a lazy-loaded build (Stencil, Ionic) that fills its shadow root a little later — has nothing to anchor to, so, like any content that shows up later, its marker appears the next time feedback loads: when the panel opens, on SPA navigation, or when you call `siteping.refresh()` (for instance once `customElements.whenDefined()` resolves).
+- Markers are placed when the page's feedback loads. A component that isn't rendered yet at that moment — defined late, or a lazy-loaded build (Stencil, Ionic) that fills its shadow root a little later — has nothing to anchor to, so, like any content that shows up later, its marker appears the next time feedback loads: when the panel opens, on SPA navigation, or when you call `beezping.refresh()` (for instance once `customElements.whenDefined()` resolves).
 
 ## Helping the anchors help you
 

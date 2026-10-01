@@ -1,7 +1,7 @@
-import { testSitepingStore } from "@beezping/core/testing";
+import { testBeezpingStore } from "@beezping/core/testing";
 import { afterAll, beforeAll, describe } from "vitest";
-import { type AnyLibSQLDatabase, createLibSQLSitepingStore } from "../src/libsql/index.js";
-import { type AnyPgDatabase, createPgSitepingStore } from "../src/pg/index.js";
+import { type AnyLibSQLDatabase, createLibSQLBeezpingStore } from "../src/libsql/index.js";
+import { type AnyPgDatabase, createPgBeezpingStore } from "../src/pg/index.js";
 import {
   createLibSQLTestDatabase,
   createPgTestDatabase,
@@ -9,7 +9,7 @@ import {
   withoutInteractiveTransactions,
 } from "./databases.js";
 
-// The shared SitepingStore contract, run against both real engines.
+// The shared BeezpingStore contract, run against both real engines.
 // Warnings (inline screenshots) are expected here and silenced.
 const silentLogger = { warn: () => {} };
 
@@ -20,9 +20,9 @@ describe("PostgreSQL (PGlite)", () => {
   });
   afterAll(() => database.close());
 
-  testSitepingStore(async () => {
+  testBeezpingStore(async () => {
     await database.reset();
-    return createPgSitepingStore(database.db, { logger: silentLogger });
+    return createPgBeezpingStore(database.db, { logger: silentLogger });
   });
 });
 
@@ -35,9 +35,9 @@ describe("PostgreSQL without interactive transactions (Neon HTTP semantics)", ()
   });
   afterAll(() => database.close());
 
-  testSitepingStore(async () => {
+  testBeezpingStore(async () => {
     await database.reset();
-    return createPgSitepingStore(withoutInteractiveTransactions(database.db), { logger: silentLogger });
+    return createPgBeezpingStore(withoutInteractiveTransactions(database.db), { logger: silentLogger });
   });
 });
 
@@ -48,8 +48,8 @@ describe("libSQL (Turso)", () => {
   });
   afterAll(() => database.close());
 
-  testSitepingStore(async () => {
+  testBeezpingStore(async () => {
     await database.reset();
-    return createLibSQLSitepingStore(database.db, { logger: silentLogger });
+    return createLibSQLBeezpingStore(database.db, { logger: silentLogger });
   });
 });

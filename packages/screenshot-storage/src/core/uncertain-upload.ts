@@ -46,7 +46,7 @@ export function createUncertainUploadReclaimer({
     const removal = Promise.resolve()
       .then(() => objectStore.remove(key))
       .catch((reclaimError: unknown) => {
-        safeWarn(logger, `[siteping] ${objectStore.name}: could not reclaim an uncertain upload`, {
+        safeWarn(logger, `[beezping] ${objectStore.name}: could not reclaim an uncertain upload`, {
           key,
           error: reclaimError,
         });
@@ -54,7 +54,7 @@ export function createUncertainUploadReclaimer({
     const hook = Promise.resolve()
       .then(() => onUncertainUpload?.(key))
       .catch((hookError: unknown) => {
-        safeWarn(logger, `[siteping] ${objectStore.name}: onUncertainUpload failed`, { key, error: hookError });
+        safeWarn(logger, `[beezping] ${objectStore.name}: onUncertainUpload failed`, { key, error: hookError });
       })
       .then(() => true);
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -66,7 +66,7 @@ export function createUncertainUploadReclaimer({
     if (!hookSettled) {
       safeWarn(
         logger,
-        `[siteping] ${objectStore.name}: onUncertainUpload has not settled after ${UNCERTAIN_UPLOAD_RECLAIM_TIMEOUT_MS} ms — ` +
+        `[beezping] ${objectStore.name}: onUncertainUpload has not settled after ${UNCERTAIN_UPLOAD_RECLAIM_TIMEOUT_MS} ms — ` +
           "the upload error is reported without waiting for it",
         { key },
       );

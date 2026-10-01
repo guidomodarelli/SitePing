@@ -47,7 +47,7 @@ function dependencyVersion(pkg: PackageJsonSnapshot, name: string): string | und
 function findWidgetUsage(cwd: string): string | null {
   const searchDirs = [join(cwd, "src"), join(cwd, "app"), join(cwd, "pages")];
   const extensions = [".ts", ".tsx", ".js", ".jsx"] as const;
-  const patterns = ["initSiteping", "@beezping/widget"] as const;
+  const patterns = ["initBeezping", "@beezping/widget"] as const;
 
   for (const dir of searchDirs) {
     if (!existsSync(dir)) continue;
@@ -98,7 +98,7 @@ interface SchemaCheckResult {
 }
 
 /**
- * Diff the schema against the Siteping models with the exact reconciliation
+ * Diff the schema against the Beezping models with the exact reconciliation
  * `sync` applies — so "Up to date" here means `sync` would change nothing,
  * attributes and indexes included. (The AST is reconciled in memory only;
  * nothing is written.)
@@ -143,7 +143,7 @@ function pad(label: string, width: number): string {
 
 // ── Command ────────────────────────────────────────────────────────────
 
-/** Options accepted by the `siteping status` subcommand. */
+/** Options accepted by the `beezping status` subcommand. */
 export interface StatusCommandOptions {
   /** Optional explicit path to the host project's `schema.prisma`. */
   schema?: string;
@@ -152,7 +152,7 @@ export interface StatusCommandOptions {
 export function statusCommand(options: StatusCommandOptions): void {
   const cwd = process.cwd();
 
-  p.intro("siteping — Status");
+  p.intro("beezping — Status");
 
   // 1. Prisma schema
   const schemaPath = options.schema ?? findPrismaSchema(cwd);
@@ -208,7 +208,7 @@ export function statusCommand(options: StatusCommandOptions): void {
   if (widgetFile) {
     p.log.success(`${pad("Widget integration", 25)}found in ${relative(cwd, widgetFile)}`);
   } else {
-    p.log.warn(`${pad("Widget integration", 25)}initSiteping not found in source files`);
+    p.log.warn(`${pad("Widget integration", 25)}initBeezping not found in source files`);
   }
 
   // Outro
@@ -220,10 +220,10 @@ export function statusCommand(options: StatusCommandOptions): void {
     !widgetFile;
 
   if (hasError) {
-    p.outro("Some items are missing — run `siteping init` to set up.");
+    p.outro("Some items are missing — run `beezping init` to set up.");
     process.exit(1);
   } else if (hasWarning) {
-    p.outro("Some adjustments needed — run `siteping sync` to update.");
+    p.outro("Some adjustments needed — run `beezping sync` to update.");
   } else {
     p.outro("Everything is set up!");
   }

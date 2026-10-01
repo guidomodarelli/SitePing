@@ -1,5 +1,5 @@
 /**
- * Shared conformance test suite for `SitepingStore` implementations.
+ * Shared conformance test suite for `BeezpingStore` implementations.
  *
  * Adapters import this and run it with their store factory to verify they
  * satisfy the full store contract — no need to write the same 50+ tests
@@ -7,15 +7,15 @@
  *
  * @example
  * ```ts
- * import { testSitepingStore } from '@beezping/core/testing'
+ * import { testBeezpingStore } from '@beezping/core/testing'
  * import { DrizzleStore } from '../src/index.js'
  *
- * testSitepingStore(() => new DrizzleStore(db))
+ * testBeezpingStore(() => new DrizzleStore(db))
  * ```
  */
 
 import { beforeEach, describe, expect, it } from "vitest";
-import type { CommentCreateInput, DiagnosticsSnapshot, FeedbackCreateInput, SitepingStore } from "./types.js";
+import type { BeezpingStore, CommentCreateInput, DiagnosticsSnapshot, FeedbackCreateInput } from "./types.js";
 import { isStoreDuplicate, isStoreLimit, isStoreNotFound, MAX_COMMENTS_PER_FEEDBACK } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -102,7 +102,7 @@ const MINIMAL_ANNOTATION = {
 export interface StoreConformanceOptions {
   /**
    * How `createFeedback` reacts to a duplicate `clientId` — both are valid
-   * per the `SitepingStore` contract:
+   * per the `BeezpingStore` contract:
    * - `"return"` (default): idempotently return the existing record. A
    *   concurrent create that loses the insert race may still throw
    *   `StoreDuplicateError`, which the HTTP handler recovers.
@@ -119,20 +119,20 @@ export interface StoreConformanceOptions {
 }
 
 /**
- * Run the full `SitepingStore` conformance test suite.
+ * Run the full `BeezpingStore` conformance test suite.
  *
  * @param factory — called before each test to create a fresh, empty store instance. May be async.
  * @param options — contract variations, see {@link StoreConformanceOptions}.
  */
-export function testSitepingStore(
-  factory: () => SitepingStore | Promise<SitepingStore>,
+export function testBeezpingStore(
+  factory: () => BeezpingStore | Promise<BeezpingStore>,
   options?: StoreConformanceOptions,
 ): void {
   const duplicateBehavior = options?.duplicateBehavior ?? "return";
   const caseInsensitiveSearch = options?.caseInsensitiveSearch ?? true;
 
-  describe("SitepingStore conformance", () => {
-    let store: SitepingStore;
+  describe("BeezpingStore conformance", () => {
+    let store: BeezpingStore;
 
     beforeEach(async () => {
       store = await factory();

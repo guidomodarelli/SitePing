@@ -1,17 +1,23 @@
 import {
+  type BeezpingConfig,
+  type BeezpingInstance,
+  type BeezpingPublicEventListener,
+  type BeezpingPublicEvents,
   canonicalizeLocale,
   type DiagnosticsSnapshot,
   type FeedbackPayload,
   IDENTITY_FIELD_MAX_LENGTH,
   isValidEmail,
   type PageScope,
-  type SitepingConfig,
-  type SitepingInstance,
-  type SitepingPublicEventListener,
-  type SitepingPublicEvents,
 } from "@beezping/core";
 import { Annotator } from "./annotator.js";
 import { ApiClient, flushRetryQueue, type WidgetClient } from "./api-client.js";
+import {
+  DEFAULT_DEEP_LINK_PARAM,
+  MARKERS_LAYER_ID,
+  WIDGET_IGNORE_ATTRIBUTE,
+  WIDGET_TAG_NAME,
+} from "./constants/branding.js";
 import { DEFAULT_MIN_VIEWPORT_WIDTH, PAGE_SIZE, Z_INDEX_MAX } from "./constants.js";
 import { ConsoleBuffer } from "./diagnostics/console-buffer.js";
 import { NetworkBuffer } from "./diagnostics/network-buffer.js";
@@ -31,7 +37,7 @@ import { Tooltip } from "./tooltip.js";
 import { trackKeyboardInset } from "./viewport.js";
 
 /** Singleton guard — prevents duplicate widgets from overlapping */
-let instance: SitepingInstance | null = null;
+let instance: BeezpingInstance | null = null;
 
 interface NormalisedDiagnostics {
   console: boolean;
@@ -41,7 +47,7 @@ interface NormalisedDiagnostics {
 }
 
 /**
- * Resolve `SitepingConfig.captureDiagnostics` into a normalised shape.
+ * Resolve `BeezpingConfig.captureDiagnostics` into a normalised shape.
  *
  * - `undefined` / `false` → everything off (no monkey-patching).
  * - `true` → console + network on with the defaults (50 / 20).
@@ -50,7 +56,7 @@ interface NormalisedDiagnostics {
  *   still get both channels. The buffers sanitise sizes themselves: capped
  *   at the server limits (50 / 20), NaN / negative → default.
  */
-function normaliseDiagnosticsOptions(value: SitepingConfig["captureDiagnostics"]): NormalisedDiagnostics {
+function normaliseDiagnosticsOptions(value: BeezpingConfig["captureDiagnostics"]): NormalisedDiagnostics {
   if (value === undefined || value === false) {
     return { console: false, network: false, maxConsoleEntries: 50, maxNetworkEntries: 20 };
   }
@@ -65,8 +71,8 @@ function normaliseDiagnosticsOptions(value: SitepingConfig["captureDiagnostics"]
   };
 }
 
-/** Build a no-op SitepingInstance for when the widget is skipped */
-function skippedInstance(): SitepingInstance {
+/** Build a no-op BeezpingInstance for when the widget is skipped */
+function skippedInstance(): BeezpingInstance {
   const noop = () => {};
   return {
     destroy: noop,
@@ -115,29 +121,29 @@ interface NormalisedDeepLink {
 }
 
 /**
- * Resolve `SitepingConfig.deepLink` into a normalised shape.
+ * Resolve `BeezpingConfig.deepLink` into a normalised shape.
  *
  * - `undefined` / `false` → disabled, no URL parsing.
- * - `true` → enabled with default param name `siteping`.
+ * - `true` → enabled with default param name `beezping`.
  * - object → enabled with optional custom param name. A bare empty object
  *   `{}` falls back to the default param so callers never need to repeat it.
  */
-function normaliseDeepLinkOptions(value: SitepingConfig["deepLink"]): NormalisedDeepLink {
-  if (value === undefined || value === false) return { enabled: false, param: "siteping" };
-  if (value === true) return { enabled: true, param: "siteping" };
-  return { enabled: true, param: value.param ?? "siteping" };
+function normaliseDeepLinkOptions(value: BeezpingConfig["deepLink"]): NormalisedDeepLink {
+  if (value === undefined || value === false) return { enabled: false, param: DEFAULT_DEEP_LINK_PARAM };
+  if (value === true) return { enabled: true, param: DEFAULT_DEEP_LINK_PARAM };
+  return { enabled: true, param: value.param ?? DEFAULT_DEEP_LINK_PARAM };
 }
 
 /**
  * Main widget launcher — orchestrates all UI components.
  *
  * Architecture:
- * - Creates a <siteping-widget> custom element in the document
+ * - Creates a <beezping-widget> custom element in the document
  * - Attaches a closed Shadow DOM for CSS isolation
  * - FAB + Panel live inside the Shadow DOM
  * - Overlay, markers, tooltips live outside (appended to document.body)
  */
-export function launch(config: SitepingConfig): SitepingInstance {
+export function launch(config: BeezpingConfig): BeezpingInstance {
   // Guard: no DOM, no widget — SSR frameworks (Next.js, Remix) may run the
   // init on the server. Deliberately NOT bypassed by forceShow: the widget
   // cannot render without a document.
@@ -148,12 +154,12 @@ export function launch(config: SitepingConfig): SitepingInstance {
 
   // Debug helper — only logs when config.debug is true
   const log: (...args: unknown[]) => void = config.debug
-    ? (...args: unknown[]) => console.debug("[siteping]", ...args)
+    ? (...args: unknown[]) => console.debug("[beezping]", ...args)
     : () => {};
 
-  // Guard: prevent duplicate initSiteping() calls
+  // Guard: prevent duplicate initBeezping() calls
   if (instance) {
-    log("initSiteping() called more than once — returning existing instance");
+    log("initBeezping() called more than once — returning existing instance");
     return instance;
   }
 
@@ -163,7 +169,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
   // in Next.js webpack builds.
   if (!config.forceShow && readNodeEnv() === "production") {
     const reason = "production";
-    console.info("[siteping] Widget not loaded: production mode detected. Use forceShow: true to override.");
+    console.info("[beezping] Widget not loaded: production mode detected. Use forceShow: true to override.");
     config.onSkip?.(reason);
     return skippedInstance();
   }
@@ -181,7 +187,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
   if (!config.forceShow && window.innerWidth < minViewportWidth) {
     const reason = "mobile";
     console.info(
-      `[siteping] Widget not loaded: viewport width < ${minViewportWidth}px (minViewportWidth). Use forceShow: true or lower minViewportWidth to override.`,
+      `[beezping] Widget not loaded: viewport width < ${minViewportWidth}px (minViewportWidth). Use forceShow: true or lower minViewportWidth to override.`,
     );
     config.onSkip?.(reason);
     return skippedInstance();
@@ -190,12 +196,12 @@ export function launch(config: SitepingConfig): SitepingInstance {
   // Guard: validate required config fields
   if (!config.store && (!config.endpoint || typeof config.endpoint !== "string")) {
     console.error(
-      "[siteping] Missing 'endpoint' or 'store' in config. Provide an endpoint like '/api/siteping' or a SitepingStore instance.",
+      "[beezping] Missing 'endpoint' or 'store' in config. Provide an endpoint like '/api/beezping' or a BeezpingStore instance.",
     );
     return skippedInstance();
   }
   if (!config.projectName || typeof config.projectName !== "string") {
-    console.error("[siteping] Missing or invalid 'projectName' in config. Expected a non-empty string.");
+    console.error("[beezping] Missing or invalid 'projectName' in config. Expected a non-empty string.");
     return skippedInstance();
   }
 
@@ -249,7 +255,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
 
   const colors = buildThemeColors(config.accentColor, config.theme);
   const bus = new EventBus<WidgetEvents>();
-  const publicBus = new EventBus<SitepingPublicEvents>();
+  const publicBus = new EventBus<BeezpingPublicEvents>();
 
   // Client-side mode (store) vs HTTP mode (endpoint).
   // The earlier guard guarantees one of `store` / `endpoint` is set; we
@@ -259,7 +265,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
     if (config.store) return new StoreClient(config.store, config.projectName);
     const endpoint = config.endpoint;
     if (typeof endpoint !== "string" || endpoint.length === 0) {
-      throw new Error("[siteping] internal invariant: endpoint must be a non-empty string in HTTP mode");
+      throw new Error("[beezping] internal invariant: endpoint must be a non-empty string in HTTP mode");
     }
     return new ApiClient(endpoint, config.projectName, { apiKey: config.apiKey, headers: config.headers });
   })();
@@ -273,7 +279,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
   if (config.onError) bus.on("panel:action-error", config.onError);
   // A failing panel action is a bug in the host's own code, with no widget UI
   // to show it: always log it, even when onError handles it too.
-  bus.on("panel:action-error", (err) => console.error("[siteping] Panel action failed:", err));
+  bus.on("panel:action-error", (err) => console.error("[beezping] Panel action failed:", err));
   if (config.onAnnotationStart) bus.on("annotation:start", config.onAnnotationStart);
   if (config.onAnnotationEnd) bus.on("annotation:end", config.onAnnotationEnd);
 
@@ -284,10 +290,10 @@ export function launch(config: SitepingConfig): SitepingInstance {
   bus.on("feedback:all-deleted", () => own.clear());
 
   // Bridge internal events to the public bus. The mapped-object type forces
-  // one entry per public event — adding a key to SitepingPublicEvents
+  // one entry per public event — adding a key to BeezpingPublicEvents
   // without bridging it here is a compile error, so `instance.on` can never
   // silently miss an event.
-  const publicBridges: { [K in keyof SitepingPublicEvents]: () => void } = {
+  const publicBridges: { [K in keyof BeezpingPublicEvents]: () => void } = {
     "feedback:sent": () => bus.on("feedback:sent", (fb) => publicBus.emit("feedback:sent", fb)),
     "feedback:deleted": () => bus.on("feedback:deleted", (id) => publicBus.emit("feedback:deleted", id)),
     "comment:added": () => bus.on("comment:added", (comment) => publicBus.emit("comment:added", comment)),
@@ -308,7 +314,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
   bus.on("annotation:end", () => log("Annotation ended"));
 
   // Create host element + Shadow DOM
-  const host = document.createElement("siteping-widget");
+  const host = document.createElement(WIDGET_TAG_NAME);
   // `pointer-events:auto`: a <body> child inherits a host modal's
   // `body { pointer-events: none }` (see host-isolation.ts).
   host.style.cssText = `position:fixed;z-index:${Z_INDEX_MAX};pointer-events:auto;`;
@@ -346,7 +352,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
   liveRegion.setAttribute("aria-atomic", "true");
   // Widget chrome (see `isWidgetChrome`): anchor text context must never
   // read "1 feedback markers displayed" off a body-level element's sibling.
-  liveRegion.setAttribute("data-siteping-ignore", "true");
+  liveRegion.setAttribute(WIDGET_IGNORE_ATTRIBUTE, "true");
   liveRegion.style.cssText =
     "position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;";
   // A host modal's `aria-hidden` / `inert` would silence the announcements.
@@ -474,7 +480,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
       if (pointerType === undefined && e.button !== 2) return;
       // Modifier-key escape hatch: Shift/Ctrl/Alt/Meta → native menu.
       if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
-      // Exclude SitePing's own UI — right-clicking the FAB, panel, markers,
+      // Exclude Beezping's own UI — right-clicking the FAB, panel, markers,
       // popup, or overlay must not hijack the event. composedPath() reaches
       // into the closed shadow root so all retargeted events are caught.
       const path = e.composedPath();
@@ -482,7 +488,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
         path.some(
           (n) =>
             n === host ||
-            (n instanceof Element && (n.hasAttribute("data-siteping-ignore") || n.id === "siteping-markers")),
+            (n instanceof Element && (n.hasAttribute(WIDGET_IGNORE_ATTRIBUTE) || n.id === MARKERS_LAYER_ID)),
         )
       )
         return;
@@ -739,9 +745,9 @@ export function launch(config: SitepingConfig): SitepingInstance {
     };
   }
 
-  const self: SitepingInstance = {
+  const self: BeezpingInstance = {
     destroy: () => {
-      // Idempotent: hosts can hold stale handles (two `useSiteping` consumers
+      // Idempotent: hosts can hold stale handles (two `useBeezping` consumers
       // share the singleton), and a repeat call must not tear anything down
       // again — least of all a newer widget's singleton slot below.
       if (destroyed) return;
@@ -799,9 +805,9 @@ export function launch(config: SitepingConfig): SitepingInstance {
     refresh: () => {
       void doRefresh().catch(() => {});
     },
-    on: <K extends keyof SitepingPublicEvents>(event: K, listener: SitepingPublicEventListener<K>) =>
+    on: <K extends keyof BeezpingPublicEvents>(event: K, listener: BeezpingPublicEventListener<K>) =>
       publicBus.on(event, listener),
-    off: <K extends keyof SitepingPublicEvents>(event: K, listener: SitepingPublicEventListener<K>) => {
+    off: <K extends keyof BeezpingPublicEvents>(event: K, listener: BeezpingPublicEventListener<K>) => {
       publicBus.off(event, listener);
     },
   };

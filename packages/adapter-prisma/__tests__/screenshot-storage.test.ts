@@ -9,7 +9,7 @@ const SAMPLE_DATA_URL = "data:image/jpeg;base64,/9j/4AAQ";
 
 function mockPrisma() {
   return {
-    sitepingFeedback: {
+    beezpingFeedback: {
       // create echoes back the data so we can assert what was written.
       create: vi.fn().mockImplementation((args: { data: Record<string, unknown> }) => ({
         id: "fb-1",
@@ -59,7 +59,7 @@ describe("PrismaStore — screenshot storage", () => {
     it("persists null when no data URL is sent", async () => {
       const store = new PrismaStore(prisma);
       await store.createFeedback(createInput());
-      const created = prisma.sitepingFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: unknown } };
+      const created = prisma.beezpingFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: unknown } };
       expect(created.data.screenshotUrl).toBeNull();
     });
 
@@ -68,7 +68,7 @@ describe("PrismaStore — screenshot storage", () => {
       await store.createFeedback(createInput({ screenshotDataUrl: SAMPLE_DATA_URL, clientId: "c1" }));
       await store.createFeedback(createInput({ screenshotDataUrl: SAMPLE_DATA_URL, clientId: "c2" }));
 
-      const calls = prisma.sitepingFeedback.create.mock.calls as Array<[{ data: { screenshotUrl: string } }]>;
+      const calls = prisma.beezpingFeedback.create.mock.calls as Array<[{ data: { screenshotUrl: string } }]>;
       expect(calls[0]?.[0].data.screenshotUrl).toBe(SAMPLE_DATA_URL);
       expect(calls[1]?.[0].data.screenshotUrl).toBe(SAMPLE_DATA_URL);
 
@@ -93,7 +93,7 @@ describe("PrismaStore — screenshot storage", () => {
         feedbackId: "c1",
         mimeType: "image/jpeg",
       });
-      const created = prisma.sitepingFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: string } };
+      const created = prisma.beezpingFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: string } };
       expect(created.data.screenshotUrl).toBe("https://cdn.example.com/fb-c1.jpg");
     });
 
@@ -127,7 +127,7 @@ describe("PrismaStore — screenshot storage", () => {
       await store.createFeedback(createInput());
 
       expect(storage.upload).not.toHaveBeenCalled();
-      const created = prisma.sitepingFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: unknown } };
+      const created = prisma.beezpingFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: unknown } };
       expect(created.data.screenshotUrl).toBeNull();
     });
 
@@ -139,7 +139,7 @@ describe("PrismaStore — screenshot storage", () => {
 
       const result = await store.createFeedback(createInput({ screenshotDataUrl: SAMPLE_DATA_URL, clientId: "c1" }));
 
-      const created = prisma.sitepingFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: string | null } };
+      const created = prisma.beezpingFeedback.create.mock.calls[0]?.[0] as { data: { screenshotUrl: string | null } };
       // The feedback message is preserved; only the screenshot is dropped.
       // An inline fallback would silently grow Postgres during a storage
       // outage — operators discover it only when DB-size alarms fire.
@@ -178,7 +178,7 @@ describe("PrismaStore — screenshot cleanup", () => {
 
   it("deleteFeedback deletes the stored screenshot of the deleted row", async () => {
     const storage = storageWithDelete();
-    prisma.sitepingFeedback.delete.mockResolvedValue({ id: "fb-1", screenshotUrl: REMOTE_URL });
+    prisma.beezpingFeedback.delete.mockResolvedValue({ id: "fb-1", screenshotUrl: REMOTE_URL });
 
     await new PrismaStore(prisma, { screenshotStorage: storage }).deleteFeedback("fb-1");
 
@@ -189,9 +189,9 @@ describe("PrismaStore — screenshot cleanup", () => {
     const storage = storageWithDelete();
     const store = new PrismaStore(prisma, { screenshotStorage: storage });
 
-    prisma.sitepingFeedback.delete.mockResolvedValueOnce({ id: "fb-1", screenshotUrl: SAMPLE_DATA_URL });
+    prisma.beezpingFeedback.delete.mockResolvedValueOnce({ id: "fb-1", screenshotUrl: SAMPLE_DATA_URL });
     await store.deleteFeedback("fb-1");
-    prisma.sitepingFeedback.delete.mockResolvedValueOnce({ id: "fb-2", screenshotUrl: null });
+    prisma.beezpingFeedback.delete.mockResolvedValueOnce({ id: "fb-2", screenshotUrl: null });
     await store.deleteFeedback("fb-2");
 
     expect(storage.delete).not.toHaveBeenCalled();
@@ -200,12 +200,12 @@ describe("PrismaStore — screenshot cleanup", () => {
   it("deleteAllFeedbacks deletes every stored screenshot of the project, rows first", async () => {
     const storage = storageWithDelete();
     const calls: string[] = [];
-    prisma.sitepingFeedback.findMany.mockResolvedValue([
+    prisma.beezpingFeedback.findMany.mockResolvedValue([
       { screenshotUrl: "https://cdn.example.com/a.jpg" },
       { screenshotUrl: "https://cdn.example.com/b.jpg" },
       { screenshotUrl: SAMPLE_DATA_URL },
     ]);
-    prisma.sitepingFeedback.deleteMany.mockImplementation(async () => {
+    prisma.beezpingFeedback.deleteMany.mockImplementation(async () => {
       calls.push("deleteMany");
       return { count: 3 };
     });
@@ -215,7 +215,7 @@ describe("PrismaStore — screenshot cleanup", () => {
 
     await new PrismaStore(prisma, { screenshotStorage: storage }).deleteAllFeedbacks("p");
 
-    expect(prisma.sitepingFeedback.findMany).toHaveBeenCalledWith(
+    expect(prisma.beezpingFeedback.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { projectName: "p", screenshotUrl: { not: null } } }),
     );
     expect(calls[0]).toBe("deleteMany");
@@ -225,7 +225,7 @@ describe("PrismaStore — screenshot cleanup", () => {
   it("deleteAllFeedbacks keeps at most the concurrency limit of screenshot deletes in flight", async () => {
     const storage = storageWithDelete();
     const urls = Array.from({ length: 50 }, (_, index) => `https://cdn.example.com/${index}.jpg`);
-    prisma.sitepingFeedback.findMany.mockResolvedValue(urls.map((screenshotUrl) => ({ screenshotUrl })));
+    prisma.beezpingFeedback.findMany.mockResolvedValue(urls.map((screenshotUrl) => ({ screenshotUrl })));
     let inFlight = 0;
     let peakInFlight = 0;
     const deleted: string[] = [];
@@ -247,14 +247,14 @@ describe("PrismaStore — screenshot cleanup", () => {
   it("deleteAllFeedbacks does not query screenshots when the storage has no delete hook", async () => {
     const storage: ScreenshotStorage = { upload: vi.fn() };
     await new PrismaStore(prisma, { screenshotStorage: storage }).deleteAllFeedbacks("p");
-    expect(prisma.sitepingFeedback.findMany).not.toHaveBeenCalled();
-    expect(prisma.sitepingFeedback.deleteMany).toHaveBeenCalledOnce();
+    expect(prisma.beezpingFeedback.findMany).not.toHaveBeenCalled();
+    expect(prisma.beezpingFeedback.deleteMany).toHaveBeenCalledOnce();
   });
 
   it("a failing delete hook is logged and never fails the deletion", async () => {
     const storage = storageWithDelete();
     storage.delete.mockRejectedValue(new Error("bucket gone"));
-    prisma.sitepingFeedback.delete.mockResolvedValue({ id: "fb-1", screenshotUrl: REMOTE_URL });
+    prisma.beezpingFeedback.delete.mockResolvedValue({ id: "fb-1", screenshotUrl: REMOTE_URL });
 
     await expect(
       new PrismaStore(prisma, { screenshotStorage: storage }).deleteFeedback("fb-1"),
@@ -265,7 +265,7 @@ describe("PrismaStore — screenshot cleanup", () => {
 
   it("discards the upload of a replayed clientId (the stored row keeps its own screenshot)", async () => {
     const storage = storageWithDelete();
-    prisma.sitepingFeedback.create.mockRejectedValue(Object.assign(new Error("dup"), { code: "P2002" }));
+    prisma.beezpingFeedback.create.mockRejectedValue(Object.assign(new Error("dup"), { code: "P2002" }));
 
     await expect(
       new PrismaStore(prisma, { screenshotStorage: storage }).createFeedback(
@@ -338,7 +338,7 @@ describe("PrismaStore — upload cleanup after a failed insert", () => {
     const prisma = fakePrisma();
     const storage = deterministicStorage();
     const outage = Object.assign(new Error("Can't reach database server"), { code: "P1001" });
-    vi.spyOn(prisma.sitepingFeedback, "create").mockRejectedValueOnce(outage);
+    vi.spyOn(prisma.beezpingFeedback, "create").mockRejectedValueOnce(outage);
 
     await expect(new PrismaStore(prisma, { screenshotStorage: storage }).createFeedback(input())).rejects.toBe(outage);
 
@@ -350,7 +350,7 @@ describe("PrismaStore — upload cleanup after a failed insert", () => {
     const storage = deterministicStorage();
     const store = new PrismaStore(prisma, { screenshotStorage: storage });
     await store.createFeedback(input());
-    vi.spyOn(prisma.sitepingFeedback, "findUnique").mockRejectedValueOnce(new Error("connection reset"));
+    vi.spyOn(prisma.beezpingFeedback, "findUnique").mockRejectedValueOnce(new Error("connection reset"));
 
     await expect(store.createFeedback(input())).rejects.toThrow(StoreDuplicateError);
 
@@ -367,7 +367,7 @@ describe("PrismaStore — with @beezping/screenshot-storage", () => {
   const PNG_DATA_URL = "data:image/png;base64,iVBORw0KGgo=";
 
   function open() {
-    const objectStore = createMemoryObjectStore({ publicBaseUrl: "https://app.example.com/api/siteping/screenshots" });
+    const objectStore = createMemoryObjectStore({ publicBaseUrl: "https://app.example.com/api/beezping/screenshots" });
     const screenshotStorage = createScreenshotStorage(objectStore, { logger: { warn: vi.fn() } });
     return { objectStore, store: new PrismaStore(fakePrisma(), { screenshotStorage }) };
   }
@@ -378,7 +378,7 @@ describe("PrismaStore — with @beezping/screenshot-storage", () => {
     const record = await store.createFeedback(createInput({ screenshotDataUrl: PNG_DATA_URL, clientId: "client-1" }));
     const key = objectStore.keyFromUrl(record.screenshotUrl ?? "");
 
-    expect(key).toMatch(/^siteping-[a-f0-9]{32}\.png$/);
+    expect(key).toMatch(/^beezping-[a-f0-9]{32}\.png$/);
     expect(objectStore.keys()).toEqual([key]);
 
     await store.deleteFeedback(record.id);

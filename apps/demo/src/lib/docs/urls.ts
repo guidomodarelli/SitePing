@@ -1,7 +1,8 @@
+import { SITE_URL } from "../../config/site";
 import { i18n } from "./i18n";
 
 /** Canonical origin of the public site — every absolute docs URL derives from it. */
-export const SITE_URL = "https://siteping.dev";
+export { SITE_URL } from "../../config/site";
 
 /**
  * Strip the locale prefix from a page URL.

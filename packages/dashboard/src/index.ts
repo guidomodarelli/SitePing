@@ -1,20 +1,22 @@
 // Re-export commonly needed core types so consumers don't have to depend on @beezping/core directly.
 export type {
+  BeezpingCapabilities,
+  BeezpingStore,
   CommentCreateInput,
   CommentRecord,
   FeedbackPermissions,
   FeedbackRecord,
   FeedbackStatus,
   FeedbackType,
-  SitepingCapabilities,
-  SitepingStore,
 } from "@beezping/core";
 export { FEEDBACK_STATUSES, FEEDBACK_TYPES, isClosedStatus } from "@beezping/core";
-export { SitepingInbox } from "./components/inbox.js";
+export { BeezpingInbox } from "./components/inbox.js";
 export { registerLocale } from "./i18n/index.js";
 export { createEndpointSource, createStoreSource } from "./source.js";
 export type { InboxTheme, ResolvedTheme } from "./theme.js";
 export type {
+  BeezpingInboxPresentationProps,
+  BeezpingInboxProps,
   EndpointSourceOptions,
   InboxCustomSourceOptions,
   InboxEndpointOptions,
@@ -26,8 +28,6 @@ export type {
   InboxStatusFilter,
   InboxStoreOptions,
   InboxTypeFilter,
-  SitepingInboxPresentationProps,
-  SitepingInboxProps,
-  UseSitepingInboxOptions,
+  UseBeezpingInboxOptions,
 } from "./types.js";
-export { useSitepingInbox } from "./use-inbox.js";
+export { useBeezpingInbox } from "./use-inbox.js";

@@ -8,10 +8,10 @@ import { admin, bearer, jwt } from "better-auth/plugins";
 import { createLocalJWKSet, type JSONWebKeySet, type JWTPayload, jwtVerify } from "jose";
 import { describe, expect, it, vi } from "vitest";
 import {
-  createSitepingHandler,
-  type SitepingAccessControl,
-  type SitepingHandler,
-  type SitepingLogger,
+  type BeezpingAccessControl,
+  type BeezpingHandler,
+  type BeezpingLogger,
+  createBeezpingHandler,
 } from "../src/index.js";
 import { validPayloadNoAnnotations } from "./fixtures.js";
 
@@ -57,7 +57,7 @@ interface Reviewer {
 
 const VISITOR: Reviewer = { id: "", name: "", email: "", isAdmin: false };
 
-function betterAuthAccess(auth: Auth): SitepingAccessControl<Reviewer> {
+function betterAuthAccess(auth: Auth): BeezpingAccessControl<Reviewer> {
   return {
     async authenticate(request) {
       const session = await auth.api.getSession({
@@ -81,7 +81,7 @@ function betterAuthAccess(auth: Auth): SitepingAccessControl<Reviewer> {
 
 // ---- fixtures ---------------------------------------------------------------
 
-const ENDPOINT = `${BASE_URL}/api/siteping`;
+const ENDPOINT = `${BASE_URL}/api/beezping`;
 const PROJECT = validPayloadNoAnnotations.projectName;
 
 const ADMIN = { name: "Ada Lovelace", email: "ada@acme.example", role: "admin", emailVerified: true } as const;
@@ -130,9 +130,9 @@ async function signIn(auth: Auth, { name, email, role, emailVerified }: Account)
 
 function handlerFor(
   auth: Auth,
-  { logger = { error: vi.fn() }, allowedOrigins }: { logger?: SitepingLogger; allowedOrigins?: string[] } = {},
-): SitepingHandler {
-  return createSitepingHandler({
+  { logger = { error: vi.fn() }, allowedOrigins }: { logger?: BeezpingLogger; allowedOrigins?: string[] } = {},
+): BeezpingHandler {
+  return createBeezpingHandler({
     store: new MemoryStore(),
     logger,
     allowedOrigins,
@@ -160,7 +160,7 @@ function send(method: string, body: unknown, headers: Record<string, string> = {
 
 let clientIds = 0;
 
-async function submit(handler: SitepingHandler, headers: Record<string, string> = {}): Promise<FeedbackResponse> {
+async function submit(handler: BeezpingHandler, headers: Record<string, string> = {}): Promise<FeedbackResponse> {
   clientIds += 1;
   const response = await handler.POST(
     send("POST", { ...validPayloadNoAnnotations, clientId: `better-auth-${clientIds}` }, headers),
@@ -171,7 +171,7 @@ async function submit(handler: SitepingHandler, headers: Record<string, string> 
 
 /** Replies to `feedbackId` asking for the `team` role, as the inbox does. */
 async function reply(
-  handler: SitepingHandler,
+  handler: BeezpingHandler,
   feedbackId: string,
   headers: Record<string, string> = {},
 ): Promise<CommentResponse> {
@@ -190,20 +190,20 @@ async function reply(
   return (await response.json()) as CommentResponse;
 }
 
-function list(handler: SitepingHandler, headers: Record<string, string> = {}): Promise<Response> {
+function list(handler: BeezpingHandler, headers: Record<string, string> = {}): Promise<Response> {
   return handler.GET(new Request(`${ENDPOINT}?projectName=${PROJECT}`, { headers }));
 }
 
-async function page(handler: SitepingHandler, headers: Record<string, string> = {}): Promise<FeedbackResponseList> {
+async function page(handler: BeezpingHandler, headers: Record<string, string> = {}): Promise<FeedbackResponseList> {
   const response = await list(handler, headers);
   expect(response.status).toBe(200);
   return (await response.json()) as FeedbackResponseList;
 }
 
-const resolve = (handler: SitepingHandler, id: string, headers: Record<string, string> = {}) =>
+const resolve = (handler: BeezpingHandler, id: string, headers: Record<string, string> = {}) =>
   handler.PATCH(send("PATCH", { id, projectName: PROJECT, status: "resolved" }, headers));
 
-const remove = (handler: SitepingHandler, id: string, headers: Record<string, string> = {}) =>
+const remove = (handler: BeezpingHandler, id: string, headers: Record<string, string> = {}) =>
   handler.DELETE(send("DELETE", { id, projectName: PROJECT }, headers));
 
 // ---- the recipe, proven -----------------------------------------------------
@@ -440,7 +440,7 @@ describe("Better Auth recipe", () => {
     });
 
     expect((await list(handler, cookie)).status).toBe(500);
-    expect(logger.error).toHaveBeenCalledWith("[siteping] Failed to authenticate request", expect.anything());
+    expect(logger.error).toHaveBeenCalledWith("[beezping] Failed to authenticate request", expect.anything());
     expect((await list(handler)).status).toBe(200);
   });
 
@@ -513,7 +513,7 @@ describe("Better Auth recipe — authors delete their own feedback", () => {
       return ids;
     }
 
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: {
         ...betterAuthAccess(auth),

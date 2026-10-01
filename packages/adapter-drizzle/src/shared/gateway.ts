@@ -31,10 +31,10 @@ export interface FeedbackFilter {
 /**
  * The dialect-specific SQL a Drizzle-backed store needs. Each dialect entry
  * (`./pg`, `./libsql`) implements it with its own tables and query builder;
- * `DrizzleSitepingStore` owns every contract semantic on top of it.
+ * `DrizzleBeezpingStore` owns every contract semantic on top of it.
  * @internal
  */
-export interface SitepingSqlGateway {
+export interface BeezpingSqlGateway {
   /**
    * Insert the feedback and its annotations atomically — without an
    * interactive `db.transaction` (one statement or one batch), so no driver

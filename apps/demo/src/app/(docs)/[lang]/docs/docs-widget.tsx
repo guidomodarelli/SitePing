@@ -24,10 +24,10 @@ export function DocsWidget({ locale }: { locale: string }) {
     let instance: { destroy: () => void } | null = null;
 
     Promise.all([import("@beezping/widget"), import("@beezping/adapter-localstorage")]).then(
-      ([{ initSiteping }, { LocalStorageStore }]) => {
+      ([{ initBeezping }, { LocalStorageStore }]) => {
         if (destroyed) return;
-        instance = initSiteping({
-          store: new LocalStorageStore({ key: "siteping_docs_feedbacks" }),
+        instance = initBeezping({
+          store: new LocalStorageStore({ key: "beezping_docs_feedbacks" }),
           projectName: "docs",
           forceShow: true,
           accentColor: "#173CFF",

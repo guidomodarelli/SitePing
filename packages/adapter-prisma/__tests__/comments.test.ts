@@ -1,21 +1,21 @@
 import type { FeedbackResponse, FeedbackResponseList } from "@beezping/core";
 import { describe, expect, it, vi } from "vitest";
-import { createSitepingHandler, PrismaStore } from "../src/index.js";
+import { createBeezpingHandler, PrismaStore } from "../src/index.js";
 import { fakePrisma } from "./fake-prisma.js";
 import { validPayloadNoAnnotations } from "./fixtures.js";
 
 // The comment contract itself runs in the conformance suite (prisma-store.test.ts);
 // these lock what is Prisma-specific: a client generated before the
-// `SitepingComment` model existed.
+// `BeezpingComment` model existed.
 
-const ENDPOINT = "http://localhost/api/siteping";
+const ENDPOINT = "http://localhost/api/beezping";
 
 function post(body: unknown): Request {
   return new Request(ENDPOINT, { method: "POST", body: JSON.stringify(body) });
 }
 
 describe("PrismaStore — comment capability", () => {
-  it("offers addComment and deleteComment only when the client has the SitepingComment delegate", () => {
+  it("offers addComment and deleteComment only when the client has the BeezpingComment delegate", () => {
     const current = new PrismaStore(fakePrisma());
     const beforeThreads = new PrismaStore(fakePrisma({ comments: false }));
 
@@ -37,7 +37,7 @@ describe("PrismaStore — comment capability", () => {
       expect(store.addComment).toBe(addComment);
       expect(store.deleteComment).toBe(deleteComment);
     }
-    const handler = createSitepingHandler({ store: new ThreadedStore(fakePrisma({ comments: false })) });
+    const handler = createBeezpingHandler({ store: new ThreadedStore(fakePrisma({ comments: false })) });
     const listed = (await (await handler.GET(new Request(`${ENDPOINT}?projectName=p`))).json()) as FeedbackResponseList;
     expect(listed.capabilities).toEqual({ comments: true, deleteComments: true });
   });
@@ -45,8 +45,8 @@ describe("PrismaStore — comment capability", () => {
   it("reads the thread only from a client that has the model", async () => {
     const current = fakePrisma();
     const beforeThreads = fakePrisma({ comments: false });
-    const currentRead = vi.spyOn(current.sitepingFeedback, "findMany");
-    const legacyRead = vi.spyOn(beforeThreads.sitepingFeedback, "findMany");
+    const currentRead = vi.spyOn(current.beezpingFeedback, "findMany");
+    const legacyRead = vi.spyOn(beforeThreads.beezpingFeedback, "findMany");
 
     await new PrismaStore(current).getFeedbacks({ projectName: "p" });
     await new PrismaStore(beforeThreads).getFeedbacks({ projectName: "p" });
@@ -60,9 +60,9 @@ describe("PrismaStore — comment capability", () => {
   });
 });
 
-describe("createSitepingHandler — a schema synced before threads", () => {
+describe("createBeezpingHandler — a schema synced before threads", () => {
   it("keeps serving feedbacks with empty threads and answers comment posts with 501", async () => {
-    const handler = createSitepingHandler({ prisma: fakePrisma({ comments: false }) });
+    const handler = createBeezpingHandler({ prisma: fakePrisma({ comments: false }) });
     const created = await handler.POST(post(validPayloadNoAnnotations));
     const feedback = (await created.json()) as FeedbackResponse;
 

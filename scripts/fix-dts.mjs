@@ -8,15 +8,15 @@
 // attw `internal-resolution-error` class tracked in #220. So:
 //
 //  1. copy EVERY core declaration file (except test-only testing.d.ts),
-//     renaming index.d.ts -> siteping-core.d.ts, so relative imports resolve;
+//     renaming index.d.ts -> beezping-core.d.ts, so relative imports resolve;
 //  2. emit a .d.cts twin of each copy (specifiers rewritten .js -> .cjs) so
 //     the `require` condition resolves CJS-interpreted types end to end;
 //  3. rewrite '@beezping/core' imports in the consumer's own declarations to
-//     './siteping-core.js' (in .d.ts) or './siteping-core.cjs' (in .d.cts).
+//     './beezping-core.js' (in .d.ts) or './beezping-core.cjs' (in .d.cts).
 //
 // Cross-platform replacement for fix-dts.sh (no sed/cp).
 
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -42,7 +42,7 @@ if (!existsSync(coreDist)) {
 
 // Relative specifiers in declaration files are always quoted import/export
 // paths — a global quoted-specifier rewrite is safe there.
-const toCjsSpecifiers = (content) => content.replace(/(["'])\.\/([^"']+)\.js\1/g, "$1./$2.cjs$1");
+const toCjsSpecifiers = (content) => content.replace(/(["'])(\.\.?\/[^"']+)\.js\1/g, "$1$2.cjs$1");
 
 // The consumer's declarations decide whether the testing subpath is needed
 // (only @beezping/adapter-kit re-exports it today) — scan before copying so
@@ -53,12 +53,15 @@ const needsTesting = ownDts.some((f) => readFileSync(join(targetDir, f), "utf8")
 // 1 + 2. Copy core declarations (and their .d.cts twins). testing.d.ts is
 // copied only when referenced — its relative './types.js' imports resolve
 // against the copies made here.
-const coreFiles = readdirSync(coreDist).filter((f) => f.endsWith(".d.ts") && (f !== "testing.d.ts" || needsTesting));
+const coreFiles = readdirSync(coreDist, { recursive: true }).filter(
+  (file) => file.endsWith(".d.ts") && (file !== "testing.d.ts" || needsTesting),
+);
 
 for (const file of coreFiles) {
   const content = readFileSync(join(coreDist, file), "utf8");
   const base =
-    file === "index.d.ts" ? "siteping-core" : file === "testing.d.ts" ? "siteping-core-testing" : file.slice(0, -5);
+    file === "index.d.ts" ? "beezping-core" : file === "testing.d.ts" ? "beezping-core-testing" : file.slice(0, -5);
+  mkdirSync(dirname(join(targetDir, `${base}.d.ts`)), { recursive: true });
   writeFileSync(join(targetDir, `${base}.d.ts`), content, "utf8");
   writeFileSync(join(targetDir, `${base}.d.cts`), toCjsSpecifiers(content), "utf8");
   console.log(`  Copied: ${file} -> ${base}.d.ts + ${base}.d.cts`);
@@ -75,8 +78,8 @@ for (const file of dtsFiles) {
   let content = readFileSync(filePath, "utf8");
   const original = content;
   const cjs = file.endsWith(".d.cts");
-  const replacement = cjs ? "./siteping-core.cjs" : "./siteping-core.js";
-  const testingReplacement = cjs ? "./siteping-core-testing.cjs" : "./siteping-core-testing.js";
+  const replacement = cjs ? "./beezping-core.cjs" : "./beezping-core.js";
+  const testingReplacement = cjs ? "./beezping-core-testing.cjs" : "./beezping-core-testing.js";
 
   content = content.replaceAll("'@beezping/core/testing'", `'${testingReplacement}'`);
   content = content.replaceAll('"@beezping/core/testing"', `"${testingReplacement}"`);

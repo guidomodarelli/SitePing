@@ -3,9 +3,9 @@ import { Suspense } from "react";
 import { DemoInbox, DemoSiteLink } from "./demo-inbox";
 
 export const metadata: Metadata = {
-  title: "Feedback inbox — SitePing demo",
+  title: "Feedback inbox — Beezping demo",
   description:
-    "The freelancer side of SitePing: a Linear-style triage inbox with annotated screenshots, keyboard shortcuts, and deep links back to the page.",
+    "The freelancer side of Beezping: a Linear-style triage inbox with annotated screenshots, keyboard shortcuts, and deep links back to the page.",
 };
 
 export default function InboxPage() {

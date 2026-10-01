@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { SitepingPanelAction } from "@beezping/core";
+import type { BeezpingPanelAction } from "@beezping/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { normalizePanelActions, parseActionIcon, safeHref } from "../../src/panel-actions.js";
 
@@ -114,7 +114,7 @@ describe("normalizePanelActions", () => {
 
   it("keeps valid actions in order and skips invalid ones with a warning each", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const valid: SitepingPanelAction = { id: "ticket", label: "Create ticket", onAction };
+    const valid: BeezpingPanelAction = { id: "ticket", label: "Create ticket", onAction };
     const items = normalizePanelActions([
       valid,
       null as never,
@@ -131,13 +131,13 @@ describe("normalizePanelActions", () => {
     expect(items.map((i) => i.action.id)).toEqual(["ticket", "agent", "tracker"]);
     expect(items[0]?.action).toBe(valid);
     expect(warn.mock.calls.map(([message]) => message)).toEqual([
-      "[siteping] panelActions[1] ignored: it needs a non-empty string `id` and `label`.",
-      "[siteping] panelActions[2] ignored: it needs a non-empty string `id` and `label`.",
-      "[siteping] panelActions[3] ignored: it needs a non-empty string `id` and `label`.",
-      '[siteping] panelActions[4] ("no-handler") ignored: it needs either an `onAction` function or an `href`, not both.',
-      '[siteping] panelActions[5] ("both") ignored: it needs either an `onAction` function or an `href`, not both.',
-      '[siteping] panelActions[6] ("js") ignored: `href` must be an http(s) or mailto URL.',
-      '[siteping] panelActions[7] ignored: duplicate id "ticket".',
+      "[beezping] panelActions[1] ignored: it needs a non-empty string `id` and `label`.",
+      "[beezping] panelActions[2] ignored: it needs a non-empty string `id` and `label`.",
+      "[beezping] panelActions[3] ignored: it needs a non-empty string `id` and `label`.",
+      '[beezping] panelActions[4] ("no-handler") ignored: it needs either an `onAction` function or an `href`, not both.',
+      '[beezping] panelActions[5] ("both") ignored: it needs either an `onAction` function or an `href`, not both.',
+      '[beezping] panelActions[6] ("js") ignored: `href` must be an http(s) or mailto URL.',
+      '[beezping] panelActions[7] ignored: duplicate id "ticket".',
     ]);
   });
 
@@ -152,7 +152,7 @@ describe("normalizePanelActions", () => {
     expect(badIcon?.action.id).toBe("b");
     expect(badIcon?.icon).toBeNull();
     expect(warn).toHaveBeenCalledExactlyOnceWith(
-      '[siteping] panelActions[1] ("b"): `icon` is not SVG markup — showing the label only.',
+      '[beezping] panelActions[1] ("b"): `icon` is not SVG markup — showing the label only.',
     );
   });
 });

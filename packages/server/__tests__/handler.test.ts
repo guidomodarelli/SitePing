@@ -7,10 +7,10 @@ import {
 } from "@beezping/core";
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_MAX_BODY_BYTES, MAX_VALIDATION_ISSUES } from "../src/constants.js";
-import { createSitepingHandler, type SitepingLogger, type SitepingStore } from "../src/index.js";
+import { type BeezpingLogger, type BeezpingStore, createBeezpingHandler } from "../src/index.js";
 import { validAnnotation, validPayloadNoAnnotations } from "./fixtures.js";
 
-const ENDPOINT = "http://localhost/api/siteping";
+const ENDPOINT = "http://localhost/api/beezping";
 const API_KEY = "a-secret-key";
 
 function request(method: string, body?: unknown, headers: Record<string, string> = {}): Request {
@@ -21,11 +21,11 @@ function listRequest(headers: Record<string, string> = {}): Request {
   return new Request(`${ENDPOINT}?projectName=${validPayloadNoAnnotations.projectName}`, { headers });
 }
 
-const silentLogger = () => ({ error: vi.fn<SitepingLogger["error"]>() });
+const silentLogger = () => ({ error: vi.fn<BeezpingLogger["error"]>() });
 
-describe("createSitepingHandler — any store", () => {
+describe("createBeezpingHandler — any store", () => {
   it("serves the whole feedback lifecycle over a MemoryStore", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), apiKey: API_KEY });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), apiKey: API_KEY });
     const auth = { Authorization: `Bearer ${API_KEY}` };
 
     const created = await handler.POST(request("POST", validPayloadNoAnnotations));
@@ -50,7 +50,7 @@ describe("createSitepingHandler — any store", () => {
 
   it("stores every optional field a submission carries, and serves the page filters and pages", async () => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store });
+    const handler = createBeezpingHandler({ store });
     const now = "2026-09-29T10:00:00.000Z";
     const extras = {
       screenshotDataUrl: "data:image/jpeg;base64,/9j/4AAQ",
@@ -87,13 +87,13 @@ describe("createSitepingHandler — any store", () => {
   });
 
   it("refuses to start without a store", () => {
-    expect(() => createSitepingHandler({} as { store: SitepingStore })).toThrow(/requires a `store`/);
+    expect(() => createBeezpingHandler({} as { store: BeezpingStore })).toThrow(/requires a `store`/);
   });
 });
 
-describe("createSitepingHandler — apiKey", () => {
+describe("createBeezpingHandler — apiKey", () => {
   it("rejects a wrong key of the same byte length as the real one", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), apiKey: API_KEY });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), apiKey: API_KEY });
     const sameLengthKey = `${API_KEY.slice(0, -1)}X`;
 
     const response = await handler.GET(listRequest({ Authorization: `Bearer ${sameLengthKey}` }));
@@ -113,7 +113,7 @@ describe("createSitepingHandler — apiKey", () => {
     `Bearer ${"x".repeat(API_KEY.length - 1)}${API_KEY.slice(-1)}`,
   ])("refuses Authorization %j, reading nothing and deleting nothing", async (authorization) => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store, apiKey: API_KEY });
+    const handler = createBeezpingHandler({ store, apiKey: API_KEY });
     await handler.POST(request("POST", validPayloadNoAnnotations));
 
     const list = await handler.GET(listRequest({ Authorization: authorization }));
@@ -131,7 +131,7 @@ describe("createSitepingHandler — apiKey", () => {
 
   it("vouches for no Bearer at all when no apiKey is set, `Bearer undefined` included", async () => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store });
+    const handler = createBeezpingHandler({ store });
     const bearer = { Authorization: "Bearer undefined" };
     const { id } = (await (await handler.POST(request("POST", validPayloadNoAnnotations))).json()) as FeedbackRecord;
 
@@ -159,8 +159,8 @@ describe("createSitepingHandler — apiKey", () => {
   it("refuses to start in production without an apiKey, naming the ways out", () => {
     vi.stubEnv("NODE_ENV", "production");
     try {
-      expect(() => createSitepingHandler({ store: new MemoryStore() })).toThrow(
-        /createSitepingHandler: apiKey is required in production/,
+      expect(() => createBeezpingHandler({ store: new MemoryStore() })).toThrow(
+        /createBeezpingHandler: apiKey is required in production/,
       );
     } finally {
       vi.unstubAllEnvs();
@@ -168,7 +168,7 @@ describe("createSitepingHandler — apiKey", () => {
   });
 });
 
-describe("createSitepingHandler — validation errors", () => {
+describe("createBeezpingHandler — validation errors", () => {
   const many = (length: number) => Array.from({ length }, () => ({}));
 
   it.each<[string, Record<string, unknown>]>([
@@ -176,7 +176,7 @@ describe("createSitepingHandler — validation errors", () => {
     ["diagnostics.console", { diagnostics: { console: many(10_000), network: [] } }],
     ["diagnostics.network", { diagnostics: { console: [], network: many(10_000) } }],
   ])("refuses an oversized %s on its length alone, in one issue", async (field, overrides) => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), apiKey: API_KEY });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), apiKey: API_KEY });
 
     const response = await handler.POST(request("POST", { ...validPayloadNoAnnotations, ...overrides }));
 
@@ -185,7 +185,7 @@ describe("createSitepingHandler — validation errors", () => {
   });
 
   it("refuses an oversized statuses filter on its length alone", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore() });
+    const handler = createBeezpingHandler({ store: new MemoryStore() });
     const statuses = Array.from({ length: 4000 }, () => "x").join(",");
 
     const response = await handler.GET(
@@ -199,7 +199,7 @@ describe("createSitepingHandler — validation errors", () => {
   });
 
   it(`lists at most ${MAX_VALIDATION_ISSUES} issues`, async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore() });
+    const handler = createBeezpingHandler({ store: new MemoryStore() });
 
     // Fifty empty annotations: a missing field each, twenty-odd per annotation.
     const response = await handler.POST(request("POST", { ...validPayloadNoAnnotations, annotations: many(50) }));
@@ -210,7 +210,7 @@ describe("createSitepingHandler — validation errors", () => {
   });
 });
 
-describe("createSitepingHandler — screenshots", () => {
+describe("createBeezpingHandler — screenshots", () => {
   it.each([
     "https://attacker.example/beacon.gif",
     "javascript:alert(1)",
@@ -218,7 +218,7 @@ describe("createSitepingHandler — screenshots", () => {
     "data:image/svg+xml;base64,PHN2Zz4=",
   ])("refuses %s as a screenshot, which a store would serve verbatim as its URL", async (screenshotDataUrl) => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store });
+    const handler = createBeezpingHandler({ store });
 
     const response = await handler.POST(request("POST", { ...validPayloadNoAnnotations, screenshotDataUrl }));
 
@@ -230,7 +230,7 @@ describe("createSitepingHandler — screenshots", () => {
   });
 });
 
-describe("createSitepingHandler — request body size", () => {
+describe("createBeezpingHandler — request body size", () => {
   const CHUNK_BYTES = 64 * 1024;
   const encode = (body: unknown) => new TextEncoder().encode(JSON.stringify(body));
   const text = (length: number) => "a".repeat(length);
@@ -299,7 +299,7 @@ describe("createSitepingHandler — request body size", () => {
   }
 
   it("refuses a body whose Content-Length is over the cap before reading it", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), apiKey: API_KEY });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), apiKey: API_KEY });
     const bytes = oversized();
     const auth = { Authorization: `Bearer ${API_KEY}` };
 
@@ -317,7 +317,7 @@ describe("createSitepingHandler — request body size", () => {
 
   it("stops reading a body of unknown length once it passes the cap", async () => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store, apiKey: API_KEY });
+    const handler = createBeezpingHandler({ store, apiKey: API_KEY });
     const bytes = oversized();
     const { request, pulled } = streamed("POST", bytes);
 
@@ -330,7 +330,7 @@ describe("createSitepingHandler — request body size", () => {
   });
 
   it("accepts the largest submission the validation accepts, which the default cap holds twice", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), apiKey: API_KEY });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), apiKey: API_KEY });
     const bytes = encode(largestSubmission());
     const { request } = streamed("POST", bytes, { "Content-Length": String(bytes.length) });
 
@@ -342,7 +342,7 @@ describe("createSitepingHandler — request body size", () => {
 
   it("answers the 413 with the request's CORS headers, and takes another cap through maxBodyBytes", async () => {
     const origin = "https://client-site.example";
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       allowedOrigins: [origin],
       maxBodyBytes: 1000,
@@ -359,15 +359,15 @@ describe("createSitepingHandler — request body size", () => {
   });
 
   it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])("refuses to start with maxBodyBytes %s", (value) => {
-    expect(() => createSitepingHandler({ store: new MemoryStore(), maxBodyBytes: value })).toThrow(
+    expect(() => createBeezpingHandler({ store: new MemoryStore(), maxBodyBytes: value })).toThrow(
       /`maxBodyBytes` must be a positive integer/,
     );
   });
 });
 
-describe("createSitepingHandler — failure reporting", () => {
+describe("createBeezpingHandler — failure reporting", () => {
   /** A store whose reads fail with `error`, the way a missing table surfaces. */
-  function failingStore(error: unknown): SitepingStore {
+  function failingStore(error: unknown): BeezpingStore {
     const store = new MemoryStore();
     store.getFeedbacks = () => Promise.reject(error);
     return store;
@@ -376,16 +376,16 @@ describe("createSitepingHandler — failure reporting", () => {
   it("reports a store failure to the logger with its request context, never the query", async () => {
     const failure = new Error("connection refused");
     const logger = silentLogger();
-    const handler = createSitepingHandler({ store: failingStore(failure), logger });
+    const handler = createBeezpingHandler({ store: failingStore(failure), logger });
 
     const response = await handler.GET(listRequest());
 
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ error: "Internal server error" });
-    expect(logger.error).toHaveBeenCalledWith("[siteping] Failed to fetch feedbacks", {
+    expect(logger.error).toHaveBeenCalledWith("[beezping] Failed to fetch feedbacks", {
       error: failure,
       method: "GET",
-      path: "/api/siteping",
+      path: "/api/beezping",
     });
   });
 
@@ -396,7 +396,7 @@ describe("createSitepingHandler — failure reporting", () => {
     const store = new MemoryStore();
     const logger = silentLogger();
     let presentationFails = false;
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store,
       logger,
       allowedOrigins: [origin],
@@ -428,16 +428,16 @@ describe("createSitepingHandler — failure reporting", () => {
     );
 
     for (const [response, message, method] of [
-      [patched, "[siteping] Failed to update feedback", "PATCH"],
-      [uncommented, "[siteping] Failed to delete comment", "DELETE"],
-      [posted, "[siteping] Failed to create feedback", "POST"],
+      [patched, "[beezping] Failed to update feedback", "PATCH"],
+      [uncommented, "[beezping] Failed to delete comment", "DELETE"],
+      [posted, "[beezping] Failed to create feedback", "POST"],
     ] as const) {
       expect(response.status).toBe(500);
       expect(response.headers.get("Access-Control-Allow-Origin")).toBe(origin);
       // A cookie-authenticated widget reads nothing without it.
       expect(response.headers.get("Access-Control-Allow-Credentials")).toBe("true");
       expect(await response.json()).toEqual({ error: "Internal server error" });
-      expect(logger.error).toHaveBeenCalledWith(message, { error: failure, method, path: "/api/siteping" });
+      expect(logger.error).toHaveBeenCalledWith(message, { error: failure, method, path: "/api/beezping" });
     }
     // The POST stored its feedback: only the answer failed.
     expect(await store.findByClientId("uuid-456")).not.toBeNull();
@@ -445,25 +445,25 @@ describe("createSitepingHandler — failure reporting", () => {
 
   it("answers describeError's hint, and the generic message when it has none", async () => {
     const missingTable = Object.assign(new Error("relation does not exist"), { code: "42P01" });
-    const describeError = (error: unknown) => (error === missingTable ? "Run the SitePing migrations" : undefined);
+    const describeError = (error: unknown) => (error === missingTable ? "Run the Beezping migrations" : undefined);
 
-    const described = createSitepingHandler({
+    const described = createBeezpingHandler({
       store: failingStore(missingTable),
       logger: silentLogger(),
       describeError,
     });
-    const undescribed = createSitepingHandler({
+    const undescribed = createBeezpingHandler({
       store: failingStore(new Error("other")),
       logger: silentLogger(),
       describeError,
     });
 
-    expect(await (await described.GET(listRequest())).json()).toEqual({ error: "Run the SitePing migrations" });
+    expect(await (await described.GET(listRequest())).json()).toEqual({ error: "Run the Beezping migrations" });
     expect(await (await undescribed.GET(listRequest())).json()).toEqual({ error: "Internal server error" });
   });
 
   it("keeps Prisma's setup hint out of the store-agnostic handler", async () => {
-    const handler = createSitepingHandler({ store: failingStore({ code: "P2021" }), logger: silentLogger() });
+    const handler = createBeezpingHandler({ store: failingStore({ code: "P2021" }), logger: silentLogger() });
 
     expect(await (await handler.GET(listRequest())).json()).toEqual({ error: "Internal server error" });
   });
@@ -471,15 +471,15 @@ describe("createSitepingHandler — failure reporting", () => {
   it("falls back to console.error when the logger throws or rejects, and still answers", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
-      const throwing: SitepingLogger = {
+      const throwing: BeezpingLogger = {
         error() {
           throw new Error("logger misconfigured");
         },
       };
-      const rejecting: SitepingLogger = { error: () => Promise.reject(new Error("log shipper unreachable")) };
+      const rejecting: BeezpingLogger = { error: () => Promise.reject(new Error("log shipper unreachable")) };
 
       for (const logger of [throwing, rejecting]) {
-        const response = await createSitepingHandler({ store: failingStore(new Error("down")), logger }).GET(
+        const response = await createBeezpingHandler({ store: failingStore(new Error("down")), logger }).GET(
           listRequest(),
         );
 
@@ -488,8 +488,8 @@ describe("createSitepingHandler — failure reporting", () => {
 
       await vi.waitFor(() => expect(consoleSpy).toHaveBeenCalledTimes(2));
       expect(consoleSpy.mock.calls.map(([message]) => message)).toEqual([
-        "[siteping] Failed to fetch feedbacks",
-        "[siteping] Failed to fetch feedbacks",
+        "[beezping] Failed to fetch feedbacks",
+        "[beezping] Failed to fetch feedbacks",
       ]);
     } finally {
       consoleSpy.mockRestore();
@@ -499,11 +499,11 @@ describe("createSitepingHandler — failure reporting", () => {
   it("logs to console.error by default", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
-      const handler = createSitepingHandler({ store: failingStore(new Error("down")) });
+      const handler = createBeezpingHandler({ store: failingStore(new Error("down")) });
 
       await handler.GET(listRequest());
 
-      expect(consoleSpy).toHaveBeenCalledWith("[siteping] Failed to fetch feedbacks", expect.anything());
+      expect(consoleSpy).toHaveBeenCalledWith("[beezping] Failed to fetch feedbacks", expect.anything());
     } finally {
       consoleSpy.mockRestore();
     }

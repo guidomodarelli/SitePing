@@ -1,5 +1,6 @@
 import {
   type AnnotationRecord,
+  type BeezpingStore,
   type CommentCreateInput,
   type CommentRecord,
   createCollectionStore,
@@ -12,11 +13,11 @@ import {
   type FeedbackRecord,
   type FeedbackUpdateInput,
   type Serialized,
-  type SitepingStore,
   StorePersistenceError,
 } from "@beezping/core";
+import { DEFAULT_STORAGE_KEY } from "./constants/storage.js";
 
-export type { SitepingStore } from "@beezping/core";
+export type { BeezpingStore } from "@beezping/core";
 export {
   isStorePersistence,
   StoreDuplicateError,
@@ -25,15 +26,13 @@ export {
   StorePersistenceError,
 } from "@beezping/core";
 
-const DEFAULT_KEY = "siteping_feedbacks";
-
 export interface LocalStorageStoreOptions {
-  /** localStorage key prefix — defaults to `'siteping_feedbacks'` */
+  /** localStorage key prefix — defaults to `'beezping_feedbacks'` */
   key?: string | undefined;
 }
 
 /**
- * Client-side `SitepingStore` implementation backed by `localStorage`.
+ * Client-side `BeezpingStore` implementation backed by `localStorage`.
  *
  * Designed for demos, prototyping, and static sites that don't need a server.
  * Data persists across page reloads but is scoped to the current origin.
@@ -53,24 +52,24 @@ export interface LocalStorageStoreOptions {
  * revived (see `isRevivable`) is skipped without hiding the others. Before
  * the next write replaces `<key>`, whatever was skipped — those entries, or
  * the whole raw blob when it isn't a JSON array — is appended to the JSON
- * array under `<key>.corrupt` (e.g. `siteping_feedbacks.corrupt`), next to
+ * array under `<key>.corrupt` (e.g. `beezping_feedbacks.corrupt`), next to
  * any earlier backup; if that copy can't be written, the write throws
  * `StorePersistenceError` and `<key>` is left as is.
  *
  * @example
  * ```ts
- * import { initSiteping } from '@beezping/widget'
+ * import { initBeezping } from '@beezping/widget'
  * import { LocalStorageStore } from '@beezping/adapter-localstorage'
  *
  * const store = new LocalStorageStore()
  *
- * initSiteping({
+ * initBeezping({
  *   store,
  *   projectName: 'my-demo',
  * })
  * ```
  */
-export class LocalStorageStore implements SitepingStore {
+export class LocalStorageStore implements BeezpingStore {
   private readonly key: string;
   /**
    * What the last `load()` could not read — skipped entries, or the whole raw
@@ -90,7 +89,7 @@ export class LocalStorageStore implements SitepingStore {
   });
 
   constructor(options?: LocalStorageStoreOptions) {
-    this.key = options?.key ?? DEFAULT_KEY;
+    this.key = options?.key ?? DEFAULT_STORAGE_KEY;
   }
 
   // ---------------------------------------------------------------------------
@@ -153,7 +152,7 @@ export class LocalStorageStore implements SitepingStore {
   }
 
   // ---------------------------------------------------------------------------
-  // SitepingStore implementation — delegated to the collection engine
+  // BeezpingStore implementation — delegated to the collection engine
   // ---------------------------------------------------------------------------
 
   createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {

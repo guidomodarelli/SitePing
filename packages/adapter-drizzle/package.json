@@ -1,7 +1,7 @@
 {
   "name": "@beezping/adapter-drizzle",
   "version": "0.0.0",
-  "description": "Drizzle ORM adapter for Siteping — PostgreSQL and Turso/libSQL",
+  "description": "Drizzle ORM adapter for Beezping — PostgreSQL and Turso/libSQL",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -48,7 +48,7 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "siteping",
+    "beezping",
     "drizzle",
     "postgres",
     "turso",
@@ -60,14 +60,14 @@
   ],
   "author": "neosianexus",
   "license": "MIT",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://github.com/guidomodarelli/beezping",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/guidomodarelli/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/beezping.git",
     "directory": "packages/adapter-drizzle"
   },
   "bugs": {
-    "url": "https://github.com/guidomodarelli/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/beezping/issues"
   },
   "publishConfig": {
     "access": "public"

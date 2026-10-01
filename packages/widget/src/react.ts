@@ -1,14 +1,14 @@
 /**
  * React helper for `@beezping/widget`.
  *
- * `useSiteping` initialises the widget once for the lifetime of the component
+ * `useBeezping` initialises the widget once for the lifetime of the component
  * tree, even under React.StrictMode's double-invoke effect dance. Returns the
- * `SitepingInstance` so consumers can drive `open()` / `close()` / `refresh()`
+ * `BeezpingInstance` so consumers can drive `open()` / `close()` / `refresh()`
  * programmatically from anywhere in their tree.
  *
  * Why a dedicated entry instead of a snippet in the README:
  * - StrictMode mounts every effect twice in dev, which the obvious
- *   `useEffect(() => { const i = initSiteping(...); return i.destroy }, [])`
+ *   `useEffect(() => { const i = initBeezping(...); return i.destroy }, [])`
  *   handles fine for *re-mount*, but not for the brief window where the
  *   second mount sees a still-alive widget (the widget's own singleton guard
  *   logs an info message and returns the existing instance — surprising
@@ -21,13 +21,13 @@
  */
 
 import type {
-  SitepingConfig,
-  SitepingInstance,
-  SitepingPanelAction,
-  SitepingPanelActionFeedback,
+  BeezpingConfig,
+  BeezpingInstance,
+  BeezpingPanelAction,
+  BeezpingPanelActionFeedback,
 } from "@beezping/core";
 import { useEffect, useRef, useState } from "react";
-import { initSiteping } from "./index.js";
+import { initBeezping } from "./index.js";
 
 /**
  * Stable stand-ins for `config.panelActions`. The list itself — ids, labels,
@@ -36,16 +36,16 @@ import { initSiteping } from "./index.js";
  * action with the same id in the latest config at call time, so a handler
  * closing over fresh state (an auth token, the current user) runs with it.
  */
-function freshPanelActions(ref: { readonly current: SitepingConfig }): SitepingConfig["panelActions"] {
+function freshPanelActions(ref: { readonly current: BeezpingConfig }): BeezpingConfig["panelActions"] {
   const actions = ref.current.panelActions;
   if (!Array.isArray(actions)) return actions;
   return actions.map((initial) => {
     // Only well-formed entries are wrapped. Anything else goes through
     // untouched, so the widget still warns about it and skips it.
     if (typeof initial !== "object" || initial === null) return initial;
-    const latest = (): SitepingPanelAction => ref.current.panelActions?.find((a) => a?.id === initial.id) ?? initial;
+    const latest = (): BeezpingPanelAction => ref.current.panelActions?.find((a) => a?.id === initial.id) ?? initial;
     // Truthiness, as in the widget: a plain-JS `visible` returning `undefined` hides the action.
-    const visible = (fb: SitepingPanelActionFeedback) => {
+    const visible = (fb: BeezpingPanelActionFeedback) => {
       const current = latest().visible;
       return current ? Boolean(current(fb)) : true;
     };
@@ -68,7 +68,7 @@ function freshPanelActions(ref: { readonly current: SitepingConfig }): SitepingC
 }
 
 /**
- * Initialise the SitePing widget for the lifetime of the calling component.
+ * Initialise the Beezping widget for the lifetime of the calling component.
  *
  * Safe to call from a Server Component file as long as the component itself
  * is marked `"use client"` — the hook bails out cleanly on the server because
@@ -77,11 +77,11 @@ function freshPanelActions(ref: { readonly current: SitepingConfig }): SitepingC
  * @example Next.js App Router
  * ```tsx
  * "use client"
- * import { useSiteping } from "@beezping/widget/react"
+ * import { useBeezping } from "@beezping/widget/react"
  *
  * export function FeedbackProvider({ children }: { children: React.ReactNode }) {
- *   useSiteping({
- *     endpoint: "/api/siteping",
+ *   useBeezping({
+ *     endpoint: "/api/beezping",
  *     projectName: "my-app",
  *   })
  *   return <>{children}</>
@@ -91,15 +91,15 @@ function freshPanelActions(ref: { readonly current: SitepingConfig }): SitepingC
  * @example Driving the panel programmatically
  * ```tsx
  * "use client"
- * import { useSiteping } from "@beezping/widget/react"
+ * import { useBeezping } from "@beezping/widget/react"
  *
  * export function HelpButton() {
- *   const widget = useSiteping({ endpoint: "/api/siteping", projectName: "my-app" })
+ *   const widget = useBeezping({ endpoint: "/api/beezping", projectName: "my-app" })
  *   return <button onClick={() => widget?.open()}>Need help?</button>
  * }
  * ```
  */
-export function useSiteping(config: SitepingConfig): SitepingInstance | null {
+export function useBeezping(config: BeezpingConfig): BeezpingInstance | null {
   // Keep callbacks fresh without retriggering the init effect. The widget
   // captures the *initial* config; we mirror updated handlers via the bridge
   // below so consumers can change `onFeedbackSent` between renders without
@@ -107,7 +107,7 @@ export function useSiteping(config: SitepingConfig): SitepingInstance | null {
   const configRef = useRef(config);
   configRef.current = config;
 
-  const [instance, setInstance] = useState<SitepingInstance | null>(null);
+  const [instance, setInstance] = useState<BeezpingInstance | null>(null);
 
   useEffect(() => {
     // `mounted` flag deals with the StrictMode double-effect: the cleanup of
@@ -125,7 +125,7 @@ export function useSiteping(config: SitepingConfig): SitepingInstance | null {
     // `instance.on` on top of the config wiring would call them twice per
     // event — the config wrappers are the single delivery path.)
     // The `mounted` guard keeps callbacks silent after unmount.
-    const created = initSiteping({
+    const created = initBeezping({
       ...configRef.current,
       onSkip: (reason) => {
         if (mounted) configRef.current.onSkip?.(reason);

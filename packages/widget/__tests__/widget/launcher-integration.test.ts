@@ -2,11 +2,11 @@
 
 import { MemoryStore } from "@beezping/adapter-memory";
 import type {
+  BeezpingConfig,
+  BeezpingHttpConfig,
   CommentResponse,
   FeedbackPayload,
   FeedbackResponse,
-  SitepingConfig,
-  SitepingHttpConfig,
 } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockMatchMedia, mockVisualViewport } from "../helpers.js";
@@ -122,9 +122,9 @@ import { ownFeedback } from "../../src/own-feedback.js";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function defaultConfig(overrides: Partial<Omit<SitepingHttpConfig, "store">> = {}): SitepingConfig {
+function defaultConfig(overrides: Partial<Omit<BeezpingHttpConfig, "store">> = {}): BeezpingConfig {
   return {
-    endpoint: "/api/siteping",
+    endpoint: "/api/beezping",
     projectName: "test-project",
     forceShow: true,
     ...overrides,
@@ -187,8 +187,8 @@ function makeAnnotationCompleteData() {
 
 describe("launcher — annotation:complete integration", () => {
   afterEach(() => {
-    // Clean up any siteping-widget elements left in the DOM
-    for (const el of document.querySelectorAll("siteping-widget")) {
+    // Clean up any beezping-widget elements left in the DOM
+    for (const el of document.querySelectorAll("beezping-widget")) {
       el.remove();
     }
     for (const el of document.querySelectorAll('[role="status"]')) {
@@ -343,7 +343,7 @@ describe("launcher — annotation:complete integration", () => {
       });
 
       // No identity modal should appear — identity was stored
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       const shadow = widget?.shadowRoot;
       // Check for identity modal specifically (exclude DetailView's .sp-detail dialog)
       const modal = shadow?.querySelector('[role="dialog"]:not(.sp-detail):not(.sp-shortcuts-overlay)') ?? null;
@@ -363,7 +363,7 @@ describe("launcher — annotation:complete integration", () => {
 
       // The identity modal is appended to the shadow root
       await vi.waitFor(() => {
-        const widget = document.querySelector("siteping-widget");
+        const widget = document.querySelector("beezping-widget");
         expect(widget).not.toBeNull();
         const shadow = widget!.shadowRoot;
         if (shadow) {
@@ -395,7 +395,7 @@ describe("launcher — annotation:complete integration", () => {
       fakePopup.style.cssText = "position:fixed;z-index:2147483647;";
       document.body.appendChild(fakePopup);
 
-      const hostBefore = document.querySelector("siteping-widget")!;
+      const hostBefore = document.querySelector("beezping-widget")!;
       const hostIndexBefore = Array.from(document.body.children).indexOf(hostBefore);
       const popupIndexBefore = Array.from(document.body.children).indexOf(fakePopup);
       expect(popupIndexBefore).toBeGreaterThan(hostIndexBefore);
@@ -403,14 +403,14 @@ describe("launcher — annotation:complete integration", () => {
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
 
       await vi.waitFor(() => {
-        const widget = document.querySelector("siteping-widget")!;
+        const widget = document.querySelector("beezping-widget")!;
         const shadow = widget.shadowRoot;
         expect(shadow?.querySelector('[role="dialog"]')).not.toBeNull();
       });
 
       // After promptIdentity runs, the host must be the LAST sibling so the
       // identity prompt inside its stacking context renders above the popup.
-      const hostAfter = document.querySelector("siteping-widget")!;
+      const hostAfter = document.querySelector("beezping-widget")!;
       const hostIndexAfter = Array.from(document.body.children).indexOf(hostAfter);
       const popupIndexAfter = Array.from(document.body.children).indexOf(fakePopup);
       expect(hostIndexAfter).toBeGreaterThan(popupIndexAfter);
@@ -444,7 +444,7 @@ describe("launcher — annotation:complete integration", () => {
       expect(payload.authorEmail).toBe("host@example.com");
 
       // No identity modal should appear — config short-circuits the prompt
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       const shadow = widget?.shadowRoot;
       const modal = shadow?.querySelector('[role="dialog"]:not(.sp-detail):not(.sp-shortcuts-overlay)') ?? null;
       expect(modal).toBeNull();
@@ -516,7 +516,7 @@ describe("launcher — annotation:complete integration", () => {
   });
 
   // -------------------------------------------------------------------------
-  // deepLink option — auto-focus annotation when ?siteping=<id> is set
+  // deepLink option — auto-focus annotation when ?beezping=<id> is set
   // -------------------------------------------------------------------------
 
   describe("deepLink option", () => {
@@ -525,7 +525,7 @@ describe("launcher — annotation:complete integration", () => {
         feedbacks: [makeFeedbackResponse({ id: "fb-deep-1" })],
         total: 1,
       });
-      window.history.replaceState(null, "", "/?siteping=fb-deep-1");
+      window.history.replaceState(null, "", "/?beezping=fb-deep-1");
 
       const instance = launch(defaultConfig());
 
@@ -539,13 +539,13 @@ describe("launcher — annotation:complete integration", () => {
       instance.destroy();
     });
 
-    it("calls focusFeedback with the id from ?siteping=<id> when deepLink is true", async () => {
+    it("calls focusFeedback with the id from ?beezping=<id> when deepLink is true", async () => {
       mockGetFeedbacks.mockResolvedValueOnce({
         feedbacks: [makeFeedbackResponse({ id: "fb-deep-1" })],
         total: 1,
       });
       mockMarkersFocusFeedback.mockReturnValueOnce(true);
-      window.history.replaceState(null, "", "/?siteping=fb-deep-1");
+      window.history.replaceState(null, "", "/?beezping=fb-deep-1");
 
       const instance = launch(defaultConfig({ deepLink: true }));
 
@@ -562,14 +562,14 @@ describe("launcher — annotation:complete integration", () => {
         total: 1,
       });
       mockMarkersFocusFeedback.mockReturnValueOnce(true);
-      window.history.replaceState(null, "", "/?fb=fb-deep-2&siteping=ignored");
+      window.history.replaceState(null, "", "/?fb=fb-deep-2&beezping=ignored");
 
       const instance = launch(defaultConfig({ deepLink: { param: "fb" } }));
 
       await vi.waitFor(() => {
         expect(mockMarkersFocusFeedback).toHaveBeenCalledWith("fb-deep-2");
       });
-      // The default "siteping" key must not leak in when a custom param is configured.
+      // The default "beezping" key must not leak in when a custom param is configured.
       expect(mockMarkersFocusFeedback).not.toHaveBeenCalledWith("ignored");
 
       instance.destroy();
@@ -580,7 +580,7 @@ describe("launcher — annotation:complete integration", () => {
         feedbacks: [makeFeedbackResponse({ id: "fb-deep-3" })],
         total: 1,
       });
-      // URL carries some other key but not `siteping`.
+      // URL carries some other key but not `beezping`.
       window.history.replaceState(null, "", "/?other=value");
 
       const instance = launch(defaultConfig({ deepLink: true }));
@@ -600,7 +600,7 @@ describe("launcher — annotation:complete integration", () => {
         total: 1,
       });
       mockMarkersFocusFeedback.mockReturnValueOnce(false);
-      window.history.replaceState(null, "", "/?siteping=does-not-exist");
+      window.history.replaceState(null, "", "/?beezping=does-not-exist");
 
       const instance = launch(defaultConfig({ deepLink: true }));
 
@@ -656,7 +656,7 @@ describe("launcher — annotation:complete integration", () => {
       cancelBtn: HTMLButtonElement;
       submitBtn: HTMLButtonElement;
     }> {
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       if (!widget) throw new Error("widget not found");
       const shadow = widget.shadowRoot;
       if (!shadow) throw new Error("shadow root not found");
@@ -1250,7 +1250,7 @@ describe("launcher — annotation:complete integration", () => {
 
   describe("FAB unread badge", () => {
     function getBadge(): HTMLElement | null {
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       return widget!.shadowRoot!.querySelector<HTMLElement>(".sp-fab-badge");
     }
 
@@ -1510,7 +1510,7 @@ describe("launcher — annotation:complete integration", () => {
         const error = new Error("ticket creation failed");
         capturedBus!.emit("panel:action-error", error);
 
-        expect(consoleError).toHaveBeenCalledExactlyOnceWith("[siteping] Panel action failed:", error);
+        expect(consoleError).toHaveBeenCalledExactlyOnceWith("[beezping] Panel action failed:", error);
         if (onError) expect(onError).toHaveBeenCalledExactlyOnceWith(error);
         expect(publicFeedbackError).not.toHaveBeenCalled();
       } finally {
@@ -1550,7 +1550,7 @@ describe("launcher — annotation:complete integration", () => {
       nameInput: HTMLInputElement;
       submitBtn: HTMLButtonElement;
     }> {
-      const widget = document.querySelector("siteping-widget");
+      const widget = document.querySelector("beezping-widget");
       if (!widget) throw new Error("widget not found");
       const shadow = widget.shadowRoot;
       if (!shadow) throw new Error("shadow root not found");
@@ -1671,13 +1671,13 @@ describe("launcher — annotation:complete integration", () => {
     it("re-localizes the FAB once the German chunk lands", async () => {
       const instance = launch(defaultConfig({ locale: "de" }));
 
-      const widget = document.querySelector("siteping-widget")!;
+      const widget = document.querySelector("beezping-widget")!;
       const shadow = widget.shadowRoot!;
       const fabBtn = shadow.querySelector<HTMLButtonElement>(".sp-fab")!;
 
       // Wait for the German chunk to resolve and refreshLabels to run.
       await vi.waitFor(() => {
-        expect(fabBtn.getAttribute("aria-label")).toBe("Siteping — Feedback-Menü");
+        expect(fabBtn.getAttribute("aria-label")).toBe("Beezping — Feedback-Menü");
         expect(mockAnnotatorRefreshLabels).toHaveBeenCalled();
       });
 
@@ -1778,12 +1778,12 @@ describe("launcher — annotation:complete integration", () => {
       const headers = { "X-Team": "acme" };
       const instance = launch(defaultConfig({ apiKey: "widget-key", headers }));
 
-      expect(vi.mocked(ApiClient)).toHaveBeenCalledWith("/api/siteping", "test-project", {
+      expect(vi.mocked(ApiClient)).toHaveBeenCalledWith("/api/beezping", "test-project", {
         apiKey: "widget-key",
         headers,
       });
       expect(vi.mocked(flushRetryQueue)).toHaveBeenCalledWith(
-        "/api/siteping",
+        "/api/beezping",
         { name: "Test User", email: "test@example.com" },
         { apiKey: "widget-key", headers },
       );
@@ -1794,7 +1794,7 @@ describe("launcher — annotation:complete integration", () => {
     it("passes an empty auth object when no auth is configured", () => {
       const instance = launch(defaultConfig());
 
-      expect(vi.mocked(ApiClient)).toHaveBeenCalledWith("/api/siteping", "test-project", {
+      expect(vi.mocked(ApiClient)).toHaveBeenCalledWith("/api/beezping", "test-project", {
         apiKey: undefined,
         headers: undefined,
       });
@@ -1808,7 +1808,7 @@ describe("launcher — annotation:complete integration", () => {
   // -------------------------------------------------------------------------
 
   describe("feedback sent from this browser ('Mine' filter)", () => {
-    const shadow = () => document.querySelector("siteping-widget")!.shadowRoot!;
+    const shadow = () => document.querySelector("beezping-widget")!.shadowRoot!;
     const cardIds = () => [...shadow().querySelectorAll<HTMLElement>(".sp-card")].map((c) => c.dataset.feedbackId);
 
     beforeEach(() => {
@@ -1822,7 +1822,7 @@ describe("launcher — annotation:complete integration", () => {
     it("remembers a sent feedback's id for the project and endpoint, and forgets deleted ones", async () => {
       mockSendFeedback.mockResolvedValue(makeFeedbackResponse({ id: "fb-mine" }));
       const instance = launch(defaultConfig());
-      const own = ownFeedback("test-project", "/api/siteping");
+      const own = ownFeedback("test-project", "/api/beezping");
 
       capturedBus!.emit("annotation:complete", makeAnnotationCompleteData());
       await vi.waitFor(() => expect([...own.ids()]).toEqual(["fb-mine"]));
@@ -1889,7 +1889,7 @@ describe("launcher — annotation:complete integration", () => {
         capabilities: { comments: true },
       });
       instance.open();
-      const shadow = document.querySelector("siteping-widget")!.shadowRoot!;
+      const shadow = document.querySelector("beezping-widget")!.shadowRoot!;
       await vi.waitFor(() => expect(shadow.querySelector('[data-feedback-id="fb-1"]')).not.toBeNull());
       shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!.click();
       shadow.querySelector<HTMLTextAreaElement>(".sp-detail textarea")!.value = "16 px, please";
@@ -1977,7 +1977,7 @@ describe("launcher — annotation:complete integration", () => {
     it("leaves the shadow host in place: moving it would scroll the detail view back to the top", async () => {
       mockGetIdentity.mockReturnValue(null);
       const instance = launch(defaultConfig());
-      const host = document.querySelector("siteping-widget")!;
+      const host = document.querySelector("beezping-widget")!;
       const next = host.nextSibling;
       expect(next).not.toBeNull();
 
@@ -2015,7 +2015,7 @@ describe("launcher — annotation:complete integration", () => {
     async function openCard(instance: ReturnType<typeof launch>): Promise<HTMLElement> {
       mockGetFeedbacks.mockResolvedValue({ feedbacks: [makeFeedbackResponse({ id: "fb-1" })], total: 1 });
       instance.open();
-      const shadow = document.querySelector("siteping-widget")!.shadowRoot!;
+      const shadow = document.querySelector("beezping-widget")!.shadowRoot!;
       await vi.waitFor(() => expect(shadow.querySelector('[data-feedback-id="fb-1"]')).not.toBeNull());
       return shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!;
     }

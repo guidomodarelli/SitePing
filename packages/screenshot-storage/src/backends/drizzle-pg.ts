@@ -26,10 +26,10 @@ const bytea = customType<{ data: Uint8Array<ArrayBuffer>; driverData: unknown }>
  * schema so `drizzle-kit` migrates it:
  *
  * ```ts
- * export const sitepingScreenshots = createSitepingScreenshotsPgTable();
+ * export const beezpingScreenshots = createBeezpingScreenshotsPgTable();
  * ```
  */
-export function createSitepingScreenshotsPgTable(name: string = DEFAULT_SCREENSHOTS_TABLE_NAME) {
+export function createBeezpingScreenshotsPgTable(name: string = DEFAULT_SCREENSHOTS_TABLE_NAME) {
   return pgTable(name, {
     key: text(SCREENSHOTS_TABLE_COLUMNS.key).primaryKey(),
     contentType: text(SCREENSHOTS_TABLE_COLUMNS.contentType).notNull(),
@@ -40,16 +40,16 @@ export function createSitepingScreenshotsPgTable(name: string = DEFAULT_SCREENSH
   });
 }
 
-export type SitepingScreenshotsPgTable = ReturnType<typeof createSitepingScreenshotsPgTable>;
+export type BeezpingScreenshotsPgTable = ReturnType<typeof createBeezpingScreenshotsPgTable>;
 
 // biome-ignore lint/suspicious/noExplicitAny: accepts every driver's query-result HKT and schema.
 type AnyPgDatabase = PgDatabase<PgQueryResultHKT, any, any>;
 
 export interface PgScreenshotObjectStoreOptions {
-  /** Where `createScreenshotServeHandler` is mounted, e.g. `https://app.example.com/api/siteping/screenshots`. */
+  /** Where `createScreenshotServeHandler` is mounted, e.g. `https://app.example.com/api/beezping/screenshots`. */
   publicBaseUrl: string;
-  /** The table from `createSitepingScreenshotsPgTable` — pass it when you renamed it. */
-  table?: SitepingScreenshotsPgTable | undefined;
+  /** The table from `createBeezpingScreenshotsPgTable` — pass it when you renamed it. */
+  table?: BeezpingScreenshotsPgTable | undefined;
 }
 
 /**
@@ -59,7 +59,7 @@ export interface PgScreenshotObjectStoreOptions {
  */
 export function createPgScreenshotObjectStore(
   db: AnyPgDatabase,
-  { publicBaseUrl, table = createSitepingScreenshotsPgTable() }: PgScreenshotObjectStoreOptions,
+  { publicBaseUrl, table = createBeezpingScreenshotsPgTable() }: PgScreenshotObjectStoreOptions,
 ): ScreenshotObjectStore {
   return createDatabaseObjectStore({
     name: POSTGRES_OBJECT_STORE_NAME,

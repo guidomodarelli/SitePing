@@ -4,7 +4,7 @@
 // click-through. Only the DOM anchor helpers are mocked (jsdom has no
 // layout), as in submit-unbounded-wait.test.ts.
 
-import type { SitepingStore } from "@beezping/core";
+import type { BeezpingStore } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { launch } from "../../src/launcher.js";
 import { mockMatchMedia } from "../helpers.js";
@@ -34,13 +34,13 @@ const store = {
   updateFeedback: vi.fn(),
   deleteFeedback: vi.fn(),
   deleteAllFeedbacks: vi.fn(),
-} satisfies SitepingStore;
+} satisfies BeezpingStore;
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 30));
-const widgetHost = () => document.querySelector<HTMLElement>("siteping-widget")!;
+const widgetHost = () => document.querySelector<HTMLElement>("beezping-widget")!;
 // NODE_ENV=test → the shadow root is open
 const shadowRoot = () => widgetHost().shadowRoot!;
-const popupRoot = () => document.querySelector<HTMLElement>('[role="dialog"][data-siteping-ignore]')!;
+const popupRoot = () => document.querySelector<HTMLElement>('[role="dialog"][data-beezping-ignore]')!;
 const liveRegion = () => document.querySelector<HTMLElement>('body > [role="status"][aria-live="polite"]')!;
 
 function pressEscape(target: HTMLElement): KeyboardEvent {
@@ -91,7 +91,7 @@ describe("launcher over a host modal", () => {
     instance = launch({ store, projectName: "host-modal", forceShow: true });
     await flush();
     const overlay = await startAnnotationFromFab();
-    const toolbar = document.querySelector<HTMLElement>('div[data-siteping-ignore="true"]:not([role])')!;
+    const toolbar = document.querySelector<HTMLElement>('div[data-beezping-ignore="true"]:not([role])')!;
 
     for (const surface of [widgetHost(), overlay, toolbar, popupRoot(), document.getElementById("sp-tooltip")!]) {
       expect(getComputedStyle(surface).pointerEvents).toBe("auto");
@@ -104,7 +104,7 @@ describe("launcher over a host modal", () => {
       widgetHost(),
       liveRegion(),
       popupRoot(),
-      document.getElementById("siteping-markers")!,
+      document.getElementById("beezping-markers")!,
       document.getElementById("sp-tooltip")!,
     ];
 

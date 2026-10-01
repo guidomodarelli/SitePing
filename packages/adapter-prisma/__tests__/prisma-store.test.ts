@@ -1,5 +1,5 @@
 import { StoreDuplicateError, StoreNotFoundError, StoreValueTooLongError } from "@beezping/core";
-import { testSitepingStore } from "@beezping/core/testing";
+import { testBeezpingStore } from "@beezping/core/testing";
 import { describe, expect, it, vi } from "vitest";
 import { PrismaStore } from "../src/index.js";
 import { fakePrisma } from "./fake-prisma.js";
@@ -10,7 +10,7 @@ import { fakePrisma } from "./fake-prisma.js";
 // ---------------------------------------------------------------------------
 
 describe("PrismaStore", () => {
-  testSitepingStore(() => new PrismaStore(fakePrisma()), {
+  testBeezpingStore(() => new PrismaStore(fakePrisma()), {
     duplicateBehavior: "throw",
     // No `_activeProvider` on the double → `contains` without `mode`, i.e.
     // case-sensitive like Postgres `LIKE`.
@@ -24,7 +24,7 @@ describe("PrismaStore", () => {
 
 function spyDelegate() {
   return {
-    sitepingFeedback: {
+    beezpingFeedback: {
       create: vi.fn(),
       findMany: vi.fn().mockResolvedValue([]),
       findUnique: vi.fn().mockResolvedValue(null),
@@ -44,14 +44,14 @@ describe("PrismaStore — pagination clamp", () => {
   it("caps limit at 100 before calling findMany", async () => {
     const prisma = spyDelegate();
     await new PrismaStore(prisma).getFeedbacks({ projectName: "p", limit: 500 });
-    const args = prisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as { take: number };
+    const args = prisma.beezpingFeedback.findMany.mock.calls[0]?.[0] as { take: number };
     expect(args.take).toBe(100);
   });
 
   it("clamps a page below 1 to the first page (never a negative skip)", async () => {
     const prisma = spyDelegate();
     await new PrismaStore(prisma).getFeedbacks({ projectName: "p", page: 0 });
-    const args = prisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as { skip: number; take: number };
+    const args = prisma.beezpingFeedback.findMany.mock.calls[0]?.[0] as { skip: number; take: number };
     expect(args.skip).toBe(0);
     expect(args.take).toBe(50);
   });
@@ -59,17 +59,17 @@ describe("PrismaStore — pagination clamp", () => {
   it("derives skip from the clamped window", async () => {
     const prisma = spyDelegate();
     await new PrismaStore(prisma).getFeedbacks({ projectName: "p", page: 3, limit: 20 });
-    const args = prisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as { skip: number; take: number };
+    const args = prisma.beezpingFeedback.findMany.mock.calls[0]?.[0] as { skip: number; take: number };
     expect(args).toMatchObject({ skip: 40, take: 20 });
   });
 
   it("answers an unreachable page from count alone, never forwarding the offset to findMany", async () => {
     const prisma = spyDelegate();
-    prisma.sitepingFeedback.count.mockResolvedValue(7);
+    prisma.beezpingFeedback.count.mockResolvedValue(7);
     const result = await new PrismaStore(prisma).getFeedbacks({ projectName: "p", page: 1e18, limit: 100 });
     expect(result).toEqual({ feedbacks: [], total: 7 });
-    expect(prisma.sitepingFeedback.findMany).not.toHaveBeenCalled();
-    expect(prisma.sitepingFeedback.count).toHaveBeenCalledWith({ where: { projectName: "p" } });
+    expect(prisma.beezpingFeedback.findMany).not.toHaveBeenCalled();
+    expect(prisma.beezpingFeedback.count).toHaveBeenCalledWith({ where: { projectName: "p" } });
   });
 });
 
@@ -79,7 +79,7 @@ describe("PrismaStore — ordering", () => {
     // tie-breaker, OFFSET pagination can repeat one row and skip another.
     const prisma = spyDelegate();
     await new PrismaStore(prisma).getFeedbacks({ projectName: "p", page: 2, limit: 10 });
-    const args = prisma.sitepingFeedback.findMany.mock.calls[0]?.[0] as { orderBy: unknown };
+    const args = prisma.beezpingFeedback.findMany.mock.calls[0]?.[0] as { orderBy: unknown };
     expect(args.orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }]);
   });
 });
@@ -87,11 +87,11 @@ describe("PrismaStore — ordering", () => {
 describe("PrismaStore — verifyProjectOwnership", () => {
   it("reads only projectName, never the whole row (inline screenshot, diagnostics)", async () => {
     const prisma = spyDelegate();
-    prisma.sitepingFeedback.findUnique.mockResolvedValue({ projectName: "p" });
+    prisma.beezpingFeedback.findUnique.mockResolvedValue({ projectName: "p" });
 
     await expect(new PrismaStore(prisma).verifyProjectOwnership("fb-1", "p")).resolves.toBe(true);
 
-    expect(prisma.sitepingFeedback.findUnique).toHaveBeenCalledWith({
+    expect(prisma.beezpingFeedback.findUnique).toHaveBeenCalledWith({
       where: { id: "fb-1" },
       select: { projectName: true },
     });
@@ -102,7 +102,7 @@ describe("PrismaStore — store error translation", () => {
   it("updateFeedback throws StoreNotFoundError (with the Prisma error as cause) on P2025", async () => {
     const prisma = spyDelegate();
     const original = prismaError("P2025");
-    prisma.sitepingFeedback.update.mockRejectedValue(original);
+    prisma.beezpingFeedback.update.mockRejectedValue(original);
 
     const error = await new PrismaStore(prisma)
       .updateFeedback("missing", { status: "resolved", resolvedAt: new Date() })
@@ -114,13 +114,13 @@ describe("PrismaStore — store error translation", () => {
 
   it("deleteFeedback throws StoreNotFoundError on P2025", async () => {
     const prisma = spyDelegate();
-    prisma.sitepingFeedback.delete.mockRejectedValue(prismaError("P2025"));
+    prisma.beezpingFeedback.delete.mockRejectedValue(prismaError("P2025"));
     await expect(new PrismaStore(prisma).deleteFeedback("missing")).rejects.toThrow(StoreNotFoundError);
   });
 
   it("createFeedback throws StoreDuplicateError on P2002", async () => {
     const prisma = spyDelegate();
-    prisma.sitepingFeedback.create.mockRejectedValue(prismaError("P2002"));
+    prisma.beezpingFeedback.create.mockRejectedValue(prismaError("P2002"));
     await expect(
       new PrismaStore(prisma).createFeedback({
         projectName: "p",
@@ -141,8 +141,8 @@ describe("PrismaStore — store error translation", () => {
   it("createFeedback and addComment throw StoreValueTooLongError on P2000, a value longer than its column", async () => {
     const original = prismaError("P2000");
     const prisma = fakePrisma();
-    vi.spyOn(prisma.sitepingFeedback, "create").mockRejectedValue(original);
-    vi.spyOn(prisma.sitepingComment as NonNullable<typeof prisma.sitepingComment>, "create").mockRejectedValue(
+    vi.spyOn(prisma.beezpingFeedback, "create").mockRejectedValue(original);
+    vi.spyOn(prisma.beezpingComment as NonNullable<typeof prisma.beezpingComment>, "create").mockRejectedValue(
       original,
     );
     const store = new PrismaStore(prisma);
@@ -181,7 +181,7 @@ describe("PrismaStore — store error translation", () => {
   it("lets unrelated errors through untouched", async () => {
     const prisma = spyDelegate();
     const outage = new Error("connection refused");
-    prisma.sitepingFeedback.update.mockRejectedValue(outage);
+    prisma.beezpingFeedback.update.mockRejectedValue(outage);
     await expect(new PrismaStore(prisma).updateFeedback("fb-1", { status: "open", resolvedAt: null })).rejects.toBe(
       outage,
     );

@@ -1,15 +1,15 @@
 ---
 title: CLI
-description: Set up and check SitePing from the command line — init, sync, status, and doctor.
+description: Set up and check Beezping from the command line — init, sync, status, and doctor.
 ---
 
-The SitePing CLI automates project setup and health checks. It ships as a single self-contained binary with **zero runtime dependencies** and requires **Node 20 or newer**.
+The Beezping CLI automates project setup and health checks. It ships as a single self-contained binary with **zero runtime dependencies** and requires **Node 20 or newer**.
 
 ```bash
 npx @beezping/cli --help
 ```
 
-> **The package name matters.** Always run `npx @beezping/cli <command>`. There is no `siteping` package on npm, so `npx siteping` only works if `@beezping/cli` is already installed in your project.
+> **The package name matters.** Always run `npx @beezping/cli <command>`. There is no `beezping` package on npm, so `npx beezping` only works if `@beezping/cli` is already installed in your project.
 
 ## `init` — interactive setup
 
@@ -19,8 +19,8 @@ npx @beezping/cli init
 
 `init` walks you through two confirmations:
 
-1. **Sync Prisma models** — if a schema is found (see [schema detection](#schema-detection)), it offers to add the SitePing models: `SitepingFeedback`, `SitepingAnnotation` and `SitepingComment` (the [discussion threads](/docs/comments)).
-2. **Generate the API route** — offers to create a Next.js App Router route that serves the widget. The file goes to `app/api/siteping/route.ts`, or `src/app/api/siteping/route.ts` when your project uses a `src/` layout. If both `app/` and `src/app/` exist, `app/` wins — Next.js itself ignores `src/app/` then. An existing route — `route.ts`, `.tsx`, `.js` or `.jsx` — is never overwritten.
+1. **Sync Prisma models** — if a schema is found (see [schema detection](#schema-detection)), it offers to add the Beezping models: `BeezpingFeedback`, `BeezpingAnnotation` and `BeezpingComment` (the [discussion threads](/docs/comments)).
+2. **Generate the API route** — offers to create a Next.js App Router route that serves the widget. The file goes to `app/api/beezping/route.ts`, or `src/app/api/beezping/route.ts` when your project uses a `src/` layout. If both `app/` and `src/app/` exist, `app/` wins — Next.js itself ignores `src/app/` then. An existing route — `route.ts`, `.tsx`, `.js` or `.jsx` — is never overwritten.
 
 The generated route imports two things you need to provide yourself — the CLI installs nothing:
 
@@ -38,14 +38,14 @@ npx @beezping/cli sync
 npx @beezping/cli sync --schema prisma/schema.prisma
 ```
 
-`sync` merges the SitePing models into your Prisma schema without prompts, which makes it safe for CI and update scripts. It works at the AST level:
+`sync` merges the Beezping models into your Prisma schema without prompts, which makes it safe for CI and update scripts. It works at the AST level:
 
-- creates the SitePing models that are missing — in the database schema of the existing SitePing models (their `@@schema`) when your datasource declares several `schemas`,
+- creates the Beezping models that are missing — in the database schema of the existing Beezping models (their `@@schema`) when your datasource declares several `schemas`,
 - adds any missing fields and `@@index` blocks,
-- rewrites SitePing fields whose type or attributes drifted from the expected shape — keeping the parts that are yours (`@map` column names, relation names, a relation's `onUpdate`, comments); an `@ignore` counts as drift, since the adapter writes every SitePing column,
+- rewrites Beezping fields whose type or attributes drifted from the expected shape — keeping the parts that are yours (`@map` column names, relation names, a relation's `onUpdate`, comments); an `@ignore` counts as drift, since the adapter writes every Beezping column,
 - **never touches fields you added yourself.**
 
-When something changed, it reminds you to run `npx prisma db push` and `npx prisma generate` (Prisma 7 no longer generates the client from `db push`). An existing schema gets `SitepingComment` and the `SitepingFeedback.comments` relation this way: apply them before you deploy — see [discussion threads with Prisma](/docs/adapters/prisma#discussion-threads). Running it twice in a row is a no-op.
+When something changed, it reminds you to run `npx prisma db push` and `npx prisma generate` (Prisma 7 no longer generates the client from `db push`). An existing schema gets `BeezpingComment` and the `BeezpingFeedback.comments` relation this way: apply them before you deploy — see [discussion threads with Prisma](/docs/adapters/prisma#discussion-threads). Running it twice in a row is a no-op.
 
 > **Commit before you run it.** `sync` re-prints the whole schema file, so formatting (blank lines after `//` comments, column alignment) is normalized across your own models too — `///` doc comments stay attached to what they document. A clean git diff makes the changes easy to review.
 
@@ -60,23 +60,23 @@ npx @beezping/cli status --schema prisma/schema.prisma
 
 | Check | What it looks at |
 |---|---|
-| Prisma schema | All three SitePing models present, every field up to date — the exact diff `sync` applies, so type, optionality, attributes and their arguments (`@unique`, `@db.Text`, `onDelete: Cascade`, …) and `@@index` blocks all count |
-| API route | `api/siteping/route.ts` (or `.tsx`, `.js`, `.jsx`) exists in the app directory Next.js serves — `app/`, or `src/app/` when there is no `app/` |
+| Prisma schema | All three Beezping models present, every field up to date — the exact diff `sync` applies, so type, optionality, attributes and their arguments (`@unique`, `@db.Text`, `onDelete: Cascade`, …) and `@@index` blocks all count |
+| API route | `api/beezping/route.ts` (or `.tsx`, `.js`, `.jsx`) exists in the app directory Next.js serves — `app/`, or `src/app/` when there is no `app/` |
 | Package | `@beezping/widget` listed in your `package.json` |
-| Widget integration | `initSiteping` referenced somewhere in `src/`, `app/`, or `pages/` |
+| Widget integration | `initBeezping` referenced somewhere in `src/`, `app/`, or `pages/` |
 
 The API route check only knows about the Next.js App Router. If you serve the adapter from Express, Hono, or the Pages Router, that line will read "Not found" even though your setup works.
 
 ## `doctor` — live endpoint check
 
 ```bash
-npx @beezping/cli doctor --url http://localhost:3000 --endpoint /api/siteping
-npx @beezping/cli doctor --url https://app.example.com --api-key "$SITEPING_API_KEY"
+npx @beezping/cli doctor --url http://localhost:3000 --endpoint /api/beezping
+npx @beezping/cli doctor --url https://app.example.com --api-key "$BEEZPING_API_KEY"
 ```
 
-`doctor` sends one GET request to your running server and tells you whether a SitePing handler answered (10-second timeout). Pass **both** `--url` and `--endpoint` to run it non-interactively — either one you omit becomes a prompt. When the endpoint is configured with an `apiKey` and `GET` is not public, pass the key with `--api-key`; without it, a `401` comes with a hint.
+`doctor` sends one GET request to your running server and tells you whether a Beezping handler answered (10-second timeout). Pass **both** `--url` and `--endpoint` to run it non-interactively — either one you omit becomes a prompt. When the endpoint is configured with an `apiKey` and `GET` is not public, pass the key with `--api-key`; without it, a `401` comes with a hint.
 
-`--url` is your site's base URL, not the endpoint's: a path in it (a Next.js `basePath`, for example) goes in front of `--endpoint`. With `--url https://example.com/app --endpoint /api/siteping`, `doctor` requests `https://example.com/app/api/siteping`.
+`--url` is your site's base URL, not the endpoint's: a path in it (a Next.js `basePath`, for example) goes in front of `--endpoint`. With `--url https://example.com/app --endpoint /api/beezping`, `doctor` requests `https://example.com/app/api/beezping`.
 
 It checks the HTTP response only — it never reads your schema. For schema verification, use `status`.
 
@@ -91,7 +91,7 @@ All commands are scriptable. `0` means success, `1` means something needs fixing
 | `status` | Schema, API route, `package.json`, or the widget dependency is missing, or the schema can't be read or parsed |
 | `doctor` | Non-200 response, unreachable server, or timeout |
 
-Two caveats for CI pipelines: `status` exits `0` (with a hint to run `sync`) when schema fields merely drift, and `doctor` exits `0` on any 200 response — even one that is not a SitePing handler (it prints a warning instead). Neither is a strict gate.
+Two caveats for CI pipelines: `status` exits `0` (with a hint to run `sync`) when schema fields merely drift, and `doctor` exits `0` on any 200 response — even one that is not a Beezping handler (it prints a warning instead). Neither is a strict gate.
 
 ## Schema detection
 
@@ -101,4 +101,4 @@ When you don't pass `--schema`, the CLI probes three locations in order:
 2. `schema.prisma`
 3. `prisma/schema/schema.prisma`
 
-A schema file inside a `schema/` folder (like `prisma/schema/schema.prisma`) is treated as part of a multi-file schema, as Prisma does: every `.prisma` file in that folder and its subfolders counts, except under `node_modules` and hidden folders. SitePing models are found and updated in whichever file holds them; missing ones are added to the file you pointed at. A folder that holds a `package.json` is a project root, never a schema folder, even if it is named `schema`. A multi-file schema folder with any other name isn't detected: the CLI then only sees the file you point it at.
+A schema file inside a `schema/` folder (like `prisma/schema/schema.prisma`) is treated as part of a multi-file schema, as Prisma does: every `.prisma` file in that folder and its subfolders counts, except under `node_modules` and hidden folders. Beezping models are found and updated in whichever file holds them; missing ones are added to the file you pointed at. A folder that holds a `package.json` is a project root, never a schema folder, even if it is named `schema`. A multi-file schema folder with any other name isn't detected: the CLI then only sees the file you point it at.

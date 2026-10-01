@@ -3,11 +3,11 @@ import { expect, test } from "@playwright/test";
 // The IIFE bundle (`dist/index.global.js`) is what a plain `<script src>` embed
 // runs, exactly as shipped — and the only widget bundle a second minifier
 // (Terser) goes over. Every other spec loads the ESM build, so this one drives
-// the script bundle end to end: the `SitePing` global, the stylesheet, the
+// the script bundle end to end: the `Beezping` global, the stylesheet, the
 // lazily initialized panel, and a feedback with a screenshot (html2canvas-pro
 // is bundled into it).
 
-const API = "http://localhost:3999/api/siteping";
+const API = "http://localhost:3999/api/beezping";
 
 test("the <script> bundle mounts, opens the panel and sends a feedback with a screenshot", async ({
   page,
@@ -20,10 +20,10 @@ test("the <script> bundle mounts, opens the panel and sends a feedback with a sc
   const fab = page.locator(".sp-fab");
   await expect(fab).toBeVisible();
   const api = await page.evaluate(() => {
-    const global = (window as unknown as { SitePing: Record<string, unknown> }).SitePing;
+    const global = (window as unknown as { Beezping: Record<string, unknown> }).Beezping;
     return Object.fromEntries(Object.entries(global).map(([name, value]) => [name, typeof value]));
   });
-  expect(api).toEqual({ initSiteping: "function", loadLocale: "function", registerLocale: "function" });
+  expect(api).toEqual({ initBeezping: "function", loadLocale: "function", registerLocale: "function" });
   expect(await fab.evaluate((element) => getComputedStyle(element).width)).toBe("52px");
 
   await fab.click();
@@ -40,7 +40,7 @@ test("the <script> bundle mounts, opens the panel and sends a feedback with a sc
   await page.mouse.down();
   await page.mouse.move(box.x + 250, box.y + 60, { steps: 5 });
   await page.mouse.up();
-  const popup = page.locator('[role="dialog"][data-siteping-ignore]');
+  const popup = page.locator('[role="dialog"][data-beezping-ignore]');
   await popup.locator("button[data-type='bug']").click();
   await popup.locator("textarea").fill("Sent from the script bundle");
   await popup.getByRole("button", { name: "Send" }).click();
@@ -50,7 +50,7 @@ test("the <script> bundle mounts, opens the panel and sends a feedback with a sc
   await email.fill("test@example.com");
   await page.locator(".sp-btn-primary").click();
 
-  await expect(page.locator("#siteping-markers [data-feedback-id]")).toHaveCount(1, { timeout: 10_000 });
+  await expect(page.locator("#beezping-markers [data-feedback-id]")).toHaveCount(1, { timeout: 10_000 });
   const res = await page.request.get(`${API}?projectName=${project}`);
   const { feedbacks } = await res.json();
   expect(feedbacks).toHaveLength(1);

@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>SitePing</h1>
+<h1>Beezping</h1>
 
 **Client feedback, pinned to the pixel.**
 
@@ -9,32 +9,32 @@ Draw rectangles, leave comments, track bugs — directly on the live site.
 
 ![Demo](./demo.gif)
 
-[![Website](https://img.shields.io/badge/website-siteping.dev-000000?style=flat&colorA=000000&colorB=000000)](https://siteping.dev)
-[![Live Demo](https://img.shields.io/badge/demo-try%20it%20live-22c55e?style=flat&colorA=000000)](https://siteping.dev/demo)
-[![Docs](https://img.shields.io/badge/docs-siteping.dev%2Fdocs-0066ff?style=flat&colorA=000000)](https://siteping.dev/docs)
+[![Repository](https://img.shields.io/badge/repository-GitHub-181717?style=flat)](https://github.com/guidomodarelli/beezping)
+[![Demo source](https://img.shields.io/badge/demo-source-22c55e?style=flat)](https://github.com/guidomodarelli/beezping/tree/main/apps/demo)
+[![Docs](https://img.shields.io/badge/docs-source-0066ff?style=flat)](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs)
 [![npm version](https://img.shields.io/npm/v/@beezping/widget?style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@beezping/widget)
 [![npm downloads](https://img.shields.io/npm/dm/@beezping/widget?style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@beezping/widget)
 [![license](https://img.shields.io/npm/l/@beezping/widget?style=flat&colorA=000000&colorB=000000)](./LICENSE)
-[![build](https://img.shields.io/github/actions/workflow/status/NeosiaNexus/SitePing/ci.yml?style=flat&colorA=000000&colorB=000000)](https://github.com/NeosiaNexus/SitePing/actions)
-[![CodeQL](https://img.shields.io/github/actions/workflow/status/NeosiaNexus/SitePing/codeql.yml?label=CodeQL&style=flat&colorA=000000&colorB=000000)](https://github.com/NeosiaNexus/SitePing/security/code-scanning)
-[![coverage](https://img.shields.io/codecov/c/github/NeosiaNexus/SitePing?style=flat&colorA=000000&colorB=000000)](https://app.codecov.io/gh/NeosiaNexus/SitePing)
-[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/NeosiaNexus/SitePing?label=scorecard&style=flat&colorA=000000&colorB=000000)](https://scorecard.dev/viewer/?uri=github.com/NeosiaNexus/SitePing)
+[![build](https://img.shields.io/github/actions/workflow/status/guidomodarelli/beezping/ci.yml?style=flat&colorA=000000&colorB=000000)](https://github.com/guidomodarelli/beezping/actions)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/guidomodarelli/beezping/codeql.yml?label=CodeQL&style=flat&colorA=000000&colorB=000000)](https://github.com/guidomodarelli/beezping/security/code-scanning)
+[![coverage](https://img.shields.io/codecov/c/github/guidomodarelli/beezping?style=flat&colorA=000000&colorB=000000)](https://app.codecov.io/gh/guidomodarelli/beezping)
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/guidomodarelli/beezping?label=scorecard&style=flat&colorA=000000&colorB=000000)](https://scorecard.dev/viewer/?uri=github.com/guidomodarelli/beezping)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 [![Bundle Size](https://img.shields.io/badge/widget-~34%20KB%20gzip%20(ESM)-blue)](./packages/widget/.size-limit.json)
 
-[**Documentation**](https://siteping.dev/docs) &middot; [Quickstart](https://siteping.dev/docs/quickstart) &middot; [Live Demo](https://siteping.dev/demo) &middot; [Contributing](./CONTRIBUTING.md)
+[**Documentation**](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/index.mdx) &middot; [Quickstart](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/quickstart.mdx) &middot; [Demo source](https://github.com/guidomodarelli/beezping/tree/main/apps/demo) &middot; [Contributing](./CONTRIBUTING.md)
 
 </div>
 
-> **[See SitePing in action →](https://siteping.dev/demo)** — Draw annotations, leave feedback, track bugs directly on the live site.
+> Run the [demo source](https://github.com/guidomodarelli/beezping/tree/main/apps/demo) locally with `bun run --filter @beezping/demo dev`. No public demo domain is configured.
 
 ---
 
-## Why SitePing?
+## Why Beezping?
 
-Stop chasing client feedback across Slack threads, email chains, and Notion docs. SitePing gives your clients a **contextual** way to leave feedback — anchored to the exact element they're looking at.
+Stop chasing client feedback across Slack threads, email chains, and Notion docs. Beezping gives your clients a **contextual** way to leave feedback — anchored to the exact element they're looking at.
 
-| | SitePing | Marker.io | BugHerd |
+| | Beezping | Marker.io | BugHerd |
 |---|---|---|---|
 | **Self-hosted** | Yes — your DB, your data | No (SaaS) | No (SaaS) |
 | **npm package** | `npm install` and go | npm + script tag | Script tag only |
@@ -50,7 +50,7 @@ Stop chasing client feedback across Slack threads, email chains, and Notion docs
 - **Instant right-click comments** — opt-in, and it never hijacks keyboard or modifier-key context menus
 - **Screenshots + diagnostics** — opt-in JPEG of the annotated area (with privacy masking) and console/network capture
 - **Panel actions** — your own buttons and links in the feedback detail view: create a ticket, hand a feedback to an agent, open it in your tracker
-- **Triage inbox** — `<SitepingInbox />` (`@beezping/dashboard`): Linear-style, keyboard-first, light/dark, 8 locales
+- **Triage inbox** — `<BeezpingInbox />` (`@beezping/dashboard`): Linear-style, keyboard-first, light/dark, 8 locales
 - **Reliability built in** — retry with backoff plus a localStorage queue; a flaky network never loses a comment
 - **Shadow DOM isolation** — widget CSS never leaks into your site, and your site CSS never breaks the widget
 - **Dev-only by default** — auto-hides in production builds unless `forceShow: true`
@@ -66,10 +66,10 @@ npx prisma db push
 
 ```tsx
 "use client";
-import { useSiteping } from "@beezping/widget/react";
+import { useBeezping } from "@beezping/widget/react";
 
 export function Feedback() {
-  useSiteping({ endpoint: "/api/siteping", projectName: "my-app" });
+  useBeezping({ endpoint: "/api/beezping", projectName: "my-app" });
   return null;
 }
 ```
@@ -77,29 +77,29 @@ export function Feedback() {
 Your clients can now draw rectangles on the site and leave feedback. Triage it with one component:
 
 ```tsx
-import { SitepingInbox } from "@beezping/dashboard";
+import { BeezpingInbox } from "@beezping/dashboard";
 
-<SitepingInbox projects="my-app" endpoint="/api/siteping" theme="auto" />
+<BeezpingInbox projects="my-app" endpoint="/api/beezping" theme="auto" />
 ```
 
-No server? The widget also runs fully client-side with `store: new LocalStorageStore()` — the [three-minute quickstart](https://siteping.dev/docs/quickstart) covers both paths, prerequisites included.
+No server? The widget also runs fully client-side with `store: new LocalStorageStore()` — the [three-minute quickstart](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/quickstart.mdx) covers both paths, prerequisites included.
 
 ## Documentation
 
-The full documentation lives at **[siteping.dev/docs](https://siteping.dev/docs)** (English and French) — every option, default, and behavior on these pages is verified against the source code.
+The full documentation lives at **[github.com/guidomodarelli/beezping/docs](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/index.mdx)** (English and French) — every option, default, and behavior on these pages is verified against the source code.
 
 | Package | | Docs |
 |---|---|---|
-| [`@beezping/widget`](./packages/widget) | The feedback widget (framework-agnostic + React hook) | [Widget](https://siteping.dev/docs/widget) · [Configuration](https://siteping.dev/docs/widget/configuration) · [Screenshots](https://siteping.dev/docs/widget/screenshots) |
-| [`@beezping/dashboard`](./packages/dashboard) | Triage inbox component + headless hook | [Dashboard](https://siteping.dev/docs/dashboard) · [Theming](https://siteping.dev/docs/dashboard/theming) |
-| [`@beezping/server`](./packages/server) | HTTP endpoint over any store, any framework (auth, CORS, hooks, webhooks) | [Server](https://siteping.dev/docs/server) |
-| [`@beezping/adapter-prisma`](./packages/adapter-prisma) | Production server adapter: the endpoint with a Prisma store built in | [Prisma adapter](https://siteping.dev/docs/adapters/prisma) |
-| [`@beezping/adapter-drizzle`](./packages/adapter-drizzle) | Drizzle ORM store (PostgreSQL, Turso/libSQL) | [Drizzle adapter](https://siteping.dev/docs/adapters/drizzle) |
-| [`@beezping/integration-issues`](./packages/integration-issues) | One GitHub or GitLab issue per feedback, kept in sync through the server's hooks | [Issue trackers](https://siteping.dev/docs/issue-trackers) |
-| [`@beezping/screenshot-storage`](./packages/screenshot-storage) | Screenshot storage for the stores (S3-compatible, Cloudflare Images, database, filesystem, custom) | [Screenshot storage](https://siteping.dev/docs/adapters/screenshot-storage) |
-| [`@beezping/adapter-memory`](./packages/adapter-memory) | In-memory store (tests, demos) | [Memory adapter](https://siteping.dev/docs/adapters/memory) |
-| [`@beezping/adapter-localstorage`](./packages/adapter-localstorage) | Client-side store (zero server) | [localStorage adapter](https://siteping.dev/docs/adapters/localstorage) |
-| [`@beezping/cli`](./packages/cli) | `init` / `sync` / `status` / `doctor` | [CLI](https://siteping.dev/docs/cli) |
+| [`@beezping/widget`](./packages/widget) | The feedback widget (framework-agnostic + React hook) | [Widget](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/widget) · [Configuration](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/widget/configuration.mdx) · [Screenshots](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/widget/screenshots.mdx) |
+| [`@beezping/dashboard`](./packages/dashboard) | Triage inbox component + headless hook | [Dashboard](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/dashboard) · [Theming](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/dashboard/theming.mdx) |
+| [`@beezping/server`](./packages/server) | HTTP endpoint over any store, any framework (auth, CORS, hooks, webhooks) | [Server](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/server.mdx) |
+| [`@beezping/adapter-prisma`](./packages/adapter-prisma) | Production server adapter: the endpoint with a Prisma store built in | [Prisma adapter](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/adapters/prisma.mdx) |
+| [`@beezping/adapter-drizzle`](./packages/adapter-drizzle) | Drizzle ORM store (PostgreSQL, Turso/libSQL) | [Drizzle adapter](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/adapters/drizzle.mdx) |
+| [`@beezping/integration-issues`](./packages/integration-issues) | One GitHub or GitLab issue per feedback, kept in sync through the server's hooks | [Issue trackers](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/issue-trackers.mdx) |
+| [`@beezping/screenshot-storage`](./packages/screenshot-storage) | Screenshot storage for the stores (S3-compatible, Cloudflare Images, database, filesystem, custom) | [Screenshot storage](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/adapters/screenshot-storage.mdx) |
+| [`@beezping/adapter-memory`](./packages/adapter-memory) | In-memory store (tests, demos) | [Memory adapter](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/adapters/memory.mdx) |
+| [`@beezping/adapter-localstorage`](./packages/adapter-localstorage) | Client-side store (zero server) | [localStorage adapter](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/adapters/localstorage.mdx) |
+| [`@beezping/cli`](./packages/cli) | `init` / `sync` / `status` / `doctor` | [CLI](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/cli.mdx) |
 
 ## Contributing
 
@@ -109,7 +109,7 @@ Maintaining a fork with extra features (semantic anchors, screenshot storage bac
 
 ## Contributors
 
-Every line of code, locale, doc fix, and bug report makes SitePing better. Huge thanks to everyone who has shown up — first-time contributors especially.
+Every line of code, locale, doc fix, and bug report makes Beezping better. Huge thanks to everyone who has shown up — first-time contributors especially.
 
 This project follows the [all-contributors](https://allcontributors.org) specification — every kind of contribution counts ([emoji key](https://allcontributors.org/docs/en/emoji-key)).
 
@@ -119,25 +119,25 @@ This project follows the [all-contributors](https://allcontributors.org) specifi
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/NeosiaNexus"><img src="https://avatars.githubusercontent.com/u/63867369?v=4?s=100" width="100px;" alt="Olsen Matheo"/><br /><sub><b>Olsen Matheo</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/commits?author=NeosiaNexus" title="Code">💻</a> <a href="#maintenance-NeosiaNexus" title="Maintenance">🚧</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=NeosiaNexus" title="Documentation">📖</a> <a href="#design-NeosiaNexus" title="Design">🎨</a> <a href="#infra-NeosiaNexus" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#ideas-NeosiaNexus" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/NeosiaNexus/SitePing/pulls?q=is%3Apr+reviewed-by%3ANeosiaNexus" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=NeosiaNexus" title="Tests">⚠️</a> <a href="#projectManagement-NeosiaNexus" title="Project Management">📆</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/alceops"><img src="https://avatars.githubusercontent.com/u/278831803?v=4?s=100" width="100px;" alt="Alce"/><br /><sub><b>Alce</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/commits?author=alceops" title="Code">💻</a> <a href="#translation-alceops" title="Translation">🌍</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=alceops" title="Tests">⚠️</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/reikjarloekl"><img src="https://avatars.githubusercontent.com/u/839540?v=4?s=100" width="100px;" alt="Jörn Bungartz"/><br /><sub><b>Jörn Bungartz</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/issues?q=author%3Areikjarloekl" title="Bug reports">🐛</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=reikjarloekl" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="http://innovation-agents.de"><img src="https://avatars.githubusercontent.com/u/915773?v=4?s=100" width="100px;" alt="Andi Keßler"/><br /><sub><b>Andi Keßler</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/commits?author=andinger" title="Code">💻</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=andinger" title="Tests">⚠️</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=andinger" title="Documentation">📖</a> <a href="#ideas-andinger" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/NeosiaNexus/SitePing/issues?q=author%3Aandinger" title="Bug reports">🐛</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/grizodubov"><img src="https://avatars.githubusercontent.com/u/55758039?v=4?s=100" width="100px;" alt="Valerii"/><br /><sub><b>Valerii</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/commits?author=grizodubov" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/sjh9714"><img src="https://avatars.githubusercontent.com/u/163989462?v=4?s=100" width="100px;" alt="JinHyuk Sung"/><br /><sub><b>JinHyuk Sung</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/commits?author=sjh9714" title="Code">💻</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=sjh9714" title="Tests">⚠️</a> <a href="https://github.com/NeosiaNexus/SitePing/issues?q=author%3Asjh9714" title="Bug reports">🐛</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://www.sendung.de/"><img src="https://avatars.githubusercontent.com/u/273727?v=4?s=100" width="100px;" alt="Marian Steinbach"/><br /><sub><b>Marian Steinbach</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/issues?q=author%3Amarians" title="Bug reports">🐛</a> <a href="#ideas-marians" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/NeosiaNexus"><img src="https://avatars.githubusercontent.com/u/63867369?v=4?s=100" width="100px;" alt="Olsen Matheo"/><br /><sub><b>Olsen Matheo</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/commits?author=NeosiaNexus" title="Code">💻</a> <a href="#maintenance-NeosiaNexus" title="Maintenance">🚧</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=NeosiaNexus" title="Documentation">📖</a> <a href="#design-NeosiaNexus" title="Design">🎨</a> <a href="#infra-NeosiaNexus" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#ideas-NeosiaNexus" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/guidomodarelli/beezping/pulls?q=is%3Apr+reviewed-by%3ANeosiaNexus" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=NeosiaNexus" title="Tests">⚠️</a> <a href="#projectManagement-NeosiaNexus" title="Project Management">📆</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/alceops"><img src="https://avatars.githubusercontent.com/u/278831803?v=4?s=100" width="100px;" alt="Alce"/><br /><sub><b>Alce</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/commits?author=alceops" title="Code">💻</a> <a href="#translation-alceops" title="Translation">🌍</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=alceops" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/reikjarloekl"><img src="https://avatars.githubusercontent.com/u/839540?v=4?s=100" width="100px;" alt="Jörn Bungartz"/><br /><sub><b>Jörn Bungartz</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/issues?q=author%3Areikjarloekl" title="Bug reports">🐛</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=reikjarloekl" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://innovation-agents.de"><img src="https://avatars.githubusercontent.com/u/915773?v=4?s=100" width="100px;" alt="Andi Keßler"/><br /><sub><b>Andi Keßler</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/commits?author=andinger" title="Code">💻</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=andinger" title="Tests">⚠️</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=andinger" title="Documentation">📖</a> <a href="#ideas-andinger" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/guidomodarelli/beezping/issues?q=author%3Aandinger" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/grizodubov"><img src="https://avatars.githubusercontent.com/u/55758039?v=4?s=100" width="100px;" alt="Valerii"/><br /><sub><b>Valerii</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/commits?author=grizodubov" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/sjh9714"><img src="https://avatars.githubusercontent.com/u/163989462?v=4?s=100" width="100px;" alt="JinHyuk Sung"/><br /><sub><b>JinHyuk Sung</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/commits?author=sjh9714" title="Code">💻</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=sjh9714" title="Tests">⚠️</a> <a href="https://github.com/guidomodarelli/beezping/issues?q=author%3Asjh9714" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.sendung.de/"><img src="https://avatars.githubusercontent.com/u/273727?v=4?s=100" width="100px;" alt="Marian Steinbach"/><br /><sub><b>Marian Steinbach</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/issues?q=author%3Amarians" title="Bug reports">🐛</a> <a href="#ideas-marians" title="Ideas, Planning, & Feedback">🤔</a></td>
     </tr>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://humen.lmm.best/mcp/"><img src="https://avatars.githubusercontent.com/u/106986785?v=4?s=100" width="100px;" alt="LIghtJUNction"/><br /><sub><b>LIghtJUNction</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/commits?author=LIghtJUNction" title="Code">💻</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=LIghtJUNction" title="Tests">⚠️</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://rehansanjay-portfolio.vercel.app/"><img src="https://avatars.githubusercontent.com/u/179024758?v=4?s=100" width="100px;" alt="Rehuz"/><br /><sub><b>Rehuz</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/commits?author=Rehansanjay" title="Code">💻</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=Rehansanjay" title="Tests">⚠️</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=Rehansanjay" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://humen.lmm.best/mcp/"><img src="https://avatars.githubusercontent.com/u/106986785?v=4?s=100" width="100px;" alt="LIghtJUNction"/><br /><sub><b>LIghtJUNction</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/commits?author=LIghtJUNction" title="Code">💻</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=LIghtJUNction" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://rehansanjay-portfolio.vercel.app/"><img src="https://avatars.githubusercontent.com/u/179024758?v=4?s=100" width="100px;" alt="Rehuz"/><br /><sub><b>Rehuz</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/commits?author=Rehansanjay" title="Code">💻</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=Rehansanjay" title="Tests">⚠️</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=Rehansanjay" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://vongohren.me/"><img src="https://avatars.githubusercontent.com/u/1012055?v=4?s=100" width="100px;" alt="Snorre Lothar von Gohren Edwin"/><br /><sub><b>Snorre Lothar von Gohren Edwin</b></sub></a><br /><a href="#ideas-vongohren" title="Ideas, Planning, & Feedback">🤔</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/guidomodarelli"><img src="https://avatars.githubusercontent.com/u/38738725?v=4?s=100" width="100px;" alt="Guido Modarelli"/><br /><sub><b>Guido Modarelli</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/commits?author=guidomodarelli" title="Code">💻</a> <a href="#platform-guidomodarelli" title="Packaging/porting to new platform">📦</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=guidomodarelli" title="Tests">⚠️</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=guidomodarelli" title="Documentation">📖</a> <a href="https://github.com/NeosiaNexus/SitePing/issues?q=author%3Aguidomodarelli" title="Bug reports">🐛</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://david.vasandani.me/"><img src="https://avatars.githubusercontent.com/u/547876?v=4?s=100" width="100px;" alt="David Vasandani"/><br /><sub><b>David Vasandani</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/commits?author=davidvasandani" title="Code">💻</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=davidvasandani" title="Tests">⚠️</a> <a href="https://github.com/NeosiaNexus/SitePing/issues?q=author%3Adavidvasandani" title="Bug reports">🐛</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/hiepnn-rk"><img src="https://avatars.githubusercontent.com/u/92846351?v=4?s=100" width="100px;" alt="hiepnn"/><br /><sub><b>hiepnn</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/commits?author=hiepnn-rk" title="Code">💻</a> <a href="#translation-hiepnn-rk" title="Translation">🌍</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=hiepnn-rk" title="Documentation">📖</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://petzko.sh/"><img src="https://avatars.githubusercontent.com/u/62967026?v=4?s=100" width="100px;" alt="Dylan Petzko"/><br /><sub><b>Dylan Petzko</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/commits?author=petzkod5" title="Code">💻</a> <a href="#ideas-petzkod5" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=petzkod5" title="Documentation">📖</a> <a href="#security-petzkod5" title="Security">🛡️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/guidomodarelli"><img src="https://avatars.githubusercontent.com/u/38738725?v=4?s=100" width="100px;" alt="Guido Modarelli"/><br /><sub><b>Guido Modarelli</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/commits?author=guidomodarelli" title="Code">💻</a> <a href="#platform-guidomodarelli" title="Packaging/porting to new platform">📦</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=guidomodarelli" title="Tests">⚠️</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=guidomodarelli" title="Documentation">📖</a> <a href="https://github.com/guidomodarelli/beezping/issues?q=author%3Aguidomodarelli" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://david.vasandani.me/"><img src="https://avatars.githubusercontent.com/u/547876?v=4?s=100" width="100px;" alt="David Vasandani"/><br /><sub><b>David Vasandani</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/commits?author=davidvasandani" title="Code">💻</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=davidvasandani" title="Tests">⚠️</a> <a href="https://github.com/guidomodarelli/beezping/issues?q=author%3Adavidvasandani" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/hiepnn-rk"><img src="https://avatars.githubusercontent.com/u/92846351?v=4?s=100" width="100px;" alt="hiepnn"/><br /><sub><b>hiepnn</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/commits?author=hiepnn-rk" title="Code">💻</a> <a href="#translation-hiepnn-rk" title="Translation">🌍</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=hiepnn-rk" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://petzko.sh/"><img src="https://avatars.githubusercontent.com/u/62967026?v=4?s=100" width="100px;" alt="Dylan Petzko"/><br /><sub><b>Dylan Petzko</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/commits?author=petzkod5" title="Code">💻</a> <a href="#ideas-petzkod5" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=petzkod5" title="Documentation">📖</a> <a href="#security-petzkod5" title="Security">🛡️</a></td>
     </tr>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/imikemiller"><img src="https://avatars.githubusercontent.com/u/24856374?v=4?s=100" width="100px;" alt="Mike Miller"/><br /><sub><b>Mike Miller</b></sub></a><br /><a href="https://github.com/NeosiaNexus/SitePing/commits?author=imikemiller" title="Code">💻</a> <a href="https://github.com/NeosiaNexus/SitePing/commits?author=imikemiller" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/imikemiller"><img src="https://avatars.githubusercontent.com/u/24856374?v=4?s=100" width="100px;" alt="Mike Miller"/><br /><sub><b>Mike Miller</b></sub></a><br /><a href="https://github.com/guidomodarelli/beezping/commits?author=imikemiller" title="Code">💻</a> <a href="https://github.com/guidomodarelli/beezping/commits?author=imikemiller" title="Documentation">📖</a></td>
     </tr>
   </tbody>
 </table>
@@ -151,7 +151,7 @@ This project follows the [all-contributors](https://allcontributors.org) specifi
 
 ### Activity
 
-![SitePing activity](https://repobeats.axiom.co/api/embed/9ac0c24e3801b4397a9ed90af984dfec23323d1c.svg "Repobeats analytics image")
+![Beezping activity](https://repobeats.axiom.co/api/embed/9ac0c24e3801b4397a9ed90af984dfec23323d1c.svg "Repobeats analytics image")
 
 <sub>Activity graph powered by <a href="https://repobeats.axiom.co">Repobeats</a>.</sub>
 
@@ -159,7 +159,7 @@ This project follows the [all-contributors](https://allcontributors.org) specifi
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=NeosiaNexus/SitePing&type=Date)](https://star-history.com/#NeosiaNexus/SitePing&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=guidomodarelli/beezping&type=Date)](https://star-history.com/#guidomodarelli/beezping&Date)
 
 ---
 

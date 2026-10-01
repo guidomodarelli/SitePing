@@ -6,7 +6,7 @@ import { SEED_SCREENSHOTS } from "./seed-screenshots";
  * Seeds the demo MemoryStore with a realistic triage backlog so the inbox at
  * /demo/inbox has something to show. The scenario: "Horizon Studio" (the fake
  * agency site at /demo) is a client reviewing their in-progress website; the
- * "landing" project collects dogfood feedback from the SitePing landing page.
+ * "landing" project collects dogfood feedback from the Beezping landing page.
  *
  * Records are created oldest-first because MemoryStore lists in insertion
  * order (newest unshifted to the head). Timestamps are back-dated by mutating
@@ -198,7 +198,7 @@ function buildSeeds(): Seed[] {
       annotation: {
         cssSelector: "#comparison",
         xpath: "//section[@id='comparison']",
-        textSnippet: "SitePing Marker.io BugHerd Pricing Free & open source",
+        textSnippet: "Beezping Marker.io BugHerd Pricing Free & open source",
         elementTag: "SECTION",
         textPrefix: "How it works",
         textSuffix: "FAQ",

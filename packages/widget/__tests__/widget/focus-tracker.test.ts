@@ -22,7 +22,7 @@ function pageButton(): HTMLButtonElement {
 }
 
 function makeHost(): HTMLElement {
-  return append(document.createElement("siteping-widget"));
+  return append(document.createElement("beezping-widget"));
 }
 
 describe("createFocusTracker", () => {
@@ -43,28 +43,28 @@ describe("createFocusTracker", () => {
     expect(tracker.getLastPageFocus()).toBe(btn);
   });
 
-  it("ignores widget chrome carrying data-siteping-ignore (previous target retained)", () => {
+  it("ignores widget chrome carrying data-beezping-ignore (previous target retained)", () => {
     tracker = createFocusTracker(makeHost());
     const btn = pageButton();
     btn.focus();
 
     const chrome = append(document.createElement("div"));
-    chrome.setAttribute("data-siteping-ignore", "true");
+    chrome.setAttribute("data-beezping-ignore", "true");
     chrome.setAttribute("tabindex", "0");
     chrome.focus();
 
     expect(tracker.getLastPageFocus()).toBe(btn);
   });
 
-  it("ignores markers inside the #siteping-markers container (previous target retained)", () => {
+  it("ignores markers inside the #beezping-markers container (previous target retained)", () => {
     tracker = createFocusTracker(makeHost());
     const btn = pageButton();
     btn.focus();
 
     // Markers are focusable (tabindex=0) and do NOT carry
-    // data-siteping-ignore — only the container id identifies them.
+    // data-beezping-ignore — only the container id identifies them.
     const container = append(document.createElement("div"));
-    container.id = "siteping-markers";
+    container.id = "beezping-markers";
     const marker = document.createElement("div");
     marker.setAttribute("tabindex", "0");
     container.appendChild(marker);
@@ -73,12 +73,12 @@ describe("createFocusTracker", () => {
     expect(tracker.getLastPageFocus()).toBe(btn);
   });
 
-  it("ignores focus inside a <siteping-widget> element (previous target retained)", () => {
+  it("ignores focus inside a <beezping-widget> element (previous target retained)", () => {
     tracker = createFocusTracker(makeHost());
     const btn = pageButton();
     btn.focus();
 
-    const widget = append(document.createElement("siteping-widget"));
+    const widget = append(document.createElement("beezping-widget"));
     const inner = document.createElement("button");
     widget.appendChild(inner);
     inner.focus();
@@ -148,7 +148,7 @@ describe("createFocusTracker", () => {
     btn.focus();
 
     const chrome = append(document.createElement("div"));
-    chrome.setAttribute("data-siteping-ignore", "true");
+    chrome.setAttribute("data-beezping-ignore", "true");
     const component = chrome.appendChild(document.createElement("div"));
     const inner = document.createElement("button");
     component.attachShadow({ mode: "open" }).appendChild(inner);

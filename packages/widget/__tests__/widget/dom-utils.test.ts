@@ -108,7 +108,7 @@ describe("parseSvg", () => {
   });
 
   it("throws for non-SVG content", () => {
-    expect(() => parseSvg("<div>not svg</div>")).toThrow("[siteping] Invalid SVG string");
+    expect(() => parseSvg("<div>not svg</div>")).toThrow("[beezping] Invalid SVG string");
   });
 
   it("throws for empty string", () => {

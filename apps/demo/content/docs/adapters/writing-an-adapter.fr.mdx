@@ -3,7 +3,7 @@ title: Écrire un adapter
 description: Construisez votre propre adapter de stockage avec @beezping/adapter-kit — le moteur, le contrat et la suite de conformité.
 ---
 
-Les quatre adapters fournis couvrent la plupart des installations, mais les stores SitePing sont enfichables : tout ce qui peut conserver des enregistrements peut alimenter le widget et le dashboard. `@beezping/adapter-kit` est le package publié pour ça — il porte le contrat `SitepingStore`, les briques sur lesquelles tournent les adapters officiels, et la suite de conformité qui prouve que votre implémentation se comporte comme les autres.
+Les quatre adapters fournis couvrent la plupart des installations, mais les stores Beezping sont enfichables : tout ce qui peut conserver des enregistrements peut alimenter le widget et le dashboard. `@beezping/adapter-kit` est le package publié pour ça — il porte le contrat `BeezpingStore`, les briques sur lesquelles tournent les adapters officiels, et la suite de conformité qui prouve que votre implémentation se comporte comme les autres.
 
 ```bash
 npm i -D @beezping/adapter-kit vitest
@@ -18,16 +18,16 @@ npm i -D @beezping/adapter-kit vitest
 | Votre backend | Ce que vous écrivez | Guide |
 |---|---|---|
 | Snapshot — KV, fichier plat, IndexedDB, un cookie, un tableau | `load` / `persist` / `generateId` | [Backends snapshot](#backends-snapshot) |
-| Requêtes — SQL, un ORM, une API HTTP | Les 6 méthodes de `SitepingStore` | [Backends à requêtes](#backends-à-requêtes) |
+| Requêtes — SQL, un ORM, une API HTTP | Les 6 méthodes de `BeezpingStore` | [Backends à requêtes](#backends-à-requêtes) |
 
 ## Backends snapshot
 
 Si votre stockage sait rendre la liste complète des feedbacks et en reprendre une entière, `createCollectionStore` vous donne un store complet et conforme. Il implémente toutes les sémantiques du contrat — déduplication par `clientId`, tri du plus récent au plus ancien, pipeline de filtrage et de pagination, `StoreNotFoundError` sur enregistrement absent, suppression en masse cadrée au projet, et `verifyProjectOwnership` :
 
 ```ts
-import { createCollectionStore, type FeedbackRecord, type SitepingStore } from "@beezping/adapter-kit";
+import { createCollectionStore, type FeedbackRecord, type BeezpingStore } from "@beezping/adapter-kit";
 
-export function createArrayStore(): SitepingStore {
+export function createArrayStore(): BeezpingStore {
   let feedbacks: FeedbackRecord[] = [];
   let counter = 1;
 
@@ -53,7 +53,7 @@ C'est un vrai adapter, pleinement conforme — c'est l'exemple contre lequel la 
 | `persist(feedbacks)` | Réécrit l'instantané complet. Levez `StorePersistenceError` quand l'écriture est perdue (quota, stockage désactivé) — ne l'avalez jamais |
 | `generateId()` | Un identifiant unique, utilisé pour les feedbacks, les annotations et les commentaires |
 
-`createCollectionStore` renvoie un `CollectionStore` — un `SitepingStore` dont `verifyProjectOwnership` est garanti au lieu d'être optionnel — avec `createFeedbackIfAbsent` garanti lui aussi, et `addComment` et `deleteComment` dès que vous passez `comments: true` — vous pouvez donc leur déléguer sans vérification préalable.
+`createCollectionStore` renvoie un `CollectionStore` — un `BeezpingStore` dont `verifyProjectOwnership` est garanti au lieu d'être optionnel — avec `createFeedbackIfAbsent` garanti lui aussi, et `addComment` et `deleteComment` dès que vous passez `comments: true` — vous pouvez donc leur déléguer sans vérification préalable.
 
 **Un `persist` qui échoue laisse votre instantané intact.** Le moteur ne modifie jamais le tableau renvoyé par `load()` — chaque écriture construit un nouveau tableau et le passe à `persist`. Donc si `load()` sert un tableau en cache et que l'écriture lève, aucun enregistrement fantôme ne reste visible, et le réessai du widget avec le même `clientId` est écrit pour de bon au lieu d'être dédupliqué contre quelque chose qui n'a jamais atteint le stockage.
 
@@ -71,10 +71,10 @@ import {
   StoreNotFoundError,
   type FeedbackCreateInput,
   type FeedbackRecord,
-  type SitepingStore,
+  type BeezpingStore,
 } from "@beezping/adapter-kit";
 
-export class PostgresStore implements SitepingStore {
+export class PostgresStore implements BeezpingStore {
   async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {
     const record = buildFeedbackRecord(data, {
       id: crypto.randomUUID(),
@@ -155,10 +155,10 @@ La même suite que celle des adapters officiels. Pointez-la vers une factory qui
 
 ```ts
 // __tests__/my-store.test.ts
-import { testSitepingStore } from "@beezping/adapter-kit/testing";
+import { testBeezpingStore } from "@beezping/adapter-kit/testing";
 import { MyStore } from "../src/index.js";
 
-testSitepingStore(() => new MyStore());
+testBeezpingStore(() => new MyStore());
 ```
 
 En plus des appels un par un, elle lance ensemble des mises à jour, des suppressions et des créations dans un `Promise.all` — comme le font les actions en masse du widget — et vérifie que chaque écriture a abouti.
@@ -171,7 +171,7 @@ La factory est appelée avant chaque test et peut être asynchrone — c'est là
 | `caseInsensitiveSearch` | `true` | Votre collation rend `search` sensible à la casse — passez `false` et la suite ne teste que la correspondance à casse identique |
 
 ```ts
-testSitepingStore(() => new PostgresStore(db), {
+testBeezpingStore(() => new PostgresStore(db), {
   duplicateBehavior: "throw",
   caseInsensitiveSearch: false,
 });
@@ -184,15 +184,15 @@ testSitepingStore(() => new PostgresStore(db), {
 Rien d'autre ne change. Côté serveur, passez-le aux handlers de requêtes ; côté client, passez-le directement au widget ou à l'inbox :
 
 ```ts
-// Serveur — les handlers de requêtes acceptent n'importe quel SitepingStore
-import { createSitepingHandler } from "@beezping/server";
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ store: new MyStore() });
+// Serveur — les handlers de requêtes acceptent n'importe quel BeezpingStore
+import { createBeezpingHandler } from "@beezping/server";
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({ store: new MyStore() });
 
 // Navigateur — mode côté client, aucun serveur
-import { initSiteping } from "@beezping/widget";
-initSiteping({ store: new MyStore(), projectName: "mon-app" });
+import { initBeezping } from "@beezping/widget";
+initBeezping({ store: new MyStore(), projectName: "mon-app" });
 ```
 
-Dans le navigateur, le widget cesse d'attendre `createFeedback` au bout de 30 s et signale une erreur réessayable (code `"TIMEOUT"`), pour que la popup de commentaire ne reste jamais bloquée. Il ne peut pas annuler l'appel — `SitepingStore` ne prend pas de signal d'annulation — donc une écriture tardive peut encore aboutir. Si votre store passe par le réseau, bornez vous-même ses appels, et dédupliquez sur `clientId` : un renvoi depuis la même popup le réutilise.
+Dans le navigateur, le widget cesse d'attendre `createFeedback` au bout de 30 s et signale une erreur réessayable (code `"TIMEOUT"`), pour que la popup de commentaire ne reste jamais bloquée. Il ne peut pas annuler l'appel — `BeezpingStore` ne prend pas de signal d'annulation — donc une écriture tardive peut encore aboutir. Si votre store passe par le réseau, bornez vous-même ses appels, et dédupliquez sur `clientId` : un renvoi depuis la même popup le réutilise.
 
-Si vous en publiez un, [ouvrez une issue](https://github.com/NeosiaNexus/SitePing/issues) — nous le référencerons depuis cette page.
+Si vous en publiez un, [ouvrez une issue](https://github.com/guidomodarelli/beezping/issues) — nous le référencerons depuis cette page.

@@ -1,3 +1,5 @@
+import { OWN_FEEDBACK_KEY_PREFIX } from "./constants/storage.js";
+
 /** How many ids a project's list keeps — the oldest are dropped first. */
 const MAX_OWN_FEEDBACK = 500;
 
@@ -19,7 +21,7 @@ export interface OwnFeedback {
  * the list reads as empty and writes are dropped.
  */
 export function ownFeedback(projectName: string, endpoint?: string): OwnFeedback {
-  const key = `siteping_own_feedback:${JSON.stringify([projectName, endpoint ?? null])}`;
+  const key = `${OWN_FEEDBACK_KEY_PREFIX}${JSON.stringify([projectName, endpoint ?? null])}`;
   const ids = (): Set<string> => {
     try {
       const stored: unknown = JSON.parse(localStorage.getItem(key) ?? "[]");

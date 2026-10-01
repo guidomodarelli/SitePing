@@ -3,8 +3,8 @@
 import type { FeedbackRecord } from "@beezping/core";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { SitepingInbox } from "../../src/components/inbox.js";
-import type { InboxCustomSourceOptions, SitepingInboxPresentationProps } from "../../src/types.js";
+import { BeezpingInbox } from "../../src/components/inbox.js";
+import type { BeezpingInboxPresentationProps, InboxCustomSourceOptions } from "../../src/types.js";
 import { deferred, makeDiagnostics, makeRecord, makeSource, REGION } from "../helpers.js";
 import { installJsdomStubs } from "../render.js";
 
@@ -19,7 +19,7 @@ function seed(): FeedbackRecord[] {
       status: "open",
       type: "bug",
       message: "Header overlaps the logo",
-      url: "https://demo.siteping.dev/pricing",
+      url: "https://demo.example.com/pricing",
       createdAt: new Date("2026-07-20T10:06:00Z"),
       screenshotUrl: "data:image/jpeg;base64,AA",
       screenshotRegion: REGION,
@@ -57,14 +57,14 @@ function seed(): FeedbackRecord[] {
  */
 type InboxOverrides = Partial<
   Omit<
-    InboxCustomSourceOptions & SitepingInboxPresentationProps,
+    InboxCustomSourceOptions & BeezpingInboxPresentationProps,
     "source" | "store" | "endpoint" | "apiKey" | "headers"
   >
 >;
 
 function renderInbox(props: InboxOverrides = {}, records = seed()) {
   const source = makeSource(records);
-  const utils = render(<SitepingInbox source={source} projects="demo" theme="dark" {...props} />);
+  const utils = render(<BeezpingInbox source={source} projects="demo" theme="dark" {...props} />);
   return { source, ...utils };
 }
 
@@ -81,7 +81,7 @@ function listRows(): HTMLElement[] {
   return within(screen.getByRole("listbox")).getAllByRole("option");
 }
 
-describe("SitepingInbox — list & tabs", () => {
+describe("BeezpingInbox — list & tabs", () => {
   it("renders one row per open feedback with the right status", async () => {
     renderInbox();
     await ready();
@@ -139,7 +139,7 @@ describe("SitepingInbox — list & tabs", () => {
   });
 });
 
-describe("SitepingInbox — keyboard", () => {
+describe("BeezpingInbox — keyboard", () => {
   it("j / k move the keyboard focus (focus ring), not the selection", async () => {
     renderInbox();
     const listbox = await ready();
@@ -352,7 +352,7 @@ describe("SitepingInbox — keyboard", () => {
   });
 });
 
-describe("SitepingInbox — toasts with concurrent work", () => {
+describe("BeezpingInbox — toasts with concurrent work", () => {
   const FAILED = "Something went wrong. Change reverted.";
 
   async function flush(): Promise<void> {
@@ -410,7 +410,7 @@ describe("SitepingInbox — toasts with concurrent work", () => {
   });
 });
 
-describe("SitepingInbox — search & live regions", () => {
+describe("BeezpingInbox — search & live regions", () => {
   it("shows a clear button once the search has text and clearing it empties the field", async () => {
     const { container } = renderInbox();
     await ready();
@@ -458,7 +458,7 @@ describe("SitepingInbox — search & live regions", () => {
   });
 });
 
-describe("SitepingInbox — drawer", () => {
+describe("BeezpingInbox — drawer", () => {
   async function openFirst(): Promise<void> {
     const listbox = await ready();
     fireEvent.keyDown(listbox, { key: "j" });
@@ -470,14 +470,14 @@ describe("SitepingInbox — drawer", () => {
     renderInbox();
     await openFirst();
     const link = screen.getByRole("link", { name: /Open on page/ });
-    expect(link.getAttribute("href")).toBe("https://demo.siteping.dev/pricing?siteping=o1");
+    expect(link.getAttribute("href")).toBe("https://demo.example.com/pricing?beezping=o1");
   });
 
   it("honours a custom deepLinkParam", async () => {
     renderInbox({ deepLinkParam: "fb" });
     await openFirst();
     expect(screen.getByRole("link", { name: /Open on page/ }).getAttribute("href")).toBe(
-      "https://demo.siteping.dev/pricing?fb=o1",
+      "https://demo.example.com/pricing?fb=o1",
     );
   });
 
@@ -524,7 +524,7 @@ describe("SitepingInbox — drawer", () => {
       [async () => {}, true],
     ] as const) {
       const source = Object.assign(makeSource(records), { addComment }, removeComment ? { removeComment } : {});
-      render(<SitepingInbox source={source} projects="demo" theme="dark" author={{ name: "Studio" }} />);
+      render(<BeezpingInbox source={source} projects="demo" theme="dark" author={{ name: "Studio" }} />);
       await openFirst();
       const dialog = screen.getByRole("dialog", { name: /Feedback details/ });
       expect(within(dialog).getByRole("textbox", { name: "Reply to the client…" })).toBeTruthy();
@@ -550,7 +550,7 @@ describe("SitepingInbox — drawer", () => {
       addComment: async () => reply("c-2"),
       removeComment: async () => {},
     });
-    render(<SitepingInbox source={source} projects="demo" theme="dark" author={{ name: "Studio" }} />);
+    render(<BeezpingInbox source={source} projects="demo" theme="dark" author={{ name: "Studio" }} />);
     await openFirst();
     const dialog = screen.getByRole("dialog", { name: /Feedback details/ });
 
@@ -565,7 +565,7 @@ describe("SitepingInbox — drawer", () => {
 
   it("keeps the drawer, and the reply draft, on an Escape typed in the composer — the next one closes", async () => {
     const source = Object.assign(makeSource(seed()), { addComment: async () => ({}) as never });
-    render(<SitepingInbox source={source} projects="demo" theme="dark" author={{ name: "Studio" }} />);
+    render(<BeezpingInbox source={source} projects="demo" theme="dark" author={{ name: "Studio" }} />);
     await openFirst();
     const dialog = screen.getByRole("dialog", { name: /Feedback details/ });
     const composer = within(dialog).getByRole("textbox", { name: "Reply to the client…" });
@@ -652,7 +652,7 @@ describe("SitepingInbox — drawer", () => {
   });
 });
 
-describe("SitepingInbox — empty & error states", () => {
+describe("BeezpingInbox — empty & error states", () => {
   it("shows the filtered-empty state, then the project-empty state via View all", async () => {
     renderInbox({}, []);
     // Default "open" filter counts as a filter → the filtered-empty state.
@@ -679,13 +679,13 @@ describe("SitepingInbox — empty & error states", () => {
   it("shows the error state with a retry button when the list fails", async () => {
     const source = makeSource(seed());
     source.list.mockRejectedValue(new Error("boom"));
-    render(<SitepingInbox source={source} projects="demo" theme="dark" />);
+    render(<BeezpingInbox source={source} projects="demo" theme="dark" />);
     expect(await screen.findByText("Failed to load feedbacks")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
   });
 });
 
-describe("SitepingInbox — chrome & theming", () => {
+describe("BeezpingInbox — chrome & theming", () => {
   it("reflects density, theme and accent on the root element", async () => {
     const { container } = renderInbox({ density: "compact", theme: "light", accentColor: "#ff0000" });
     await ready();
@@ -703,7 +703,7 @@ describe("SitepingInbox — chrome & theming", () => {
 
   it("renders the project switcher only when more than one project is configured", async () => {
     const multi = makeSource(seed());
-    const { container } = render(<SitepingInbox source={multi} projects={["demo", "landing"]} theme="dark" />);
+    const { container } = render(<BeezpingInbox source={multi} projects={["demo", "landing"]} theme="dark" />);
     await screen.findByRole("listbox");
     expect(container.querySelector(".spd-project-select")).not.toBeNull();
 
@@ -726,7 +726,7 @@ describe("SitepingInbox — chrome & theming", () => {
   });
 });
 
-describe("SitepingInbox — permissions and readOnly", () => {
+describe("BeezpingInbox — permissions and readOnly", () => {
   const REVIEWER = { canChangeStatus: false, canDelete: false, canComment: true, canDeleteComment: false };
   const hintKeys = (container: HTMLElement) =>
     [...container.querySelectorAll(".spd-hints kbd")].map((kbd) => kbd.textContent);

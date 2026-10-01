@@ -37,7 +37,7 @@ describe("issue marker", () => {
       feedbackId: "fb-1",
       projectName: "site",
     });
-    expect(parseIssueMarker('<!-- siteping-feedback {"id":"fb-1","project":"site","instance":1} -->')).toBeNull();
+    expect(parseIssueMarker('<!-- beezping-feedback {"id":"fb-1","project":"site","instance":1} -->')).toBeNull();
   });
 
   it("reads the first line only, whatever the line endings", () => {
@@ -51,13 +51,13 @@ describe("issue marker", () => {
 
   it("treats missing, truncated or malformed markers as absent", () => {
     expect(parseIssueMarker("An issue written by hand")).toBeNull();
-    expect(parseIssueMarker('<!-- siteping-feedback {"id":"a" -->')).toBeNull();
-    expect(parseIssueMarker('<!-- siteping-feedback {"id":1,"project":"site"} -->')).toBeNull();
-    expect(parseIssueMarker('<!-- siteping-feedback {"id":} -->')).toBeNull();
+    expect(parseIssueMarker('<!-- beezping-feedback {"id":"a" -->')).toBeNull();
+    expect(parseIssueMarker('<!-- beezping-feedback {"id":1,"project":"site"} -->')).toBeNull();
+    expect(parseIssueMarker('<!-- beezping-feedback {"id":} -->')).toBeNull();
   });
 });
 
-const options: IssueFormatOptions = { redact: (text) => text, deepLinkParam: "siteping", includeAuthorEmail: false };
+const options: IssueFormatOptions = { redact: (text) => text, deepLinkParam: "beezping", includeAuthorEmail: false };
 
 const record = (overrides: Partial<FeedbackRecord> = {}): FeedbackRecord => ({
   id: "fb-1",
@@ -136,10 +136,10 @@ function liveMarkdown(body: string) {
 describe("deletion comment", () => {
   it("is told by its first line alone, whatever the text below it", () => {
     expect(isDeletionComment(buildDeletionComment("Feedback fb-1 was deleted."))).toBe(true);
-    expect(isDeletionComment("<!-- siteping-feedback-deleted -->\r\n\r\nDeleted.")).toBe(true);
+    expect(isDeletionComment("<!-- beezping-feedback-deleted -->\r\n\r\nDeleted.")).toBe(true);
     // A reply quoting it, or naming its marker, is not it.
-    expect(isDeletionComment("Quoting the bot:\n<!-- siteping-feedback-deleted -->")).toBe(false);
-    expect(isDeletionComment("See <!-- siteping-feedback-deleted --> above")).toBe(false);
+    expect(isDeletionComment("Quoting the bot:\n<!-- beezping-feedback-deleted -->")).toBe(false);
+    expect(isDeletionComment("See <!-- beezping-feedback-deleted --> above")).toBe(false);
   });
 });
 
@@ -165,7 +165,7 @@ describe("formatIssue", () => {
     const live = liveMarkdown(body);
 
     for (const leak of leaks) expect(live.text).not.toContain(leak);
-    expect(live.links).toEqual(["https://example.com/checkout?siteping=fb-1"]);
+    expect(live.links).toEqual(["https://example.com/checkout?beezping=fb-1"]);
     expect(live.images).toEqual([]);
     expect(body).toContain(`\`\`\`\`\`text\n${message}\n\`\`\`\`\``);
   });
@@ -211,7 +211,7 @@ describe("formatIssue", () => {
     );
 
     expect(title).toBe(
-      "[SitePing] Ping @\u200Boctocat and @\u200Bacme/maintainers about #\u200B12 " +
+      "[Beezping] Ping @\u200Boctocat and @\u200Bacme/maintainers about #\u200B12 " +
         "and GH-\u200B5, !\u200B7, &\u200B3, ~\u200Bbug, %\u200Bv1, $\u200B4",
     );
   });
@@ -222,7 +222,7 @@ describe("formatIssue", () => {
 
       expect(title.length).toBeLessThanOrEqual(255);
     }
-    expect(formatIssue(record({ message: "a".repeat(5000) }), options).title).toBe(`[SitePing] ${"a".repeat(241)}...`);
+    expect(formatIssue(record({ message: "a".repeat(5000) }), options).title).toBe(`[Beezping] ${"a".repeat(241)}...`);
   });
 
   it("breaks the URLs in the title, which GitLab would autolink into references", () => {
@@ -231,7 +231,7 @@ describe("formatIssue", () => {
       options,
     );
 
-    expect(title).toBe("[SitePing] Same as https:\u200B//gitlab.com/acme/site/-/merge_requests/12 and ftp:\u200B//x");
+    expect(title).toBe("[Beezping] Same as https:\u200B//gitlab.com/acme/site/-/merge_requests/12 and ftp:\u200B//x");
   });
 
   it("lists where each annotation points, quoted as code", () => {
@@ -315,7 +315,7 @@ describe("formatIssue", () => {
   it("resolves the widget's default pathname URL against siteUrl", () => {
     const { body } = formatIssue(record({ url: "/checkout?step=2" }), { ...options, siteUrl: "https://acme.test" });
 
-    expect(liveMarkdown(body).links).toEqual(["https://acme.test/checkout?step=2&siteping=fb-1"]);
+    expect(liveMarkdown(body).links).toEqual(["https://acme.test/checkout?step=2&beezping=fb-1"]);
     expect(body).toContain("## Page\n\n`https://acme.test/checkout?step=2`");
   });
 
@@ -341,7 +341,7 @@ describe("formatIssue", () => {
     }
     expect(linked("https://acme.test/checkout")).toEqual([]);
     expect(linked("https://acme.test/checkout", "https://acme.test/app/")).toEqual([
-      "https://acme.test/checkout?siteping=fb-1",
+      "https://acme.test/checkout?beezping=fb-1",
     ]);
   });
 
@@ -358,7 +358,7 @@ describe("formatIssue", () => {
       siteUrl: "https://acme.test",
     });
 
-    expect(liveMarkdown(body).links).toEqual(["https://acme.test/checkout?siteping=fb-1"]);
+    expect(liveMarkdown(body).links).toEqual(["https://acme.test/checkout?beezping=fb-1"]);
     expect(body).toContain("## Page\n\n`https://acme.test/checkout`");
     expect(body).not.toContain("pass");
   });

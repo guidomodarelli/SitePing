@@ -1,5 +1,5 @@
 /**
- * Complete stylesheet for `<SitepingInbox />`.
+ * Complete stylesheet for `<BeezpingInbox />`.
  *
  * Design: Linear/Vercel — speed, density, sobriety. The dashboard is MATTE:
  * 1px borders, flat surfaces, no glassmorphism. Deliberate contrast with the

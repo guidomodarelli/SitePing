@@ -5,7 +5,7 @@ description: One GitHub or GitLab issue per feedback, opened, closed and reopene
 
 `@beezping/integration-issues` builds the [lifecycle hooks](/docs/server#extension-points) of `@beezping/server` so that every feedback gets its own issue on GitHub or GitLab:
 
-- **created** → an issue opens, labelled `siteping`, with the message, the page, a deep link, the annotated elements, the reviewer's environment and diagnostics;
+- **created** → an issue opens, labelled `beezping`, with the message, the page, a deep link, the annotated elements, the reviewer's environment and diagnostics;
 - **resolved** or **won't fix** → the issue closes; **reopened** → it reopens;
 - **deleted** → the issue closes with a comment. If the tracker is unreachable, the delete is refused and can be retried.
 
@@ -20,15 +20,15 @@ It runs wherever the [server](/docs/server) runs (Fetch API only) and takes `@be
 ## GitHub
 
 ```ts
-// app/api/siteping/route.ts
-import { createSitepingHandler } from "@beezping/server";
+// app/api/beezping/route.ts
+import { createBeezpingHandler } from "@beezping/server";
 import { createIssueTrackerHooks } from "@beezping/integration-issues";
 import { createGitHubTracker } from "@beezping/integration-issues/github";
-import { store } from "@/lib/siteping-store";
+import { store } from "@/lib/beezping-store";
 
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({
   store,
-  apiKey: process.env.SITEPING_API_KEY,
+  apiKey: process.env.BEEZPING_API_KEY,
   hooks: createIssueTrackerHooks({
     tracker: createGitHubTracker({ repository: "acme/site", token: process.env.GITHUB_TOKEN! }),
     siteUrl: "https://acme.com",
@@ -36,7 +36,7 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
 });
 ```
 
-The token is a [fine-grained personal access token](https://github.com/settings/personal-access-tokens) limited to that repository, with the **Issues** permission set to **Read and write**. Its account also needs **write access** to the repository: GitHub silently drops the labels of a new issue created by anyone else, and without its `siteping` label SitePing cannot find the issue again. When that happens the handler logs an error that names the missing permission.
+The token is a [fine-grained personal access token](https://github.com/settings/personal-access-tokens) limited to that repository, with the **Issues** permission set to **Read and write**. Its account also needs **write access** to the repository: GitHub silently drops the labels of a new issue created by anyone else, and without its `beezping` label Beezping cannot find the issue again. When that happens the handler logs an error that names the missing permission.
 
 On GitHub Enterprise Server, pass `apiBaseUrl: "https://github.acme.com/api/v3"`.
 
@@ -66,11 +66,11 @@ On a self-managed instance, pass `apiBaseUrl: "https://gitlab.acme.com/api/v4"`.
 
 Moving between `open` and `in_progress` only looks the issue up, and writes nothing to an issue that is open. With `syncStatus: false`, issues are only created and closed on delete.
 
-The sync runs one way, from SitePing to the tracker: closing the issue on GitHub does not resolve the feedback.
+The sync runs one way, from Beezping to the tracker: closing the issue on GitHub does not resolve the feedback.
 
 ## What an issue contains
 
-The title is `[SitePing]` followed by the message on one line, truncated to 255 characters. The body has these sections:
+The title is `[Beezping]` followed by the message on one line, truncated to 255 characters. The body has these sections:
 
 - **Message**
 - **Type**
@@ -101,15 +101,15 @@ Everything in the body comes from anonymous visitors, so it is quoted as code. T
 |---|---|---|---|
 | `tracker` | `IssueTracker` | — | Required. `createGitHubTracker`, `createGitLabTracker` or [your own](#other-trackers) |
 | `siteUrl` | `string` | — | Origin of the site under review. The widget records `location.pathname` as the page URL by default, which resolves against it. The deep link only points to this origin: without `siteUrl`, issues have no deep link. It must be an absolute http(s) URL such as `https://acme.com`: anything else throws when the hooks are built, so the route module fails to load |
-| `deepLinkParam` | `string \| false` | `"siteping"` | Must match the widget's [`deepLink`](/docs/widget/configuration) `param`. `false` leaves the link out |
-| `labels` | `string[]` | `[]` | Extra labels. `siteping` is always added |
+| `deepLinkParam` | `string \| false` | `"beezping"` | Must match the widget's [`deepLink`](/docs/widget/configuration) `param`. `false` leaves the link out |
+| `labels` | `string[]` | `[]` | Extra labels. `beezping` is always added |
 | `redact` | `(text) => string` | none | Applied by the built-in format to the message, author, page URL, user agent, annotation text and diagnostics before they leave your server. A custom `formatIssue` gets the feedback unredacted: call `options.redact` on what you copy, or [extend the default issue](#extending-the-default-issue). To redact before the feedback is even stored, use the server's [`beforeCreate`](/docs/server#extension-points) |
 | `includeAuthorEmail` | `boolean` | `false` | Add the reviewer's email next to their name |
 | `formatIssue` | `(feedback, options) => { title, body }` | built-in | Your own title and Markdown, or [the default extended](#extending-the-default-issue). The marker is still added as the first line. Quoting visitor text is then up to you |
 | `onIssueCreated` | `(feedback, issue) => void` | — | Called with each issue opened (`issue.key`, `issue.url`), to send its link to a chat or keep it, say. The visitor's `POST` waits for it, and so do the feedback's later status changes and deletes and its project's next delete, so it must not wait for one of those itself. A throw is logged like a failed creation |
 | `instance` | `string` | — | Name of this deployment when several share one repository. See [how issues are found again](#how-issues-are-found-again) |
 | `syncStatus` | `boolean` | `true` | Close and reopen the issue when the status changes |
-| `deletedCommentText` | `(feedbackId) => string` | ``SitePing feedback `<id>` was deleted.`` | The comment left on the issue of a deleted feedback. A retried delete finds it by a hidden first line, so the text may change from one call to the next |
+| `deletedCommentText` | `(feedbackId) => string` | ``Beezping feedback `<id>` was deleted.`` | The comment left on the issue of a deleted feedback. A retried delete finds it by a hidden first line, so the text may change from one call to the next |
 
 `createGitHubTracker` and `createGitLabTracker` also take `apiBaseUrl`, `fetch` (for a proxy or tests), `timeoutMs` (per request, default `5000`) and `maxListedPages` (default `10`, see [how issues are found again](#how-issues-are-found-again)).
 
@@ -120,7 +120,7 @@ Both check their options when they are called, and throw on a value that could n
 ```ts
 const issues = createIssueTrackerHooks({ tracker });
 
-createSitepingHandler({
+createBeezpingHandler({
   store,
   hooks: {
     ...issues,
@@ -154,26 +154,26 @@ createIssueTrackerHooks({
 
 ## Latency and failures
 
-- **Creating.** `onCreated` is awaited before the `POST` answers, so the widget waits for one tracker request, at most `timeoutMs` (5 seconds by default), then for `onIssueCreated`. If it fails (the tracker is down, or the token is wrong), the feedback is stored anyway and the error goes to the server's `logger` as `[siteping] Hook onCreated failed`, with the feedback's id. Nothing retries it: that feedback has no issue. When the label was dropped, the issue does exist and the same error names the missing permission, but SitePing cannot find that issue again, so status changes and deletes never reach it. Fix the permission, then label or close those issues by hand.
+- **Creating.** `onCreated` is awaited before the `POST` answers, so the widget waits for one tracker request, at most `timeoutMs` (5 seconds by default), then for `onIssueCreated`. If it fails (the tracker is down, or the token is wrong), the feedback is stored anyway and the error goes to the server's `logger` as `[beezping] Hook onCreated failed`, with the feedback's id. Nothing retries it: that feedback has no issue. When the label was dropped, the issue does exist and the same error names the missing permission, but Beezping cannot find that issue again, so status changes and deletes never reach it. Fix the permission, then label or close those issues by hand.
 - **Changing a status.** The `PATCH` waits for the issue's [lookup](#how-issues-are-found-again), one search plus one listing request when the search misses (and up to `maxListedPages` more when it fails), then for one write, each request at most `timeoutMs`. A tracker that does not answer the search within `timeoutMs` is taken as down, and the lookup stops there. A search that fails at once (a refused connection, a rate limit) falls back to the listing. A failed sync is logged the same way, and the new status is kept.
 - **Deleting.** `onDeleting` looks the issue up the same way and closes it before the record goes. If the tracker fails, the `DELETE` answers `502` and keeps the record: retry it once the tracker is back. The comment is left once, even across retries.
 - **Deleting a whole project.** The project's issues are listed first, and the delete is refused when the listing stops at `maxListedPages` with issues left (see [how issues are found again](#how-issues-are-found-again)). They are then handled one after the other, with up to three requests each: close the issue if it is open, read its comments, comment. A project with many issues can therefore hit the tracker's rate limit (GitHub allows about 80 content-creating requests a minute) or a serverless function's time limit. Every record is then kept: the `DELETE` answers `502` when the tracker refuses a request, or the platform's own timeout error (`504` on Vercel, for example) when the function is stopped. After a rate limit, retry a few minutes later: an issue already closed and commented costs a single read, so each attempt gets further. A time limit is different: every attempt reads the comments of the issues already handled again, so it never handles more issues than one run has time for, and retrying a project past that size never succeeds. Delete its feedback one at a time instead, or run that delete through a handler without these hooks and close its issues yourself.
 - **Slow answers.** The widget gives up on a request after 10 seconds and retries it, so a request that lists many pages (a project delete, or a lookup whose search failed) can show an error for a change the server still makes. Keep `maxListedPages` to what the repository needs.
 - **Concurrent requests.** Within one server process, the hooks queue their tracker work: a feedback's status changes and deletes run in the order they came, after the creation of its issue, and a project delete runs after the work already started on that project. This holds for hooks built once, at module scope, as in the examples above. Separate instances (several serverless functions, say) can still interleave two requests on one feedback. In one process as in several, a feedback sent while its project is being deleted goes with the project, and its issue can be left open: its `POST` does not wait for the delete, which could not keep the issue from opening.
 
-The built-in trackers throw two errors that a custom `logger` can tell apart: `IssueTrackerRequestError` for a failed tracker request, an answer that is not JSON or is cut short by the timeout included (it carries the method, path and status, never the token) and `UnlabelledIssueError` for an issue created without its `siteping` label. Match them with `isIssueTrackerRequestError(error)` and `isUnlabelledIssueError(error)`, exported next to them, rather than `instanceof`: in CommonJS, each entry point bundles its own copy of the error classes.
+The built-in trackers throw two errors that a custom `logger` can tell apart: `IssueTrackerRequestError` for a failed tracker request, an answer that is not JSON or is cut short by the timeout included (it carries the method, path and status, never the token) and `UnlabelledIssueError` for an issue created without its `beezping` label. Match them with `isIssueTrackerRequestError(error)` and `isUnlabelledIssueError(error)`, exported next to them, rather than `instanceof`: in CommonJS, each entry point bundles its own copy of the error classes.
 
 ## How issues are found again
 
-Each body starts with the marker `<!-- siteping-feedback {"id":"…","project":"…"} -->`, which GitHub and GitLab do not display. Only that first line is read, so feedback text that imitates it is ignored. Edit the rest of the issue as you like, but keep that line first. The deletion comment starts the same way, with `<!-- siteping-feedback-deleted -->`: a retried delete looks for that line, not for the comment's text. Any comment that starts with it counts, whoever wrote it: on a public repository, anyone can post one to keep the deletion comment off an issue, which is still closed.
+Each body starts with the marker `<!-- beezping-feedback {"id":"…","project":"…"} -->`, which GitHub and GitLab do not display. Only that first line is read, so feedback text that imitates it is ignored. Edit the rest of the issue as you like, but keep that line first. The deletion comment starts the same way, with `<!-- beezping-feedback-deleted -->`: a retried delete looks for that line, not for the comment's text. Any comment that starts with it counts, whoever wrote it: on a public repository, anyone can post one to keep the deletion comment off an issue, which is still closed.
 
 Deployments that share a repository and a project name (staging and production, or a preview that copied the production `.env`) would find each other's issues, and a project delete on staging would close production's. Give each its own `instance`: the marker then ends with `"instance":"staging"`, and the hooks only touch issues opened under the same name, an unnamed deployment only those without one. Issues opened before a deployment was named, or renamed, keep the old name.
 
-To sync a status or delete one feedback, the tracker is first searched for the feedback id (GitHub's search API, GitLab's `search` parameter). If the search misses, the hooks list the first page of `siteping` issues, newest first: GitHub's search index lags a few seconds behind a new issue. A search that answered settles the rest, since it only misses issues too new for its index. When it failed (GitHub allows 30 searches a minute), or found more issues quoting the feedback id than it returned, the hooks list further. Deleting a whole project always lists every issue.
+To sync a status or delete one feedback, the tracker is first searched for the feedback id (GitHub's search API, GitLab's `search` parameter). If the search misses, the hooks list the first page of `beezping` issues, newest first: GitHub's search index lags a few seconds behind a new issue. A search that answered settles the rest, since it only misses issues too new for its index. When it failed (GitHub allows 30 searches a minute), or found more issues quoting the feedback id than it returned, the hooks list further. Deleting a whole project always lists every issue.
 
-The listing stops after `maxListedPages` pages of 100 issues, and it counts the SitePing issues of every project in the repository, closed ones included, so a repository outgrows it in time. Past that, the hooks do not guess. A project delete is refused with a `502` rather than leaving the older issues open, and so is a status sync or a delete whose issue the search did not settle and the listing did not reach. With the default of 10, the cap is the repository's 1,000 newest SitePing issues. Raise it for a larger backlog: only project deletes and the lookups the search does not settle list that far.
+The listing stops after `maxListedPages` pages of 100 issues, and it counts the Beezping issues of every project in the repository, closed ones included, so a repository outgrows it in time. Past that, the hooks do not guess. A project delete is refused with a `502` rather than leaving the older issues open, and so is a status sync or a delete whose issue the search did not settle and the listing did not reach. With the default of 10, the cap is the repository's 1,000 newest Beezping issues. Raise it for a larger backlog: only project deletes and the lookups the search does not settle list that far.
 
-Only labelled issues count. On GitHub and GitLab, an outsider cannot label an issue, so they cannot make one pass for SitePing's.
+Only labelled issues count. On GitHub and GitLab, an outsider cannot label an issue, so they cannot make one pass for Beezping's.
 
 ## Other trackers
 
@@ -194,16 +194,16 @@ const tracker: IssueTracker = {
   async listComments(reference) {
     return []; // comment bodies, each first line as addComment received it
   },
-  // Every SitePing issue whose body contains `marker`, closed ones included,
+  // Every Beezping issue whose body contains `marker`, closed ones included,
   // newest first, no more than `maxPages` pages when it is set, and whether
   // you stopped before the last one.
-  async findSitepingIssues(marker, { maxPages } = {}) {
+  async findBeezpingIssues(marker, { maxPages } = {}) {
     return { issues: [], truncated: false }; // issues: { reference, body, isOpen }
   },
   // Optional, but without it lookups past your cap are refused (see below):
   // a server-side search by feedback id, tried first, and whether it found
   // more matches than it returned.
-  async searchSitepingIssues(feedbackId) {
+  async searchBeezpingIssues(feedbackId) {
     return { issues: [], truncated: false };
   },
 };
@@ -211,6 +211,6 @@ const tracker: IssueTracker = {
 
 Throw when a call fails, and the [failure rules](#latency-and-failures) above apply. Trackers that do not speak Markdown can shape the body with `formatIssue`.
 
-Without `searchSitepingIssues`, nothing settles a lookup past the newest page: every status change or delete whose issue is not there lists up to your cap, and once the tracker holds more SitePing issues than that, one whose issue is not listed is refused. That includes a feedback that never got an issue, which then cannot be deleted. Provide a search whenever the tracker has one.
+Without `searchBeezpingIssues`, nothing settles a lookup past the newest page: every status change or delete whose issue is not there lists up to your cap, and once the tracker holds more Beezping issues than that, one whose issue is not listed is refused. That includes a feedback that never got an issue, which then cannot be deleted. Provide a search whenever the tracker has one.
 
-Syncing the other way, so that closing an issue resolves its feedback, needs a tracker webhook handler and is not built yet ([#318](https://github.com/NeosiaNexus/SitePing/issues/318)).
+Syncing the other way, so that closing an issue resolves its feedback, needs a tracker webhook handler and is not built yet ([#318](https://github.com/guidomodarelli/beezping/issues/318)).

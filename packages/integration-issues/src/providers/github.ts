@@ -9,7 +9,7 @@ import {
   GITHUB_USER_AGENT,
 } from "../constants/github.js";
 import { TRACKER_MAX_LISTED_PAGES } from "../constants/http.js";
-import { SITEPING_ISSUE_LABEL } from "../constants/issue-format.js";
+import { BEEZPING_ISSUE_LABEL } from "../constants/issue-format.js";
 import { createJsonHttpClient, UnlabelledIssueError } from "../core/http-client.js";
 import type { IssueTracker, TrackedIssue } from "../core/issue-tracker.js";
 import { checkApiBaseUrl, checkPositiveInteger, checkTimeout, checkToken } from "../core/tracker-options.js";
@@ -27,7 +27,7 @@ export interface GitHubTrackerOptions {
    * Most pages of 100 issues listed, newest first: on a project-wide delete,
    * and to find a feedback's issue when the search fails. After a search
    * that answered, one page is listed (its index lags a few seconds behind a
-   * new issue). Defaults to 10: past the 1,000 newest SitePing issues, a
+   * new issue). Defaults to 10: past the 1,000 newest Beezping issues, a
    * project delete is refused, and so is a lookup the search did not settle.
    */
   maxListedPages?: number | undefined;
@@ -74,7 +74,7 @@ export function createGitHubTracker({
 }: GitHubTrackerOptions): IssueTracker {
   if (!GITHUB_REPOSITORY_PATTERN.test(repository)) {
     // Not echoed: a clone URL may carry a token, and this error is logged.
-    throw new Error('[siteping] createGitHubTracker: repository must be "owner/name"');
+    throw new Error('[beezping] createGitHubTracker: repository must be "owner/name"');
   }
   const credential = checkToken("createGitHubTracker", token);
   checkApiBaseUrl("createGitHubTracker", apiBaseUrl);
@@ -99,9 +99,9 @@ export function createGitHubTracker({
 
     async createIssue({ title, body, labels }) {
       const issue = await request<GitHubIssue>({ method: "POST", path: issuesPath, body: { title, body, labels } });
-      // Label names are case-insensitive: an existing `SitePing` label is attached and answered as is.
+      // Label names are case-insensitive: an existing `Beezping` label is attached and answered as is.
       const kept = issue.labels.map((label) => (typeof label === "string" ? label : label.name)?.toLowerCase());
-      if (labels.includes(SITEPING_ISSUE_LABEL) && !kept.includes(SITEPING_ISSUE_LABEL)) {
+      if (labels.includes(BEEZPING_ISSUE_LABEL) && !kept.includes(BEEZPING_ISSUE_LABEL)) {
         throw new UnlabelledIssueError(
           "GitHub",
           `#${issue.number}`,
@@ -133,12 +133,12 @@ export function createGitHubTracker({
       return bodies;
     },
 
-    async searchSitepingIssues(feedbackId) {
+    async searchBeezpingIssues(feedbackId) {
       const { items, total_count, incomplete_results } = await request<GitHubSearchResult>({
         method: "GET",
         path: "/search/issues",
         query: {
-          q: `repo:${repository} is:issue label:${SITEPING_ISSUE_LABEL} in:body "${feedbackId.replaceAll('"', "")}"`,
+          q: `repo:${repository} is:issue label:${BEEZPING_ISSUE_LABEL} in:body "${feedbackId.replaceAll('"', "")}"`,
           per_page: String(GITHUB_PAGE_SIZE),
         },
       });
@@ -150,13 +150,13 @@ export function createGitHubTracker({
     },
 
     // Listed by label (consistent right after creation, unlike the search index).
-    async findSitepingIssues(marker, { maxPages = maxListedPages } = {}) {
+    async findBeezpingIssues(marker, { maxPages = maxListedPages } = {}) {
       const matches: TrackedIssue[] = [];
       for (let page = 1; page <= Math.min(maxPages, maxListedPages); page++) {
         const issues = await request<GitHubIssue[]>({
           method: "GET",
           path: issuesPath,
-          query: { labels: SITEPING_ISSUE_LABEL, state: "all", per_page: String(GITHUB_PAGE_SIZE), page: String(page) },
+          query: { labels: BEEZPING_ISSUE_LABEL, state: "all", per_page: String(GITHUB_PAGE_SIZE), page: String(page) },
         });
         for (const issue of issues) {
           if (issue.pull_request || !issue.body?.includes(marker)) continue;

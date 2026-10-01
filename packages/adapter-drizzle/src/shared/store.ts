@@ -1,4 +1,5 @@
 import {
+  type BeezpingStore,
   buildCommentRecord,
   buildFeedbackRecord,
   type CommentCreateInput,
@@ -17,7 +18,6 @@ import {
   MAX_COMMENTS_PER_FEEDBACK,
   SCREENSHOT_DELETE_CONCURRENCY,
   type ScreenshotStorage,
-  type SitepingStore,
   StoreLimitError,
   StoreNotFoundError,
   StorePersistenceError,
@@ -34,11 +34,11 @@ import { INLINE_SCREENSHOT_URL_PREFIX, SCREENSHOT_REFERENCE_LOOKUP_BATCH_SIZE } 
 import { withDriverErrors } from "./errors.js";
 import type {
   AnnotationRow,
+  BeezpingSqlGateway,
   CommentRow,
   DeleteFeedbacksOptions,
   FeedbackFilter,
   FeedbackRow,
-  SitepingSqlGateway,
 } from "./gateway.js";
 import { toStorableText, toStorableValue } from "./text.js";
 
@@ -47,8 +47,8 @@ import { toStorableText, toStorableValue } from "./text.js";
  * the ownership check, the atomic `createFeedbackIfAbsent` and discussion
  * threads.
  */
-export type DrizzleStore = SitepingStore &
-  Required<Pick<SitepingStore, "verifyProjectOwnership" | "createFeedbackIfAbsent" | "addComment" | "deleteComment">>;
+export type DrizzleStore = BeezpingStore &
+  Required<Pick<BeezpingStore, "verifyProjectOwnership" | "createFeedbackIfAbsent" | "addComment" | "deleteComment">>;
 
 /**
  * Where the store reports degraded-but-non-fatal situations (failed
@@ -95,7 +95,7 @@ function isStoreContractError(error: unknown): boolean {
  * Run database calls a mutation makes (its write, or a read it depends on),
  * reporting any database failure (read-only or full database, lost
  * connection, rejected statement…) as `StorePersistenceError`, the
- * `SitepingStore` mutation contract, with the driver's error as `cause`.
+ * `BeezpingStore` mutation contract, with the driver's error as `cause`.
  *
  * @param mutation - Store method being served, for the message.
  * @param identifiers - Minimal ids to debug the failure (never payload data).
@@ -146,20 +146,20 @@ function isUploadedScreenshotUrl(url: string | null | undefined): url is string 
 }
 
 /**
- * `SitepingStore` over a dialect gateway: ids, timestamps, clientId
+ * `BeezpingStore` over a dialect gateway: ids, timestamps, clientId
  * idempotency, screenshot upload/cleanup and the error contract live here,
  * SQL lives in the gateway. Every string a method receives goes through
  * {@link toStorableText} before it reaches the gateway.
  * @internal
  */
-export class DrizzleSitepingStore implements DrizzleStore {
-  private readonly gateway: SitepingSqlGateway;
+export class DrizzleBeezpingStore implements DrizzleStore {
+  private readonly gateway: BeezpingSqlGateway;
   private readonly screenshotStorage: ScreenshotStorage | undefined;
   private readonly logger: DrizzleStoreLogger;
   private readonly now: () => Date;
   private inlineScreenshotWarned = false;
 
-  constructor(gateway: SitepingSqlGateway, options: DrizzleStoreOptions = {}) {
+  constructor(gateway: BeezpingSqlGateway, options: DrizzleStoreOptions = {}) {
     this.gateway = withDriverErrors(gateway);
     this.screenshotStorage = options.screenshotStorage;
     this.logger = options.logger ?? silentLogger;
@@ -480,7 +480,7 @@ export class DrizzleSitepingStore implements DrizzleStore {
         return url;
       } catch (error) {
         this.logger.warn(
-          "[siteping] DrizzleStore: screenshotStorage.upload failed — feedback saved without screenshot",
+          "[beezping] DrizzleStore: screenshotStorage.upload failed — feedback saved without screenshot",
           { clientId, feedbackId, error },
         );
         return null;
@@ -489,7 +489,7 @@ export class DrizzleSitepingStore implements DrizzleStore {
     if (!this.inlineScreenshotWarned) {
       this.inlineScreenshotWarned = true;
       this.logger.warn(
-        "[siteping] DrizzleStore: no screenshotStorage configured — screenshots are stored inline as base64. Configure a ScreenshotStorage for production.",
+        "[beezping] DrizzleStore: no screenshotStorage configured — screenshots are stored inline as base64. Configure a ScreenshotStorage for production.",
         {},
       );
     }

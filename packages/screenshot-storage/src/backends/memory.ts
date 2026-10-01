@@ -2,7 +2,7 @@ import type { ScreenshotObject, ScreenshotObjectStore } from "../core/object-sto
 import { createPublicUrlMapping } from "../core/public-url.js";
 
 export interface MemoryObjectStoreOptions {
-  /** Where `createScreenshotServeHandler` is mounted, e.g. `https://app.example.com/api/siteping/screenshots`. */
+  /** Where `createScreenshotServeHandler` is mounted, e.g. `https://app.example.com/api/beezping/screenshots`. */
   publicBaseUrl: string;
 }
 

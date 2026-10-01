@@ -5,11 +5,11 @@
  * `@beezping/core`.
  */
 
-import { createCollectionStore, type FeedbackRecord, type SitepingStore } from "../src/index.js";
-import { testSitepingStore } from "../src/testing.js";
+import { type BeezpingStore, createCollectionStore, type FeedbackRecord } from "../src/index.js";
+import { testBeezpingStore } from "../src/testing.js";
 
 /** The simplest possible third-party adapter: a snapshot store over a plain array. */
-function createArrayStore(): SitepingStore {
+function createArrayStore(): BeezpingStore {
   let feedbacks: FeedbackRecord[] = [];
   let counter = 1;
   return createCollectionStore({
@@ -22,4 +22,4 @@ function createArrayStore(): SitepingStore {
   });
 }
 
-testSitepingStore(() => createArrayStore());
+testBeezpingStore(() => createArrayStore());

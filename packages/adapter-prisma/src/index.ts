@@ -1,4 +1,5 @@
 import {
+  type BeezpingStore,
   type CommentCreateInput,
   type CommentRecord,
   clampPagination,
@@ -17,7 +18,6 @@ import {
   MAX_COMMENTS_PER_FEEDBACK,
   SCREENSHOT_DELETE_CONCURRENCY,
   type ScreenshotStorage,
-  type SitepingStore,
   StoreDuplicateError,
   StoreLimitError,
   StoreNotFoundError,
@@ -26,20 +26,20 @@ import {
   settleWithConcurrencyLimit,
 } from "@beezping/core";
 import {
-  createSitepingHandler as createServerHandler,
-  type SitepingAccessHandlerOptions,
-  type SitepingApiKeyHandlerOptions,
-  type SitepingHandler,
-  type SitepingPrincipal,
+  type BeezpingAccessHandlerOptions,
+  type BeezpingApiKeyHandlerOptions,
+  type BeezpingHandler,
+  type BeezpingPrincipal,
+  createBeezpingHandler as createServerHandler,
 } from "@beezping/server";
 
 export type {
+  BeezpingStore,
   CommentCreateInput,
   CommentPayload,
   FeedbackCreateInput,
   FeedbackRecord,
   ScreenshotStorage,
-  SitepingStore,
 } from "@beezping/core";
 export {
   flattenAnnotation,
@@ -60,19 +60,19 @@ export type FeedbackCreateSchemaInput = FeedbackPayload;
 // The server's option types, so a strict linker (pnpm, Bun's isolated
 // installs) never needs @beezping/server as a direct dependency to type them.
 export type {
+  BeezpingAccessControl,
+  BeezpingAction,
+  BeezpingAuthorizationContext,
+  BeezpingDeletionTarget,
+  BeezpingHandler,
+  BeezpingHandlerBaseOptions,
+  BeezpingHttpMethod,
+  BeezpingLifecycleHooks,
+  BeezpingLogger,
+  BeezpingPrincipal,
+  BeezpingRequestContext,
   DiscordWebhookPayload,
   GenericWebhookPayload,
-  SitepingAccessControl,
-  SitepingAction,
-  SitepingAuthorizationContext,
-  SitepingDeletionTarget,
-  SitepingHandler,
-  SitepingHandlerBaseOptions,
-  SitepingHttpMethod,
-  SitepingLifecycleHooks,
-  SitepingLogger,
-  SitepingPrincipal,
-  SitepingRequestContext,
   SlackWebhookPayload,
   WebhookConfig,
   WebhookPayloadMap,
@@ -85,7 +85,7 @@ export { dispatchWebhook, dispatchWebhooks } from "@beezping/server";
 // ---------------------------------------------------------------------------
 
 /**
- * Structural type for a Prisma model delegate (`prisma.sitepingFeedback`).
+ * Structural type for a Prisma model delegate (`prisma.beezpingFeedback`).
  *
  * Arguments are kept `unknown` so any Prisma version's generated client
  * satisfies the constraint; the adapter assembles type-safe payloads
@@ -138,24 +138,24 @@ type _AssertDelegateBivariance = AssertTrue<GeneratedDelegateProbe extends Prism
  * defines the subset of methods the adapter actually uses, so it can be
  * referenced in handler option types without importing `@prisma/client`.
  */
-export interface SitepingPrismaClient {
-  sitepingFeedback: PrismaModelDelegate;
+export interface BeezpingPrismaClient {
+  beezpingFeedback: PrismaModelDelegate;
   /**
-   * Generated once the schema declares the `SitepingComment` model
+   * Generated once the schema declares the `BeezpingComment` model
    * (`npx @beezping/cli sync`). Optional, so a client generated from an older
    * schema keeps type-checking: `PrismaStore` then has no threads and the
    * handler answers comment writes with 501.
    */
-  sitepingComment?: PrismaModelDelegate | undefined;
+  beezpingComment?: PrismaModelDelegate | undefined;
 }
 
 // ---------------------------------------------------------------------------
-// PrismaStore — SitepingStore implementation backed by Prisma
+// PrismaStore — BeezpingStore implementation backed by Prisma
 // ---------------------------------------------------------------------------
 
 const INCLUDE_ANNOTATIONS = { annotations: true } as const;
 /**
- * Read shape once the client has the `SitepingComment` model: the thread
+ * Read shape once the client has the `BeezpingComment` model: the thread
  * oldest first, `id` breaking `createdAt` ties (SQL leaves them unordered).
  */
 const INCLUDE_ANNOTATIONS_AND_COMMENTS = {
@@ -273,7 +273,7 @@ function isStoredScreenshotUrl(url: unknown): url is string {
 }
 
 /**
- * Prisma-backed implementation of `SitepingStore`.
+ * Prisma-backed implementation of `BeezpingStore`.
  *
  * Wraps a PrismaClient to satisfy the abstract store interface.
  *
@@ -282,9 +282,9 @@ function isStoredScreenshotUrl(url: unknown): url is string {
  * the database stays small. Without `screenshotStorage`, the data URL is
  * persisted inline (logged once on first use as a heads-up).
  */
-export class PrismaStore implements SitepingStore {
+export class PrismaStore implements BeezpingStore {
   /** @internal */
-  private prisma: SitepingPrismaClient;
+  private prisma: BeezpingPrismaClient;
   private readonly screenshotStorage: ScreenshotStorage | undefined;
   /** Module-level flag would leak across PrismaStore instances in tests; use per-instance. */
   private inlineFallbackWarned = false;
@@ -295,7 +295,7 @@ export class PrismaStore implements SitepingStore {
 
   /**
    * Add a comment to a feedback's thread — defined only when the client has
-   * the `SitepingComment` delegate, unless a subclass defines its own. Without
+   * the `BeezpingComment` delegate, unless a subclass defines its own. Without
    * it the store has no threads, and the handler answers comment writes with
    * 501 instead of every post failing with a Prisma error. Declared, not a
    * field: a field would set it on every instance, hiding a subclass's method.
@@ -304,10 +304,10 @@ export class PrismaStore implements SitepingStore {
   /** Delete one comment from a feedback's thread — defined under the same condition as {@link addComment}. */
   declare readonly deleteComment?: (feedbackId: string, commentId: string) => Promise<void>;
 
-  constructor(prisma: SitepingPrismaClient, options: PrismaStoreOptions = {}) {
+  constructor(prisma: BeezpingPrismaClient, options: PrismaStoreOptions = {}) {
     this.prisma = prisma;
     this.screenshotStorage = options.screenshotStorage;
-    const comments = prisma.sitepingComment;
+    const comments = prisma.beezpingComment;
     this.include = comments ? INCLUDE_ANNOTATIONS_AND_COMMENTS : INCLUDE_ANNOTATIONS;
     if (comments) {
       this.addComment ??= (feedbackId, data) => this.insertComment(comments, feedbackId, data);
@@ -351,7 +351,7 @@ export class PrismaStore implements SitepingStore {
     if (!isStoredScreenshotUrl(url) || !this.screenshotStorage?.delete) return;
     let existing: { screenshotUrl: string | null } | null;
     try {
-      existing = (await this.prisma.sitepingFeedback.findUnique({
+      existing = (await this.prisma.beezpingFeedback.findUnique({
         where: { clientId },
         select: { screenshotUrl: true },
       })) as { screenshotUrl: string | null } | null;
@@ -363,7 +363,7 @@ export class PrismaStore implements SitepingStore {
   }
 
   private async insertFeedback(data: FeedbackCreateInput, screenshotUrl: string | null): Promise<FeedbackRecord> {
-    return (await this.prisma.sitepingFeedback.create({
+    return (await this.prisma.beezpingFeedback.create({
       data: {
         projectName: data.projectName,
         type: data.type,
@@ -374,10 +374,10 @@ export class PrismaStore implements SitepingStore {
         screenshotUrl,
         // Persisted as JSON when the model has a `screenshotRegion Json?`
         // column — same omit-when-null contract as `diagnostics` below, so
-        // hosts that haven't run `npx siteping sync` keep working.
+        // hosts that haven't run `npx beezping sync` keep working.
         ...(data.screenshotRegion ? { screenshotRegion: data.screenshotRegion } : {}),
         // Persisted as JSON when the model has a `diagnostics Json?` column.
-        // Hosts that haven't run `npx siteping sync` keep their schema as-is
+        // Hosts that haven't run `npx beezping sync` keep their schema as-is
         // and Prisma will throw if we pass an unknown column, so omit the
         // key entirely when diagnostics is null.
         ...(data.diagnostics ? { diagnostics: data.diagnostics } : {}),
@@ -446,7 +446,7 @@ export class PrismaStore implements SitepingStore {
         return url;
       } catch (err) {
         console.warn(
-          "[siteping] screenshotStorage.upload failed — feedback will be saved without a screenshot. Wrap your storage's upload to handle this differently:",
+          "[beezping] screenshotStorage.upload failed — feedback will be saved without a screenshot. Wrap your storage's upload to handle this differently:",
           err,
         );
         return null;
@@ -456,7 +456,7 @@ export class PrismaStore implements SitepingStore {
     if (!this.inlineFallbackWarned) {
       this.inlineFallbackWarned = true;
       console.warn(
-        "[siteping] enableScreenshot is on but no `screenshotStorage` is configured — base64 data URLs will be persisted inline on Feedback.screenshotUrl. Configure a ScreenshotStorage (S3/R2/…) for production.",
+        "[beezping] enableScreenshot is on but no `screenshotStorage` is configured — base64 data URLs will be persisted inline on Feedback.screenshotUrl. Configure a ScreenshotStorage (S3/R2/…) for production.",
       );
     }
     return dataUrl;
@@ -484,7 +484,7 @@ export class PrismaStore implements SitepingStore {
     results.forEach((result, index) => {
       if (result.status === "rejected") {
         console.warn(
-          `[siteping] screenshotStorage.delete failed for ${stored[index]} — object left in place:`,
+          `[beezping] screenshotStorage.delete failed for ${stored[index]} — object left in place:`,
           result.reason,
         );
       }
@@ -494,7 +494,7 @@ export class PrismaStore implements SitepingStore {
   /** URLs of the stored screenshots in `projectName` — only fetched when a `delete` hook can use them. */
   private async storedScreenshotUrls(projectName: string): Promise<string[]> {
     if (!this.screenshotStorage?.delete) return [];
-    const rows = (await this.prisma.sitepingFeedback.findMany({
+    const rows = (await this.prisma.beezpingFeedback.findMany({
       where: { projectName, screenshotUrl: { not: null } },
       select: { screenshotUrl: true },
     })) as ReadonlyArray<{ screenshotUrl: string | null }>;
@@ -502,7 +502,7 @@ export class PrismaStore implements SitepingStore {
   }
 
   async findByClientId(clientId: string): Promise<FeedbackRecord | null> {
-    return (await this.prisma.sitepingFeedback.findUnique({
+    return (await this.prisma.beezpingFeedback.findUnique({
       where: { clientId },
       include: this.include,
     })) as FeedbackRecord | null;
@@ -533,11 +533,11 @@ export class PrismaStore implements SitepingStore {
     // (non-integer or past 64 bits): answer the empty page the in-memory
     // stores return, with the real total, without issuing `findMany`.
     if (isUnreachableOffset(skip)) {
-      return { feedbacks: [], total: await this.prisma.sitepingFeedback.count({ where }) };
+      return { feedbacks: [], total: await this.prisma.beezpingFeedback.count({ where }) };
     }
 
     const [feedbacks, total] = await Promise.all([
-      this.prisma.sitepingFeedback.findMany({
+      this.prisma.beezpingFeedback.findMany({
         where,
         include: this.include,
         // `id` breaks createdAt ties: SQL leaves equal rows unordered, so
@@ -546,7 +546,7 @@ export class PrismaStore implements SitepingStore {
         skip,
         take: limit,
       }),
-      this.prisma.sitepingFeedback.count({ where }),
+      this.prisma.beezpingFeedback.count({ where }),
     ]);
 
     return { feedbacks: feedbacks as FeedbackRecord[], total };
@@ -554,7 +554,7 @@ export class PrismaStore implements SitepingStore {
 
   async updateFeedback(id: string, data: FeedbackUpdateInput): Promise<FeedbackRecord> {
     try {
-      return (await this.prisma.sitepingFeedback.update({
+      return (await this.prisma.beezpingFeedback.update({
         where: { id },
         data: {
           status: data.status,
@@ -626,7 +626,7 @@ export class PrismaStore implements SitepingStore {
     try {
       // Prisma returns the deleted row — the only chance to learn which
       // screenshot object the feedback owned.
-      deleted = (await this.prisma.sitepingFeedback.delete({ where: { id } })) as {
+      deleted = (await this.prisma.beezpingFeedback.delete({ where: { id } })) as {
         screenshotUrl?: string | null;
       } | null;
     } catch (error) {
@@ -640,7 +640,7 @@ export class PrismaStore implements SitepingStore {
     // objects (acceptable), the reverse would leave rows pointing at deleted
     // screenshots.
     const screenshotUrls = await this.storedScreenshotUrls(projectName);
-    await this.prisma.sitepingFeedback.deleteMany({ where: { projectName } });
+    await this.prisma.beezpingFeedback.deleteMany({ where: { projectName } });
     await this.discardScreenshots(screenshotUrls);
   }
 
@@ -649,7 +649,7 @@ export class PrismaStore implements SitepingStore {
    * Returns `true` when the record exists and matches, `false` otherwise.
    */
   async verifyProjectOwnership(id: string, projectName: string): Promise<boolean> {
-    const record = (await this.prisma.sitepingFeedback.findUnique({
+    const record = (await this.prisma.beezpingFeedback.findUnique({
       where: { id },
       // Only need projectName for the check — not the annotations, nor an
       // inline screenshot data URL or the diagnostics JSON
@@ -666,9 +666,9 @@ export class PrismaStore implements SitepingStore {
 /** How the handler reaches its data: a Prisma client, or any store. */
 interface PrismaHandlerStoreOptions {
   /** Prisma client — used when `store` is not provided. Wrapped in a `PrismaStore` internally. */
-  prisma?: SitepingPrismaClient;
+  prisma?: BeezpingPrismaClient;
   /** Abstract store — when provided, takes precedence over `prisma`. */
-  store?: SitepingStore;
+  store?: BeezpingStore;
   /**
    * Optional storage backend for screenshots. Used only with `prisma`
    * (ignored when a custom `store` is passed — that store is responsible
@@ -686,28 +686,28 @@ interface PrismaHandlerStoreOptions {
   caseInsensitiveSearch?: boolean;
 }
 
-/** Options of `createSitepingHandler` under the `apiKey` policy — every `@beezping/server` option. */
-export interface HandlerOptions extends Omit<SitepingApiKeyHandlerOptions, "store">, PrismaHandlerStoreOptions {}
+/** Options of `createBeezpingHandler` under the `apiKey` policy — every `@beezping/server` option. */
+export interface HandlerOptions extends Omit<BeezpingApiKeyHandlerOptions, "store">, PrismaHandlerStoreOptions {}
 
-/** Options of `createSitepingHandler` under a custom `access` policy (see `@beezping/server`). */
-export interface PrismaAccessHandlerOptions<Principal extends SitepingPrincipal>
-  extends Omit<SitepingAccessHandlerOptions<Principal>, "store">,
+/** Options of `createBeezpingHandler` under a custom `access` policy (see `@beezping/server`). */
+export interface PrismaAccessHandlerOptions<Principal extends BeezpingPrincipal>
+  extends Omit<BeezpingAccessHandlerOptions<Principal>, "store">,
     PrismaHandlerStoreOptions {}
 
 /**
- * Setup hint for Prisma's "table does not exist" error (P2021) — any SitePing
- * table: a client generated after `sync` also reads `SitepingComment`.
+ * Setup hint for Prisma's "table does not exist" error (P2021) — any Beezping
+ * table: a client generated after `sync` also reads `BeezpingComment`.
  */
 function describePrismaError(error: unknown): string | undefined {
   if (hasOwn(error, "code") && error.code === "P2021") {
-    return "A SitePing table is missing. Run 'npx prisma db push' (or apply your migrations) to create it.";
+    return "A Beezping table is missing. Run 'npx prisma db push' (or apply your migrations) to create it.";
   }
   return undefined;
 }
 
 /**
- * Create request handlers for the Siteping API endpoint — `@beezping/server`'s
- * `createSitepingHandler` over a Prisma-backed store, with every server option.
+ * Create request handlers for the Beezping API endpoint — `@beezping/server`'s
+ * `createBeezpingHandler` over a Prisma-backed store, with every server option.
  *
  * Accepts either a `store` (abstract) or a `prisma` client (backwards compatible).
  * When `prisma` is provided without `store`, it is wrapped in a `PrismaStore`.
@@ -717,45 +717,45 @@ function describePrismaError(error: unknown): string | undefined {
  * The POST endpoint in particular should be rate-limited to prevent abuse, since
  * the widget typically calls it from unauthenticated browser contexts.
  *
- * @example Next.js App Router — `app/api/siteping/route.ts`
+ * @example Next.js App Router — `app/api/beezping/route.ts`
  * ```ts
- * import { createSitepingHandler } from '@beezping/adapter-prisma'
+ * import { createBeezpingHandler } from '@beezping/adapter-prisma'
  * import { prisma } from '@/lib/prisma'
  *
- * export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ prisma })
+ * export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({ prisma })
  * ```
  *
  * @example With abstract store
  * ```ts
- * import { createSitepingHandler, PrismaStore } from '@beezping/adapter-prisma'
+ * import { createBeezpingHandler, PrismaStore } from '@beezping/adapter-prisma'
  * import { prisma } from '@/lib/prisma'
  *
  * const store = new PrismaStore(prisma)
- * export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ store })
+ * export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({ store })
  * ```
  */
-export function createSitepingHandler<Principal extends SitepingPrincipal>(
+export function createBeezpingHandler<Principal extends BeezpingPrincipal>(
   options: PrismaAccessHandlerOptions<Principal>,
-): SitepingHandler;
-export function createSitepingHandler(options: HandlerOptions): SitepingHandler;
+): BeezpingHandler;
+export function createBeezpingHandler(options: HandlerOptions): BeezpingHandler;
 /** Options assembled at runtime, either policy. */
-export function createSitepingHandler<Principal extends SitepingPrincipal>(
+export function createBeezpingHandler<Principal extends BeezpingPrincipal>(
   options: HandlerOptions | PrismaAccessHandlerOptions<Principal>,
-): SitepingHandler;
-export function createSitepingHandler<Principal extends SitepingPrincipal>({
+): BeezpingHandler;
+export function createBeezpingHandler<Principal extends BeezpingPrincipal>({
   prisma,
   store: providedStore,
   screenshotStorage,
   caseInsensitiveSearch,
   describeError,
   ...serverOptions
-}: HandlerOptions | PrismaAccessHandlerOptions<Principal>): SitepingHandler {
+}: HandlerOptions | PrismaAccessHandlerOptions<Principal>): BeezpingHandler {
   if (!providedStore && !prisma) {
-    throw new Error("[siteping] createSitepingHandler requires either `store` or `prisma`.");
+    throw new Error("[beezping] createBeezpingHandler requires either `store` or `prisma`.");
   }
 
   // Safe: the throw above guarantees at least one is defined
-  const store: SitepingStore =
+  const store: BeezpingStore =
     providedStore ??
     new PrismaStore(prisma as NonNullable<typeof prisma>, {
       screenshotStorage,

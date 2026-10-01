@@ -1,4 +1,5 @@
 import {
+  type BeezpingStore,
   type CommentCreateInput,
   type CommentRecord,
   createCollectionStore,
@@ -8,10 +9,9 @@ import {
   type FeedbackQuery,
   type FeedbackRecord,
   type FeedbackUpdateInput,
-  type SitepingStore,
 } from "@beezping/core";
 
-export type { SitepingStore } from "@beezping/core";
+export type { BeezpingStore } from "@beezping/core";
 export {
   isStorePersistence,
   StoreDuplicateError,
@@ -21,7 +21,7 @@ export {
 } from "@beezping/core";
 
 /**
- * In-memory `SitepingStore` implementation.
+ * In-memory `BeezpingStore` implementation.
  *
  * Zero dependencies, works in any JS environment (Node, Bun, Deno, browser,
  * Cloudflare Workers). Data lives in a plain array — lost on process restart.
@@ -40,10 +40,10 @@ export {
  * import { MemoryStore } from '@beezping/adapter-memory'
  *
  * const store = new MemoryStore()
- * // Pass to createSitepingHandler({ store }) or initSiteping({ store })
+ * // Pass to createBeezpingHandler({ store }) or initBeezping({ store })
  * ```
  */
-export class MemoryStore implements SitepingStore {
+export class MemoryStore implements BeezpingStore {
   private feedbacks: FeedbackRecord[] = [];
   private idCounter = 1;
 

@@ -1,3 +1,4 @@
+import { WIDGET_IGNORE_ATTRIBUTE, WIDGET_TAG_NAME } from "./constants/branding.js";
 /**
  * Screenshot capture via html2canvas-pro.
  *
@@ -58,7 +59,7 @@ async function loadHtml2Canvas(): Promise<Html2CanvasFn | null> {
     if (!warnedAboutMissingDep) {
       warnedAboutMissingDep = true;
       console.warn(
-        "[siteping] html2canvas-pro import failed unexpectedly. Capture is disabled for this session — feedbacks are still submitted, just without screenshots. Underlying error:",
+        "[beezping] html2canvas-pro import failed unexpectedly. Capture is disabled for this session — feedbacks are still submitted, just without screenshots. Underlying error:",
         err,
       );
     }
@@ -100,7 +101,7 @@ function roundPct(value: number): number {
  * - Pads the rect by up to 60% of its own size (48px floor, 280/220px ceiling)
  *   so reviewers see the UI around the annotation, not just its pixels
  * - Clamps the capture area to the document bounds (no blank margins)
- * - Excludes Siteping's own overlay elements via `ignoreElements`
+ * - Excludes Beezping's own overlay elements via `ignoreElements`
  * - Honors devicePixelRatio for crisp captures, then downscales to `maxWidth`
  *   — `region` is resolution-independent, so it survives the downscale
  * - JPEG at `quality` (0.85 = ~50–150 KB for a typical annotated area)
@@ -159,17 +160,17 @@ export async function captureAnnotatedScreenshot(
         // render pass — the page underneath shows through. Two layers of
         // exclusion:
         //
-        // 1. The widget's own shadow host (`<siteping-widget>`).
-        // 2. Anything carrying `data-siteping-ignore="true"` — the
+        // 1. The widget's own shadow host (`<beezping-widget>`).
+        // 2. Anything carrying `data-beezping-ignore="true"` — the
         //    documented host-facing masking attribute AND how widget
         //    chrome that lives OUTSIDE the shadow host (annotator overlay
         //    + toolbar + drawing rect, popup) opts itself out of capture.
         //    Without (2) the accent-colored selection border ends up
         //    baked into the JPEG.
         return (
-          element.tagName === "SITEPING-WIDGET" ||
-          element.closest?.("siteping-widget") !== null ||
-          element.getAttribute?.("data-siteping-ignore") === "true"
+          element.tagName === "BEEZPING-WIDGET" ||
+          element.closest?.(WIDGET_TAG_NAME) !== null ||
+          element.getAttribute?.(WIDGET_IGNORE_ATTRIBUTE) === "true"
         );
       },
     });
@@ -192,7 +193,7 @@ export async function captureAnnotatedScreenshot(
     ctx.drawImage(canvas, 0, 0, targetW, targetH);
     return { dataUrl: scaled.toDataURL("image/jpeg", quality), region };
   } catch (err) {
-    console.warn("[siteping] Screenshot capture failed:", err);
+    console.warn("[beezping] Screenshot capture failed:", err);
     return null;
   }
 }

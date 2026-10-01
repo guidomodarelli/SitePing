@@ -23,10 +23,10 @@ const InboxUiContext = createContext<InboxUiContextValue | null>(null);
 
 export const InboxUiProvider = InboxUiContext.Provider;
 
-/** Read the inbox UI context — throws outside `<SitepingInbox />`. */
+/** Read the inbox UI context — throws outside `<BeezpingInbox />`. */
 export function useInboxUi(): InboxUiContextValue {
   const ctx = useContext(InboxUiContext);
-  if (!ctx) throw new Error("[siteping] Inbox components must render inside <SitepingInbox />");
+  if (!ctx) throw new Error("[beezping] Inbox components must render inside <BeezpingInbox />");
   return ctx;
 }
 

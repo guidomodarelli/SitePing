@@ -103,7 +103,7 @@ export function Hero() {
       {/* Widget dogfood callout */}
       <p className="mt-4 text-center text-xs text-gray-500">
         <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-        See the blue button in the corner? That&apos;s SitePing running on this page. Try it.
+        See the blue button in the corner? That&apos;s Beezping running on this page. Try it.
       </p>
 
       {/* Bottom fade transition to next section */}

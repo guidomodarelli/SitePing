@@ -1,13 +1,12 @@
-import { hasOwn, IDENTITY_FIELD_MAX_LENGTH, isValidEmail, type SitepingIdentity } from "@beezping/core";
-
-const STORAGE_KEY = "siteping_identity";
+import { type BeezpingIdentity, hasOwn, IDENTITY_FIELD_MAX_LENGTH, isValidEmail } from "@beezping/core";
+import { IDENTITY_STORAGE_KEY } from "./constants/storage.js";
 
 /**
  * Author identity persisted by the widget — alias of core's
- * `SitepingIdentity` (one concept, one shape; the alias keeps the widget's
+ * `BeezpingIdentity` (one concept, one shape; the alias keeps the widget's
  * historical export name working).
  */
-export type Identity = SitepingIdentity;
+export type Identity = BeezpingIdentity;
 
 /**
  * Type guard — narrows an unknown value to `Identity` only when the name is a
@@ -31,7 +30,7 @@ function isIdentity(value: unknown): value is Identity {
 
 export function getIdentity(): Identity | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(IDENTITY_STORAGE_KEY);
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
     return isIdentity(parsed) ? parsed : null;
@@ -42,7 +41,7 @@ export function getIdentity(): Identity | null {
 
 export function saveIdentity(identity: Identity): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+    localStorage.setItem(IDENTITY_STORAGE_KEY, JSON.stringify(identity));
   } catch {
     // Quota exceeded or localStorage disabled — identity works for this session only
   }

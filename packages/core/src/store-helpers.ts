@@ -5,12 +5,12 @@
  * needs the same three ingredients: turn a `FeedbackCreateInput` into a
  * `FeedbackRecord` (null-normalizing optional fields, stamping ids and
  * timestamps), filter/paginate with `applyFeedbackFilters`, and implement
- * the dedup/update/delete choreography of the `SitepingStore` contract.
+ * the dedup/update/delete choreography of the `BeezpingStore` contract.
  *
  * `buildFeedbackRecord` / `buildAnnotationRecord` / `buildCommentRecord`
  * cover the first part for any adapter. `createCollectionStore` covers all
  * of it: give it `load`, `persist`, and `generateId`, and it returns a fully
- * conformant `SitepingStore` — writing a new snapshot adapter is ~20 lines
+ * conformant `BeezpingStore` — writing a new snapshot adapter is ~20 lines
  * plus its storage specifics.
  */
 
@@ -18,6 +18,7 @@ import { applyFeedbackFilters } from "./filters.js";
 import type {
   AnnotationCreateInput,
   AnnotationRecord,
+  BeezpingStore,
   CommentCreateInput,
   CommentRecord,
   FeedbackCreateInput,
@@ -26,7 +27,6 @@ import type {
   FeedbackQuery,
   FeedbackRecord,
   FeedbackUpdateInput,
-  SitepingStore,
 } from "./types.js";
 import { MAX_COMMENTS_PER_FEEDBACK, StoreLimitError, StoreNotFoundError } from "./types.js";
 
@@ -165,14 +165,14 @@ export interface CollectionStoreBackend {
 }
 
 /**
- * A `SitepingStore` with the optional `verifyProjectOwnership` guaranteed —
+ * A `BeezpingStore` with the optional `verifyProjectOwnership` guaranteed —
  * what `createCollectionStore` returns, which also guarantees
  * `createFeedbackIfAbsent`.
  */
-export type CollectionStore = SitepingStore & Required<Pick<SitepingStore, "verifyProjectOwnership">>;
+export type CollectionStore = BeezpingStore & Required<Pick<BeezpingStore, "verifyProjectOwnership">>;
 
 /**
- * Build a fully conformant `SitepingStore` on top of a snapshot backend.
+ * Build a fully conformant `BeezpingStore` on top of a snapshot backend.
  *
  * The engine implements the whole store contract: clientId dedup (idempotent
  * create, with `createFeedbackIfAbsent` reporting inserts), newest-first
@@ -206,7 +206,7 @@ export type CollectionStore = SitepingStore & Required<Pick<SitepingStore, "veri
  *
  * @example
  * ```ts
- * export class MemoryStore implements SitepingStore {
+ * export class MemoryStore implements BeezpingStore {
  *   private feedbacks: FeedbackRecord[] = [];
  *   private readonly store = createCollectionStore({
  *     load: () => this.feedbacks,
@@ -223,13 +223,13 @@ export type CollectionStore = SitepingStore & Required<Pick<SitepingStore, "veri
  */
 export function createCollectionStore(
   backend: CollectionStoreBackend & { comments: true },
-): CollectionStore & Required<Pick<SitepingStore, "createFeedbackIfAbsent" | "addComment" | "deleteComment">>;
+): CollectionStore & Required<Pick<BeezpingStore, "createFeedbackIfAbsent" | "addComment" | "deleteComment">>;
 export function createCollectionStore(
   backend: CollectionStoreBackend,
-): CollectionStore & Required<Pick<SitepingStore, "createFeedbackIfAbsent">>;
+): CollectionStore & Required<Pick<BeezpingStore, "createFeedbackIfAbsent">>;
 export function createCollectionStore(
   backend: CollectionStoreBackend,
-): CollectionStore & Required<Pick<SitepingStore, "createFeedbackIfAbsent">> {
+): CollectionStore & Required<Pick<BeezpingStore, "createFeedbackIfAbsent">> {
   // Every mutation is a load → modify → persist cycle over the WHOLE
   // snapshot, so two interleaved mutations would start from the same
   // snapshot and the last persist would silently drop the other's change
@@ -279,7 +279,7 @@ export function createCollectionStore(
       return { feedback: record, created: true };
     });
 
-  const store: CollectionStore & Required<Pick<SitepingStore, "createFeedbackIfAbsent">> = {
+  const store: CollectionStore & Required<Pick<BeezpingStore, "createFeedbackIfAbsent">> = {
     createFeedbackIfAbsent,
 
     async createFeedback(data: FeedbackCreateInput): Promise<FeedbackRecord> {

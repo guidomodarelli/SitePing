@@ -1,6 +1,6 @@
 [![npm version](https://img.shields.io/npm/v/@beezping/widget)](https://www.npmjs.com/package/@beezping/widget)
-[![Live Demo](https://img.shields.io/badge/demo-try%20it%20live-22c55e)](https://siteping.dev/demo)
-[![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/widget)
+[![Live Demo](https://img.shields.io/badge/demo-try%20it%20live-22c55e)](https://github.com/guidomodarelli/beezping/tree/main/apps/demo)
+[![Docs](https://img.shields.io/badge/docs-github.com/guidomodarelli/beezping-0066ff)](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/widget)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
 # @beezping/widget
@@ -9,7 +9,7 @@
 
 A lightweight feedback widget that lets your clients annotate websites during development. Draw rectangles (or right-click), leave comments, track bugs — directly on the live site, anchored to the exact DOM element.
 
-Part of [SitePing](https://github.com/NeosiaNexus/SitePing) — **[live demo](https://siteping.dev/demo)** · **[documentation](https://siteping.dev/docs/widget)**.
+Part of [Beezping](https://github.com/guidomodarelli/beezping) — **[live demo](https://github.com/guidomodarelli/beezping/tree/main/apps/demo)** · **[documentation](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/widget)**.
 
 ## Install
 
@@ -23,10 +23,10 @@ React (the hook survives StrictMode double-mounts and tears down on unmount):
 
 ```tsx
 "use client";
-import { useSiteping } from "@beezping/widget/react";
+import { useBeezping } from "@beezping/widget/react";
 
 export function Feedback() {
-  useSiteping({ endpoint: "/api/siteping", projectName: "my-app" });
+  useBeezping({ endpoint: "/api/beezping", projectName: "my-app" });
   return null;
 }
 ```
@@ -34,9 +34,9 @@ export function Feedback() {
 Any other framework, or none:
 
 ```ts
-import { initSiteping } from "@beezping/widget";
+import { initBeezping } from "@beezping/widget";
 
-const widget = initSiteping({ endpoint: "/api/siteping", projectName: "my-app" });
+const widget = initBeezping({ endpoint: "/api/beezping", projectName: "my-app" });
 // widget.open() / .close() / .refresh() / .focusFeedback(id) / .on(...) / .destroy()
 ```
 
@@ -46,7 +46,7 @@ No server? Pass `store: new LocalStorageStore()` (from `@beezping/adapter-locals
 
 - **DOM-anchored annotations** — CSS selector + XPath + text fallbacks; they survive deploys and layout changes
 - **Dev-only by default** — hides in production builds (`NODE_ENV`); `forceShow: true` for staging. Renders at every width, with a phone layout (`minViewportWidth` keeps it off small screens)
-- **Opt-in extras** — screenshots of the annotated area (with `data-siteping-ignore="true"` privacy masking), console/network diagnostics, instant right-click comments that never hijack keyboard or modifier-key menus
+- **Opt-in extras** — screenshots of the annotated area (with `data-beezping-ignore="true"` privacy masking), console/network diagnostics, instant right-click comments that never hijack keyboard or modifier-key menus
 - **Panel actions** — your own buttons and links in the feedback detail view: create a ticket, hand a feedback to an agent, open it in your tracker
 - **Reliable** — retry with backoff plus a localStorage queue; a flaky network never loses a comment
 - **Isolated & light** — closed Shadow DOM, ~34 KB gzip (ESM); panel, screenshot engine, and non-English locales load on demand
@@ -54,8 +54,8 @@ No server? Pass `store: new LocalStorageStore()` (from `@beezping/adapter-locals
 
 ## Documentation
 
-Every option with its real default and behavior: **[siteping.dev/docs/widget/configuration](https://siteping.dev/docs/widget/configuration)** — plus [screenshots & masking](https://siteping.dev/docs/widget/screenshots), [right-click comments](https://siteping.dev/docs/widget/right-click), [panel actions](https://siteping.dev/docs/widget/panel-actions), and [how anchoring works](https://siteping.dev/docs/widget/anchoring).
+Every option with its real default and behavior: **[github.com/guidomodarelli/beezping/docs/widget/configuration](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/widget/configuration.mdx)** — plus [screenshots & masking](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/widget/screenshots.mdx), [right-click comments](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/widget/right-click.mdx), [panel actions](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/widget/panel-actions.mdx), and [how anchoring works](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/widget/anchoring.mdx).
 
 ## License
 
-[MIT](https://github.com/NeosiaNexus/SitePing/blob/main/LICENSE)
+[MIT](https://github.com/guidomodarelli/beezping/blob/main/LICENSE)

@@ -31,7 +31,7 @@ export interface ScreenshotServeHandlerOptions {
   /**
    * Namespace served: only keys `<keyPrefix><hex>.<ext>` are read, anything
    * else answers `404`. Use the `keyPrefix` given to `createScreenshotStorage`
-   * (defaults to the same `siteping-`), so applications sharing a directory or
+   * (defaults to the same `beezping-`), so applications sharing a directory or
    * bucket under distinct prefixes cannot read each other's screenshots
    * through this handler.
    */
@@ -44,7 +44,7 @@ export interface ScreenshotServeHandlerOptions {
  * `publicBaseUrl` points at, taking the key from the last path segment:
  *
  * ```ts
- * // app/api/siteping/screenshots/[key]/route.ts
+ * // app/api/beezping/screenshots/[key]/route.ts
  * export const { GET } = createScreenshotServeHandler(objectStore);
  * ```
  *
@@ -65,7 +65,7 @@ export function createScreenshotServeHandler(
   const read = objectStore.get?.bind(objectStore);
   if (!read) {
     throw new Error(
-      `[siteping] createScreenshotServeHandler: ${objectStore.name} has no get() — it serves screenshots from its own URLs`,
+      `[beezping] createScreenshotServeHandler: ${objectStore.name} has no get() — it serves screenshots from its own URLs`,
     );
   }
   const cacheControl = authorize ? AUTHORIZED_SERVED_SCREENSHOT_CACHE_CONTROL : SERVED_SCREENSHOT_CACHE_CONTROL;

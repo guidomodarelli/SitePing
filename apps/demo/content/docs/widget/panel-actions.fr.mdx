@@ -6,8 +6,8 @@ description: Ajouter vos propres boutons et liens à la vue détail d'un feedbac
 `panelActions` ajoute vos propres contrôles à la vue détail d'un feedback, sur une ligne sous **Résoudre** et **Supprimer**. Servez-vous-en pour faire passer un feedback dans les outils que vous utilisez déjà, sans forker le panneau.
 
 ```ts
-initSiteping({
-  endpoint: "/api/siteping",
+initBeezping({
+  endpoint: "/api/beezping",
   projectName: "mon-projet",
   panelActions: [
     {
@@ -46,7 +46,7 @@ Chaque action est **soit** un bouton (`onAction`), **soit** un lien (`href`). Ty
 | `onAction` | `(feedback, context) => void \| Promise<void>` | **Bouton.** Exécuté au clic |
 | `href` | `string` ou `(feedback) => string` | **Lien.** Sa cible — uniquement `http:`, `https:` ou `mailto:` |
 
-Les types sont exportés par `@beezping/widget` : `SitepingPanelAction` (l'union), `SitepingPanelButtonAction`, `SitepingPanelLinkAction`, `SitepingPanelActionContext` et `SitepingPanelActionFeedback`.
+Les types sont exportés par `@beezping/widget` : `BeezpingPanelAction` (l'union), `BeezpingPanelButtonAction`, `BeezpingPanelLinkAction`, `BeezpingPanelActionContext` et `BeezpingPanelActionFeedback`.
 
 ## Exécution d'une action
 
@@ -57,7 +57,7 @@ Le second argument vous donne deux utilitaires :
 - `refresh()` recharge la liste et les marqueurs, puis réaffiche la vue détail avec le feedback à jour — ou revient à la liste s'il ne correspond plus aux filtres du panneau. Appelez-le quand votre action a modifié le feedback côté serveur.
 - `close()` ferme le panneau.
 
-Les callbacks reçoivent une **copie gelée** du feedback, typée `SitepingPanelActionFeedback` : en lecture seule à tous les niveaux, tableaux et objets imbriqués compris. Lisez tout ce dont vous avez besoin. Les écritures sont refusées — TypeScript les signale, et à l'exécution elles lèvent une erreur en mode strict (et sont ignorées sans bruit sinon) — et ne pourraient de toute façon pas changer ce qu'affiche le panneau. Typez vos propres fonctions avec `SitepingPanelActionFeedback` : un paramètre `FeedbackResponse` n'accepte pas la copie gelée.
+Les callbacks reçoivent une **copie gelée** du feedback, typée `BeezpingPanelActionFeedback` : en lecture seule à tous les niveaux, tableaux et objets imbriqués compris. Lisez tout ce dont vous avez besoin. Les écritures sont refusées — TypeScript les signale, et à l'exécution elles lèvent une erreur en mode strict (et sont ignorées sans bruit sinon) — et ne pourraient de toute façon pas changer ce qu'affiche le panneau. Typez vos propres fonctions avec `BeezpingPanelActionFeedback` : un paramètre `FeedbackResponse` n'accepte pas la copie gelée.
 
 ## Liens
 
@@ -67,11 +67,11 @@ Tout autre schéma — `javascript:`, `data:`, `file:`… — n'est jamais rendu
 
 ## Erreurs
 
-Tout ce que `onAction` lève ou rejette, ainsi qu'une fonction `visible` ou `href` qui lève, est toujours journalisé dans la console sous `[siteping] Panel action failed:`, puis part dans [`onError`](/fr/docs/widget#gérer-les-erreurs) si vous en définissez un — les valeurs qui ne sont pas des `Error` sont enveloppées — et les boutons reviennent. Le widget n'a pas d'interface à lui pour ces erreurs : l'entrée de console garantit qu'un bug dans votre handler n'échoue jamais en silence. Ce sont des échecs de votre code, pas de l'API de feedback : ils ne sont donc **pas** émis sur l'événement public `feedback:error`, et ne peuvent jamais être pris pour un envoi échoué dans la popup de commentaire.
+Tout ce que `onAction` lève ou rejette, ainsi qu'une fonction `visible` ou `href` qui lève, est toujours journalisé dans la console sous `[beezping] Panel action failed:`, puis part dans [`onError`](/fr/docs/widget#gérer-les-erreurs) si vous en définissez un — les valeurs qui ne sont pas des `Error` sont enveloppées — et les boutons reviennent. Le widget n'a pas d'interface à lui pour ces erreurs : l'entrée de console garantit qu'un bug dans votre handler n'échoue jamais en silence. Ce sont des échecs de votre code, pas de l'API de feedback : ils ne sont donc **pas** émis sur l'événement public `feedback:error`, et ne peuvent jamais être pris pour un envoi échoué dans la popup de commentaire.
 
 ```ts
-initSiteping({
-  endpoint: "/api/siteping",
+initBeezping({
+  endpoint: "/api/beezping",
   projectName: "mon-projet",
   onError: (error) => showToast(error.message),
   panelActions: [
@@ -89,7 +89,7 @@ initSiteping({
 
 ## Validation
 
-`panelActions` est lu une seule fois, au chargement du panneau. Une entrée sans `id` ni `label` non vides, sans exactement un de `onAction` / `href`, avec un `href` statique dangereux, ou qui réutilise un `id` précédent est écartée avec un avertissement `[siteping]` dans la console. Les autres actions s'affichent quand même.
+`panelActions` est lu une seule fois, au chargement du panneau. Une entrée sans `id` ni `label` non vides, sans exactement un de `onAction` / `href`, avec un `href` statique dangereux, ou qui réutilise un `id` précédent est écartée avec un avertissement `[beezping]` dans la console. Les autres actions s'affichent quand même.
 
 ## Icônes
 
@@ -97,4 +97,4 @@ initSiteping({
 
 ## React
 
-Avec [`useSiteping`](/fr/docs/widget#react), `onAction`, `visible` et un `href` fonction sont lus au moment de l'appel : ils peuvent capturer un état frais (un jeton d'authentification, l'utilisateur courant) sans réinitialiser le widget. La liste elle-même — ids, libellés, icônes, `href` statiques — est lue au montage, comme toutes les autres options structurelles.
+Avec [`useBeezping`](/fr/docs/widget#react), `onAction`, `visible` et un `href` fonction sont lus au moment de l'appel : ils peuvent capturer un état frais (un jeton d'authentification, l'utilisateur courant) sans réinitialiser le widget. La liste elle-même — ids, libellés, icônes, `href` statiques — est lue au montage, comme toutes les autres options structurelles.

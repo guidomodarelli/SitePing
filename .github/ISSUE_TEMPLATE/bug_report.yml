@@ -61,7 +61,7 @@ body:
     id: package
     attributes:
       label: Package
-      description: Which SitePing package is affected?
+      description: Which Beezping package is affected?
       options:
         - "@beezping/widget"
         - "@beezping/dashboard"
@@ -74,7 +74,7 @@ body:
         - "@beezping/adapter-localstorage"
         - "@beezping/adapter-kit"
         - "@beezping/cli"
-        - "siteping.dev (site / docs / demo)"
+        - "github.com/guidomodarelli/beezping (site / docs / demo)"
         - "Not sure"
     validations:
       required: true
@@ -82,7 +82,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: SitePing version
+      label: Beezping version
       description: The version of the package you are using.
       placeholder: "e.g. 0.1.0"
     validations:

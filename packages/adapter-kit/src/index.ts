@@ -1,5 +1,5 @@
 /**
- * Everything needed to build a custom Siteping store adapter, published —
+ * Everything needed to build a custom Beezping store adapter, published —
  * `@beezping/core` is an internal (unpublished) package, so this kit is the
  * supported dependency for third-party adapters.
  *
@@ -10,20 +10,20 @@
  *    every store semantic (clientId dedup, serialized mutations, filtering,
  *    pagination, error contract) comes built-in — an adapter is ~20 lines
  *    plus its storage specifics.
- * 2. **Query backends** (SQL, ORMs): implement {@link SitepingStore}
+ * 2. **Query backends** (SQL, ORMs): implement {@link BeezpingStore}
  *    directly; {@link buildFeedbackRecord} / {@link buildAnnotationRecord} /
  *    {@link buildCommentRecord} handle input→record construction, and the
- *    JSDoc on `SitepingStore` documents the exact error contract.
+ *    JSDoc on `BeezpingStore` documents the exact error contract.
  *
  * Either way, verify with the conformance suite from
  * `@beezping/adapter-kit/testing`:
  *
  * @example
  * ```ts
- * import { testSitepingStore } from "@beezping/adapter-kit/testing";
+ * import { testBeezpingStore } from "@beezping/adapter-kit/testing";
  * import { MyStore } from "../src/index.js";
  *
- * testSitepingStore(() => new MyStore());
+ * testBeezpingStore(() => new MyStore());
  * ```
  */
 
@@ -36,6 +36,7 @@ export type {
   AnnotationPayload,
   AnnotationRecord,
   AnnotationResponse,
+  BeezpingStore,
   ClosedFeedbackStatus,
   CollectionStore,
   CollectionStoreBackend,
@@ -65,7 +66,6 @@ export type {
   ScreenshotRegion,
   ScreenshotStorage,
   Serialized,
-  SitepingStore,
 } from "@beezping/core";
 // Status/type constants + helpers
 // Store errors — throw these from adapter implementations

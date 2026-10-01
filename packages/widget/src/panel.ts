@@ -1,4 +1,5 @@
 import {
+  type BeezpingPanelAction,
   CLOSED_FEEDBACK_STATUSES,
   type CommentResponse,
   FEEDBACK_STATUSES,
@@ -9,7 +10,6 @@ import {
   isClosedStatus,
   MAX_PAGE_LIMIT,
   type PageScope,
-  type SitepingPanelAction,
 } from "@beezping/core";
 import type { GetFeedbacksOptions, WidgetClient } from "./api-client.js";
 import { SegmentedControl } from "./components/segmented-control.js";
@@ -134,7 +134,7 @@ export class Panel {
     options?: {
       getScope: () => PageScope;
       scopeAnnotationsByUrl: boolean;
-      panelActions?: readonly SitepingPanelAction[] | undefined;
+      panelActions?: readonly BeezpingPanelAction[] | undefined;
       ownFeedback?: Pick<OwnFeedback, "ids" | "remove"> | undefined;
       resolveIdentity?: () => Promise<Identity | null>;
       readOnly?: boolean | undefined;

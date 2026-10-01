@@ -1,6 +1,6 @@
 import { DrizzleQueryError } from "drizzle-orm";
 import { DRIVER_ERROR_DIAGNOSTIC_FIELDS, DRIZZLE_QUERY_ERROR_MESSAGE_PREFIX } from "../constants/errors.js";
-import type { SitepingSqlGateway } from "./gateway.js";
+import type { BeezpingSqlGateway } from "./gateway.js";
 
 /**
  * Whether `error` is Drizzle's `DrizzleQueryError`, whose message lists the
@@ -49,7 +49,7 @@ function withoutStatement(error: unknown, above: readonly unknown[] = []): unkno
  * error: no error the store throws, or wraps as a `cause`, carries the
  * statement or its parameters.
  */
-export function withDriverErrors(gateway: SitepingSqlGateway): SitepingSqlGateway {
+export function withDriverErrors(gateway: BeezpingSqlGateway): BeezpingSqlGateway {
   return new Proxy(gateway, {
     get(target, property, receiver) {
       const member: unknown = Reflect.get(target, property, receiver);

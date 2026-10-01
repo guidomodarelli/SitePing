@@ -1,28 +1,28 @@
-[![npm version](https://img.shields.io/npm/v/@siteping/integration-issues)](https://www.npmjs.com/package/@siteping/integration-issues)
+[![npm version](https://img.shields.io/npm/v/@beezping/integration-issues)](https://www.npmjs.com/package/@beezping/integration-issues)
 [![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/issue-trackers)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
-# @siteping/integration-issues
+# @beezping/integration-issues
 
-One GitHub or GitLab issue per [SitePing](https://github.com/NeosiaNexus/SitePing) feedback, opened, closed and reopened along with it through `@siteping/server` lifecycle hooks. No database column: the issue's first line links it to its feedback. Any other tracker plugs in through the `IssueTracker` interface.
+One GitHub or GitLab issue per [SitePing](https://github.com/NeosiaNexus/SitePing) feedback, opened, closed and reopened along with it through `@beezping/server` lifecycle hooks. No database column: the issue's first line links it to its feedback. Any other tracker plugs in through the `IssueTracker` interface.
 
 **[Documentation](https://siteping.dev/docs/issue-trackers)**
 
 ## Install
 
 ```bash
-npm install @siteping/integration-issues
+npm install @beezping/integration-issues
 ```
 
-Node ≥ 20, or any runtime with the Fetch API. `@siteping/server` is a peer dependency.
+Node ≥ 20, or any runtime with the Fetch API. `@beezping/server` is a peer dependency.
 
 ## Quick start
 
 ```ts
-import { createSitepingHandler } from "@siteping/server";
-import { createIssueTrackerHooks } from "@siteping/integration-issues";
-import { createGitHubTracker } from "@siteping/integration-issues/github";
-// or: import { createGitLabTracker } from "@siteping/integration-issues/gitlab";
+import { createSitepingHandler } from "@beezping/server";
+import { createIssueTrackerHooks } from "@beezping/integration-issues";
+import { createGitHubTracker } from "@beezping/integration-issues/github";
+// or: import { createGitLabTracker } from "@beezping/integration-issues/gitlab";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
   store,

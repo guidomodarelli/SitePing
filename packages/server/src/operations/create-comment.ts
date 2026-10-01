@@ -4,7 +4,7 @@ import {
   isStoreNotFound,
   isStoreValueTooLong,
   type SitepingStore,
-} from "@siteping/core";
+} from "@beezping/core";
 import { ERROR_MESSAGES } from "../constants.js";
 import type { SitepingHandlerBaseOptions } from "../options.js";
 import type { Pipeline, Scope } from "../pipeline.js";

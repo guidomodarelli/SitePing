@@ -2,7 +2,7 @@
  * Dogfood test: build a complete adapter using ONLY the kit's public
  * exports, then run the published conformance suite against it — proving
  * the kit is sufficient for a third-party adapter with zero access to
- * `@siteping/core`.
+ * `@beezping/core`.
  */
 
 import { createCollectionStore, type FeedbackRecord, type SitepingStore } from "../src/index.js";

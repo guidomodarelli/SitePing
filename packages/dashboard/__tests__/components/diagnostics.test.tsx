@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { DiagnosticsSnapshot } from "@siteping/core";
+import type { DiagnosticsSnapshot } from "@beezping/core";
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { Diagnostics } from "../../src/components/diagnostics.js";

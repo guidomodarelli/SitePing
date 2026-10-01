@@ -4,7 +4,7 @@ import type {
   FeedbackStatus,
   FeedbackType,
   ScreenshotRegion,
-} from "@siteping/core";
+} from "@beezping/core";
 import {
   bigint,
   doublePrecision,

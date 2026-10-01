@@ -1,4 +1,4 @@
-import { MemoryStore } from "@siteping/adapter-memory";
+import { MemoryStore } from "@beezping/adapter-memory";
 import {
   type AnnotationPayload,
   type CommentRecord,
@@ -8,7 +8,7 @@ import {
   SitepingError,
   type SitepingStore,
   StoreDuplicateError,
-} from "@siteping/core";
+} from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StoreClient } from "../../src/store-client.js";
 

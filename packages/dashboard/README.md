@@ -1,19 +1,19 @@
-[![npm version](https://img.shields.io/npm/v/@siteping/dashboard)](https://www.npmjs.com/package/@siteping/dashboard)
+[![npm version](https://img.shields.io/npm/v/@beezping/dashboard)](https://www.npmjs.com/package/@beezping/dashboard)
 [![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/dashboard)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
-# @siteping/dashboard
+# @beezping/dashboard
 
 **A Linear-style triage inbox for your SitePing feedback.**
 
-`<SitepingInbox />` is a keyboard-first React component that lists every feedback your clients sent through [`@siteping/widget`](https://www.npmjs.com/package/@siteping/widget) — annotated screenshots re-rendered as the client framed them, status triage (open / in progress / resolved / won't fix) with undo, search, and deep links back to the live page.
+`<SitepingInbox />` is a keyboard-first React component that lists every feedback your clients sent through [`@beezping/widget`](https://www.npmjs.com/package/@beezping/widget) — annotated screenshots re-rendered as the client framed them, status triage (open / in progress / resolved / won't fix) with undo, search, and deep links back to the live page.
 
 Part of [SitePing](https://github.com/NeosiaNexus/SitePing) — **[documentation](https://siteping.dev/docs/dashboard)**.
 
 ## Install
 
 ```bash
-npm install @siteping/dashboard
+npm install @beezping/dashboard
 ```
 
 React 18 or 19 (peer dependency). Ships ESM **and** CJS, zero runtime dependencies besides React.
@@ -21,7 +21,7 @@ React 18 or 19 (peer dependency). Ships ESM **and** CJS, zero runtime dependenci
 ## Quick start
 
 ```tsx
-import { SitepingInbox } from "@siteping/dashboard";
+import { SitepingInbox } from "@beezping/dashboard";
 
 <SitepingInbox
   projects="my-app"

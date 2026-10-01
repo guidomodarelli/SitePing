@@ -1,4 +1,4 @@
-import type { AnchorData, RectData } from "@siteping/core";
+import type { AnchorData, RectData } from "@beezping/core";
 import { ANCHOR_KEY_ATTR, SHADOW_BOUNDARY } from "./anchor.js";
 import { attrHash, scoreFingerprint } from "./fingerprint.js";
 import {

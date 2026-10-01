@@ -1,5 +1,5 @@
 {
-  "name": "@siteping/adapter-drizzle",
+  "name": "@beezping/adapter-drizzle",
   "version": "0.0.0",
   "description": "Drizzle ORM adapter for Siteping — PostgreSQL and Turso/libSQL",
   "type": "module",
@@ -63,11 +63,11 @@
   "homepage": "https://siteping.dev",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/SitePing.git",
     "directory": "packages/adapter-drizzle"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/SitePing/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -78,8 +78,8 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@libsql/client": "^0.18.0",
-    "@siteping/core": "workspace:*",
-    "@siteping/server": "workspace:*",
+    "@beezping/core": "workspace:*",
+    "@beezping/server": "workspace:*",
     "drizzle-kit": "^0.31.11",
     "drizzle-orm": "^0.45.3"
   },

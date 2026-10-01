@@ -7,7 +7,7 @@ import type {
   SitepingPanelActionFeedback,
   SitepingPanelButtonAction,
   SitepingPanelLinkAction,
-} from "@siteping/core";
+} from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { createT } from "../../src/i18n/index.js";
 import { normalizePanelActions } from "../../src/panel-actions.js";

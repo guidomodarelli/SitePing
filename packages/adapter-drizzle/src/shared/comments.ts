@@ -1,4 +1,4 @@
-import type { CommentRecord } from "@siteping/core";
+import type { CommentRecord } from "@beezping/core";
 import { type Column, type SQL, sql, type Table } from "drizzle-orm";
 
 /** The columns a comment insert reads besides its own values — satisfied by both dialects' tables. */

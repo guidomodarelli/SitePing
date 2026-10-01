@@ -1,5 +1,5 @@
+import { ANCHOR_ELEMENT_ID_MAX, ANCHOR_ELEMENT_TAG_MAX, type AnchorData, type RectData } from "@beezping/core";
 import { finder } from "@medv/finder";
-import { ANCHOR_ELEMENT_ID_MAX, ANCHOR_ELEMENT_TAG_MAX, type AnchorData, type RectData } from "@siteping/core";
 import { generateFingerprint } from "./fingerprint.js";
 import { adjacentText, neighborText } from "./text-context.js";
 import { generateXPath } from "./xpath.js";

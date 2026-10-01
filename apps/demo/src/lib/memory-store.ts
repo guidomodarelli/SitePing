@@ -1,4 +1,4 @@
-import { MemoryStore } from "@siteping/adapter-memory";
+import { MemoryStore } from "@beezping/adapter-memory";
 import { seedDemoStore } from "./seed";
 
 const RESET_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes

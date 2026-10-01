@@ -3,17 +3,17 @@ title: Adapter Drizzle
 description: Un store de production sur PostgreSQL ou Turso / libSQL via Drizzle ORM — des tables qui vivent dans votre schéma, des migrations via drizzle-kit.
 ---
 
-`@siteping/adapter-drizzle` est un `SitepingStore` adossé à [Drizzle ORM](https://orm.drizzle.team). Il propose une entrée par famille de base de données :
+`@beezping/adapter-drizzle` est un `SitepingStore` adossé à [Drizzle ORM](https://orm.drizzle.team). Il propose une entrée par famille de base de données :
 
 | Entrée | Base | Drivers |
 |---|---|---|
-| `@siteping/adapter-drizzle/pg` | PostgreSQL | N'importe quel driver PostgreSQL de Drizzle — node-postgres, postgres.js, Neon (serverless et HTTP), Vercel Postgres, Supabase, PGlite… |
-| `@siteping/adapter-drizzle/libsql` | Turso / libSQL | `drizzle-orm/libsql` uniquement — Turso distant, réplicas embarqués, fichiers locaux |
+| `@beezping/adapter-drizzle/pg` | PostgreSQL | N'importe quel driver PostgreSQL de Drizzle — node-postgres, postgres.js, Neon (serverless et HTTP), Vercel Postgres, Supabase, PGlite… |
+| `@beezping/adapter-drizzle/libsql` | Turso / libSQL | `drizzle-orm/libsql` uniquement — Turso distant, réplicas embarqués, fichiers locaux |
 
-Il exige Node 20+ et `drizzle-orm` 0.45 ou plus récent (sous la 1.0), en dépendance peer. `@siteping/server` sert le store en HTTP (étape 3) :
+Il exige Node 20+ et `drizzle-orm` 0.45 ou plus récent (sous la 1.0), en dépendance peer. `@beezping/server` sert le store en HTTP (étape 3) :
 
 ```bash
-npm i @siteping/adapter-drizzle @siteping/server drizzle-orm
+npm i @beezping/adapter-drizzle @beezping/server drizzle-orm
 ```
 
 Ajoutez le driver de votre base (`pg`, `postgres`, `@neondatabase/serverless`, `@electric-sql/pglite`, `@libsql/client`…) et `drizzle-kit` pour les migrations.
@@ -24,14 +24,14 @@ L'adapter ne crée jamais de tables à l'exécution : il vous fournit des défin
 
 ```ts
 // db/schema.ts — PostgreSQL
-import { createSitepingPgTables } from "@siteping/adapter-drizzle/pg";
+import { createSitepingPgTables } from "@beezping/adapter-drizzle/pg";
 
 export const { sitepingFeedbacks, sitepingAnnotations, sitepingComments } = createSitepingPgTables();
 ```
 
 ```ts
 // db/schema.ts — Turso / libSQL
-import { createSitepingSqliteTables } from "@siteping/adapter-drizzle/libsql";
+import { createSitepingSqliteTables } from "@beezping/adapter-drizzle/libsql";
 
 export const { sitepingFeedbacks, sitepingAnnotations, sitepingComments } = createSitepingSqliteTables();
 ```
@@ -85,7 +85,7 @@ Sur PostgreSQL, gardez le nom de la table des feedbacks à 36 octets au plus, ce
 ```ts
 // PostgreSQL — node-postgres
 import { drizzle } from "drizzle-orm/node-postgres";
-import { createPgSitepingStore } from "@siteping/adapter-drizzle/pg";
+import { createPgSitepingStore } from "@beezping/adapter-drizzle/pg";
 
 export const store = createPgSitepingStore(drizzle(process.env.DATABASE_URL!), { logger: console });
 ```
@@ -97,7 +97,7 @@ Une base construite avec `withReplicas(primary, replicas)` de Drizzle fonctionne
 ```ts
 // Turso / libSQL
 import { drizzle } from "drizzle-orm/libsql";
-import { createLibSQLSitepingStore } from "@siteping/adapter-drizzle/libsql";
+import { createLibSQLSitepingStore } from "@beezping/adapter-drizzle/libsql";
 
 export const store = createLibSQLSitepingStore(
   drizzle({ connection: { url: process.env.TURSO_DATABASE_URL!, authToken: process.env.TURSO_AUTH_TOKEN! } }),
@@ -109,11 +109,11 @@ Les deux factories acceptent aussi un `screenshotStorage`, pour garder les captu
 
 ## 3. Le servir
 
-Le store ne fait que stocker. Montez-le derrière `createSitepingHandler({ store })` de [`@siteping/server`](/fr/docs/server) pour obtenir la validation, l'auth, le CORS, la redaction et les webhooks :
+Le store ne fait que stocker. Montez-le derrière `createSitepingHandler({ store })` de [`@beezping/server`](/fr/docs/server) pour obtenir la validation, l'auth, le CORS, la redaction et les webhooks :
 
 ```ts
 // app/api/siteping/route.ts
-import { createSitepingHandler } from "@siteping/server";
+import { createSitepingHandler } from "@beezping/server";
 import { store } from "@/lib/siteping-store";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
@@ -145,7 +145,7 @@ Les deux factories acceptent les mêmes options :
 
 **L'URL renvoyée doit être propre à l'envoi.** Nommez les objets d'après une valeur aléatoire neuve — jamais d'après un hash du contenu, un nom fixe ni `feedbackId` seul. `feedbackId` se trouve être unique par tentative avec ce store, mais un `ScreenshotStorage` ignore quel store l'appelle : passé à [Prisma](/fr/docs/adapters/prisma), où `feedbackId` est le `clientId` du client, un objet nommé d'après lui est réécrit à chaque nouvel essai. Le store considère chaque URL comme la propriété du seul feedback qui la stocke et peut la passer à `delete` sans se coordonner avec les créations concurrentes ; une URL partagée par plusieurs feedbacks peut faire disparaître un objet qu'un autre feedback référence encore.
 
-**Stockage prêt à l'emploi.** [`@siteping/screenshot-storage`](/fr/docs/adapters/screenshot-storage) fournit un `screenshotStorage` pour les buckets compatibles S3, Cloudflare Images ou votre disque, avec des clés aléatoires et des suppressions limitées à ses propres objets. Ses entrées `/drizzle-pg` et `/drizzle-libsql` peuvent aussi garder les captures dans une table de cette même base, pour un déploiement modeste ou autonome ; en production, un stockage objet est le meilleur choix.
+**Stockage prêt à l'emploi.** [`@beezping/screenshot-storage`](/fr/docs/adapters/screenshot-storage) fournit un `screenshotStorage` pour les buckets compatibles S3, Cloudflare Images ou votre disque, avec des clés aléatoires et des suppressions limitées à ses propres objets. Ses entrées `/drizzle-pg` et `/drizzle-libsql` peuvent aussi garder les captures dans une table de cette même base, pour un déploiement modeste ou autonome ; en production, un stockage objet est le meilleur choix.
 
 **Nettoyage.** Ajoutez un `delete(url)` optionnel et le store supprime les captures dont il n'a plus besoin : sur `deleteFeedback`, sur `deleteAllFeedbacks`, quand une soumission perd la course contre un doublon d'elle-même (elle a envoyé son propre objet, désormais orphelin — supprimé même si la relecture de la soumission gagnante échoue ensuite), et quand une insertion échoue. Avant toute suppression, il vérifie qu'aucun feedback stocké ne référence encore l'URL — une insertion signalée en échec a pu être validée malgré tout — et si cette vérification échoue elle-même, tous les objets sont conservés. Au plus 32 suppressions tournent en même temps, pour qu'une suppression de projet libérant des milliers d'objets ne sature pas votre stockage. Le nettoyage est au mieux : un `delete` qui échoue est journalisé et ne fait jamais échouer l'opération. Les data URLs `data:` en ligne ne sont jamais passées à `delete`.
 

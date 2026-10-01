@@ -1,5 +1,5 @@
 {
-  "name": "@siteping/server",
+  "name": "@beezping/server",
   "version": "0.0.0",
   "description": "Store- and framework-agnostic HTTP handler for Siteping — any SitepingStore behind one Fetch API endpoint",
   "type": "module",
@@ -42,11 +42,11 @@
   "homepage": "https://siteping.dev",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/SitePing.git",
     "directory": "packages/server"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/SitePing/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -58,8 +58,8 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@siteping/adapter-memory": "workspace:*",
-    "@siteping/core": "workspace:*",
+    "@beezping/adapter-memory": "workspace:*",
+    "@beezping/core": "workspace:*",
     "better-auth": "^1.7.5",
     "jose": "^6.2.12"
   }

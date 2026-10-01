@@ -8,7 +8,7 @@ import {
   isStorePersistence,
   SCREENSHOT_DELETE_CONCURRENCY,
   type ScreenshotStorage,
-} from "@siteping/core";
+} from "@beezping/core";
 import { getTableName, sql } from "drizzle-orm";
 import { drizzle as drizzleD1 } from "drizzle-orm/d1";
 import { withReplicas as withPgReplicas } from "drizzle-orm/pg-core";
@@ -1819,7 +1819,7 @@ it.each([
   ["libsql", () => import("../src/libsql/index.js")],
 ])("the %s entry re-exports every store error its methods throw", async (_name, loadEntry) => {
   const { isStorePersistence, StoreDuplicateError, StoreLimitError, StoreNotFoundError, StorePersistenceError } =
-    await import("@siteping/core");
+    await import("@beezping/core");
 
   expect(await loadEntry()).toMatchObject({
     isStorePersistence,

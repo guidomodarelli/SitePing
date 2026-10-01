@@ -4,7 +4,7 @@
 // #171 hidden responsive duplicates · #172 text-less verification
 // #173 whitespace normalization · #174 scan cost/fairness · #175 inversion
 
-import type { AnchorData } from "@siteping/core";
+import type { AnchorData } from "@beezping/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { generateAnchor } from "../../src/dom/anchor";
 import { generateFingerprint } from "../../src/dom/fingerprint";

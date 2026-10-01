@@ -3,17 +3,17 @@
  * `createScreenshotStorage` and hand the result to your store
  * (`createPgSitepingStore(db, { screenshotStorage })`, `new PrismaStore(prisma, { screenshotStorage })`…):
  *
- * - `@siteping/screenshot-storage/cloudflare-images` — Cloudflare Images
- * - `@siteping/screenshot-storage/s3` — AWS S3, Cloudflare R2, Backblaze B2, MinIO…
- * - `@siteping/screenshot-storage/drizzle-pg` / `drizzle-libsql` — your database (PostgreSQL, Turso/libSQL)
- * - `@siteping/screenshot-storage/filesystem` — local disk (Node.js)
- * - `@siteping/screenshot-storage/memory` — development and tests
+ * - `@beezping/screenshot-storage/cloudflare-images` — Cloudflare Images
+ * - `@beezping/screenshot-storage/s3` — AWS S3, Cloudflare R2, Backblaze B2, MinIO…
+ * - `@beezping/screenshot-storage/drizzle-pg` / `drizzle-libsql` — your database (PostgreSQL, Turso/libSQL)
+ * - `@beezping/screenshot-storage/filesystem` — local disk (Node.js)
+ * - `@beezping/screenshot-storage/memory` — development and tests
  *
  * Or implement `ScreenshotObjectStore` for any other backend (Vercel Blob,
  * Supabase Storage, another ORM…). Backends without their own public
  * URL are served through `createScreenshotServeHandler`.
  */
-export type { ScreenshotStorage } from "@siteping/core";
+export type { ScreenshotStorage } from "@beezping/core";
 export { InvalidScreenshotError } from "./core/data-url.js";
 export { isObjectStoreRequestError, ObjectStoreRequestError } from "./core/http.js";
 export {

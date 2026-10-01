@@ -1,4 +1,4 @@
-// Re-export commonly needed core types so consumers don't have to depend on @siteping/core directly.
+// Re-export commonly needed core types so consumers don't have to depend on @beezping/core directly.
 export type {
   CommentCreateInput,
   CommentRecord,
@@ -8,8 +8,8 @@ export type {
   FeedbackType,
   SitepingCapabilities,
   SitepingStore,
-} from "@siteping/core";
-export { FEEDBACK_STATUSES, FEEDBACK_TYPES, isClosedStatus } from "@siteping/core";
+} from "@beezping/core";
+export { FEEDBACK_STATUSES, FEEDBACK_TYPES, isClosedStatus } from "@beezping/core";
 export { SitepingInbox } from "./components/inbox.js";
 export { registerLocale } from "./i18n/index.js";
 export { createEndpointSource, createStoreSource } from "./source.js";

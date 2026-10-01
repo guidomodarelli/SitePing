@@ -27,14 +27,14 @@
       },
     },
     "apps/demo": {
-      "name": "@siteping/demo",
+      "name": "@beezping/demo",
       "version": "0.0.0",
       "dependencies": {
-        "@siteping/adapter-localstorage": "workspace:*",
-        "@siteping/adapter-memory": "workspace:*",
-        "@siteping/dashboard": "workspace:*",
-        "@siteping/server": "workspace:*",
-        "@siteping/widget": "workspace:*",
+        "@beezping/adapter-localstorage": "workspace:*",
+        "@beezping/adapter-memory": "workspace:*",
+        "@beezping/dashboard": "workspace:*",
+        "@beezping/server": "workspace:*",
+        "@beezping/widget": "workspace:*",
         "fumadocs-core": "^16.15.11",
         "fumadocs-mdx": "^15.4.1",
         "fumadocs-ui": "^16.15.11",
@@ -44,7 +44,7 @@
         "react-dom": "^19.3.0",
       },
       "devDependencies": {
-        "@siteping/core": "workspace:*",
+        "@beezping/core": "workspace:*",
         "@tailwindcss/postcss": "^4.3.3",
         "@types/mdx": "^2.0.13",
         "@types/react": "^19.3.0",
@@ -53,13 +53,13 @@
       },
     },
     "packages/adapter-drizzle": {
-      "name": "@siteping/adapter-drizzle",
+      "name": "@beezping/adapter-drizzle",
       "version": "0.0.0",
       "devDependencies": {
+        "@beezping/core": "workspace:*",
+        "@beezping/server": "workspace:*",
         "@electric-sql/pglite": "^0.5.8",
         "@libsql/client": "^0.18.0",
-        "@siteping/core": "workspace:*",
-        "@siteping/server": "workspace:*",
         "drizzle-kit": "^0.31.11",
         "drizzle-orm": "^0.45.3",
       },
@@ -68,10 +68,10 @@
       },
     },
     "packages/adapter-kit": {
-      "name": "@siteping/adapter-kit",
+      "name": "@beezping/adapter-kit",
       "version": "0.1.1",
       "devDependencies": {
-        "@siteping/core": "workspace:*",
+        "@beezping/core": "workspace:*",
       },
       "peerDependencies": {
         "vitest": ">=3",
@@ -81,28 +81,28 @@
       ],
     },
     "packages/adapter-localstorage": {
-      "name": "@siteping/adapter-localstorage",
+      "name": "@beezping/adapter-localstorage",
       "version": "0.5.4",
       "devDependencies": {
-        "@siteping/core": "workspace:*",
+        "@beezping/core": "workspace:*",
       },
     },
     "packages/adapter-memory": {
-      "name": "@siteping/adapter-memory",
+      "name": "@beezping/adapter-memory",
       "version": "0.5.3",
       "devDependencies": {
-        "@siteping/core": "workspace:*",
+        "@beezping/core": "workspace:*",
       },
     },
     "packages/adapter-prisma": {
-      "name": "@siteping/adapter-prisma",
+      "name": "@beezping/adapter-prisma",
       "version": "0.6.6",
       "dependencies": {
-        "@siteping/server": "workspace:^",
+        "@beezping/server": "workspace:^",
       },
       "devDependencies": {
-        "@siteping/core": "workspace:*",
-        "@siteping/screenshot-storage": "workspace:*",
+        "@beezping/core": "workspace:*",
+        "@beezping/screenshot-storage": "workspace:*",
       },
       "peerDependencies": {
         "@prisma/client": "^5.0.0 || ^6.0.0 || ^7.0.0",
@@ -112,27 +112,27 @@
       ],
     },
     "packages/cli": {
-      "name": "@siteping/cli",
+      "name": "@beezping/cli",
       "version": "0.5.6",
       "bin": {
         "siteping": "./dist/index.js",
       },
       "devDependencies": {
+        "@beezping/core": "workspace:*",
         "@clack/prompts": "^1.8.1",
         "@mrleebo/prisma-ast": "^0.16.0",
-        "@siteping/core": "workspace:*",
         "commander": "^15.0.0",
       },
     },
     "packages/core": {
-      "name": "@siteping/core",
+      "name": "@beezping/core",
       "version": "0.7.2",
     },
     "packages/dashboard": {
-      "name": "@siteping/dashboard",
+      "name": "@beezping/dashboard",
       "version": "0.2.7",
       "devDependencies": {
-        "@siteping/core": "workspace:*",
+        "@beezping/core": "workspace:*",
         "@size-limit/file": "^14.0.0",
         "@testing-library/react": "^16.3.3",
         "@types/react": "^19.3.0",
@@ -145,26 +145,26 @@
       },
     },
     "packages/integration-issues": {
-      "name": "@siteping/integration-issues",
+      "name": "@beezping/integration-issues",
       "version": "0.0.0",
       "devDependencies": {
-        "@siteping/adapter-memory": "workspace:*",
-        "@siteping/core": "workspace:*",
-        "@siteping/server": "workspace:*",
+        "@beezping/adapter-memory": "workspace:*",
+        "@beezping/core": "workspace:*",
+        "@beezping/server": "workspace:*",
         "mdast-util-from-markdown": "^2.0.3",
       },
       "peerDependencies": {
-        "@siteping/server": "workspace:^",
+        "@beezping/server": "workspace:^",
       },
     },
     "packages/screenshot-storage": {
-      "name": "@siteping/screenshot-storage",
+      "name": "@beezping/screenshot-storage",
       "version": "0.0.0",
       "devDependencies": {
         "@aws-crypto/sha256-js": "^5.2.0",
+        "@beezping/core": "workspace:*",
         "@electric-sql/pglite": "^0.5.8",
         "@libsql/client": "^0.18.0",
-        "@siteping/core": "workspace:*",
         "@smithy/signature-v4": "^5.7.4",
         "drizzle-kit": "^0.31.11",
         "drizzle-orm": "^0.45.3",
@@ -177,29 +177,29 @@
       ],
     },
     "packages/server": {
-      "name": "@siteping/server",
+      "name": "@beezping/server",
       "version": "0.0.0",
       "dependencies": {
         "zod": "^4.6.5",
       },
       "devDependencies": {
-        "@siteping/adapter-memory": "workspace:*",
-        "@siteping/core": "workspace:*",
+        "@beezping/adapter-memory": "workspace:*",
+        "@beezping/core": "workspace:*",
         "better-auth": "^1.7.5",
         "jose": "^6.2.12",
       },
     },
     "packages/widget": {
-      "name": "@siteping/widget",
+      "name": "@beezping/widget",
       "version": "0.10.10",
       "dependencies": {
         "@medv/finder": "^4.0.2",
         "html2canvas-pro": "^2.4.3",
       },
       "devDependencies": {
-        "@siteping/adapter-localstorage": "workspace:*",
-        "@siteping/adapter-memory": "workspace:*",
-        "@siteping/core": "workspace:*",
+        "@beezping/adapter-localstorage": "workspace:*",
+        "@beezping/adapter-memory": "workspace:*",
+        "@beezping/core": "workspace:*",
         "@size-limit/file": "^14.0.0",
         "@testing-library/react": "^16.3.3",
         "@types/react": "^19.3.0",
@@ -272,6 +272,32 @@
     "@babel/traverse": ["@babel/traverse@8.0.6", "", { "dependencies": { "@babel/code-frame": "^8.0.6", "@babel/generator": "^8.0.6", "@babel/helper-globals": "^8.0.6", "@babel/parser": "^8.0.6", "@babel/template": "^8.0.0", "@babel/types": "^8.0.6", "obug": "^2.1.1" } }, "sha512-ilYV+qLStGzSKLipJlETdvdtpK3rAuwfCmCoGKv15MU4EoeIuLkespSNoNLFGOPSciEHx9TLWtN5mv0fz5w5mQ=="],
 
     "@babel/types": ["@babel/types@7.29.7", "", { "dependencies": { "@babel/helper-string-parser": "^7.29.7", "@babel/helper-validator-identifier": "^7.29.7" } }, "sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA=="],
+
+    "@beezping/adapter-drizzle": ["@beezping/adapter-drizzle@workspace:packages/adapter-drizzle"],
+
+    "@beezping/adapter-kit": ["@beezping/adapter-kit@workspace:packages/adapter-kit"],
+
+    "@beezping/adapter-localstorage": ["@beezping/adapter-localstorage@workspace:packages/adapter-localstorage"],
+
+    "@beezping/adapter-memory": ["@beezping/adapter-memory@workspace:packages/adapter-memory"],
+
+    "@beezping/adapter-prisma": ["@beezping/adapter-prisma@workspace:packages/adapter-prisma"],
+
+    "@beezping/cli": ["@beezping/cli@workspace:packages/cli"],
+
+    "@beezping/core": ["@beezping/core@workspace:packages/core"],
+
+    "@beezping/dashboard": ["@beezping/dashboard@workspace:packages/dashboard"],
+
+    "@beezping/demo": ["@beezping/demo@workspace:apps/demo"],
+
+    "@beezping/integration-issues": ["@beezping/integration-issues@workspace:packages/integration-issues"],
+
+    "@beezping/screenshot-storage": ["@beezping/screenshot-storage@workspace:packages/screenshot-storage"],
+
+    "@beezping/server": ["@beezping/server@workspace:packages/server"],
+
+    "@beezping/widget": ["@beezping/widget@workspace:packages/widget"],
 
     "@better-auth/core": ["@better-auth/core@1.7.5", "", { "dependencies": { "@opentelemetry/semantic-conventions": "^1.41.1", "@standard-schema/spec": "^1.1.0", "zod": "^4.5.4" }, "peerDependencies": { "@better-auth/utils": "0.4.2", "@better-fetch/fetch": "1.3.2", "@opentelemetry/api": "^1.9.0", "better-call": "1.4.0", "jose": "^6.1.0", "kysely": "^0.28.5 || ^0.29.0", "nanostores": "^1.0.1" }, "optionalPeers": ["@opentelemetry/api"] }, "sha512-kVlSu4H8OKQfjg4b/Zj5MOaospt83N0JbX38wsDzE58Yw95jzovFkU3pxzB1eUFYc4mkuhUMZD8iT1gpUjNMcQ=="],
 
@@ -633,10 +659,6 @@
 
     "@playwright/test": ["@playwright/test@1.63.0", "", { "dependencies": { "playwright": "1.63.0" }, "bin": { "playwright": "cli.js" } }, "sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ=="],
 
-    "@prisma/client": ["@prisma/client@7.9.0", "", { "dependencies": { "@prisma/client-runtime-utils": "7.9.0" }, "peerDependencies": { "prisma": "*", "typescript": ">=5.4.0" }, "optionalPeers": ["prisma", "typescript"] }, "sha512-BTG/mB+WL/1sD2gWwdNc2uuVJjNNBgCDlPFdjco6jJArgbg4IAChtzVeW4debFa/NKBbsGedCjET316sjllWTQ=="],
-
-    "@prisma/client-runtime-utils": ["@prisma/client-runtime-utils@7.9.0", "", {}, "sha512-kMVmS4ZEy3xlkca+TfxOEm/ToVVlOS2x1Tc6/wIRf/HfczBqENtSPcKszy4ZpFNzjJ8SRKvlU5V0rrpoFw2KOg=="],
-
     "@publint/pack": ["@publint/pack@0.1.7", "", { "dependencies": { "tinyexec": "^1.3.0" } }, "sha512-4EDEmvxWtgsCnnVeBvtFIFZtUhPPt1+bA9JrSwU4Sa//6oKtzCSlGGXYJr44OD9aGISymbieJ4mCKHUygUDU+g=="],
 
     "@radix-ui/number": ["@radix-ui/number@1.1.3", "", {}, "sha512-Road2bidD0uu/1BGDOWNdPI06g0lIRy6IF9GZcIrDK2KGItfor8IQwQa+yM2ERgHM1MmHxaxpTzk0/Jp42lNfA=="],
@@ -774,32 +796,6 @@
     "@shikijs/vscode-textmate": ["@shikijs/vscode-textmate@10.0.2", "", {}, "sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg=="],
 
     "@sindresorhus/is": ["@sindresorhus/is@4.6.0", "", {}, "sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw=="],
-
-    "@siteping/adapter-drizzle": ["@siteping/adapter-drizzle@workspace:packages/adapter-drizzle"],
-
-    "@siteping/adapter-kit": ["@siteping/adapter-kit@workspace:packages/adapter-kit"],
-
-    "@siteping/adapter-localstorage": ["@siteping/adapter-localstorage@workspace:packages/adapter-localstorage"],
-
-    "@siteping/adapter-memory": ["@siteping/adapter-memory@workspace:packages/adapter-memory"],
-
-    "@siteping/adapter-prisma": ["@siteping/adapter-prisma@workspace:packages/adapter-prisma"],
-
-    "@siteping/cli": ["@siteping/cli@workspace:packages/cli"],
-
-    "@siteping/core": ["@siteping/core@workspace:packages/core"],
-
-    "@siteping/dashboard": ["@siteping/dashboard@workspace:packages/dashboard"],
-
-    "@siteping/demo": ["@siteping/demo@workspace:apps/demo"],
-
-    "@siteping/integration-issues": ["@siteping/integration-issues@workspace:packages/integration-issues"],
-
-    "@siteping/screenshot-storage": ["@siteping/screenshot-storage@workspace:packages/screenshot-storage"],
-
-    "@siteping/server": ["@siteping/server@workspace:packages/server"],
-
-    "@siteping/widget": ["@siteping/widget@workspace:packages/widget"],
 
     "@size-limit/file": ["@size-limit/file@14.0.0", "", { "peerDependencies": { "size-limit": "14.0.0" } }, "sha512-CzlXGYuzt+vZM70NxPwi5uFyYHhORrdpDCJtcH+G57oeUPrgnqdUhDoP4jRxa6i2HNBM5Htatw5X5TcDZ8uBWQ=="],
 

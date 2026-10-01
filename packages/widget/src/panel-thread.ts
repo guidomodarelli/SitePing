@@ -10,7 +10,7 @@ import {
   type FeedbackResponse,
   isThreadFull,
   newClientId,
-} from "@siteping/core";
+} from "@beezping/core";
 import { el, formatRelativeDate, isMacPlatform, setText } from "./dom-utils.js";
 import type { TFunction } from "./i18n/index.js";
 import { isCoarsePointer } from "./viewport.js";

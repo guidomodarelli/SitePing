@@ -1,4 +1,4 @@
-import { type FeedbackRecord, parseHttpUrl } from "@siteping/core";
+import { type FeedbackRecord, parseHttpUrl } from "@beezping/core";
 import {
   ANNOTATION_FIELD_MAX_LENGTH,
   ANNOTATIONS_LISTED,

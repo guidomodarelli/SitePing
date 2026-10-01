@@ -6,7 +6,7 @@ import {
   type SitepingError,
   SitepingNetworkError,
   SitepingValidationError,
-} from "@siteping/core";
+} from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiClient, flushRetryQueue } from "../../src/api-client.js";
 import { ownFeedback } from "../../src/own-feedback.js";

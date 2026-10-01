@@ -1,4 +1,4 @@
-import type { FeedbackPermissions, FeedbackRecord, FeedbackStatus } from "@siteping/core";
+import type { FeedbackPermissions, FeedbackRecord, FeedbackStatus } from "@beezping/core";
 import type { ReactElement, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import {

@@ -1,5 +1,5 @@
 {
-  "name": "@siteping/cli",
+  "name": "@beezping/cli",
   "version": "0.5.6",
   "description": "CLI tool to set up Siteping in your project",
   "type": "module",
@@ -30,11 +30,11 @@
   "homepage": "https://siteping.dev",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeosiaNexus/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/SitePing.git",
     "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/SitePing/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -43,7 +43,7 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "@siteping/core": "workspace:*",
+    "@beezping/core": "workspace:*",
     "commander": "^15.0.0",
     "@clack/prompts": "^1.8.1",
     "@mrleebo/prisma-ast": "^0.16.0"

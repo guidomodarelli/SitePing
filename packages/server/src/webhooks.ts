@@ -26,7 +26,7 @@ import type {
   FeedbackType,
   Prettify,
   Serialized,
-} from "@siteping/core";
+} from "@beezping/core";
 
 /** Supported webhook integrations — drives the JSON body shape. */
 export type WebhookType = "slack" | "discord" | "generic";

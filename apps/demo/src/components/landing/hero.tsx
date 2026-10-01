@@ -43,8 +43,8 @@ export function Hero() {
         <div data-gsap="hero-cta" className="mt-10 flex flex-wrap items-center justify-center gap-4">
           {/* Primary: npm install code pill */}
           <div className="flex items-center overflow-hidden rounded-lg border border-gray-700 bg-gray-900">
-            <code className="px-4 py-2.5 font-mono text-sm text-gray-300">npm i @siteping/widget</code>
-            <CopyButton text="npm i @siteping/widget" />
+            <code className="px-4 py-2.5 font-mono text-sm text-gray-300">npm i @beezping/widget</code>
+            <CopyButton text="npm i @beezping/widget" />
           </div>
 
           {/* Secondary: Try the Demo */}

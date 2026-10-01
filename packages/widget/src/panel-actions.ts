@@ -4,7 +4,7 @@
  * detail view goes through here before it touches the DOM.
  */
 
-import type { FeedbackResponse, SitepingPanelAction, SitepingPanelActionFeedback } from "@siteping/core";
+import type { FeedbackResponse, SitepingPanelAction, SitepingPanelActionFeedback } from "@beezping/core";
 
 /** A validated action, its icon parsed once and cloned on every render. */
 export interface PanelActionItem {

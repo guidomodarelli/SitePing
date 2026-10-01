@@ -9,7 +9,7 @@ import {
   matchesFeedbackQuery,
   newClientId,
   type SitepingCapabilities,
-} from "@siteping/core";
+} from "@beezping/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createEndpointSource, createStoreSource } from "./source.js";
 import type {

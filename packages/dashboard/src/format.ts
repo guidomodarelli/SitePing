@@ -1,4 +1,4 @@
-import { buildDeepLink as buildDeepLinkFrom, type FeedbackRecord, parseHttpUrl } from "@siteping/core";
+import { buildDeepLink as buildDeepLinkFrom, type FeedbackRecord, parseHttpUrl } from "@beezping/core";
 import { type TFunction, tWithParams } from "./i18n/index.js";
 
 const MINUTE = 60;

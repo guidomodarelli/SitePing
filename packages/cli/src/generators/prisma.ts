@@ -2,6 +2,7 @@
 import "../utils/object-group-by-polyfill.js";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve } from "node:path";
+import { type FieldDef, type IndexDef, SITEPING_MODELS, type SitepingModelName } from "@beezping/core";
 import type {
   Attribute,
   AttributeArgument,
@@ -16,7 +17,6 @@ import type {
   Schema,
 } from "@mrleebo/prisma-ast";
 import { getSchema, printSchema } from "@mrleebo/prisma-ast";
-import { type FieldDef, type IndexDef, SITEPING_MODELS, type SitepingModelName } from "@siteping/core";
 
 const DEFAULT_SCHEMA_PATH = "prisma/schema.prisma";
 

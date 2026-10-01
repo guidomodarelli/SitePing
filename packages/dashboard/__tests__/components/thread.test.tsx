@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { type CommentRecord, SitepingValidationError } from "@siteping/core";
+import { type CommentRecord, SitepingValidationError } from "@beezping/core";
 import { act, cleanup, fireEvent } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";

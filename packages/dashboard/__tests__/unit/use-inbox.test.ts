@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import type { FeedbackPage, FeedbackRecord, SitepingStore } from "@siteping/core";
-import { SitepingValidationError, StoreNotFoundError } from "@siteping/core";
+import type { FeedbackPage, FeedbackRecord, SitepingStore } from "@beezping/core";
+import { SitepingValidationError, StoreNotFoundError } from "@beezping/core";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, type Mock, vi } from "vitest";
 import type { InboxRecord, InboxSource } from "../../src/types.js";

@@ -16,7 +16,7 @@ import {
   type SitepingHeadersOption,
   SitepingNetworkError,
   withSearchParams,
-} from "@siteping/core";
+} from "@beezping/core";
 import type { Identity } from "./identity.js";
 import { ownFeedback } from "./own-feedback.js";
 

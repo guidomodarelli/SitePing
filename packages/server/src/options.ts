@@ -1,4 +1,4 @@
-import type { CommentPayload, FeedbackCreateInput, FeedbackRecord, SitepingStore } from "@siteping/core";
+import type { CommentPayload, FeedbackCreateInput, FeedbackRecord, SitepingStore } from "@beezping/core";
 import type { WebhookConfig } from "./webhooks.js";
 
 /** HTTP methods served by `createSitepingHandler`. */

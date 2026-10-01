@@ -9,16 +9,16 @@ import {
   type FeedbackRecord,
   type FeedbackUpdateInput,
   type SitepingStore,
-} from "@siteping/core";
+} from "@beezping/core";
 
-export type { SitepingStore } from "@siteping/core";
+export type { SitepingStore } from "@beezping/core";
 export {
   isStorePersistence,
   StoreDuplicateError,
   StoreLimitError,
   StoreNotFoundError,
   StorePersistenceError,
-} from "@siteping/core";
+} from "@beezping/core";
 
 /**
  * In-memory `SitepingStore` implementation.
@@ -37,7 +37,7 @@ export {
  *
  * @example
  * ```ts
- * import { MemoryStore } from '@siteping/adapter-memory'
+ * import { MemoryStore } from '@beezping/adapter-memory'
  *
  * const store = new MemoryStore()
  * // Pass to createSitepingHandler({ store }) or initSiteping({ store })

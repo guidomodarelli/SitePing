@@ -1,7 +1,7 @@
 /**
  * Screenshot capture via html2canvas-pro.
  *
- * `html2canvas-pro` is a regular `dependency` of `@siteping/widget` — every
+ * `html2canvas-pro` is a regular `dependency` of `@beezping/widget` — every
  * install gets it. We dynamic-import it so bundlers emit a separate chunk
  * loaded only when `enableScreenshot: true` triggers the first capture;
  * hosts that never enable screenshots pay only the disk-space cost.
@@ -18,7 +18,7 @@
  * submitted, just without an image.
  */
 
-import type { ScreenshotRegion } from "@siteping/core";
+import type { ScreenshotRegion } from "@beezping/core";
 
 type Html2CanvasFn = (element: HTMLElement, options?: Html2CanvasOptions) => Promise<HTMLCanvasElement>;
 

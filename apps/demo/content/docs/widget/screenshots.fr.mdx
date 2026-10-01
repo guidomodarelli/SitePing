@@ -40,4 +40,4 @@ La capture est volontairement « au mieux » : si le moteur de rendu ne se charg
 
 ## Où va l'image
 
-Par défaut, le JPEG voyage en ligne (une URL `data:`, plafonnée à 1,5 Mo) et est stocké tel quel par l'adapter. C'est très bien pour démarrer ; pour un volume de production, donnez un `screenshotStorage` à votre store : les images partent alors vers Cloudflare R2, AWS S3, Cloudflare Images, votre base de données ou votre disque, et le feedback ne garde que leur URL. [`@siteping/screenshot-storage`](/fr/docs/adapters/screenshot-storage) en fournit un prêt à l'emploi.
+Par défaut, le JPEG voyage en ligne (une URL `data:`, plafonnée à 1,5 Mo) et est stocké tel quel par l'adapter. C'est très bien pour démarrer ; pour un volume de production, donnez un `screenshotStorage` à votre store : les images partent alors vers Cloudflare R2, AWS S3, Cloudflare Images, votre base de données ou votre disque, et le feedback ne garde que leur URL. [`@beezping/screenshot-storage`](/fr/docs/adapters/screenshot-storage) en fournit un prêt à l'emploi.

@@ -1,4 +1,4 @@
-import type { SitepingConfig } from "@siteping/core";
+import type { SitepingConfig } from "@beezping/core";
 import { parseSvg, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { registerEscapeLayer } from "./host-isolation.js";

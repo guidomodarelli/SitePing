@@ -13,7 +13,7 @@ import {
   type SitepingStore,
   toFeedbackUpdate,
   withSearchParams,
-} from "@siteping/core";
+} from "@beezping/core";
 import type { EndpointSourceOptions, InboxRecord, InboxSource } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -54,7 +54,7 @@ async function parseJsonAs<T>(response: Response): Promise<T> {
 
 /**
  * Build an `InboxSource` talking HTTP to a Siteping endpoint (e.g. the
- * `@siteping/adapter-prisma` request handlers mounted at `/api/siteping`).
+ * `@beezping/adapter-prisma` request handlers mounted at `/api/siteping`).
  *
  * Auth: `apiKey` becomes `Authorization: Bearer <apiKey>`; `headers` (static
  * or per-request function, sync or async) are merged on top, so an explicit

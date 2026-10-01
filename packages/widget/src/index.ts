@@ -1,4 +1,4 @@
-import type { SitepingConfig, SitepingInstance } from "@siteping/core";
+import type { SitepingConfig, SitepingInstance } from "@beezping/core";
 import { launch } from "./launcher.js";
 
 export type {
@@ -25,7 +25,7 @@ export type {
   SitepingPublicEvents,
   SitepingStore,
   SitepingStoreConfig,
-} from "@siteping/core";
+} from "@beezping/core";
 export type { TFunction, TranslationKey, Translations } from "./i18n/index.js";
 export { loadLocale, registerLocale } from "./i18n/index.js";
 export type { Identity } from "./identity.js";
@@ -35,7 +35,7 @@ export type { Identity } from "./identity.js";
  *
  * @example
  * ```ts
- * import { initSiteping } from '@siteping/widget'
+ * import { initSiteping } from '@beezping/widget'
  *
  * const { destroy } = initSiteping({
  *   endpoint: '/api/siteping',

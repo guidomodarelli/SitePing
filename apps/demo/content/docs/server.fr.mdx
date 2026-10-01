@@ -3,13 +3,13 @@ title: Serveur
 description: Un endpoint HTTP devant n'importe quel store, pour n'importe quel framework — auth, CORS, validation, redaction, hooks et webhooks sur la Fetch API.
 ---
 
-`@siteping/server` transforme n'importe quel [store](/fr/docs/adapters) en l'API HTTP à laquelle parlent le widget et le dashboard. Il ne parle que la Fetch API (`Request` → `Response`) et n'importe aucun module natif de Node : le même handler tourne sur Node 20+, Bun, Deno et les workers edge, monté par Next.js, Hono, Express ou n'importe quoi d'autre.
+`@beezping/server` transforme n'importe quel [store](/fr/docs/adapters) en l'API HTTP à laquelle parlent le widget et le dashboard. Il ne parle que la Fetch API (`Request` → `Response`) et n'importe aucun module natif de Node : le même handler tourne sur Node 20+, Bun, Deno et les workers edge, monté par Next.js, Hono, Express ou n'importe quoi d'autre.
 
 ```bash
-npm i @siteping/server
+npm i @beezping/server
 ```
 
-Sur Prisma, [`@siteping/adapter-prisma`](/fr/docs/adapters/prisma) vous donne ce handler avec le store Prisma intégré — toutes les options ci-dessous y fonctionnent aussi.
+Sur Prisma, [`@beezping/adapter-prisma`](/fr/docs/adapters/prisma) vous donne ce handler avec le store Prisma intégré — toutes les options ci-dessous y fonctionnent aussi.
 
 ## Le montage
 
@@ -19,7 +19,7 @@ Sur Prisma, [`@siteping/adapter-prisma`](/fr/docs/adapters/prisma) vous donne ce
 
 ```ts
 // app/api/siteping/route.ts
-import { createSitepingHandler } from "@siteping/server";
+import { createSitepingHandler } from "@beezping/server";
 import { store } from "@/lib/siteping-store";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
@@ -31,7 +31,7 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
 ### Hono
 
 ```ts
-import { createSitepingHandler } from "@siteping/server";
+import { createSitepingHandler } from "@beezping/server";
 import { Hono } from "hono";
 import { store } from "./siteping-store";
 
@@ -68,7 +68,7 @@ Les endpoints Remix et SvelteKit exportent une fonction par méthode : faites ap
 Express vous passe les `req`/`res` de Node, pas une `Request` : convertissez à l'entrée.
 
 ```ts
-import { createSitepingHandler, type SitepingHandler } from "@siteping/server";
+import { createSitepingHandler, type SitepingHandler } from "@beezping/server";
 import express from "express";
 import { store } from "./siteping-store";
 
@@ -210,7 +210,7 @@ Quand les relecteurs se connectent via un fournisseur OpenID Connect — Keycloa
 
 ```ts
 // lib/siteping-access.ts
-import type { SitepingAccessControl } from "@siteping/server";
+import type { SitepingAccessControl } from "@beezping/server";
 import { createRemoteJWKSet, errors, type JWTPayload, jwtVerify } from "jose";
 
 // Tous deux tirés de https://id.example.com/realms/acme/.well-known/openid-configuration
@@ -380,7 +380,7 @@ export const auth = betterAuth({
 
 ```ts
 // lib/siteping-access.ts
-import type { SitepingAccessControl } from "@siteping/server";
+import type { SitepingAccessControl } from "@beezping/server";
 import { auth } from "@/lib/auth";
 
 export interface Reviewer {
@@ -418,7 +418,7 @@ export const betterAuthAccess: SitepingAccessControl<Reviewer> = {
 
 ```ts
 // app/api/siteping/route.ts
-import { createSitepingHandler } from "@siteping/server";
+import { createSitepingHandler } from "@beezping/server";
 import { betterAuthAccess } from "@/lib/siteping-access";
 import { store } from "@/lib/siteping-store";
 
@@ -445,8 +445,8 @@ La session épargne aussi aux utilisateurs connectés la modale d'identité du w
 ```tsx
 // app/feedback.tsx — monté dans votre layout racine
 "use client";
-import type { Identity } from "@siteping/widget";
-import { useSiteping } from "@siteping/widget/react";
+import type { Identity } from "@beezping/widget";
+import { useSiteping } from "@beezping/widget/react";
 import { authClient } from "@/lib/auth-client"; // createAuthClient() de "better-auth/react"
 
 function Widget({ identity }: { identity: Identity | undefined }) {
@@ -556,7 +556,7 @@ createSitepingHandler({
 
 Ces callbacks reçoivent `{ request, principal }` comme contexte ; `principal` vaut `null` sous la politique `apiKey`. Les hooks écrits comme méthodes de classe gardent leur `this`.
 
-Pour garder un ticket GitHub ou GitLab par feedback, fermé et rouvert avec lui, [`@siteping/integration-issues`](/fr/docs/issue-trackers) construit ces hooks pour vous.
+Pour garder un ticket GitHub ou GitLab par feedback, fermé et rouvert avec lui, [`@beezping/integration-issues`](/fr/docs/issue-trackers) construit ces hooks pour vous.
 
 ## Référence HTTP
 

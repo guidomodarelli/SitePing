@@ -1,4 +1,4 @@
-import { buildFeedbackRecord, type SitepingStore } from "@siteping/core";
+import { buildFeedbackRecord, type SitepingStore } from "@beezping/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createSitepingHandler } from "../src/index.js";
 import { validAnnotation, validPayloadNoAnnotations } from "./fixtures.js";

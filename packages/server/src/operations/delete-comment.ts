@@ -1,4 +1,4 @@
-import { isStoreNotFound, type SitepingStore } from "@siteping/core";
+import { isStoreNotFound, type SitepingStore } from "@beezping/core";
 import { ERROR_MESSAGES } from "../constants.js";
 import type { Pipeline, Scope } from "../pipeline.js";
 import { commentDeleteSchema } from "../validation.js";

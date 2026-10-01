@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import type { FeedbackResponse } from "@siteping/core";
+import type { FeedbackResponse } from "@beezping/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { POPUP_HIDE_TRANSITION_MS } from "../../src/constants.js";
 import { EventBus, type WidgetEvents } from "../../src/events.js";

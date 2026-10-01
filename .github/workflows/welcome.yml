@@ -34,7 +34,7 @@ jobs:
             A few quick things that help us help you faster:
 
             - Make sure the issue title is **descriptive** (e.g. `widget: marker tooltip disappears on focus` rather than `bug`).
-            - If it's a bug, include a **reproduction** (CodeSandbox, minimal repo, or numbered steps) and the package + version (`@siteping/widget`, `@siteping/adapter-prisma`, …).
+            - If it's a bug, include a **reproduction** (CodeSandbox, minimal repo, or numbered steps) and the package + version (`@beezping/widget`, `@beezping/adapter-prisma`, …).
             - If it's a feature, describe the **use case** before the implementation — it helps us pick the right shape for the API.
 
             We try to triage within a few days. In the meantime, browse [`good first issue`](https://github.com/NeosiaNexus/SitePing/labels/good%20first%20issue) if you'd like to ship a fix yourself. 🚀

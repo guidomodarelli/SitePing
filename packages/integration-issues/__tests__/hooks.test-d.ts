@@ -4,8 +4,8 @@
  * and optional settings take values read from the environment.
  */
 
-import type { SitepingStore } from "@siteping/core";
-import { createSitepingHandler, type SitepingHandler } from "@siteping/server";
+import type { SitepingStore } from "@beezping/core";
+import { createSitepingHandler, type SitepingHandler } from "@beezping/server";
 import { describe, expectTypeOf, it } from "vitest";
 import { createIssueTrackerHooks, formatIssue, type IssueTracker } from "../src/index.js";
 import { createGitHubTracker } from "../src/providers/github.js";

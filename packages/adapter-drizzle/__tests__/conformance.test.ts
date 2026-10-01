@@ -1,4 +1,4 @@
-import { testSitepingStore } from "@siteping/core/testing";
+import { testSitepingStore } from "@beezping/core/testing";
 import { afterAll, beforeAll, describe } from "vitest";
 import { type AnyLibSQLDatabase, createLibSQLSitepingStore } from "../src/libsql/index.js";
 import { type AnyPgDatabase, createPgSitepingStore } from "../src/pg/index.js";

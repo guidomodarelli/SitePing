@@ -7,7 +7,7 @@ export function WidgetDogfood() {
     let destroyed = false;
     let instance: { destroy: () => void } | null = null;
 
-    import("@siteping/widget").then(({ initSiteping }) => {
+    import("@beezping/widget").then(({ initSiteping }) => {
       if (destroyed) return;
       instance = initSiteping({
         endpoint: "/api/siteping",

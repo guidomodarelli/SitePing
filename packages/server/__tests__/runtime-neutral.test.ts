@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createContext, runInContext } from "node:vm";
-import type { FeedbackRecord } from "@siteping/core";
+import type { FeedbackRecord } from "@beezping/core";
 import { build } from "tsup";
 import { beforeAll, describe, expect, it } from "vitest";
 import * as zod from "zod";
@@ -29,7 +29,7 @@ async function bundleServer(): Promise<string> {
       platform: "neutral",
       target: "es2022",
       outDir,
-      noExternal: [/^@siteping\/core(\/|$)/],
+      noExternal: [/^@beezping\/core(\/|$)/],
       external: ["zod"],
       config: false,
       silent: true,
@@ -110,7 +110,7 @@ function arrayStore(): Server.SitepingStore {
   };
 }
 
-describe("@siteping/server outside Node", () => {
+describe("@beezping/server outside Node", () => {
   let server: typeof Server;
 
   beforeAll(async () => {

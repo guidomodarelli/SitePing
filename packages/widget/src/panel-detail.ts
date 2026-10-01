@@ -15,7 +15,7 @@ import {
   isClosedStatus,
   type SitepingPanelActionFeedback,
   type SitepingPanelButtonAction,
-} from "@siteping/core";
+} from "@beezping/core";
 import { el, parseSvg, setText } from "./dom-utils.js";
 import { getStatusLabel, getTypeLabel, type TFunction, tWithParams } from "./i18n/index.js";
 import { ICON_USER } from "./icons.js";

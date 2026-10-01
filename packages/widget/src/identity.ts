@@ -1,4 +1,4 @@
-import { hasOwn, IDENTITY_FIELD_MAX_LENGTH, isValidEmail, type SitepingIdentity } from "@siteping/core";
+import { hasOwn, IDENTITY_FIELD_MAX_LENGTH, isValidEmail, type SitepingIdentity } from "@beezping/core";
 
 const STORAGE_KEY = "siteping_identity";
 

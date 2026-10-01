@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { ANCHOR_ELEMENT_ID_MAX, ANCHOR_ELEMENT_TAG_MAX } from "@siteping/core";
+import { ANCHOR_ELEMENT_ID_MAX, ANCHOR_ELEMENT_TAG_MAX } from "@beezping/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { generateAnchor } from "../../src/dom/anchor.js";
 

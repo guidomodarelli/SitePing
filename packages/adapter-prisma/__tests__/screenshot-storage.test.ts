@@ -1,6 +1,6 @@
-import { SCREENSHOT_DELETE_CONCURRENCY, type ScreenshotStorage, StoreDuplicateError } from "@siteping/core";
-import { createScreenshotStorage } from "@siteping/screenshot-storage";
-import { createMemoryObjectStore } from "@siteping/screenshot-storage/memory";
+import { SCREENSHOT_DELETE_CONCURRENCY, type ScreenshotStorage, StoreDuplicateError } from "@beezping/core";
+import { createScreenshotStorage } from "@beezping/screenshot-storage";
+import { createMemoryObjectStore } from "@beezping/screenshot-storage/memory";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PrismaStore } from "../src/index.js";
 import { fakePrisma } from "./fake-prisma.js";
@@ -359,10 +359,10 @@ describe("PrismaStore — upload cleanup after a failed insert", () => {
 });
 
 // ---------------------------------------------------------------------------
-// End to end with @siteping/screenshot-storage, whose keys are random per upload
+// End to end with @beezping/screenshot-storage, whose keys are random per upload
 // ---------------------------------------------------------------------------
 
-describe("PrismaStore — with @siteping/screenshot-storage", () => {
+describe("PrismaStore — with @beezping/screenshot-storage", () => {
   /** An 8-byte PNG signature: a valid base64 image data URL. */
   const PNG_DATA_URL = "data:image/png;base64,iVBORw0KGgo=";
 

@@ -24,14 +24,14 @@ import {
   StoreValueTooLongError,
   screenshotMimeType,
   settleWithConcurrencyLimit,
-} from "@siteping/core";
+} from "@beezping/core";
 import {
   createSitepingHandler as createServerHandler,
   type SitepingAccessHandlerOptions,
   type SitepingApiKeyHandlerOptions,
   type SitepingHandler,
   type SitepingPrincipal,
-} from "@siteping/server";
+} from "@beezping/server";
 
 export type {
   CommentCreateInput,
@@ -40,7 +40,7 @@ export type {
   FeedbackRecord,
   ScreenshotStorage,
   SitepingStore,
-} from "@siteping/core";
+} from "@beezping/core";
 export {
   flattenAnnotation,
   isStorePersistence,
@@ -49,8 +49,8 @@ export {
   StoreNotFoundError,
   StorePersistenceError,
   StoreValueTooLongError,
-} from "@siteping/core";
-export type { FeedbackDeleteInput, FeedbackPatchInput, GetQueryInput } from "@siteping/server";
+} from "@beezping/core";
+export type { FeedbackDeleteInput, FeedbackPatchInput, GetQueryInput } from "@beezping/server";
 
 /**
  * @deprecated The create wire shape is core's `FeedbackPayload` — import
@@ -58,7 +58,7 @@ export type { FeedbackDeleteInput, FeedbackPatchInput, GetQueryInput } from "@si
  */
 export type FeedbackCreateSchemaInput = FeedbackPayload;
 // The server's option types, so a strict linker (pnpm, Bun's isolated
-// installs) never needs @siteping/server as a direct dependency to type them.
+// installs) never needs @beezping/server as a direct dependency to type them.
 export type {
   DiscordWebhookPayload,
   GenericWebhookPayload,
@@ -77,8 +77,8 @@ export type {
   WebhookConfig,
   WebhookPayloadMap,
   WebhookType,
-} from "@siteping/server";
-export { dispatchWebhook, dispatchWebhooks } from "@siteping/server";
+} from "@beezping/server";
+export { dispatchWebhook, dispatchWebhooks } from "@beezping/server";
 
 // ---------------------------------------------------------------------------
 // Minimal PrismaClient shape expected by this adapter
@@ -142,7 +142,7 @@ export interface SitepingPrismaClient {
   sitepingFeedback: PrismaModelDelegate;
   /**
    * Generated once the schema declares the `SitepingComment` model
-   * (`npx @siteping/cli sync`). Optional, so a client generated from an older
+   * (`npx @beezping/cli sync`). Optional, so a client generated from an older
    * schema keeps type-checking: `PrismaStore` then has no threads and the
    * handler answers comment writes with 501.
    */
@@ -660,7 +660,7 @@ export class PrismaStore implements SitepingStore {
 }
 
 // ---------------------------------------------------------------------------
-// Handler — @siteping/server behind the Prisma store
+// Handler — @beezping/server behind the Prisma store
 // ---------------------------------------------------------------------------
 
 /** How the handler reaches its data: a Prisma client, or any store. */
@@ -686,10 +686,10 @@ interface PrismaHandlerStoreOptions {
   caseInsensitiveSearch?: boolean;
 }
 
-/** Options of `createSitepingHandler` under the `apiKey` policy — every `@siteping/server` option. */
+/** Options of `createSitepingHandler` under the `apiKey` policy — every `@beezping/server` option. */
 export interface HandlerOptions extends Omit<SitepingApiKeyHandlerOptions, "store">, PrismaHandlerStoreOptions {}
 
-/** Options of `createSitepingHandler` under a custom `access` policy (see `@siteping/server`). */
+/** Options of `createSitepingHandler` under a custom `access` policy (see `@beezping/server`). */
 export interface PrismaAccessHandlerOptions<Principal extends SitepingPrincipal>
   extends Omit<SitepingAccessHandlerOptions<Principal>, "store">,
     PrismaHandlerStoreOptions {}
@@ -706,7 +706,7 @@ function describePrismaError(error: unknown): string | undefined {
 }
 
 /**
- * Create request handlers for the Siteping API endpoint — `@siteping/server`'s
+ * Create request handlers for the Siteping API endpoint — `@beezping/server`'s
  * `createSitepingHandler` over a Prisma-backed store, with every server option.
  *
  * Accepts either a `store` (abstract) or a `prisma` client (backwards compatible).
@@ -719,7 +719,7 @@ function describePrismaError(error: unknown): string | undefined {
  *
  * @example Next.js App Router — `app/api/siteping/route.ts`
  * ```ts
- * import { createSitepingHandler } from '@siteping/adapter-prisma'
+ * import { createSitepingHandler } from '@beezping/adapter-prisma'
  * import { prisma } from '@/lib/prisma'
  *
  * export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ prisma })
@@ -727,7 +727,7 @@ function describePrismaError(error: unknown): string | undefined {
  *
  * @example With abstract store
  * ```ts
- * import { createSitepingHandler, PrismaStore } from '@siteping/adapter-prisma'
+ * import { createSitepingHandler, PrismaStore } from '@beezping/adapter-prisma'
  * import { prisma } from '@/lib/prisma'
  *
  * const store = new PrismaStore(prisma)

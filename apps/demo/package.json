@@ -1,5 +1,5 @@
 {
-  "name": "@siteping/demo",
+  "name": "@beezping/demo",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -13,11 +13,11 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@siteping/adapter-localstorage": "workspace:*",
-    "@siteping/adapter-memory": "workspace:*",
-    "@siteping/dashboard": "workspace:*",
-    "@siteping/server": "workspace:*",
-    "@siteping/widget": "workspace:*",
+    "@beezping/adapter-localstorage": "workspace:*",
+    "@beezping/adapter-memory": "workspace:*",
+    "@beezping/dashboard": "workspace:*",
+    "@beezping/server": "workspace:*",
+    "@beezping/widget": "workspace:*",
     "gsap": "^3.15.0",
     "next": "^16.3.5",
     "react": "^19.3.0",
@@ -27,7 +27,7 @@
     "fumadocs-ui": "^16.15.11"
   },
   "devDependencies": {
-    "@siteping/core": "workspace:*",
+    "@beezping/core": "workspace:*",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

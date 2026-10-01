@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { FeedbackResponse } from "@siteping/core";
+import type { FeedbackResponse } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { downloadFile, ExportButton, feedbacksToCsv, feedbacksToJson } from "../../src/export-utils.js";
 import { createT } from "../../src/i18n/index.js";

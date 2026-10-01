@@ -1,4 +1,4 @@
-import { FEEDBACK_TYPES } from "@siteping/core";
+import { FEEDBACK_TYPES } from "@beezping/core";
 import type { ReactElement } from "react";
 import { getTypeLabel } from "../i18n/index.js";
 import type { InboxTypeFilter } from "../types.js";

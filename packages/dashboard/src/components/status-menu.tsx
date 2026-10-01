@@ -1,5 +1,5 @@
-import type { FeedbackStatus } from "@siteping/core";
-import { FEEDBACK_STATUSES } from "@siteping/core";
+import type { FeedbackStatus } from "@beezping/core";
+import { FEEDBACK_STATUSES } from "@beezping/core";
 import type { ReactElement, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { getStatusLabel } from "../i18n/index.js";

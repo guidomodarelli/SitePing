@@ -5,7 +5,7 @@ const links = [
   },
   {
     label: "npm",
-    href: "https://www.npmjs.com/package/@siteping/widget",
+    href: "https://www.npmjs.com/package/@beezping/widget",
   },
   {
     label: "Documentation",

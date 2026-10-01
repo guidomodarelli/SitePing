@@ -6,7 +6,7 @@ import type {
   FeedbackStatus,
   FeedbackType,
   Prettify,
-} from "@siteping/core";
+} from "@beezping/core";
 import {
   ANCHOR_ELEMENT_ID_MAX,
   ANCHOR_ELEMENT_TAG_MAX,
@@ -17,7 +17,7 @@ import {
   FEEDBACK_STATUSES,
   FEEDBACK_TYPES,
   IDENTITY_FIELD_MAX_LENGTH,
-} from "@siteping/core";
+} from "@beezping/core";
 import * as zod from "zod";
 import { MAX_VALIDATION_ISSUES } from "./constants.js";
 

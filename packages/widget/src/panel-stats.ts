@@ -1,4 +1,4 @@
-import { type FeedbackResponse, isClosedStatus } from "@siteping/core";
+import { type FeedbackResponse, isClosedStatus } from "@beezping/core";
 import { el, setText } from "./dom-utils.js";
 import { type TFunction, tWithParams } from "./i18n/index.js";
 import type { ThemeColors } from "./styles/theme.js";

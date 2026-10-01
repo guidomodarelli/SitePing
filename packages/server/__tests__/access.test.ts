@@ -1,5 +1,5 @@
-import { MemoryStore } from "@siteping/adapter-memory";
-import type { FeedbackRecord, SitepingStore } from "@siteping/core";
+import { MemoryStore } from "@beezping/adapter-memory";
+import type { FeedbackRecord, SitepingStore } from "@beezping/core";
 import { describe, expect, it, vi } from "vitest";
 import {
   createSitepingHandler,
@@ -518,7 +518,7 @@ describe("createSitepingHandler — access callback failures", () => {
 
 /**
  * Store errors as thrown by an adapter that bundles its own copy of
- * `@siteping/core` (every published package does): same stable `code`,
+ * `@beezping/core` (every published package does): same stable `code`,
  * a class identity the server's `instanceof` checks do not know.
  */
 class BundledStoreNotFoundError extends Error {

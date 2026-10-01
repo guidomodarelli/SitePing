@@ -63,17 +63,17 @@ body:
       label: Package
       description: Which SitePing package is affected?
       options:
-        - "@siteping/widget"
-        - "@siteping/dashboard"
-        - "@siteping/server"
-        - "@siteping/adapter-prisma"
-        - "@siteping/adapter-drizzle"
-        - "@siteping/integration-issues"
-        - "@siteping/screenshot-storage"
-        - "@siteping/adapter-memory"
-        - "@siteping/adapter-localstorage"
-        - "@siteping/adapter-kit"
-        - "@siteping/cli"
+        - "@beezping/widget"
+        - "@beezping/dashboard"
+        - "@beezping/server"
+        - "@beezping/adapter-prisma"
+        - "@beezping/adapter-drizzle"
+        - "@beezping/integration-issues"
+        - "@beezping/screenshot-storage"
+        - "@beezping/adapter-memory"
+        - "@beezping/adapter-localstorage"
+        - "@beezping/adapter-kit"
+        - "@beezping/cli"
         - "siteping.dev (site / docs / demo)"
         - "Not sure"
     validations:

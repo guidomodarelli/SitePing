@@ -14,17 +14,17 @@ export default defineConfig({
     conditions: ["import", "module", "default"],
     // These packages export only their built `dist`. Tests that import one
     // (the widget's bulk-action test runs over real stores, adapter-prisma
-    // delegates to @siteping/server and stores screenshots through
-    // @siteping/screenshot-storage, adapter-drizzle mounts its store behind
-    // the server) resolve it to source like `@siteping/core`, so they need no
+    // delegates to @beezping/server and stores screenshots through
+    // @beezping/screenshot-storage, adapter-drizzle mounts its store behind
+    // the server) resolve it to source like `@beezping/core`, so they need no
     // prior build and never run a stale copy of the engine after a core edit.
     // A subpath entry comes before its package: the first matching prefix wins.
     alias: {
-      "@siteping/adapter-localstorage": source("adapter-localstorage"),
-      "@siteping/adapter-memory": source("adapter-memory"),
-      "@siteping/screenshot-storage/memory": source("screenshot-storage", "backends/memory"),
-      "@siteping/screenshot-storage": source("screenshot-storage"),
-      "@siteping/server": source("server"),
+      "@beezping/adapter-localstorage": source("adapter-localstorage"),
+      "@beezping/adapter-memory": source("adapter-memory"),
+      "@beezping/screenshot-storage/memory": source("screenshot-storage", "backends/memory"),
+      "@beezping/screenshot-storage": source("screenshot-storage"),
+      "@beezping/server": source("server"),
     },
   },
   test: {

@@ -1,5 +1,5 @@
-import { MemoryStore } from "@siteping/adapter-memory";
-import { createCollectionStore, type FeedbackRecord } from "@siteping/core";
+import { MemoryStore } from "@beezping/adapter-memory";
+import { createCollectionStore, type FeedbackRecord } from "@beezping/core";
 import { describe, expect, it, vi } from "vitest";
 import {
   createSitepingHandler,

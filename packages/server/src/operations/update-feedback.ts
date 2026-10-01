@@ -1,4 +1,4 @@
-import { isStoreNotFound, type SitepingStore, toFeedbackUpdate } from "@siteping/core";
+import { isStoreNotFound, type SitepingStore, toFeedbackUpdate } from "@beezping/core";
 import { ERROR_MESSAGES } from "../constants.js";
 import type { SitepingLifecycleHooks } from "../options.js";
 import type { Pipeline } from "../pipeline.js";

@@ -1,4 +1,4 @@
-import type { FeedbackListPermissions, SitepingCapabilities, SitepingStore } from "@siteping/core";
+import type { FeedbackListPermissions, SitepingCapabilities, SitepingStore } from "@beezping/core";
 import { LIST_QUERY_KEYS } from "../constants.js";
 import type { Pipeline } from "../pipeline.js";
 import { getQuerySchema } from "../validation.js";

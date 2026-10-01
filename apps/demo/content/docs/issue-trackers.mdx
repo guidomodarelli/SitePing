@@ -3,7 +3,7 @@ title: Issue trackers
 description: One GitHub or GitLab issue per feedback, opened, closed and reopened along with it through the server's lifecycle hooks.
 ---
 
-`@siteping/integration-issues` builds the [lifecycle hooks](/docs/server#extension-points) of `@siteping/server` so that every feedback gets its own issue on GitHub or GitLab:
+`@beezping/integration-issues` builds the [lifecycle hooks](/docs/server#extension-points) of `@beezping/server` so that every feedback gets its own issue on GitHub or GitLab:
 
 - **created** → an issue opens, labelled `siteping`, with the message, the page, a deep link, the annotated elements, the reviewer's environment and diagnostics;
 - **resolved** or **won't fix** → the issue closes; **reopened** → it reopens;
@@ -12,18 +12,18 @@ description: One GitHub or GitLab issue per feedback, opened, closed and reopene
 No database column is added: the first line of each issue is a hidden marker naming its feedback.
 
 ```bash
-npm i @siteping/integration-issues
+npm i @beezping/integration-issues
 ```
 
-It runs wherever the [server](/docs/server) runs (Fetch API only) and takes `@siteping/server` as a peer dependency; [`@siteping/adapter-prisma`](/docs/adapters/prisma) already brings it, and passes `hooks` through like every other server option.
+It runs wherever the [server](/docs/server) runs (Fetch API only) and takes `@beezping/server` as a peer dependency; [`@beezping/adapter-prisma`](/docs/adapters/prisma) already brings it, and passes `hooks` through like every other server option.
 
 ## GitHub
 
 ```ts
 // app/api/siteping/route.ts
-import { createSitepingHandler } from "@siteping/server";
-import { createIssueTrackerHooks } from "@siteping/integration-issues";
-import { createGitHubTracker } from "@siteping/integration-issues/github";
+import { createSitepingHandler } from "@beezping/server";
+import { createIssueTrackerHooks } from "@beezping/integration-issues";
+import { createGitHubTracker } from "@beezping/integration-issues/github";
 import { store } from "@/lib/siteping-store";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
@@ -43,7 +43,7 @@ On GitHub Enterprise Server, pass `apiBaseUrl: "https://github.acme.com/api/v3"`
 ## GitLab
 
 ```ts
-import { createGitLabTracker } from "@siteping/integration-issues/gitlab";
+import { createGitLabTracker } from "@beezping/integration-issues/gitlab";
 
 createIssueTrackerHooks({
   tracker: createGitLabTracker({ project: "acme/site", token: process.env.GITLAB_TOKEN! }),
@@ -141,7 +141,7 @@ createSitepingHandler({
 The built-in format is exported as `formatIssue(feedback, options)`, and your `formatIssue` option receives those `options`: `redact`, `deepLinkParam`, `includeAuthorEmail` and `siteUrl`. Wrap it to add to the default issue instead of rewriting it, and the quoting of visitor text comes with it:
 
 ```ts
-import { createIssueTrackerHooks, formatIssue } from "@siteping/integration-issues";
+import { createIssueTrackerHooks, formatIssue } from "@beezping/integration-issues";
 
 createIssueTrackerHooks({
   tracker,
@@ -180,7 +180,7 @@ Only labelled issues count. On GitHub and GitLab, an outsider cannot label an is
 Implement `IssueTracker` for Jira, Linear or an internal tool. The hooks keep everything that does not depend on the tracker: the format, the marker, and making deletion comments idempotent.
 
 ```ts
-import type { IssueTracker } from "@siteping/integration-issues";
+import type { IssueTracker } from "@beezping/integration-issues";
 
 const tracker: IssueTracker = {
   name: "Linear", // named in the hooks' own errors

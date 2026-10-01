@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 
-import { MemoryStore } from "@siteping/adapter-memory";
+import { MemoryStore } from "@beezping/adapter-memory";
 import type {
   CommentResponse,
   FeedbackPayload,
   FeedbackResponse,
   SitepingConfig,
   SitepingHttpConfig,
-} from "@siteping/core";
+} from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockMatchMedia, mockVisualViewport } from "../helpers.js";
 

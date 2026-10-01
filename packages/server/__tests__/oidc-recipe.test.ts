@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { MemoryStore } from "@siteping/adapter-memory";
-import type { CommentResponse, FeedbackPermissions, FeedbackResponse, FeedbackResponseList } from "@siteping/core";
+import { MemoryStore } from "@beezping/adapter-memory";
+import type { CommentResponse, FeedbackPermissions, FeedbackResponse, FeedbackResponseList } from "@beezping/core";
 import {
   createRemoteJWKSet,
   customFetch,

@@ -6,7 +6,7 @@ import type {
   SitepingPanelAction,
   SitepingPanelActionContext,
   SitepingPanelActionFeedback,
-} from "@siteping/core";
+} from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EventBus, type WidgetEvents } from "../../src/events.js";
 import { installHostIsolationGuard, isolateFromHost } from "../../src/host-isolation.js";

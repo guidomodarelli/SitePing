@@ -1,4 +1,4 @@
-import type { AnnotationRecord, CommentRecord, FeedbackQuery, FeedbackRecord, FeedbackStatus } from "@siteping/core";
+import type { AnnotationRecord, CommentRecord, FeedbackQuery, FeedbackRecord, FeedbackStatus } from "@beezping/core";
 
 /** A stored feedback row — the record without its annotations and comments relations. */
 export type FeedbackRow = Omit<FeedbackRecord, "annotations" | "comments">;

@@ -3,13 +3,13 @@ title: Server
 description: One HTTP endpoint over any store, for any framework — auth, CORS, validation, redaction, hooks and webhooks on the Fetch API.
 ---
 
-`@siteping/server` turns any [store](/docs/adapters) into the HTTP API the widget and the dashboard talk to. It speaks the Fetch API only (`Request` → `Response`) and imports no Node built-in, so the same handler runs on Node 20+, Bun, Deno and edge workers, mounted by Next.js, Hono, Express or anything else.
+`@beezping/server` turns any [store](/docs/adapters) into the HTTP API the widget and the dashboard talk to. It speaks the Fetch API only (`Request` → `Response`) and imports no Node built-in, so the same handler runs on Node 20+, Bun, Deno and edge workers, mounted by Next.js, Hono, Express or anything else.
 
 ```bash
-npm i @siteping/server
+npm i @beezping/server
 ```
 
-On Prisma, [`@siteping/adapter-prisma`](/docs/adapters/prisma) gives you this handler with the Prisma store built in — every option below works there too.
+On Prisma, [`@beezping/adapter-prisma`](/docs/adapters/prisma) gives you this handler with the Prisma store built in — every option below works there too.
 
 ## Mounting
 
@@ -19,7 +19,7 @@ On Prisma, [`@siteping/adapter-prisma`](/docs/adapters/prisma) gives you this ha
 
 ```ts
 // app/api/siteping/route.ts
-import { createSitepingHandler } from "@siteping/server";
+import { createSitepingHandler } from "@beezping/server";
 import { store } from "@/lib/siteping-store";
 
 export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
@@ -31,7 +31,7 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
 ### Hono
 
 ```ts
-import { createSitepingHandler } from "@siteping/server";
+import { createSitepingHandler } from "@beezping/server";
 import { Hono } from "hono";
 import { store } from "./siteping-store";
 
@@ -68,7 +68,7 @@ Remix and SvelteKit endpoints export a function per method: have each call its o
 Express hands you Node's `req`/`res`, not a `Request`: convert at the edge.
 
 ```ts
-import { createSitepingHandler, type SitepingHandler } from "@siteping/server";
+import { createSitepingHandler, type SitepingHandler } from "@beezping/server";
 import express from "express";
 import { store } from "./siteping-store";
 
@@ -210,7 +210,7 @@ When reviewers sign in with an OpenID Connect provider — Keycloak, Microsoft E
 
 ```ts
 // lib/siteping-access.ts
-import type { SitepingAccessControl } from "@siteping/server";
+import type { SitepingAccessControl } from "@beezping/server";
 import { createRemoteJWKSet, errors, type JWTPayload, jwtVerify } from "jose";
 
 // Both from https://id.example.com/realms/acme/.well-known/openid-configuration
@@ -380,7 +380,7 @@ export const auth = betterAuth({
 
 ```ts
 // lib/siteping-access.ts
-import type { SitepingAccessControl } from "@siteping/server";
+import type { SitepingAccessControl } from "@beezping/server";
 import { auth } from "@/lib/auth";
 
 export interface Reviewer {
@@ -418,7 +418,7 @@ export const betterAuthAccess: SitepingAccessControl<Reviewer> = {
 
 ```ts
 // app/api/siteping/route.ts
-import { createSitepingHandler } from "@siteping/server";
+import { createSitepingHandler } from "@beezping/server";
 import { betterAuthAccess } from "@/lib/siteping-access";
 import { store } from "@/lib/siteping-store";
 
@@ -445,8 +445,8 @@ The session also spares signed-in users the widget's identity prompt: pass it as
 ```tsx
 // app/feedback.tsx — mounted in your root layout
 "use client";
-import type { Identity } from "@siteping/widget";
-import { useSiteping } from "@siteping/widget/react";
+import type { Identity } from "@beezping/widget";
+import { useSiteping } from "@beezping/widget/react";
 import { authClient } from "@/lib/auth-client"; // createAuthClient() from "better-auth/react"
 
 function Widget({ identity }: { identity: Identity | undefined }) {
@@ -556,7 +556,7 @@ createSitepingHandler({
 
 These callbacks get `{ request, principal }` as their context; `principal` is `null` under the `apiKey` policy. Hooks written as class methods keep their `this`.
 
-To keep one GitHub or GitLab issue per feedback, closed and reopened along with it, [`@siteping/integration-issues`](/docs/issue-trackers) builds these hooks for you.
+To keep one GitHub or GitLab issue per feedback, closed and reopened along with it, [`@beezping/integration-issues`](/docs/issue-trackers) builds these hooks for you.
 
 ## HTTP reference
 

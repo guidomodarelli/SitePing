@@ -10,7 +10,7 @@ import type {
   SitepingInstance,
   SitepingPublicEvents,
   SitepingStore,
-} from "@siteping/core";
+} from "@beezping/core";
 import { describe, expectTypeOf, it } from "vitest";
 import type { GetFeedbacksOptions } from "../../src/api-client.js";
 import {

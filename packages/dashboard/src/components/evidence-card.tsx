@@ -1,4 +1,4 @@
-import type { AnnotationRecord, FeedbackRecord, ScreenshotRegion } from "@siteping/core";
+import type { AnnotationRecord, FeedbackRecord, ScreenshotRegion } from "@beezping/core";
 import type { CSSProperties, ReactElement } from "react";
 import { useRef, useState } from "react";
 import { pathFromUrl } from "../format.js";

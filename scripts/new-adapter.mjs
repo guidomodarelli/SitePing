@@ -9,7 +9,7 @@
 // the end and enforced by scripts/check-consistency.mjs until done.
 //
 // Third-party adapters (outside this repo) should depend on
-// @siteping/adapter-kit instead — see docs/adapters/writing-an-adapter.
+// @beezping/adapter-kit instead — see docs/adapters/writing-an-adapter.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -46,7 +46,7 @@ writeFileSync(
   abs(`${pkgDir}/package.json`),
   `${JSON.stringify(
     {
-      name: `@siteping/adapter-${name}`,
+      name: `@beezping/adapter-${name}`,
       version: "0.0.0",
       description: `${className} adapter for Siteping`,
       type: "module",
@@ -72,13 +72,13 @@ writeFileSync(
       homepage: "https://siteping.dev",
       repository: {
         type: "git",
-        url: "git+https://github.com/NeosiaNexus/SitePing.git",
+        url: "git+https://github.com/guidomodarelli/SitePing.git",
         directory: pkgDir,
       },
-      bugs: { url: "https://github.com/NeosiaNexus/SitePing/issues" },
+      bugs: { url: "https://github.com/guidomodarelli/SitePing/issues" },
       publishConfig: { access: "public" },
       engines: { node: ">=20" },
-      devDependencies: { "@siteping/core": "workspace:*" },
+      devDependencies: { "@beezping/core": "workspace:*" },
     },
     null,
     2,
@@ -112,10 +112,10 @@ writeFileSync(
   type FeedbackRecord,
   type FeedbackUpdateInput,
   type SitepingStore,
-} from "@siteping/core";
+} from "@beezping/core";
 
-export type { SitepingStore } from "@siteping/core";
-export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@siteping/core";
+export type { SitepingStore } from "@beezping/core";
+export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@beezping/core";
 
 /**
  * ${className} — \`SitepingStore\` implementation backed by TODO.
@@ -123,7 +123,7 @@ export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersi
  * Two implementation strategies:
  * - Snapshot backend (KV, file, browser storage): delegate everything to
  *   \`createCollectionStore({ load, persist, generateId })\` from
- *   @siteping/core — see adapter-memory for the reference. Threads are
+ *   @beezping/core — see adapter-memory for the reference. Threads are
  *   opt-in: add \`comments: true\` once \`load\` revives each comment's
  *   \`createdAt\` as a Date; without it the store keeps no replies, and the
  *   conformance suite skips its thread tests.
@@ -170,7 +170,7 @@ export class ${className} implements SitepingStore {
 
 writeFileSync(
   abs(`${pkgDir}/__tests__/${name}-store.test.ts`),
-  `import { testSitepingStore } from "@siteping/core/testing";
+  `import { testSitepingStore } from "@beezping/core/testing";
 import { ${className} } from "../src/index.js";
 
 // The shared conformance suite (~56 tests) verifies the full SitepingStore
@@ -185,7 +185,7 @@ testSitepingStore(() => new ${className}());
 
 writeFileSync(
   abs(`${pkgDir}/README.md`),
-  `# @siteping/adapter-${name}
+  `# @beezping/adapter-${name}
 
 ${className} adapter for [Siteping](https://siteping.dev).
 

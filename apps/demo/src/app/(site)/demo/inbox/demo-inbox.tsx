@@ -1,7 +1,7 @@
 "use client";
 
-import { LocalStorageStore } from "@siteping/adapter-localstorage";
-import { createStoreSource, SitepingInbox } from "@siteping/dashboard";
+import { LocalStorageStore } from "@beezping/adapter-localstorage";
+import { createStoreSource, SitepingInbox } from "@beezping/dashboard";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useMemo } from "react";

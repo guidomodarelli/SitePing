@@ -1,4 +1,4 @@
-import { parseHttpUrl } from "@siteping/core";
+import { parseHttpUrl } from "@beezping/core";
 
 /**
  * Remove every trailing `/` from a configured base URL.

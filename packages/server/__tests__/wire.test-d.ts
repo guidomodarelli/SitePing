@@ -3,7 +3,7 @@
  * serializes is exactly the wire contract core publishes to clients.
  */
 
-import type { CommentResponse, FeedbackPermissions, FeedbackResponse, Prettify, Serialized } from "@siteping/core";
+import type { CommentResponse, FeedbackPermissions, FeedbackResponse, Prettify, Serialized } from "@beezping/core";
 import { expectTypeOf, test } from "vitest";
 import type { GenericWebhookPayload } from "../src/index.js";
 import type { WireComment, WireFeedback } from "../src/pipeline.js";

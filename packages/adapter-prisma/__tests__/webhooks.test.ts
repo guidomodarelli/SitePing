@@ -1,4 +1,4 @@
-import type { FeedbackRecord } from "@siteping/core";
+import type { FeedbackRecord } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createSitepingHandler, type WebhookConfig } from "../src/index.js";
 import { validPayloadNoAnnotations } from "./fixtures.js";

@@ -1,5 +1,5 @@
-import type { MemoryStore } from "@siteping/adapter-memory";
-import type { AnnotationCreateInput, DiagnosticsSnapshot, FeedbackStatus, FeedbackType } from "@siteping/core";
+import type { MemoryStore } from "@beezping/adapter-memory";
+import type { AnnotationCreateInput, DiagnosticsSnapshot, FeedbackStatus, FeedbackType } from "@beezping/core";
 import { SEED_SCREENSHOTS } from "./seed-screenshots";
 
 /**
@@ -286,7 +286,7 @@ function buildSeeds(): Seed[] {
         elementTag: "SECTION",
         textPrefix: "Features",
         textSuffix: "Comparison",
-        neighborText: "npm install @siteping/widget @siteping/adapter-prisma",
+        neighborText: "npm install @beezping/widget @beezping/adapter-prisma",
         xPct: 0.3,
         yPct: 0.4,
         wPct: 0.4,

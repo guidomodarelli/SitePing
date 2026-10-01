@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { FeedbackPermissions } from "@siteping/core";
+import type { FeedbackPermissions } from "@beezping/core";
 import { act, cleanup, fireEvent } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Drawer } from "../../src/components/drawer.js";

@@ -1,4 +1,4 @@
-import { ANCHOR_ELEMENT_ID_MAX, ANCHOR_ELEMENT_TAG_MAX, IDENTITY_FIELD_MAX_LENGTH } from "@siteping/core";
+import { ANCHOR_ELEMENT_ID_MAX, ANCHOR_ELEMENT_TAG_MAX, IDENTITY_FIELD_MAX_LENGTH } from "@beezping/core";
 import { describe, expect, it } from "vitest";
 import {
   feedbackCreateSchema,

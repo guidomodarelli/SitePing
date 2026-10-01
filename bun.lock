@@ -54,7 +54,7 @@
     },
     "packages/adapter-drizzle": {
       "name": "@beezping/adapter-drizzle",
-      "version": "0.0.0",
+      "version": "0.2.0",
       "devDependencies": {
         "@beezping/core": "workspace:*",
         "@beezping/server": "workspace:*",
@@ -69,7 +69,7 @@
     },
     "packages/adapter-kit": {
       "name": "@beezping/adapter-kit",
-      "version": "0.1.1",
+      "version": "0.3.0",
       "devDependencies": {
         "@beezping/core": "workspace:*",
       },
@@ -82,21 +82,21 @@
     },
     "packages/adapter-localstorage": {
       "name": "@beezping/adapter-localstorage",
-      "version": "0.5.4",
+      "version": "0.7.0",
       "devDependencies": {
         "@beezping/core": "workspace:*",
       },
     },
     "packages/adapter-memory": {
       "name": "@beezping/adapter-memory",
-      "version": "0.5.3",
+      "version": "0.7.0",
       "devDependencies": {
         "@beezping/core": "workspace:*",
       },
     },
     "packages/adapter-prisma": {
       "name": "@beezping/adapter-prisma",
-      "version": "0.6.6",
+      "version": "0.8.0",
       "dependencies": {
         "@beezping/server": "workspace:^",
       },
@@ -113,7 +113,7 @@
     },
     "packages/cli": {
       "name": "@beezping/cli",
-      "version": "0.5.6",
+      "version": "0.7.0",
       "bin": {
         "beezping": "./dist/index.js",
       },
@@ -130,7 +130,7 @@
     },
     "packages/dashboard": {
       "name": "@beezping/dashboard",
-      "version": "0.2.7",
+      "version": "0.4.0",
       "devDependencies": {
         "@beezping/core": "workspace:*",
         "@size-limit/file": "^14.0.0",
@@ -146,7 +146,7 @@
     },
     "packages/integration-issues": {
       "name": "@beezping/integration-issues",
-      "version": "0.0.0",
+      "version": "0.2.0",
       "devDependencies": {
         "@beezping/adapter-memory": "workspace:*",
         "@beezping/core": "workspace:*",
@@ -159,7 +159,7 @@
     },
     "packages/screenshot-storage": {
       "name": "@beezping/screenshot-storage",
-      "version": "0.0.0",
+      "version": "0.2.0",
       "devDependencies": {
         "@aws-crypto/sha256-js": "^5.2.0",
         "@beezping/core": "workspace:*",
@@ -178,7 +178,7 @@
     },
     "packages/server": {
       "name": "@beezping/server",
-      "version": "0.0.0",
+      "version": "0.2.0",
       "dependencies": {
         "zod": "^4.6.5",
       },
@@ -191,7 +191,7 @@
     },
     "packages/widget": {
       "name": "@beezping/widget",
-      "version": "0.10.10",
+      "version": "0.12.0",
       "dependencies": {
         "@medv/finder": "^4.0.2",
         "html2canvas-pro": "^2.4.3",

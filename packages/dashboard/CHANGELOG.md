@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.0](https://github.com/guidomodarelli/beezping/releases/tag/dashboard-v0.4.0) (2026-10-01)
+
+### Breaking Changes
+
+* Publish the complete Beezping API and branding under `@beezping/dashboard`, including the renamed public identifiers and configuration contracts.
+
+### Features
+
+* Include the current main implementation, validated in PR #17, and align release metadata with the versions already published to npm.
+
 ## [0.2.7](https://github.com/guidomodarelli/beezping/compare/dashboard-v0.2.6...dashboard-v0.2.7) (2026-09-23)
 
 

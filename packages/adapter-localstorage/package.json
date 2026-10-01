@@ -1,6 +1,6 @@
 {
   "name": "@beezping/adapter-localstorage",
-  "version": "0.5.4",
+  "version": "0.7.0",
   "description": "localStorage adapter for Beezping — client-side feedback persistence without a server",
   "type": "module",
   "sideEffects": false,

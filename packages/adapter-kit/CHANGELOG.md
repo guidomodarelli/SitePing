@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.0](https://github.com/guidomodarelli/beezping/releases/tag/adapter-kit-v0.3.0) (2026-10-01)
+
+### Breaking Changes
+
+* Publish the complete Beezping API and branding under `@beezping/adapter-kit`, including the renamed public identifiers and configuration contracts.
+
+### Features
+
+* Include the current main implementation, validated in PR #17, and align release metadata with the versions already published to npm.
+
 ## [0.1.1](https://github.com/guidomodarelli/beezping/compare/adapter-kit-v0.1.0...adapter-kit-v0.1.1) (2026-09-03)
 
 

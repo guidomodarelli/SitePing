@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.8.0](https://github.com/guidomodarelli/beezping/releases/tag/adapter-prisma-v0.8.0) (2026-10-01)
+
+### Breaking Changes
+
+* Publish the complete Beezping API and branding under `@beezping/adapter-prisma`, including the renamed public identifiers and configuration contracts.
+
+### Features
+
+* Include the current main implementation, validated in PR #17, and align release metadata with the versions already published to npm.
+
 ## [0.6.6](https://github.com/guidomodarelli/beezping/compare/adapter-prisma-v0.6.5...adapter-prisma-v0.6.6) (2026-09-23)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@beezping/adapter-drizzle",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "description": "Drizzle ORM adapter for Beezping — PostgreSQL and Turso/libSQL",
   "type": "module",
   "sideEffects": false,

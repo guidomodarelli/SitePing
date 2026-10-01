@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.0](https://github.com/guidomodarelli/beezping/releases/tag/adapter-memory-v0.7.0) (2026-10-01)
+
+### Breaking Changes
+
+* Publish the complete Beezping API and branding under `@beezping/adapter-memory`, including the renamed public identifiers and configuration contracts.
+
+### Features
+
+* Include the current main implementation, validated in PR #17, and align release metadata with the versions already published to npm.
+
 ## [0.5.3](https://github.com/guidomodarelli/beezping/compare/adapter-memory-v0.5.2...adapter-memory-v0.5.3) (2026-07-28)
 
 

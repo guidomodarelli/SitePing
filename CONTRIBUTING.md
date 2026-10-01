@@ -12,7 +12,7 @@ Thanks for your interest in contributing! This guide covers everything you need 
 
 ```bash
 git clone https://github.com/guidomodarelli/beezping.git
-cd Beezping
+cd beezping
 bun install
 ```
 

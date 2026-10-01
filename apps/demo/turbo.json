@@ -12,6 +12,7 @@
         "package.json",
         "tsconfig.json"
       ],
+      "env": ["BEEZPING_SITE_URL"],
       "outputs": [".next/**", "!.next/cache/**"]
     },
     "check": {

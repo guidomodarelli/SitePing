@@ -3,7 +3,7 @@ title: Personnalisation
 description: Styles cadrés, variables CSS, et la bonne façon de les surcharger.
 ---
 
-Le dashboard n'utilise **pas de Shadow DOM** — c'est le DOM de votre app, stylé par une feuille de styles injectée en `<style id="siteping-inbox-styles">` dans le `document.head` au premier montage (partagée entre les instances, compatible SSR). Tous les sélecteurs sont cadrés sous `.spd-root`, rien n'utilise `!important`, et tout le comportement responsive repose sur des **container queries** — l'inbox s'adapte à la largeur de la boîte dans laquelle vous la placez, pas à celle de la fenêtre. En dessous de 960 px de largeur de conteneur, le tiroir de détail devient une surcouche avec piège à focus ; au-dessus, il se place côte à côte.
+Le dashboard n'utilise **pas de Shadow DOM** — c'est le DOM de votre app, stylé par une feuille de styles injectée en `<style id="beezping-inbox-styles">` dans le `document.head` au premier montage (partagée entre les instances, compatible SSR). Tous les sélecteurs sont cadrés sous `.spd-root`, rien n'utilise `!important`, et tout le comportement responsive repose sur des **container queries** — l'inbox s'adapte à la largeur de la boîte dans laquelle vous la placez, pas à celle de la fenêtre. En dessous de 960 px de largeur de conteneur, le tiroir de détail devient une surcouche avec piège à focus ; au-dessus, il se place côte à côte.
 
 > Note CSP : la feuille de styles injectée exige que `style-src` l'autorise (une politique limitée à `'self'` sans `'unsafe-inline'` ni nonce la bloquera).
 
@@ -12,7 +12,7 @@ Le dashboard n'utilise **pas de Shadow DOM** — c'est le DOM de votre app, styl
 Définissez-la par la prop — elle est appliquée comme variable CSS en ligne, donc aucune règle de feuille de styles ne peut la surcharger :
 
 ```tsx
-<SitepingInbox accentColor="#7c3aed" ... />
+<BeezpingInbox accentColor="#7c3aed" ... />
 ```
 
 Hexadécimal uniquement (`#RGB`, `#RRGGBB`, `#RRGGBBAA`) ; toute autre valeur avertit et retombe sur `#0066ff`. Chaque nuance d'accent de l'interface est une dérivation `color-mix()` de cette unique valeur.

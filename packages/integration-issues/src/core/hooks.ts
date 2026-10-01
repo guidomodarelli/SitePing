@@ -1,9 +1,9 @@
 import { type FeedbackRecord, isClosedStatus, parseHttpUrl } from "@beezping/core";
-import type { SitepingDeletionTarget } from "@beezping/server";
+import type { BeezpingDeletionTarget } from "@beezping/server";
 import {
+  BEEZPING_ISSUE_LABEL,
   DEFAULT_DEEP_LINK_PARAM,
   DELETED_FEEDBACK_COMMENT_TEMPLATE,
-  SITEPING_ISSUE_LABEL,
 } from "../constants/issue-format.js";
 import { isTrackerTimeout } from "./http-client.js";
 import {
@@ -24,7 +24,7 @@ import { createTaskQueue } from "./task-queue.js";
 export interface IssueTrackerHooksOptions {
   /** Where issues live — `createGitHubTracker`, `createGitLabTracker` or your own. */
   tracker: IssueTracker;
-  /** Extra labels on trackers that support them (the `siteping` label is always added). */
+  /** Extra labels on trackers that support them (the `beezping` label is always added). */
   labels?: readonly string[];
   /**
    * Redact secrets from free text before it leaves your server. The
@@ -39,7 +39,7 @@ export interface IssueTrackerHooksOptions {
    * carry no deep link.
    */
   siteUrl?: string | undefined;
-  /** Query parameter of the widget's deep link (`SitepingConfig.deepLink`), or `false` to omit it. */
+  /** Query parameter of the widget's deep link (`BeezpingConfig.deepLink`), or `false` to omit it. */
   deepLinkParam?: string | false;
   /** Include reviewer emails in issues. Defaults to `false` — issues are often public. */
   includeAuthorEmail?: boolean;
@@ -80,7 +80,7 @@ export interface IssueTrackerHooksOptions {
 export interface IssueTrackerHooks {
   onCreated(feedback: FeedbackRecord): Promise<void>;
   onUpdated(feedback: FeedbackRecord): Promise<void>;
-  onDeleting(target: SitepingDeletionTarget): Promise<void>;
+  onDeleting(target: BeezpingDeletionTarget): Promise<void>;
 }
 
 const noRedaction = (text: string): string => text;
@@ -101,7 +101,7 @@ const defaultDeletedComment = (feedbackId: string): string =>
  * import { createIssueTrackerHooks } from "@beezping/integration-issues";
  * import { createGitHubTracker } from "@beezping/integration-issues/github";
  *
- * createSitepingHandler({
+ * createBeezpingHandler({
  *   store,
  *   access,
  *   hooks: createIssueTrackerHooks({
@@ -125,7 +125,7 @@ export function createIssueTrackerHooks({
 }: IssueTrackerHooksOptions): IssueTrackerHooks {
   if (siteUrl !== undefined && !parseHttpUrl(siteUrl)) {
     // Not echoed: a staging URL may carry credentials, and this error is logged.
-    throw new Error("[siteping] createIssueTrackerHooks: siteUrl must be an absolute http(s) URL");
+    throw new Error("[beezping] createIssueTrackerHooks: siteUrl must be an absolute http(s) URL");
   }
   const formatOptions: IssueFormatOptions = {
     redact,
@@ -133,7 +133,7 @@ export function createIssueTrackerHooks({
     includeAuthorEmail,
     siteUrl,
   };
-  const issueLabels = [SITEPING_ISSUE_LABEL, ...labels.filter((label) => label !== SITEPING_ISSUE_LABEL)];
+  const issueLabels = [BEEZPING_ISSUE_LABEL, ...labels.filter((label) => label !== BEEZPING_ISSUE_LABEL)];
   const instance = instanceName || undefined;
   /** The issue's link, when this deployment opened it. */
   const linkOf = (issue: TrackedIssue): IssueLink | null => {
@@ -145,7 +145,7 @@ export function createIssueTrackerHooks({
     const isLinked = (issue: TrackedIssue) => linkOf(issue)?.feedbackId === feedbackId;
     const marker = feedbackMarkerFragment(feedbackId);
     // `null` when the search failed: its miss then says nothing.
-    const searched = await tracker.searchSitepingIssues?.(feedbackId).catch((error: unknown) => {
+    const searched = await tracker.searchBeezpingIssues?.(feedbackId).catch((error: unknown) => {
       // Timed out: the tracker is down, and the listing would only wait out another timeout.
       if (isTrackerTimeout(error)) throw error;
       return null;
@@ -153,25 +153,25 @@ export function createIssueTrackerHooks({
     const found = searched?.issues.find(isLinked);
     if (found) return found;
     // The newest page holds the issues too new for the search index, and a recent feedback's issue.
-    const newest = await tracker.findSitepingIssues(marker, { maxPages: 1 });
+    const newest = await tracker.findBeezpingIssues(marker, { maxPages: 1 });
     const recent = newest.issues.find(isLinked);
     // A search that returned every match leaves no older issue to find.
     if (recent || !newest.truncated || searched?.truncated === false) return recent ?? null;
-    const listing = await tracker.findSitepingIssues(marker);
+    const listing = await tracker.findBeezpingIssues(marker);
     const listed = listing.issues.find(isLinked);
     if (listed || !listing.truncated) return listed ?? null;
     throw new Error(
-      `[siteping] ${tracker.name}: the issue of feedback "${feedbackId}" is not among the SitePing issues listed, ` +
+      `[beezping] ${tracker.name}: the issue of feedback "${feedbackId}" is not among the Beezping issues listed, ` +
         "and more are left unlisted. Raise maxListedPages to reach it.",
     );
   };
 
   const issuesOfProject = async (projectName: string): Promise<TrackedIssue[]> => {
-    const listing = await tracker.findSitepingIssues(projectMarkerFragment(projectName));
+    const listing = await tracker.findBeezpingIssues(projectMarkerFragment(projectName));
     // Refused rather than done in part: the issues past the cap would stay open once the records are gone.
     if (listing.truncated) {
       throw new Error(
-        `[siteping] ${tracker.name}: project "${projectName}" may have SitePing issues past the ones listed, ` +
+        `[beezping] ${tracker.name}: project "${projectName}" may have Beezping issues past the ones listed, ` +
           "which deleting it would leave open. Raise maxListedPages to reach them.",
       );
     }

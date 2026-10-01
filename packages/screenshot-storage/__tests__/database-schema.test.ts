@@ -1,18 +1,18 @@
 import { getTableConfig as getPgTableConfig } from "drizzle-orm/pg-core";
 import { getTableConfig as getSqliteTableConfig } from "drizzle-orm/sqlite-core";
 import { describe, expect, it } from "vitest";
-import { createSitepingScreenshotsSqliteTable } from "../src/backends/drizzle-libsql.js";
-import { createSitepingScreenshotsPgTable } from "../src/backends/drizzle-pg.js";
+import { createBeezpingScreenshotsSqliteTable } from "../src/backends/drizzle-libsql.js";
+import { createBeezpingScreenshotsPgTable } from "../src/backends/drizzle-pg.js";
 import { formatUnexpectedBinaryColumnDataMessage, SCREENSHOTS_TABLE_COLUMNS } from "../src/constants/database.js";
 import { toBytes } from "../src/core/binary.js";
 
 describe("screenshots table schema", () => {
   it("creates the same columns in every Drizzle dialect", () => {
     const expectedColumnNames = Object.values(SCREENSHOTS_TABLE_COLUMNS).sort();
-    const pgColumnNames = getPgTableConfig(createSitepingScreenshotsPgTable())
+    const pgColumnNames = getPgTableConfig(createBeezpingScreenshotsPgTable())
       .columns.map((column) => column.name)
       .sort();
-    const sqliteColumnNames = getSqliteTableConfig(createSitepingScreenshotsSqliteTable())
+    const sqliteColumnNames = getSqliteTableConfig(createBeezpingScreenshotsSqliteTable())
       .columns.map((column) => column.name)
       .sort();
 

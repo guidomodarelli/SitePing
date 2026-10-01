@@ -1,7 +1,7 @@
 {
   "name": "@beezping/screenshot-storage",
   "version": "0.0.0",
-  "description": "Screenshot storage for Siteping — Cloudflare Images, any S3-compatible bucket, your database (Drizzle: PostgreSQL, Turso/libSQL), the local filesystem, memory, or your own backend",
+  "description": "Screenshot storage for Beezping — Cloudflare Images, any S3-compatible bucket, your database (Drizzle: PostgreSQL, Turso/libSQL), the local filesystem, memory, or your own backend",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -88,7 +88,7 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "siteping",
+    "beezping",
     "screenshot",
     "storage",
     "cloudflare-images",
@@ -103,14 +103,14 @@
   ],
   "author": "neosianexus",
   "license": "MIT",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://github.com/guidomodarelli/beezping",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/guidomodarelli/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/beezping.git",
     "directory": "packages/screenshot-storage"
   },
   "bugs": {
-    "url": "https://github.com/guidomodarelli/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/beezping/issues"
   },
   "publishConfig": {
     "access": "public"

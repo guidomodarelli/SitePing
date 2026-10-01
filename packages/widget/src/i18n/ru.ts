@@ -3,7 +3,7 @@ import type { Translations } from "./types.js";
 export const ru: Translations = {
   // Panel
   "panel.title": "Обратная связь",
-  "panel.ariaLabel": "Панель обратной связи Siteping",
+  "panel.ariaLabel": "Панель обратной связи Beezping",
   "panel.feedbackList": "Список отзывов",
   "panel.loading": "Загрузка отзывов",
   "panel.close": "Закрыть панель",
@@ -53,7 +53,7 @@ export const ru: Translations = {
   "panel.filterMineHint": "Только отзывы, отправленные из этого браузера",
 
   // FAB menu
-  "fab.aria": "Siteping — Меню обратной связи",
+  "fab.aria": "Beezping — Меню обратной связи",
   "fab.messages": "Показать панель",
   "fab.annotate": "Создать аннотацию",
   "fab.annotations": "Показать или скрыть метки",

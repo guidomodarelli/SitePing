@@ -1,12 +1,12 @@
 [![npm version](https://img.shields.io/npm/v/@beezping/adapter-localstorage)](https://www.npmjs.com/package/@beezping/adapter-localstorage)
-[![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/adapters/localstorage)
+[![Docs](https://img.shields.io/badge/docs-github.com/guidomodarelli/beezping-0066ff)](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/adapters/localstorage.mdx)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
 # @beezping/adapter-localstorage
 
-Client-side store for [SitePing](https://github.com/NeosiaNexus/SitePing) — the whole feedback loop in the browser, no server required. Ideal for demos, prototypes, and docs sites.
+Client-side store for [Beezping](https://github.com/guidomodarelli/beezping) — the whole feedback loop in the browser, no server required. Ideal for demos, prototypes, and docs sites.
 
-**[Documentation](https://siteping.dev/docs/adapters/localstorage)**
+**[Documentation](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/adapters/localstorage.mdx)**
 
 ## Install
 
@@ -17,11 +17,11 @@ npm install @beezping/adapter-localstorage
 ## Usage
 
 ```ts
-import { initSiteping } from "@beezping/widget";
+import { initBeezping } from "@beezping/widget";
 import { LocalStorageStore } from "@beezping/adapter-localstorage";
 
-initSiteping({
-  store: new LocalStorageStore(),   // options: { key?: string } — default "siteping_feedbacks"
+initBeezping({
+  store: new LocalStorageStore(),   // options: { key?: string } — default "beezping_feedbacks"
   projectName: "my-demo",
 });
 ```
@@ -30,4 +30,4 @@ Each visitor sees only their own feedback — data never leaves their browser. C
 
 ## License
 
-[MIT](https://github.com/NeosiaNexus/SitePing/blob/main/LICENSE)
+[MIT](https://github.com/guidomodarelli/beezping/blob/main/LICENSE)

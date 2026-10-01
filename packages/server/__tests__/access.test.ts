@@ -1,16 +1,16 @@
 import { MemoryStore } from "@beezping/adapter-memory";
-import type { FeedbackRecord, SitepingStore } from "@beezping/core";
+import type { BeezpingStore, FeedbackRecord } from "@beezping/core";
 import { describe, expect, it, vi } from "vitest";
 import {
-  createSitepingHandler,
-  type SitepingAccessControl,
-  type SitepingAuthorizationContext,
-  type SitepingHandler,
-  type SitepingLogger,
+  type BeezpingAccessControl,
+  type BeezpingAuthorizationContext,
+  type BeezpingHandler,
+  type BeezpingLogger,
+  createBeezpingHandler,
 } from "../src/index.js";
 import { validPayloadNoAnnotations } from "./fixtures.js";
 
-const ENDPOINT = "http://localhost/api/siteping";
+const ENDPOINT = "http://localhost/api/beezping";
 const PROJECT = validPayloadNoAnnotations.projectName;
 
 interface Reviewer {
@@ -22,7 +22,7 @@ const ADMIN: Reviewer = { email: "admin@example.com", isAdmin: true };
 const GUEST: Reviewer = { email: "guest@example.com", isAdmin: false };
 
 /** Session stand-in: the caller identifies through a header, as a cookie session would. */
-function sessionAccess(overrides: Partial<SitepingAccessControl<Reviewer>> = {}): SitepingAccessControl<Reviewer> {
+function sessionAccess(overrides: Partial<BeezpingAccessControl<Reviewer>> = {}): BeezpingAccessControl<Reviewer> {
   return {
     authenticate: (request) => {
       const email = request.headers.get("x-session");
@@ -46,17 +46,17 @@ function listRequest(session?: Reviewer, projectName = PROJECT): Request {
   });
 }
 
-const silentLogger = () => ({ error: vi.fn<SitepingLogger["error"]>() });
+const silentLogger = () => ({ error: vi.fn<BeezpingLogger["error"]>() });
 
-async function createFeedback(handler: SitepingHandler, session: Reviewer = ADMIN): Promise<FeedbackRecord> {
+async function createFeedback(handler: BeezpingHandler, session: Reviewer = ADMIN): Promise<FeedbackRecord> {
   const response = await handler.POST(jsonRequest("POST", validPayloadNoAnnotations, session));
   expect(response.status).toBe(201);
   return (await response.json()) as FeedbackRecord;
 }
 
-describe("createSitepingHandler — access", () => {
+describe("createBeezpingHandler — access", () => {
   it("answers 401 on every method when authenticate resolves no principal", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), access: sessionAccess() });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), access: sessionAccess() });
 
     expect((await handler.POST(jsonRequest("POST", validPayloadNoAnnotations))).status).toBe(401);
     expect((await handler.GET(listRequest())).status).toBe(401);
@@ -68,7 +68,7 @@ describe("createSitepingHandler — access", () => {
 
   it("fails closed when authenticate resolves undefined", async () => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store, access: { authenticate: () => undefined } });
+    const handler = createBeezpingHandler({ store, access: { authenticate: () => undefined } });
 
     const response = await handler.POST(jsonRequest("POST", validPayloadNoAnnotations));
 
@@ -81,7 +81,7 @@ describe("createSitepingHandler — access", () => {
     const store = new MemoryStore();
     // TypeScript refuses a boolean principal (options.test-d.ts); plain JavaScript can still pass one.
     const tokenCheck = { authenticate: (request: Request) => request.headers.get("x-token") === "secret" };
-    const handler = createSitepingHandler({ store, access: tokenCheck as unknown as SitepingAccessControl<string> });
+    const handler = createBeezpingHandler({ store, access: tokenCheck as unknown as BeezpingAccessControl<string> });
     const withToken = (request: Request, token: string) => {
       const headers = new Headers(request.headers);
       headers.set("x-token", token);
@@ -107,14 +107,14 @@ describe("createSitepingHandler — access", () => {
   });
 
   it.each([0, ""])("fails closed when authenticate resolves %j", async (principal) => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), access: { authenticate: () => principal } });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), access: { authenticate: () => principal } });
 
     expect((await handler.GET(listRequest())).status).toBe(401);
   });
 
   it("passes action, project and target id to authorize and answers 403 when it refuses", async () => {
-    const decisions: Array<SitepingAuthorizationContext<Reviewer>> = [];
-    const handler = createSitepingHandler({
+    const decisions: Array<BeezpingAuthorizationContext<Reviewer>> = [];
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: sessionAccess({
         authorize: (context) => {
@@ -176,8 +176,8 @@ describe("createSitepingHandler — access", () => {
         waitUntil,
         hooks: { onCreated },
       };
-      const claimed = createSitepingHandler(options);
-      const rewritten = createSitepingHandler({
+      const claimed = createBeezpingHandler(options);
+      const rewritten = createBeezpingHandler({
         ...options,
         beforeCreate: (input) => ({ ...input, projectName: "other-project" }),
       });
@@ -203,7 +203,7 @@ describe("createSitepingHandler — access", () => {
   });
 
   it("blanks authorEmail in list and PATCH responses for principals that may not read it", async () => {
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: sessionAccess({ canReadAuthorEmail: (principal) => principal.isAdmin }),
     });
@@ -223,7 +223,7 @@ describe("createSitepingHandler — access", () => {
   });
 
   it("blanks authorEmail for every principal when canReadAuthorEmail is not set", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), access: sessionAccess() });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), access: sessionAccess() });
 
     const created = await createFeedback(handler, ADMIN);
     const listed = ((await (await handler.GET(listRequest(ADMIN))).json()) as { feedbacks: FeedbackRecord[] })
@@ -238,7 +238,7 @@ describe("createSitepingHandler — access", () => {
   it("reveals authorEmail, and the team role, on a true answer only", async () => {
     // A visitor principal lacks the flag its policy reads: JavaScript, or a principal typed `any`.
     const VISITOR = { email: "" } as Reviewer;
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: {
         authenticate: (request) => (request.headers.get("x-session") === ADMIN.email ? ADMIN : VISITOR),
@@ -278,8 +278,8 @@ describe("createSitepingHandler — access", () => {
     const access = {
       authenticate: (request: Request) => (request.headers.get("x-admin") ? { roles: ["admin"] } : { visitor: true }),
       canReadAuthorEmail: (principal: { roles?: string[] }) => principal.roles?.includes("admin"),
-    } as unknown as SitepingAccessControl<object>;
-    const handler = createSitepingHandler({ store: new MemoryStore(), access });
+    } as unknown as BeezpingAccessControl<object>;
+    const handler = createBeezpingHandler({ store: new MemoryStore(), access });
     const { id } = (await (
       await handler.POST(
         new Request(ENDPOINT, {
@@ -311,8 +311,8 @@ describe("createSitepingHandler — access", () => {
     const access = {
       authenticate: () => ({ id: "u" }),
       canCommentAsTeam: () => "yes",
-    } as unknown as SitepingAccessControl<object>;
-    const handler = createSitepingHandler({ store: new MemoryStore(), access });
+    } as unknown as BeezpingAccessControl<object>;
+    const handler = createBeezpingHandler({ store: new MemoryStore(), access });
     const { id } = await createFeedback(handler);
 
     const reply = await handler.POST(
@@ -332,7 +332,7 @@ describe("createSitepingHandler — access", () => {
 
   it("applies the email permission to fresh and replayed POST responses", async () => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store,
       access: sessionAccess({ canReadAuthorEmail: async (principal) => principal.isAdmin }),
     });
@@ -350,7 +350,7 @@ describe("createSitepingHandler — access", () => {
   });
 
   it("keeps echoing authorEmail to the anonymous submitter under the apiKey policy", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), apiKey: "secret-key" });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), apiKey: "secret-key" });
 
     const fresh = await handler.POST(jsonRequest("POST", validPayloadNoAnnotations));
     const replayed = await handler.POST(jsonRequest("POST", validPayloadNoAnnotations));
@@ -360,7 +360,7 @@ describe("createSitepingHandler — access", () => {
   });
 
   it("never lets the browser cache a list that depends on the principal", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), access: sessionAccess() });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), access: sessionAccess() });
 
     const response = await handler.GET(listRequest(ADMIN));
 
@@ -369,7 +369,7 @@ describe("createSitepingHandler — access", () => {
   });
 
   it("keeps the apiKey policy's short private cache on lists", async () => {
-    const handler = createSitepingHandler({ store: new MemoryStore(), requireAuthForDestructive: false });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), requireAuthForDestructive: false });
 
     expect((await handler.GET(listRequest())).headers.get("Cache-Control")).toBe("private, max-age=5");
   });
@@ -377,7 +377,7 @@ describe("createSitepingHandler — access", () => {
   it("does not require an apiKey in production when a custom access policy is passed", () => {
     vi.stubEnv("NODE_ENV", "production");
     try {
-      expect(() => createSitepingHandler({ store: new MemoryStore(), access: sessionAccess() })).not.toThrow();
+      expect(() => createBeezpingHandler({ store: new MemoryStore(), access: sessionAccess() })).not.toThrow();
     } finally {
       vi.unstubAllEnvs();
     }
@@ -389,7 +389,7 @@ describe("createSitepingHandler — access", () => {
  * as a minimal third-party adapter may — every required method delegates to
  * a real `MemoryStore`.
  */
-function storeWithoutOwnershipCheck(backing = new MemoryStore()): SitepingStore {
+function storeWithoutOwnershipCheck(backing = new MemoryStore()): BeezpingStore {
   return {
     createFeedback: (data) => backing.createFeedback(data),
     getFeedbacks: (query) => backing.getFeedbacks(query),
@@ -406,21 +406,21 @@ const projectScopedAccess = () =>
     authorize: ({ principal, projectName }) => projectName === (principal.isAdmin ? PROJECT : "guest-project"),
   });
 
-describe("createSitepingHandler — project ownership of per-record mutations", () => {
+describe("createBeezpingHandler — project ownership of per-record mutations", () => {
   it("refuses to start with a custom authorize over a store without verifyProjectOwnership", () => {
-    expect(() => createSitepingHandler({ store: storeWithoutOwnershipCheck(), access: projectScopedAccess() })).toThrow(
+    expect(() => createBeezpingHandler({ store: storeWithoutOwnershipCheck(), access: projectScopedAccess() })).toThrow(
       /needs a store implementing `verifyProjectOwnership`/,
     );
   });
 
   it("still starts over such a store when no policy scopes callers to projects", () => {
-    expect(() => createSitepingHandler({ store: storeWithoutOwnershipCheck(), access: sessionAccess() })).not.toThrow();
-    expect(() => createSitepingHandler({ store: storeWithoutOwnershipCheck(), apiKey: "secret-key" })).not.toThrow();
+    expect(() => createBeezpingHandler({ store: storeWithoutOwnershipCheck(), access: sessionAccess() })).not.toThrow();
+    expect(() => createBeezpingHandler({ store: storeWithoutOwnershipCheck(), apiKey: "secret-key" })).not.toThrow();
   });
 
   it("answers 404 and leaves the record untouched when the claimed project is not the record's", async () => {
     const store = new MemoryStore();
-    const handler = createSitepingHandler({ store, access: projectScopedAccess() });
+    const handler = createBeezpingHandler({ store, access: projectScopedAccess() });
     const created = await handler.POST(
       jsonRequest("POST", { ...validPayloadNoAnnotations, projectName: "guest-project" }, GUEST),
     );
@@ -441,7 +441,7 @@ describe("createSitepingHandler — project ownership of per-record mutations", 
   });
 });
 
-describe("createSitepingHandler — access callback failures", () => {
+describe("createBeezpingHandler — access callback failures", () => {
   const ALLOWED_ORIGIN = "https://client-site.example";
   const sessionStoreError = new Error("session database unreachable: connection refused at 10.0.0.5:5432");
 
@@ -453,7 +453,7 @@ describe("createSitepingHandler — access callback failures", () => {
 
   it("answers a logged, CORS-readable 500 on every method when authenticate throws", async () => {
     const logger = silentLogger();
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: sessionAccess({ authenticate: () => Promise.reject(sessionStoreError) }),
       allowedOrigins: [ALLOWED_ORIGIN],
@@ -472,16 +472,16 @@ describe("createSitepingHandler — access callback failures", () => {
       expect(response.status).toBe(500);
       expect(response.headers.get("Access-Control-Allow-Origin")).toBe(ALLOWED_ORIGIN);
       expect(await response.json()).toEqual({ error: "Internal server error" });
-      expect(logger.error).toHaveBeenLastCalledWith("[siteping] Failed to authenticate request", {
+      expect(logger.error).toHaveBeenLastCalledWith("[beezping] Failed to authenticate request", {
         error: sessionStoreError,
         method,
-        path: "/api/siteping",
+        path: "/api/beezping",
       });
     }
   });
 
   it("answers the 500 without the email when canReadAuthorEmail throws", async () => {
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: sessionAccess({
         canReadAuthorEmail: () => {
@@ -502,7 +502,7 @@ describe("createSitepingHandler — access callback failures", () => {
   it("answers a logged 500 and stores nothing when authorize throws on a create", async () => {
     const store = new MemoryStore();
     const logger = silentLogger();
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store,
       access: sessionAccess({ authorize: () => Promise.reject(sessionStoreError) }),
       logger,
@@ -511,7 +511,7 @@ describe("createSitepingHandler — access callback failures", () => {
     const response = await handler.POST(jsonRequest("POST", validPayloadNoAnnotations, ADMIN));
 
     expect(response.status).toBe(500);
-    expect(logger.error).toHaveBeenCalledWith("[siteping] Failed to create feedback", expect.anything());
+    expect(logger.error).toHaveBeenCalledWith("[beezping] Failed to create feedback", expect.anything());
     expect((await store.getFeedbacks({ projectName: PROJECT })).total).toBe(0);
   });
 });
@@ -528,7 +528,7 @@ class BundledStoreDuplicateError extends Error {
   readonly code = "STORE_DUPLICATE" as const;
 }
 
-describe("createSitepingHandler — store errors from another bundled copy of core", () => {
+describe("createBeezpingHandler — store errors from another bundled copy of core", () => {
   it("answers 404 when the record vanishes between the ownership check and the mutation", async () => {
     class RacingStore extends MemoryStore {
       override updateFeedback(): Promise<FeedbackRecord> {
@@ -538,7 +538,7 @@ describe("createSitepingHandler — store errors from another bundled copy of co
         return Promise.reject(new BundledStoreNotFoundError("Record not found"));
       }
     }
-    const handler = createSitepingHandler({ store: new RacingStore(), access: sessionAccess() });
+    const handler = createBeezpingHandler({ store: new RacingStore(), access: sessionAccess() });
     const feedback = await createFeedback(handler);
 
     const update = await handler.PATCH(
@@ -574,7 +574,7 @@ describe("createSitepingHandler — store errors from another bundled copy of co
       diagnostics: null,
     });
     // Without `createFeedbackIfAbsent`, only the duplicate error reports the race.
-    const handler = createSitepingHandler({ store: storeWithoutOwnershipCheck(store), access: sessionAccess() });
+    const handler = createBeezpingHandler({ store: storeWithoutOwnershipCheck(store), access: sessionAccess() });
 
     const response = await handler.POST(jsonRequest("POST", validPayloadNoAnnotations, ADMIN));
 

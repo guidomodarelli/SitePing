@@ -3,7 +3,7 @@ import { inspect } from "node:util";
 import { DrizzleQueryError } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { withDriverErrors } from "../src/shared/errors.js";
-import type { SitepingSqlGateway } from "../src/shared/gateway.js";
+import type { BeezpingSqlGateway } from "../src/shared/gateway.js";
 
 describe("withDriverErrors", () => {
   it("keeps the parameters out of a query error thrown by another copy of drizzle-orm", async () => {
@@ -21,7 +21,7 @@ describe("withDriverErrors", () => {
     );
     const gateway = withDriverErrors({
       findProjectName: () => Promise.reject(queryError),
-    } as Partial<SitepingSqlGateway> as SitepingSqlGateway);
+    } as Partial<BeezpingSqlGateway> as BeezpingSqlGateway);
 
     const failure = await gateway.findProjectName("id").then(
       () => null,

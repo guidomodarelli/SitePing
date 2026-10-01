@@ -10,11 +10,11 @@
  */
 
 import {
+  type BeezpingPanelActionFeedback,
+  type BeezpingPanelButtonAction,
   type FeedbackResponse,
   type FeedbackStatus,
   isClosedStatus,
-  type SitepingPanelActionFeedback,
-  type SitepingPanelButtonAction,
 } from "@beezping/core";
 import { el, parseSvg, setText } from "./dom-utils.js";
 import { getStatusLabel, getTypeLabel, type TFunction, tWithParams } from "./i18n/index.js";
@@ -1037,7 +1037,7 @@ export interface DetailCallbacks {
   /** False hides "Go to annotation" (e.g. the feedback belongs to another page). */
   canGoToAnnotation?: (feedback: FeedbackResponse) => boolean;
   /** Runs a host-defined button action. Never rejects: the panel contains and reports host failures. */
-  onCustomAction: (action: SitepingPanelButtonAction, feedback: SitepingPanelActionFeedback) => Promise<void>;
+  onCustomAction: (action: BeezpingPanelButtonAction, feedback: BeezpingPanelActionFeedback) => Promise<void>;
   /** Reports a host `visible()`/`href()` that threw or an unsafe computed href — the action is hidden. */
   onCustomActionError: (error: unknown) => void;
   /** The discussion thread, shown under the message — `null` when the feedback has none to show. */
@@ -1360,7 +1360,7 @@ export class DetailView {
           control = btn;
         } else {
           const href = safeHref(typeof action.href === "function" ? action.href(snapshot) : action.href);
-          if (!href) throw new Error(`[siteping] Panel action "${action.id}": href must be an http(s) or mailto URL.`);
+          if (!href) throw new Error(`[beezping] Panel action "${action.id}": href must be an http(s) or mailto URL.`);
           const link = document.createElement("a");
           link.href = href;
           // Web links open beside the reviewed page, which never leaks as referrer.

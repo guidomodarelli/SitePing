@@ -10,22 +10,22 @@ npm i @beezping/widget
 ```
 
 ```ts
-import { initSiteping } from "@beezping/widget";
+import { initBeezping } from "@beezping/widget";
 
-const siteping = initSiteping({
-  endpoint: "/api/siteping",
+const beezping = initBeezping({
+  endpoint: "/api/beezping",
   projectName: "mon-projet",
 });
 ```
 
-`initSiteping` est l'export runtime principal du package, aux côtés des deux helpers i18n (`registerLocale`, `loadLocale`) et des types TypeScript. Il pèse environ **34 KB gzip** (ESM), charge ses parties lourdes à la demande (panneau, locales, moteur de capture) et s'affiche dans un Shadow DOM fermé — les styles de votre page et ceux du widget ne peuvent jamais se marcher dessus.
+`initBeezping` est l'export runtime principal du package, aux côtés des deux helpers i18n (`registerLocale`, `loadLocale`) et des types TypeScript. Il pèse environ **34 KB gzip** (ESM), charge ses parties lourdes à la demande (panneau, locales, moteur de capture) et s'affiche dans un Shadow DOM fermé — les styles de votre page et ceux du widget ne peuvent jamais se marcher dessus.
 
 ## Quand le widget s'affiche — et quand il ne s'affiche pas
 
-`initSiteping` exécute une série de garde-fous, dans cet ordre. Quand l'un d'eux s'active, vous récupérez une instance no-op (toutes les méthodes existent, rien ne s'affiche) :
+`initBeezping` exécute une série de garde-fous, dans cet ordre. Quand l'un d'eux s'active, vous récupérez une instance no-op (toutes les méthodes existent, rien ne s'affiche) :
 
 1. **Rendu côté serveur** — pas de `window` ? Le widget passe son tour avec `onSkip("ssr")`. Jamais contournable.
-2. **Déjà initialisé** — un second appel à `initSiteping()` renvoie l'instance *existante* (un seul widget par page). `destroy()` remet le compteur à zéro.
+2. **Déjà initialisé** — un second appel à `initBeezping()` renvoie l'instance *existante* (un seul widget par page). `destroy()` remet le compteur à zéro.
 3. **Production** — quand `process.env.NODE_ENV === "production"`, le widget passe son tour avec `onSkip("production")`. C'est le comportement « les clients le voient pendant la relecture, les visiteurs jamais ». Contournez-le avec `forceShow: true` pour les environnements de staging ou de preview. À noter : seul `process.env.NODE_ENV` est lu — pas `import.meta.env`.
 4. **Largeur minimale (optionnelle)** — en dessous de `minViewportWidth`, il passe son tour avec `onSkip("mobile")`. La valeur par défaut, `0`, l'affiche à toutes les largeurs : les téléphones ont droit à la [mise en page compacte](#sur-téléphone-et-tablette). Également contourné par `forceShow`.
 5. **Validation de la config** — pas d'`endpoint`/`store`, ou pas de `projectName` ? Le widget affiche un `console.error` et ne fait rien. Ce cas-là n'appelle **pas** `onSkip` — regardez la console, pas le callback.
@@ -54,14 +54,14 @@ La mise en page respecte l'encoche et l'indicateur d'accueil quand votre page d�
 ## L'instance
 
 ```ts
-const siteping = initSiteping({ ... });
+const beezping = initBeezping({ ... });
 
-siteping.open();                  // ouvrir le panneau de feedback
-siteping.close();                 // le fermer
-siteping.refresh();               // recharger les feedbacks de la page courante (ne lève jamais)
-siteping.focusFeedback(id);       // faire défiler jusqu'à un marqueur et le mettre en évidence ; false si inconnu
-const off = siteping.on("feedback:sent", (feedback) => { ... });
-siteping.destroy();               // démontage complet, restaure tous les globals patchés
+beezping.open();                  // ouvrir le panneau de feedback
+beezping.close();                 // le fermer
+beezping.refresh();               // recharger les feedbacks de la page courante (ne lève jamais)
+beezping.focusFeedback(id);       // faire défiler jusqu'à un marqueur et le mettre en évidence ; false si inconnu
+const off = beezping.on("feedback:sent", (feedback) => { ... });
+beezping.destroy();               // démontage complet, restaure tous les globals patchés
 ```
 
 `on()` renvoie une fonction de désabonnement. Huit événements publics sont disponibles :
@@ -81,11 +81,11 @@ Utilisez le hook dédié — il survit aux doubles montages du StrictMode et lai
 
 ```tsx
 "use client";
-import { useSiteping } from "@beezping/widget/react";
+import { useBeezping } from "@beezping/widget/react";
 
 export function Feedback() {
-  const siteping = useSiteping({
-    endpoint: "/api/siteping",
+  const beezping = useBeezping({
+    endpoint: "/api/beezping",
     projectName: "mon-projet",
     onFeedbackSent: (f) => console.log("nouveau feedback", f.id),
   });
@@ -100,8 +100,8 @@ Le hook renvoie `null` jusqu'à son montage, puis l'instance. Changer `endpoint`
 `onError` reçoit des erreurs avec deux champs utiles — `code` (`"NETWORK" | "VALIDATION" | "AUTH" | "SERVER" | "TIMEOUT"`, ce dernier uniquement en mode `store`) et `retryable` (booléen). Une erreur `AUTH` porte aussi le `status` HTTP : `401` quand les identifiants manquent ou sont morts, `403` quand ils fonctionnent et que la politique du serveur refuse la requête :
 
 ```ts
-initSiteping({
-  endpoint: "/api/siteping",
+initBeezping({
+  endpoint: "/api/beezping",
   projectName: "mon-projet",
   onError: (error) => {
     const code = (error as { code?: string }).code;

@@ -20,7 +20,7 @@ describe("createJsonHttpClient", () => {
     const failure = await request({ method: "GET", path: "/issues" }).catch((error: unknown) => error);
 
     expect(failure).toBeInstanceOf(IssueTrackerRequestError);
-    expect(failure).toMatchObject({ status: null, message: "[siteping] Tracker API GET /issues failed" });
+    expect(failure).toMatchObject({ status: null, message: "[beezping] Tracker API GET /issues failed" });
     expect((failure as Error).cause).toBeInstanceOf(TypeError);
   });
 
@@ -46,7 +46,7 @@ describe("createJsonHttpClient", () => {
     expect(isIssueTrackerRequestError(failure)).toBe(true);
     expect(failure).toMatchObject({
       status: 200,
-      message: "[siteping] Tracker API GET /issues failed with status 200",
+      message: "[beezping] Tracker API GET /issues failed with status 200",
     });
   });
 

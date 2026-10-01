@@ -4,7 +4,7 @@ import type { Translations } from "./types.js";
 export const pt: Translations = {
   // Panel
   "panel.title": "Feedbacks",
-  "panel.ariaLabel": "Painel de feedback do Siteping",
+  "panel.ariaLabel": "Painel de feedback do Beezping",
   "panel.feedbackList": "Lista de feedbacks",
   "panel.loading": "Carregando feedbacks",
   "panel.close": "Fechar painel",
@@ -54,7 +54,7 @@ export const pt: Translations = {
   "panel.filterMineHint": "Apenas os feedbacks enviados deste navegador",
 
   // FAB menu
-  "fab.aria": "Siteping — Menu de feedback",
+  "fab.aria": "Beezping — Menu de feedback",
   "fab.messages": "Exibir barra lateral",
   "fab.annotate": "Criar nova anotação",
   "fab.annotations": "Exibir ou ocultar marcadores",

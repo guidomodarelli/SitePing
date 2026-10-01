@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { DemoSite } from "@/components/demo/demo-site";
+import { SITE_URL } from "@/config/site";
 import { Playground } from "./playground";
 
 export const metadata: Metadata = {
   title: "Live Demo",
-  description: "Try SitePing live — draw annotations, leave comments, directly on a demo website.",
+  description: "Try Beezping live — draw annotations, leave comments, directly on a demo website.",
   openGraph: {
-    title: "SitePing — Live Demo",
-    description: "Try SitePing live — draw annotations, leave comments, directly on a demo website.",
-    url: "https://siteping.dev/demo",
+    title: "Beezping — Live Demo",
+    description: "Try Beezping live — draw annotations, leave comments, directly on a demo website.",
+    url: `${SITE_URL}/demo`,
   },
 };
 

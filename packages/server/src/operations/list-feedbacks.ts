@@ -1,10 +1,10 @@
-import type { FeedbackListPermissions, SitepingCapabilities, SitepingStore } from "@beezping/core";
+import type { BeezpingCapabilities, BeezpingStore, FeedbackListPermissions } from "@beezping/core";
 import { LIST_QUERY_KEYS } from "../constants.js";
 import type { Pipeline } from "../pipeline.js";
 import { getQuerySchema } from "../validation.js";
 
 interface ListFeedbacksDependencies<Principal> {
-  store: SitepingStore;
+  store: BeezpingStore;
   pipeline: Pipeline<Principal>;
 }
 
@@ -50,14 +50,14 @@ export function listFeedbacksOperation<Principal>({ store, pipeline }: ListFeedb
           capabilities: {
             comments: store.addComment !== undefined,
             deleteComments: store.deleteComment !== undefined,
-          } satisfies SitepingCapabilities,
+          } satisfies BeezpingCapabilities,
           // And the actions this requester would be refused.
           permissions: { canDeleteAll } satisfies FeedbackListPermissions,
         },
         { headers: { "Cache-Control": pipeline.listCacheControl } },
       );
     } catch (error) {
-      return pipeline.fail(scope, "[siteping] Failed to fetch feedbacks", error);
+      return pipeline.fail(scope, "[beezping] Failed to fetch feedbacks", error);
     }
   };
 }

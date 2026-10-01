@@ -13,34 +13,34 @@ On Prisma, [`@beezping/adapter-prisma`](/docs/adapters/prisma) gives you this ha
 
 ## Mounting
 
-`createSitepingHandler` returns one handler per HTTP method: `GET`, `POST`, `PATCH`, `DELETE` and `OPTIONS`. Mount all five on a single URL.
+`createBeezpingHandler` returns one handler per HTTP method: `GET`, `POST`, `PATCH`, `DELETE` and `OPTIONS`. Mount all five on a single URL.
 
 ### Next.js (App Router)
 
 ```ts
-// app/api/siteping/route.ts
-import { createSitepingHandler } from "@beezping/server";
-import { store } from "@/lib/siteping-store";
+// app/api/beezping/route.ts
+import { createBeezpingHandler } from "@beezping/server";
+import { store } from "@/lib/beezping-store";
 
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({
   store,
-  apiKey: process.env.SITEPING_API_KEY,
+  apiKey: process.env.BEEZPING_API_KEY,
 });
 ```
 
 ### Hono
 
 ```ts
-import { createSitepingHandler } from "@beezping/server";
+import { createBeezpingHandler } from "@beezping/server";
 import { Hono } from "hono";
-import { store } from "./siteping-store";
+import { store } from "./beezping-store";
 
-const siteping = createSitepingHandler({ store, apiKey: process.env.SITEPING_API_KEY });
+const beezping = createBeezpingHandler({ store, apiKey: process.env.BEEZPING_API_KEY });
 
 const app = new Hono();
-app.on(["GET", "POST", "PATCH", "DELETE", "OPTIONS"], "/api/siteping", (c) => {
-  // Hono runs GET routes for HEAD too, a method SitePing does not serve.
-  const handle = siteping[c.req.method as keyof typeof siteping];
+app.on(["GET", "POST", "PATCH", "DELETE", "OPTIONS"], "/api/beezping", (c) => {
+  // Hono runs GET routes for HEAD too, a method Beezping does not serve.
+  const handle = beezping[c.req.method as keyof typeof beezping];
   return handle ? handle(c.req.raw) : c.body(null, 405, { Allow: "GET, POST, PATCH, DELETE, OPTIONS" });
 });
 
@@ -52,33 +52,33 @@ export default app;
 ```ts
 const METHODS = ["GET", "POST", "PATCH", "DELETE", "OPTIONS"] as const;
 
-function handleSiteping(request: Request): Response | Promise<Response> {
+function handleBeezping(request: Request): Response | Promise<Response> {
   const method = METHODS.find((name) => name === request.method);
   if (!method) return new Response(null, { status: 405, headers: { Allow: METHODS.join(", ") } });
-  return siteping[method](request);
+  return beezping[method](request);
 }
 
-Bun.serve({ fetch: handleSiteping });
+Bun.serve({ fetch: handleBeezping });
 ```
 
-Remix and SvelteKit endpoints export a function per method: have each call its own, `siteping.GET` from the `GET`.
+Remix and SvelteKit endpoints export a function per method: have each call its own, `beezping.GET` from the `GET`.
 
 ### Express
 
 Express hands you Node's `req`/`res`, not a `Request`: convert at the edge.
 
 ```ts
-import { createSitepingHandler, type SitepingHandler } from "@beezping/server";
+import { createBeezpingHandler, type BeezpingHandler } from "@beezping/server";
 import express from "express";
-import { store } from "./siteping-store";
+import { store } from "./beezping-store";
 
-const siteping = createSitepingHandler({ store, apiKey: process.env.SITEPING_API_KEY });
+const beezping = createBeezpingHandler({ store, apiKey: process.env.BEEZPING_API_KEY });
 const app = express();
 
 // Raw bytes in: the handler parses and validates the JSON itself. Screenshots
 // travel inline, so allow the handler's own cap (maxBodyBytes), not body-parser's 100 kB.
-app.all("/api/siteping", express.raw({ type: () => true, limit: "4mb" }), async (req, res) => {
-  const handle = siteping[req.method as keyof SitepingHandler];
+app.all("/api/beezping", express.raw({ type: () => true, limit: "4mb" }), async (req, res) => {
+  const handle = beezping[req.method as keyof BeezpingHandler];
   if (!handle) {
     res.set("Allow", "GET, POST, PATCH, DELETE, OPTIONS").sendStatus(405);
     return;
@@ -106,12 +106,12 @@ Rate limiting is not handled here: apply it in your framework or reverse proxy, 
 
 | Option | Type | Default | What it does |
 |---|---|---|---|
-| `store` | `SitepingStore` | — | Required. [Prisma](/docs/adapters/prisma), [Drizzle](/docs/adapters/drizzle), [memory](/docs/adapters/memory) or [your own](/docs/adapters/writing-an-adapter) |
+| `store` | `BeezpingStore` | — | Required. [Prisma](/docs/adapters/prisma), [Drizzle](/docs/adapters/drizzle), [memory](/docs/adapters/memory) or [your own](/docs/adapters/writing-an-adapter) |
 | `apiKey` | `string` | — | Enables Bearer auth. Requests send `Authorization: Bearer <key>` |
-| `publicEndpoints` | `SitepingHttpMethod[]` | `["POST", "OPTIONS"]` when `apiKey` is set | Methods that skip auth. **Passing a value replaces the default** — include `"POST"` yourself or the widget can no longer submit |
+| `publicEndpoints` | `BeezpingHttpMethod[]` | `["POST", "OPTIONS"]` when `apiKey` is set | Methods that skip auth. **Passing a value replaces the default** — include `"POST"` yourself or the widget can no longer submit |
 | `requireAuthForDestructive` | `boolean` | `true` | Without an `apiKey`, PATCH and DELETE answer `401`. In `NODE_ENV=production` the factory refuses to start without an `apiKey`. `false` lifts both, production included: PATCH and DELETE, `deleteAll` too, are then open to anyone — only behind your own auth |
 | `redactUnauthenticatedEmails` | `boolean` | `true` | See [what responses expose](#what-responses-expose) |
-| `access` | `SitepingAccessControl` | — | Your own authentication instead of the four options above — see [custom access](#custom-access) |
+| `access` | `BeezpingAccessControl` | — | Your own authentication instead of the four options above — see [custom access](#custom-access) |
 | `allowedOrigins` | `string[]` | — | Exact-match CORS allowlist. **No wildcard support** — `["*"]` matches nothing; unset means no CORS headers at all. Listed origins may send `Content-Type`, `Authorization`, and any custom header their preflight asks for (e.g. from the widget's `headers` option) |
 | `maxBodyBytes` | `number` | 4 MiB | Largest request body, in bytes — twice the largest submission the validation accepts. A longer one answers `413` before any of it is parsed |
 | `webhooks` | `WebhookConfig \| WebhookConfig[]` | — | Fire on each new feedback — see [webhooks](#webhooks) |
@@ -119,7 +119,7 @@ Rate limiting is not handled here: apply it in your framework or reverse proxy, 
 | `beforeCreate` | `(input, context) => input` | — | Rewrite a submission before it is stored — see [extension points](#extension-points) |
 | `beforeComment` | `(input, context) => input` | — | The same for a [thread](/docs/comments) reply |
 | `presentFeedback` | `(feedback, context) => feedback` | — | Transform each record before it is sent |
-| `hooks` | `SitepingLifecycleHooks` | — | `onCreated`, `onUpdated`, `onDeleting`, `onDeleted` |
+| `hooks` | `BeezpingLifecycleHooks` | — | `onCreated`, `onUpdated`, `onDeleting`, `onDeleted` |
 | `logger` | `{ error(message, context) }` | `console.error` | Where unexpected failures go, with the request's method and path — and for a failed hook, the feedback or deletion it concerns. Webhook failures go to their own [`onError`](#webhooks) instead. A logger that throws or rejects falls back to `console.error` |
 | `describeError` | `(error) => string \| undefined` | — | The message of a `500` instead of `"Internal server error"`, e.g. a "run your migrations" hint. Never return the error's own details |
 
@@ -130,7 +130,7 @@ import pino from "pino";
 
 const log = pino();
 
-createSitepingHandler({
+createBeezpingHandler({
   store,
   logger: { error: (message, { error, ...context }) => log.error({ err: error, ...context }, message) },
 });
@@ -170,7 +170,7 @@ Servers that predate them send none, and neither does store mode: clients then h
 A shared key suits a site and its dashboard. When reviewers log in, pass `access` instead: the handler asks your code who is calling and what they may do, from the standard `Request` — a session cookie, a JWT, a header set by your proxy. Recipes follow for [OpenID Connect](#recipe-openid-connect) providers and [Better Auth](#recipe-better-auth).
 
 ```ts
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({
   store,
   allowedOrigins: ["https://client-site.com"],
   access: {
@@ -209,8 +209,8 @@ Lists are also sent with `Cache-Control: no-store`, since they depend on who ask
 When reviewers sign in with an OpenID Connect provider — Keycloak, Microsoft Entra ID, Auth0, Zitadel… — the widget and the dashboard send its access token as a bearer, and `access` verifies it with [jose](https://github.com/panva/jose). Visitors without a token keep the public widget: they submit, read and reply, while administrators alone triage and read reviewer emails. If your app signs them in to that provider through Better Auth, use the [Better Auth recipe](#recipe-better-auth) instead.
 
 ```ts
-// lib/siteping-access.ts
-import type { SitepingAccessControl } from "@beezping/server";
+// lib/beezping-access.ts
+import type { BeezpingAccessControl } from "@beezping/server";
 import { createRemoteJWKSet, errors, type JWTPayload, jwtVerify } from "jose";
 
 // Both from https://id.example.com/realms/acme/.well-known/openid-configuration
@@ -234,7 +234,7 @@ function rolesOf(payload: JWTPayload): unknown {
 // The key set down, slow or garbled: an outage, not a bad token.
 const KEY_SET_FAILURES = new Set(["ERR_JOSE_GENERIC", "ERR_JWKS_TIMEOUT", "ERR_JWKS_INVALID"]);
 
-export const oidcAccess: SitepingAccessControl<Reviewer> = {
+export const oidcAccess: BeezpingAccessControl<Reviewer> = {
   async authenticate(request) {
     const authorization = request.headers.get("Authorization") ?? "";
     // Only a bearer is a credential: HTTP Basic on a staging site stays a visitor.
@@ -244,7 +244,7 @@ export const oidcAccess: SitepingAccessControl<Reviewer> = {
     try {
       const { payload } = await jwtVerify(token, jwks, {
         issuer: ISSUER,
-        audience: "siteping-api", // your API's, never the client id
+        audience: "beezping-api", // your API's, never the client id
         algorithms: ["RS256", "PS256", "ES256", "EdDSA"],
         requiredClaims: ["exp"],
       });
@@ -254,7 +254,7 @@ export const oidcAccess: SitepingAccessControl<Reviewer> = {
         sub: payload.sub,
         name: typeof payload.name === "string" ? payload.name : "",
         email: payload.email_verified === true && typeof payload.email === "string" ? payload.email : "",
-        isAdmin: Array.isArray(roles) && roles.includes("siteping-admin"),
+        isAdmin: Array.isArray(roles) && roles.includes("beezping-admin"),
       };
     } catch (error) {
       if (error instanceof errors.JOSEError && !KEY_SET_FAILURES.has(error.code)) return null; // → 401
@@ -268,8 +268,8 @@ export const oidcAccess: SitepingAccessControl<Reviewer> = {
 ```
 
 ```ts
-// app/api/siteping/route.ts
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
+// app/api/beezping/route.ts
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({
   store,
   // Every site the widget runs on, and the dashboard's own origin.
   allowedOrigins: ["https://client-site.com", "https://inbox.example.com"],
@@ -297,9 +297,9 @@ async function headers(): Promise<Record<string, string>> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-initSiteping({ endpoint: "https://api.example.com/api/siteping", projectName: "acme", headers });
+initBeezping({ endpoint: "https://api.example.com/api/beezping", projectName: "acme", headers });
 // Dashboard, on https://inbox.example.com:
-// <SitepingInbox endpoint="https://api.example.com/api/siteping" projects="acme" headers={headers} />
+// <BeezpingInbox endpoint="https://api.example.com/api/beezping" projects="acme" headers={headers} />
 ```
 
 - **An access token, never an ID token.** `audience` is the identifier your provider puts in `aud` for your API — Auth0's API identifier, or the audience a Keycloak audience mapper adds. An ID token is addressed to your client application instead, so it answers `401`. Auth0 issues a JWT access token only for an API audience, and Zitadel only when the application's token type is JWT.
@@ -308,7 +308,7 @@ initSiteping({ endpoint: "https://api.example.com/api/siteping", projectName: "a
 - **Pinned algorithms, over HTTPS.** `algorithms` lists what your provider signs with, so an unsigned or `HS256` token is refused before any key is looked up. Keep the issuer and the key set on `https://`: whoever can tamper with the key set can mint administrator tokens.
 - **The author comes from the token.** `beforeCreate` stamps its name, and its email only when `email_verified` is true; otherwise the widget's values stay. `beforeComment` does the same for replies, so no one signed in replies under another reviewer's name. Access tokens don't always carry these claims, so pass [`identity`](/docs/widget/configuration) to spare signed-in users the widget's identity prompt.
 - **Emails stay with administrators.** Since `canReadAuthorEmail` is set, it also decides [who speaks as the team](/docs/comments#who-speaks-as-the-team): administrators' replies are marked `team`, everyone else's `client`.
-- **One role, every project.** This `authorize` never reads `projectName`: `siteping-admin` triages every project the endpoint serves, and anyone — visitor or member — lists any of them, screenshots and diagnostics included. To keep several clients apart, give each project its own role, such as `siteping-admin:acme`: keep the caller's roles in the principal, and have `authorize` test `` roles.includes(`siteping-admin:${projectName}`) `` where it tests `isAdmin`. `canReadAuthorEmail` is not told the project, so keep it for a role that covers them all. To put reads behind sign-in too, return `null` instead of `VISITOR` when no bearer comes — every request then needs a token, submissions included — and allow `list` on the caller's projects only.
+- **One role, every project.** This `authorize` never reads `projectName`: `beezping-admin` triages every project the endpoint serves, and anyone — visitor or member — lists any of them, screenshots and diagnostics included. To keep several clients apart, give each project its own role, such as `beezping-admin:acme`: keep the caller's roles in the principal, and have `authorize` test `` roles.includes(`beezping-admin:${projectName}`) `` where it tests `isAdmin`. `canReadAuthorEmail` is not told the project, so keep it for a role that covers them all. To put reads behind sign-in too, return `null` instead of `VISITOR` when no bearer comes — every request then needs a token, submissions included — and allow `list` on the caller's projects only.
 
 Roles are provider-specific, so `rolesOf` is yours to write:
 
@@ -316,7 +316,7 @@ Roles are provider-specific, so `rolesOf` is yours to write:
 |---|---|---|
 | Keycloak | `realm_access.roles` (realm roles), `resource_access.<client>.roles` (client roles) | As above |
 | Microsoft Entra ID | `roles` (app roles) | `payload.roles` |
-| Auth0 | None by default: add a claim in a post-login Action, e.g. `https://siteping.example/roles` | `payload["https://siteping.example/roles"]` |
+| Auth0 | None by default: add a claim in a post-login Action, e.g. `https://beezping.example/roles` | `payload["https://beezping.example/roles"]` |
 | Zitadel | `urn:zitadel:iam:org:project:roles`, an object keyed by role | `Object.keys(payload["urn:zitadel:iam:org:project:roles"] ?? {})` |
 | Better Auth ([jwt plugin](#from-another-origin)) | `role`, comma-separated | `typeof payload.role === "string" ? payload.role.split(",") : []` |
 
@@ -339,7 +339,7 @@ function submittedBy(request: Request, sub: string): Promise<Set<string>> {
   return ids;
 }
 
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({
   store,
   // …allowedOrigins, beforeCreate and beforeComment as in route.ts above
   access: {
@@ -363,7 +363,7 @@ export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
 
 ### Recipe: Better Auth
 
-When your app signs users in with [Better Auth](https://www.better-auth.com), `access` asks it for the session: the widget and a `<SitepingInbox />` mounted in the app send its cookie with every request, so the client side needs no token. Its [admin plugin](https://www.better-auth.com/docs/plugins/admin) tells administrators apart — they triage and read reviewer emails — while everyone else, signed in or not, submits, reads and replies.
+When your app signs users in with [Better Auth](https://www.better-auth.com), `access` asks it for the session: the widget and a `<BeezpingInbox />` mounted in the app send its cookie with every request, so the client side needs no token. Its [admin plugin](https://www.better-auth.com/docs/plugins/admin) tells administrators apart — they triage and read reviewer emails — while everyone else, signed in or not, submits, reads and replies.
 
 This also covers an app that signs users in to an OpenID Connect provider — Keycloak, Microsoft Entra ID, Auth0… — through Better Auth's [Generic OAuth](https://www.better-auth.com/docs/plugins/generic-oauth) or [SSO](https://www.better-auth.com/docs/plugins/sso) plugin: those users hold a Better Auth session too. Keep the [OpenID Connect recipe](#recipe-openid-connect) for access tokens the endpoint verifies itself.
 
@@ -379,8 +379,8 @@ export const auth = betterAuth({
 ```
 
 ```ts
-// lib/siteping-access.ts
-import type { SitepingAccessControl } from "@beezping/server";
+// lib/beezping-access.ts
+import type { BeezpingAccessControl } from "@beezping/server";
 import { auth } from "@/lib/auth";
 
 export interface Reviewer {
@@ -392,7 +392,7 @@ export interface Reviewer {
 
 const VISITOR: Reviewer = { id: "", name: "", email: "", isAdmin: false };
 
-export const betterAuthAccess: SitepingAccessControl<Reviewer> = {
+export const betterAuthAccess: BeezpingAccessControl<Reviewer> = {
   async authenticate(request) {
     const session = await auth.api.getSession({
       headers: request.headers,
@@ -417,12 +417,12 @@ export const betterAuthAccess: SitepingAccessControl<Reviewer> = {
 ```
 
 ```ts
-// app/api/siteping/route.ts
-import { createSitepingHandler } from "@beezping/server";
-import { betterAuthAccess } from "@/lib/siteping-access";
-import { store } from "@/lib/siteping-store";
+// app/api/beezping/route.ts
+import { createBeezpingHandler } from "@beezping/server";
+import { betterAuthAccess } from "@/lib/beezping-access";
+import { store } from "@/lib/beezping-store";
 
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({
   store,
   access: betterAuthAccess,
   // A signed-in author's name, and verified email, come from the session…
@@ -446,11 +446,11 @@ The session also spares signed-in users the widget's identity prompt: pass it as
 // app/feedback.tsx — mounted in your root layout
 "use client";
 import type { Identity } from "@beezping/widget";
-import { useSiteping } from "@beezping/widget/react";
+import { useBeezping } from "@beezping/widget/react";
 import { authClient } from "@/lib/auth-client"; // createAuthClient() from "better-auth/react"
 
 function Widget({ identity }: { identity: Identity | undefined }) {
-  useSiteping({ endpoint: "/api/siteping", projectName: "acme", identity });
+  useBeezping({ endpoint: "/api/beezping", projectName: "acme", identity });
   return null;
 }
 
@@ -464,7 +464,7 @@ export function Feedback() {
 
 - **No session, a visitor; a dead token, a `401`.** Without a session the request is anonymous, so the public widget keeps working — also for someone whose cookie outlived a sign-out, an expiry or a ban, since the browser keeps sending it. A request whose `Bearer` token opens no session answers `401` instead: its client sent the token on purpose, and learns it no longer works. Any other `Authorization` stays a visitor: on a staging site behind HTTP Basic auth, the browser or the proxy attaches those credentials to every request.
 - **A database outage, a `500`.** When Better Auth cannot read its sessions, `getSession` throws: the handler logs it and answers `500` rather than downgrading everyone to a visitor. Visitors without a session cookie never reach the database.
-- **Read, never renewed.** A session older than Better Auth's `updateAge` gets renewed by the next `getSession`, which writes a later expiry and sets a new cookie — on a response SitePing never sends, so the browser's cookie would expire first. `disableRefresh` leaves the renewal to your app's own requests.
+- **Read, never renewed.** A session older than Better Auth's `updateAge` gets renewed by the next `getSession`, which writes a later expiry and sets a new cookie — on a response Beezping never sends, so the browser's cookie would expire first. `disableRefresh` leaves the renewal to your app's own requests.
 - **A demotion applies at once.** With Better Auth's `session.cookieCache` on, `getSession` trusts the cached cookie until its `maxAge`: a role change or a revoked session would wait for it. `disableCookieCache` reads your `database` or `secondaryStorage` instead, as `getSession` does anyway without the cache. Without either, Better Auth is stateless and the signed cookie is the only session record: another instance — a serverless invocation, a replica — finds no session behind that flag, and serves your administrators as visitors. Drop `disableCookieCache` there; a demotion then waits for the cookie's `maxAge`.
 - **Administrators by role.** `isAdmin` reads the admin plugin's `role` — `setRole` with `["user", "admin"]` stores `"user,admin"`. The plugin's `adminUserIds` opens its own endpoints to users whatever their role: give those users the `admin` role too. To let someone triage without the plugin's user management, give them a role of your own (declared in the plugin's `roles`, if you configured some) and test that one.
 - **The author comes from the session.** `beforeCreate` stamps the user's name, and their email once `emailVerified` is true; otherwise the widget's value stays. `beforeComment` does the same for replies.
@@ -487,8 +487,8 @@ export const auth = betterAuth({
   trustedOrigins: ["https://client-site.com"], // where users sign in from
 });
 
-// app/api/siteping/route.ts
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
+// app/api/beezping/route.ts
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({
   store,
   // Every site the widget runs on. The inbox stays on the endpoint's own origin.
   allowedOrigins: ["https://client-site.com"],
@@ -505,8 +505,8 @@ function headers(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-initSiteping({
-  endpoint: "https://app.example.com/api/siteping",
+initBeezping({
+  endpoint: "https://app.example.com/api/beezping",
   projectName: "acme",
   headers,
   onError: (error) => {
@@ -516,15 +516,15 @@ initSiteping({
 });
 ```
 
-- **The token is the whole session.** It is the session cookie's value, not a SitePing credential: it opens every Better Auth endpoint of your app, the admin plugin's included, from any origin, and whoever holds it keeps it alive, since Better Auth renews the session as it is used. Kept in `localStorage`, it is readable by every script on that page. So have administrators triage from the inbox mounted in your app, which sends the cookie, out of scripts' reach, and keeps their session on your origin; keep the bearer for reviewers who sign in on the client's site.
+- **The token is the whole session.** It is the session cookie's value, not a Beezping credential: it opens every Better Auth endpoint of your app, the admin plugin's included, from any origin, and whoever holds it keeps it alive, since Better Auth renews the session as it is used. Kept in `localStorage`, it is readable by every script on that page. So have administrators triage from the inbox mounted in your app, which sends the cookie, out of scripts' reach, and keeps their session on your origin; keep the bearer for reviewers who sign in on the client's site.
 - **Drop it once it stops working.** A stale cookie stays a visitor, but a dead token answers `401` to every request, submissions included, and nothing removes it from `localStorage` when the session expires or is revoked. Remove it on a `401`, as above, and when the user signs out — not on every `AUTH` error: a `403` means `authorize` refused that request, a project the reviewer isn't a member of, and the token still opens their session in your app.
 
-When the SitePing endpoint runs apart from Better Auth — another service, an edge worker away from your database — verify tokens from Better Auth's [jwt plugin](https://www.better-auth.com/docs/plugins/jwt) with the [OpenID Connect recipe](#recipe-openid-connect) instead. The page fetches one from `/api/auth/token` with its session cookie and sends it with `headers`. `ISSUER` and `audience` are your Better Auth URL, unless you set the plugin's `jwt.issuer` and `jwt.audience`; the key set is at `/api/auth/jwks`, and tokens are signed `EdDSA`. The payload is the user record: `rolesOf` reads `role` (see the table above), administrators hold `admin`, and the email's verification is in `emailVerified`, not `email_verified`.
+When the Beezping endpoint runs apart from Better Auth — another service, an edge worker away from your database — verify tokens from Better Auth's [jwt plugin](https://www.better-auth.com/docs/plugins/jwt) with the [OpenID Connect recipe](#recipe-openid-connect) instead. The page fetches one from `/api/auth/token` with its session cookie and sends it with `headers`. `ISSUER` and `audience` are your Better Auth URL, unless you set the plugin's `jwt.issuer` and `jwt.audience`; the key set is at `/api/auth/jwks`, and tokens are signed `EdDSA`. The payload is the user record: `rolesOf` reads `role` (see the table above), administrators hold `admin`, and the email's verification is in `emailVerified`, not `email_verified`.
 
 ## Extension points
 
 ```ts
-createSitepingHandler({
+createBeezpingHandler({
   store,
   access,
   // Take the author from the session, and scrub tokens pasted in the message.
@@ -587,11 +587,11 @@ The whole body ≤ `maxBodyBytes` (4 MiB) · `message` ≤ 5000 chars · `annota
 Get pinged on every new feedback:
 
 ```ts
-createSitepingHandler({
+createBeezpingHandler({
   store,
   webhooks: [
     { url: process.env.SLACK_WEBHOOK_URL!, type: "slack" },
-    { url: "https://my-api.dev/hooks/siteping", type: "generic", headers: { "x-secret": "…" } },
+    { url: "https://my-api.dev/hooks/beezping", type: "generic", headers: { "x-secret": "…" } },
   ],
 });
 ```
@@ -603,7 +603,7 @@ Deliveries are not awaited: the widget gets its answer first. A serverless or ed
 ```ts
 import { after } from "next/server";
 
-createSitepingHandler({ store, webhooks, waitUntil: after });
+createBeezpingHandler({ store, webhooks, waitUntil: after });
 ```
 
 `waitUntil` from `@vercel/functions` or from `cloudflare:workers` works the same way — pass a standalone function, not an unbound method.

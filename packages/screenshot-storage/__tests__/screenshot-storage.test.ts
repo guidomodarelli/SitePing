@@ -48,7 +48,7 @@ const backends: BackendUnderTest[] = [
     name: "filesystem",
     servedByApp: true,
     async open() {
-      const directory = mkdtempSync(join(tmpdir(), "siteping-screenshots-"));
+      const directory = mkdtempSync(join(tmpdir(), "beezping-screenshots-"));
       temporaryDirectories.push(directory);
       const objectStore = createFilesystemObjectStore({ directory, publicBaseUrl: PUBLIC_BASE_URL });
       return {
@@ -172,7 +172,7 @@ describe("createScreenshotStorage — validation", () => {
     const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
     const storage = createScreenshotStorage(objectStore, { keyPrefix: "team-a-", logger: silentLogger() });
     const { url } = await storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
-    const foreignKeys = ["team-a-logo.png", `siteping-${"c".repeat(32)}.jpg`, `team-a-${"c".repeat(32)}.jpg.bak`];
+    const foreignKeys = ["team-a-logo.png", `beezping-${"c".repeat(32)}.jpg`, `team-a-${"c".repeat(32)}.jpg.bak`];
     for (const key of foreignKeys) await objectStore.put({ key, bytes: JPEG_BYTES.slice(), contentType: "image/jpeg" });
 
     for (const key of foreignKeys) await storage.delete?.(objectStore.urlFor(key));
@@ -300,7 +300,7 @@ describe("createScreenshotServeHandler", () => {
     "serves an object stored as %j as a download, never inline",
     async (contentType) => {
       const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
-      const key = `siteping-${"d".repeat(32)}.jpg`;
+      const key = `beezping-${"d".repeat(32)}.jpg`;
       await objectStore.put({ key, bytes: new TextEncoder().encode("<script>alert(1)</script>"), contentType });
 
       const response = await createScreenshotServeHandler(objectStore).GET(new Request(objectStore.urlFor(key)));
@@ -313,7 +313,7 @@ describe("createScreenshotServeHandler", () => {
 
   it("serves an inert image type inline, without the parameters a backend may add", async () => {
     const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
-    const key = `siteping-${"e".repeat(32)}.png`;
+    const key = `beezping-${"e".repeat(32)}.png`;
     await objectStore.put({ key, bytes: JPEG_BYTES.slice(), contentType: "Image/PNG; charset=binary" });
 
     const response = await createScreenshotServeHandler(objectStore).GET(new Request(objectStore.urlFor(key)));
@@ -323,7 +323,7 @@ describe("createScreenshotServeHandler", () => {
   });
 
   it("removes the filesystem content-type sidecar with the screenshot", async () => {
-    const directory = mkdtempSync(join(tmpdir(), "siteping-sidecar-"));
+    const directory = mkdtempSync(join(tmpdir(), "beezping-sidecar-"));
     temporaryDirectories.push(directory);
     const storage = createScreenshotStorage(createFilesystemObjectStore({ directory, publicBaseUrl: PUBLIC_BASE_URL }));
 
@@ -335,13 +335,13 @@ describe("createScreenshotServeHandler", () => {
   });
 
   it("answers 404 for unknown keys and anything that is not a generated key", async () => {
-    const directory = mkdtempSync(join(tmpdir(), "siteping-serve-"));
+    const directory = mkdtempSync(join(tmpdir(), "beezping-serve-"));
     temporaryDirectories.push(directory);
     const handler = createScreenshotServeHandler(
       createFilesystemObjectStore({ directory, publicBaseUrl: PUBLIC_BASE_URL }),
     );
 
-    for (const key of [`siteping-${"a".repeat(32)}.jpg`, "..%2F..%2Fetc%2Fpasswd", "package.json"]) {
+    for (const key of [`beezping-${"a".repeat(32)}.jpg`, "..%2F..%2Fetc%2Fpasswd", "package.json"]) {
       expect((await handler.GET(new Request(`${PUBLIC_BASE_URL}/${key}`))).status).toBe(404);
     }
   });
@@ -452,7 +452,7 @@ describe("createScreenshotServeHandler", () => {
 
     it("answers If-None-Match: * with a 304 only when the object exists", async () => {
       const { url, handler } = await openPrivateS3(() => true);
-      const missingUrl = `${PUBLIC_BASE_URL}/siteping-${"c".repeat(32)}.jpg`;
+      const missingUrl = `${PUBLIC_BASE_URL}/beezping-${"c".repeat(32)}.jpg`;
       const wildcard = { headers: { "If-None-Match": "*" } };
 
       expect((await handler.GET(new Request(url, wildcard))).status).toBe(304);
@@ -461,7 +461,7 @@ describe("createScreenshotServeHandler", () => {
   });
 
   it("only serves its own keyPrefix namespace from a filesystem directory shared with another app", async () => {
-    const directory = mkdtempSync(join(tmpdir(), "siteping-shared-"));
+    const directory = mkdtempSync(join(tmpdir(), "beezping-shared-"));
     temporaryDirectories.push(directory);
     const objectStore = createFilesystemObjectStore({ directory, publicBaseUrl: PUBLIC_BASE_URL });
     const appA = createScreenshotStorage(objectStore, { keyPrefix: "app-a-" });
@@ -482,7 +482,7 @@ describe("createScreenshotServeHandler", () => {
     expect(authorizedKeys).toEqual([objectStore.keyFromUrl(urlOfA)]);
   });
 
-  it("serves only the default siteping- namespace when no keyPrefix is given", async () => {
+  it("serves only the default beezping- namespace when no keyPrefix is given", async () => {
     const objectStore = createMemoryObjectStore({ publicBaseUrl: PUBLIC_BASE_URL });
     const { url } = await createScreenshotStorage(objectStore, { keyPrefix: "other-" }).upload(
       JPEG_DATA_URL,
@@ -507,7 +507,7 @@ describe("createScreenshotServeHandler", () => {
 
 describe("createS3ObjectStore — credentials without s3:ListBucket", () => {
   const credentials = { accessKeyId: "AKIDEXAMPLE", secretAccessKey: "s3-secret" };
-  const unknownKey = `siteping-${"b".repeat(32)}.jpg`;
+  const unknownKey = `beezping-${"b".repeat(32)}.jpg`;
 
   function openS3WithoutListBucket(
     storeOptions: { treatAccessDeniedAsMissing?: boolean; secretAccessKey?: string } = {},
@@ -584,7 +584,7 @@ describe("backend requests — error bodies", () => {
           return response;
         },
       });
-    const key = `siteping-${"a".repeat(32)}.jpg`;
+    const key = `beezping-${"a".repeat(32)}.jpg`;
 
     const failures = [
       await createScreenshotStorage(openS3(false), { logger: silentLogger() })
@@ -670,12 +670,12 @@ describe("backend requests — error bodies", () => {
 describe("createFilesystemObjectStore — keys", () => {
   it.each([
     "../escaped.jpg",
-    `../siteping-${"a".repeat(32)}.jpg`,
-    `nested/siteping-${"a".repeat(32)}.jpg`,
+    `../beezping-${"a".repeat(32)}.jpg`,
+    `nested/beezping-${"a".repeat(32)}.jpg`,
     "..",
-    `siteping-${"a".repeat(32)}.jpg.content-type`,
+    `beezping-${"a".repeat(32)}.jpg.content-type`,
   ])("refuses the key %s on every operation, before touching the disk", async (key) => {
-    const parent = mkdtempSync(join(tmpdir(), "siteping-traversal-"));
+    const parent = mkdtempSync(join(tmpdir(), "beezping-traversal-"));
     temporaryDirectories.push(parent);
     const directory = join(parent, "screenshots");
     const objectStore = createFilesystemObjectStore({ directory, publicBaseUrl: PUBLIC_BASE_URL });
@@ -707,7 +707,7 @@ describe("createS3ObjectStore — deletes", () => {
     await storage.delete?.(url);
 
     await expect(storage.delete?.(url)).resolves.toBeUndefined();
-    await expect(objectStore.remove(`siteping-${"a".repeat(32)}.jpg`)).resolves.toBeUndefined();
+    await expect(objectStore.remove(`beezping-${"a".repeat(32)}.jpg`)).resolves.toBeUndefined();
     expect(fake.requests.map(({ method }) => method)).toEqual(["PUT", "DELETE", "DELETE", "DELETE"]);
     expect(logger.warn).not.toHaveBeenCalled();
   });
@@ -797,7 +797,7 @@ describe("backend requests — timeouts", () => {
       expect((failure as ObjectStoreRequestError).status).toBeNull();
       expect((failure as ObjectStoreRequestError).cause).toMatchObject({ name: "TimeoutError" });
       expect(requests.map(({ method }) => method)).toEqual([uploadMethod, "DELETE"]);
-      expect(uploadedKeys).toEqual([expect.stringMatching(/^siteping-[a-f0-9]{32}\.jpg$/)]);
+      expect(uploadedKeys).toEqual([expect.stringMatching(/^beezping-[a-f0-9]{32}\.jpg$/)]);
       expect(requests[1]?.path.endsWith(`/${uploadedKeys[0]}`)).toBe(true);
     },
     // Well under the 5 s default request timeout: a backend that ignored timeoutMs fails here.
@@ -983,8 +983,8 @@ describe("backend factories — timeoutMs", () => {
     "refuses timeoutMs %s, under which every request would fail without reaching the backend",
     (timeoutMs) => {
       const refusal = `timeoutMs must be an integer number of milliseconds from 1 to 2147483647, got ${String(timeoutMs)}`;
-      expect(() => openS3(timeoutMs)).toThrow(`[siteping] createS3ObjectStore: ${refusal}`);
-      expect(() => openCloudflareImages(timeoutMs)).toThrow(`[siteping] createCloudflareImagesObjectStore: ${refusal}`);
+      expect(() => openS3(timeoutMs)).toThrow(`[beezping] createS3ObjectStore: ${refusal}`);
+      expect(() => openCloudflareImages(timeoutMs)).toThrow(`[beezping] createCloudflareImagesObjectStore: ${refusal}`);
     },
   );
 
@@ -1016,7 +1016,7 @@ describe("backend factories — required options", () => {
   ] as const)("createS3ObjectStore refuses a missing %s", (option, values) => {
     for (const value of values) {
       expect(() => createS3ObjectStore({ ...s3Options, [option]: value })).toThrow(
-        new Error(`[siteping] createS3ObjectStore: ${option} is required (a non-empty string)`),
+        new Error(`[beezping] createS3ObjectStore: ${option} is required (a non-empty string)`),
       );
     }
   });
@@ -1029,7 +1029,7 @@ describe("backend factories — required options", () => {
   ] as const)("createCloudflareImagesObjectStore refuses a missing %s", (option, values) => {
     for (const value of values) {
       expect(() => createCloudflareImagesObjectStore({ ...cloudflareImagesOptions, [option]: value })).toThrow(
-        new Error(`[siteping] createCloudflareImagesObjectStore: ${option} is required (a non-empty string)`),
+        new Error(`[beezping] createCloudflareImagesObjectStore: ${option} is required (a non-empty string)`),
       );
     }
   });
@@ -1050,10 +1050,10 @@ describe("backend factories — required options", () => {
 
   it("accepts a flexible variant", () => {
     const objectStore = createCloudflareImagesObjectStore({ ...cloudflareImagesOptions, variant: "w=400,sharpen=3" });
-    const url = objectStore.urlFor("siteping-a.jpg");
+    const url = objectStore.urlFor("beezping-a.jpg");
 
-    expect(url).toBe("https://imagedelivery.net/hash-1/siteping-a.jpg/w=400,sharpen=3");
-    expect(objectStore.keyFromUrl(url)).toBe("siteping-a.jpg");
+    expect(url).toBe("https://imagedelivery.net/hash-1/beezping-a.jpg/w=400,sharpen=3");
+    expect(objectStore.keyFromUrl(url)).toBe("beezping-a.jpg");
   });
 });
 
@@ -1086,7 +1086,7 @@ describe("createS3ObjectStore — a body cut short", () => {
   it.each([200, 403])("reports a %i whose body fails to read as a failed request", async (status) => {
     const { objectStore, timeout } = openS3WithBrokenBody(status);
 
-    const failure = await objectStore.get?.(`siteping-${"a".repeat(32)}.jpg`).catch((error: unknown) => error);
+    const failure = await objectStore.get?.(`beezping-${"a".repeat(32)}.jpg`).catch((error: unknown) => error);
 
     expect(isObjectStoreRequestError(failure)).toBe(true);
     expect((failure as ObjectStoreRequestError).status).toBe(status);
@@ -1131,7 +1131,7 @@ describe("createScreenshotStorage — uploads whose outcome is unknown", () => {
     });
 
     await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(ObjectStoreRequestError);
-    expect(uncertainKeys).toEqual([expect.stringMatching(/^siteping-[a-f0-9]{32}\.jpg$/)]);
+    expect(uncertainKeys).toEqual([expect.stringMatching(/^beezping-[a-f0-9]{32}\.jpg$/)]);
     expect(remove).toHaveBeenCalledExactlyOnceWith(uncertainKeys[0]);
 
     // The backend commits after the immediate removal: the hook's key is what reclaims it.
@@ -1153,7 +1153,7 @@ describe("createScreenshotStorage — uploads whose outcome is unknown", () => {
 
     await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(ObjectStoreRequestError);
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("onUncertainUpload failed"), {
-      key: expect.stringMatching(/^siteping-[a-f0-9]{32}\.jpg$/),
+      key: expect.stringMatching(/^beezping-[a-f0-9]{32}\.jpg$/),
       error: expect.objectContaining({ message: "queue unavailable" }),
     });
   });
@@ -1172,7 +1172,7 @@ describe("createScreenshotStorage — uploads whose outcome is unknown", () => {
 
     await expect(storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT)).rejects.toBeInstanceOf(ObjectStoreRequestError);
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("onUncertainUpload failed"), {
-      key: expect.stringMatching(/^siteping-[a-f0-9]{32}\.jpg$/),
+      key: expect.stringMatching(/^beezping-[a-f0-9]{32}\.jpg$/),
       error: expect.objectContaining({ message: "queue unavailable" }),
     });
   });

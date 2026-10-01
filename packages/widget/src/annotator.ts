@@ -1,4 +1,5 @@
 import { type AnnotationPayload, type FeedbackType, newClientId, type ScreenshotRegion } from "@beezping/core";
+import { WIDGET_IGNORE_ATTRIBUTE } from "./constants/branding.js";
 import { INSTANT_ANNOTATION_SIZE, Z_INDEX_MAX } from "./constants.js";
 import { deepElementFromPoint, findAnchorElement, generateAnchor, rectToPercentages } from "./dom/anchor.js";
 import { el, setText } from "./dom-utils.js";
@@ -194,7 +195,7 @@ export class Annotator {
     // Overlay — subtle blue tint for depth.
     //
     // Overlay, toolbar and the drawn rectangle live on document.body, outside
-    // the siteping-widget shadow host. Without the `data-siteping-ignore`
+    // the beezping-widget shadow host. Without the `data-beezping-ignore`
     // marker the screenshot predicate in screenshot.ts cannot reach them —
     // and the accent-colored selection border plus the page tint end up
     // baked into the captured JPEG. See issue #124.
@@ -216,7 +217,7 @@ export class Annotator {
     // on a node that announces nothing (axe "aria-hidden-focus", serious).
     this.overlay.setAttribute("role", "application");
     this.overlay.setAttribute("aria-label", drawMode ? instruction : this.t("annotator.instantInstruction"));
-    this.overlay.setAttribute("data-siteping-ignore", "true");
+    this.overlay.setAttribute(WIDGET_IGNORE_ATTRIBUTE, "true");
 
     // Toolbar — glassmorphism bar (suppressed in instant mode: the
     // "Draw a rectangle" copy is wrong when the composer is already open)
@@ -239,7 +240,7 @@ export class Annotator {
           -webkit-font-smoothing:antialiased;
         `,
       });
-      this.toolbar.setAttribute("data-siteping-ignore", "true");
+      this.toolbar.setAttribute(WIDGET_IGNORE_ATTRIBUTE, "true");
 
       const dot = el("span", {
         style: /* css */ `
@@ -506,7 +507,7 @@ export class Annotator {
         transition:box-shadow 0.15s ease;
       `,
     });
-    rect.setAttribute("data-siteping-ignore", "true");
+    rect.setAttribute(WIDGET_IGNORE_ATTRIBUTE, "true");
     return rect;
   }
 
@@ -674,7 +675,7 @@ export class Annotator {
         box-shadow:0 0 16px ${this.colors.accentGlow};
       `,
     });
-    this.drawingRect.setAttribute("data-siteping-ignore", "true");
+    this.drawingRect.setAttribute(WIDGET_IGNORE_ATTRIBUTE, "true");
     this.overlay?.appendChild(this.drawingRect);
 
     await this.openForm(annotation, pointRect, captureRect);

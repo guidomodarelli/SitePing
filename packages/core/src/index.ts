@@ -1,8 +1,8 @@
 export { settleWithConcurrencyLimit } from "./concurrency.js";
 export { buildDeepLink, parseHttpUrl } from "./deep-link.js";
 export { EMAIL_PATTERN, isValidEmail } from "./email.js";
-export type { SitepingErrorCode } from "./errors.js";
-export { SitepingAuthError, SitepingError, SitepingNetworkError, SitepingValidationError } from "./errors.js";
+export type { BeezpingErrorCode } from "./errors.js";
+export { BeezpingAuthError, BeezpingError, BeezpingNetworkError, BeezpingValidationError } from "./errors.js";
 export type { FilterResult, Pagination } from "./filters.js";
 export {
   applyFeedbackFilters,
@@ -15,6 +15,8 @@ export {
 export type { I18n, LocaleLoaders, TranslateFunction } from "./i18n.js";
 export { canonicalizeLocale, createI18n, interpolate, intlLocale, tWithParams } from "./i18n.js";
 export type {
+  BeezpingModelFieldName,
+  BeezpingModelName,
   FieldDef,
   IndexDef,
   ModelDef,
@@ -23,10 +25,8 @@ export type {
   RelationDef,
   RelationKind,
   RelationOnDelete,
-  SitepingModelFieldName,
-  SitepingModelName,
 } from "./schema.js";
-export { isRelationField, isScalarField, SITEPING_MODELS } from "./schema.js";
+export { BEEZPING_MODELS, isRelationField, isScalarField } from "./schema.js";
 export type { ScreenshotStorage } from "./screenshot-storage.js";
 export { SCREENSHOT_DELETE_CONCURRENCY, screenshotMimeType } from "./screenshot-storage.js";
 export type { CollectionStore, CollectionStoreBackend } from "./store-helpers.js";
@@ -44,6 +44,28 @@ export type {
   AnnotationPayload,
   AnnotationRecord,
   AnnotationResponse,
+  BeezpingBaseConfig,
+  BeezpingCapabilities,
+  BeezpingConfig,
+  BeezpingDeepLinkOptions,
+  BeezpingHeadersOption,
+  BeezpingHttpConfig,
+  BeezpingIdentity,
+  BeezpingInstance,
+  BeezpingLocale,
+  BeezpingPanelAction,
+  BeezpingPanelActionContext,
+  BeezpingPanelActionFeedback,
+  BeezpingPanelButtonAction,
+  BeezpingPanelLinkAction,
+  BeezpingPosition,
+  BeezpingPublicEventListener,
+  BeezpingPublicEvents,
+  BeezpingSkipReason,
+  BeezpingStore,
+  BeezpingStoreConfig,
+  BeezpingTheme,
+  BeezpingUnsubscribe,
   BuiltinLocale,
   ClosedFeedbackStatus,
   CommentAuthorRole,
@@ -74,28 +96,6 @@ export type {
   PageScope,
   RectData,
   ScreenshotRegion,
-  SitepingBaseConfig,
-  SitepingCapabilities,
-  SitepingConfig,
-  SitepingDeepLinkOptions,
-  SitepingHeadersOption,
-  SitepingHttpConfig,
-  SitepingIdentity,
-  SitepingInstance,
-  SitepingLocale,
-  SitepingPanelAction,
-  SitepingPanelActionContext,
-  SitepingPanelActionFeedback,
-  SitepingPanelButtonAction,
-  SitepingPanelLinkAction,
-  SitepingPosition,
-  SitepingPublicEventListener,
-  SitepingPublicEvents,
-  SitepingSkipReason,
-  SitepingStore,
-  SitepingStoreConfig,
-  SitepingTheme,
-  SitepingUnsubscribe,
 } from "./types.js";
 export {
   ANCHOR_ELEMENT_ID_MAX,

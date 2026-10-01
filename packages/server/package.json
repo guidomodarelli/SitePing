@@ -1,7 +1,7 @@
 {
   "name": "@beezping/server",
   "version": "0.0.0",
-  "description": "Store- and framework-agnostic HTTP handler for Siteping — any SitepingStore behind one Fetch API endpoint",
+  "description": "Store- and framework-agnostic HTTP handler for Beezping — any BeezpingStore behind one Fetch API endpoint",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -28,7 +28,7 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "siteping",
+    "beezping",
     "server",
     "api-handler",
     "fetch-api",
@@ -39,14 +39,14 @@
   ],
   "author": "neosianexus",
   "license": "MIT",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://github.com/guidomodarelli/beezping",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/guidomodarelli/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/beezping.git",
     "directory": "packages/server"
   },
   "bugs": {
-    "url": "https://github.com/guidomodarelli/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/beezping/issues"
   },
   "publishConfig": {
     "access": "public"

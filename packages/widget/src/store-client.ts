@@ -1,6 +1,8 @@
 import {
   type AnnotationRecord,
   type AnnotationResponse,
+  BeezpingError,
+  type BeezpingStore,
   type CommentCreateInput,
   type CommentRecord,
   type CommentResponse,
@@ -10,8 +12,6 @@ import {
   type FeedbackResponseList,
   flattenAnnotation,
   isStoreDuplicate,
-  SitepingError,
-  type SitepingStore,
   toFeedbackUpdate,
 } from "@beezping/core";
 import { type GetFeedbacksOptions, type WidgetClient, withTimeout } from "./api-client.js";
@@ -24,7 +24,7 @@ import { type GetFeedbacksOptions, type WidgetClient, withTimeout } from "./api-
 const STORE_WRITE_TIMEOUT_MS = 30_000;
 
 /**
- * `WidgetClient` implementation that delegates directly to a `SitepingStore`.
+ * `WidgetClient` implementation that delegates directly to a `BeezpingStore`.
  *
  * Used in client-side mode — the widget calls the store in-process instead of
  * making HTTP requests. Handles the same conversions the HTTP handler normally
@@ -32,12 +32,12 @@ const STORE_WRITE_TIMEOUT_MS = 30_000;
  */
 export class StoreClient implements WidgetClient {
   constructor(
-    private readonly store: SitepingStore,
+    private readonly store: BeezpingStore,
     private readonly projectName: string,
   ) {}
 
   /**
-   * `SitepingStore` takes no AbortSignal, so a write that outlives the bound
+   * `BeezpingStore` takes no AbortSignal, so a write that outlives the bound
    * is abandoned, not cancelled: it may still land after the popup restored.
    * Writes are not serialized (a chain would never unblock after one that
    * never settles); a resend from the same popup carries the same clientId,
@@ -113,7 +113,7 @@ export class StoreClient implements WidgetClient {
   /** The panel only offers a reply when `getFeedbacks` advertised comments, i.e. the store implements `addComment`. */
   async addComment(feedbackId: string, input: CommentCreateInput): Promise<CommentResponse> {
     const label = "Failed to post comment";
-    if (!this.store.addComment) throw new SitepingError(`${label}: this store keeps no comments`, "SERVER", false);
+    if (!this.store.addComment) throw new BeezpingError(`${label}: this store keeps no comments`, "SERVER", false);
     return toCommentResponse(await bounded(this.store.addComment(feedbackId, input), label));
   }
 }
@@ -124,7 +124,7 @@ function bounded<T>(write: Promise<T>, label: string): Promise<T> {
     write,
     STORE_WRITE_TIMEOUT_MS,
     () =>
-      new SitepingError(
+      new BeezpingError(
         `${label}: the store did not answer within ${STORE_WRITE_TIMEOUT_MS / 1000} s`,
         "TIMEOUT",
         true,

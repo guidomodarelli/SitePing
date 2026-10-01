@@ -7,7 +7,7 @@ import {
   GITLAB_STATE_EVENT,
 } from "../constants/gitlab.js";
 import { TRACKER_MAX_LISTED_PAGES } from "../constants/http.js";
-import { SITEPING_ISSUE_LABEL } from "../constants/issue-format.js";
+import { BEEZPING_ISSUE_LABEL } from "../constants/issue-format.js";
 import { createJsonHttpClient, UnlabelledIssueError } from "../core/http-client.js";
 import type { IssueTracker, TrackedIssue } from "../core/issue-tracker.js";
 import { checkApiBaseUrl, checkPositiveInteger, checkTimeout, checkToken } from "../core/tracker-options.js";
@@ -25,7 +25,7 @@ export interface GitLabTrackerOptions {
    * Most pages of 100 issues listed, newest first: on a project-wide delete,
    * and to find a feedback's issue when the search fails. After a search
    * that answered, one page is listed. Defaults to 10: past the 1,000 newest
-   * SitePing issues, a project delete is refused, and so is a lookup the
+   * Beezping issues, a project delete is refused, and so is a lookup the
    * search did not settle.
    */
   maxListedPages?: number | undefined;
@@ -65,7 +65,7 @@ export function createGitLabTracker({
     typeof project === "number" ? Number.isSafeInteger(project) && project > 0 : GITLAB_PROJECT_PATTERN.test(project);
   if (!isProject) {
     // Not echoed: a clone URL may carry a token, and this error is logged.
-    throw new Error('[siteping] createGitLabTracker: project must be a numeric id or a full path like "group/project"');
+    throw new Error('[beezping] createGitLabTracker: project must be a numeric id or a full path like "group/project"');
   }
   const credential = checkToken("createGitLabTracker", token);
   checkApiBaseUrl("createGitLabTracker", apiBaseUrl);
@@ -91,7 +91,7 @@ export function createGitLabTracker({
         path: issuesPath,
         body: { title, description: body, labels: labels.join(GITLAB_LABEL_SEPARATOR) },
       });
-      if (labels.includes(SITEPING_ISSUE_LABEL) && !issue.labels.includes(SITEPING_ISSUE_LABEL)) {
+      if (labels.includes(BEEZPING_ISSUE_LABEL) && !issue.labels.includes(BEEZPING_ISSUE_LABEL)) {
         throw new UnlabelledIssueError(
           "GitLab",
           `#${issue.iid}`,
@@ -124,12 +124,12 @@ export function createGitLabTracker({
       return bodies;
     },
 
-    async searchSitepingIssues(feedbackId) {
+    async searchBeezpingIssues(feedbackId) {
       const issues = await request<GitLabIssue[]>({
         method: "GET",
         path: issuesPath,
         query: {
-          labels: SITEPING_ISSUE_LABEL,
+          labels: BEEZPING_ISSUE_LABEL,
           state: "all",
           search: feedbackId,
           in: "description",
@@ -142,13 +142,13 @@ export function createGitLabTracker({
       };
     },
 
-    async findSitepingIssues(marker, { maxPages = maxListedPages } = {}) {
+    async findBeezpingIssues(marker, { maxPages = maxListedPages } = {}) {
       const matches: TrackedIssue[] = [];
       for (let page = 1; page <= Math.min(maxPages, maxListedPages); page++) {
         const issues = await request<GitLabIssue[]>({
           method: "GET",
           path: issuesPath,
-          query: { labels: SITEPING_ISSUE_LABEL, state: "all", per_page: String(GITLAB_PAGE_SIZE), page: String(page) },
+          query: { labels: BEEZPING_ISSUE_LABEL, state: "all", per_page: String(GITLAB_PAGE_SIZE), page: String(page) },
         });
         for (const issue of issues) {
           if (!issue.description?.includes(marker)) continue;

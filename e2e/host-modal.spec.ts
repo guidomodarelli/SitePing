@@ -5,10 +5,10 @@ import { expect, type Page, test } from "@playwright/test";
 // checks fail when `body { pointer-events: none }` makes a widget surface
 // click-through.
 
-const API = "http://localhost:3999/api/siteping";
+const API = "http://localhost:3999/api/beezping";
 
 /** English `fab.aria` label: the FAB's accessible name in the default locale. */
-const FAB_ACCESSIBLE_NAME = "Siteping — Feedback menu";
+const FAB_ACCESSIBLE_NAME = "Beezping — Feedback menu";
 
 /** English `popup.cancel` label: the comment popup's Cancel button name in the default locale. */
 const POPUP_CANCEL_ACCESSIBLE_NAME = "Cancel";
@@ -57,7 +57,7 @@ async function annotateTheDialog(page: Page) {
   await page.mouse.down();
   await page.mouse.move(dialogBox.x + 300, dialogBox.y + 80, { steps: 5 });
   await page.mouse.up();
-  const popup = page.locator('[role="dialog"][data-siteping-ignore]');
+  const popup = page.locator('[role="dialog"][data-beezping-ignore]');
   // The popup focuses its comment textarea on the next frame; wait for it so
   // that deferred focus cannot undo what the test does next.
   await expect(popup.locator("textarea")).toBeFocused();
@@ -117,7 +117,7 @@ test.describe("Widget over a host modal", () => {
   test("Escape cancels the annotation overlay without closing the modal", async ({ page }) => {
     await page.locator(".sp-fab").click();
     await page.locator('[data-item-id="annotate"]').click();
-    const overlay = page.locator('[role="application"][data-siteping-ignore]');
+    const overlay = page.locator('[role="application"][data-beezping-ignore]');
     await expect(overlay).toBeFocused();
 
     await page.keyboard.press("Escape");
@@ -229,7 +229,7 @@ test.describe("Widget over a host modal", () => {
     await expect(page.locator("#page-content")).toHaveAttribute("aria-hidden", "true");
 
     // The FAB stays in the accessibility tree and the live region stays exposed.
-    await expect(page.locator("siteping-widget")).not.toHaveAttribute("aria-hidden", /.*/);
+    await expect(page.locator("beezping-widget")).not.toHaveAttribute("aria-hidden", /.*/);
     await expect(page.locator('[role="status"][aria-live="polite"]')).not.toHaveAttribute("aria-hidden", /.*/);
     await expect(page.getByRole("button", { name: FAB_ACCESSIBLE_NAME })).toBeVisible();
 
@@ -245,7 +245,7 @@ test.describe("Widget over a host modal", () => {
     await page.reload();
     await expect(page.locator("#host-dialog")).toBeVisible();
 
-    await page.locator("#siteping-markers [data-feedback-id]").first().hover();
+    await page.locator("#beezping-markers [data-feedback-id]").first().hover();
     const tooltip = page.locator("#sp-tooltip");
     await expect(tooltip).toBeVisible();
     await expect(tooltip).toContainText("Tooltip over the modal");
@@ -267,7 +267,7 @@ test.describe("Widget over a host modal", () => {
 // test's own inspection only — the root stays closed for the widget and the guard.
 test.describe("Widget over a host modal with its production closed shadow root", () => {
   /** Window property holding the widget's closed shadow root, set by the init script. */
-  const CLOSED_SHADOW_ROOT_PROPERTY = "__sitepingClosedShadowRoot";
+  const CLOSED_SHADOW_ROOT_PROPERTY = "__beezpingClosedShadowRoot";
 
   /** State of the FAB menu read from inside the closed shadow root. */
   interface FabMenuState {
@@ -280,7 +280,7 @@ test.describe("Widget over a host modal with its production closed shadow root",
       const attachShadow = Element.prototype.attachShadow;
       Element.prototype.attachShadow = function attachShadowAndKeepWidgetRoot(init) {
         const shadowRoot = attachShadow.call(this, init);
-        if (this.localName === "siteping-widget") {
+        if (this.localName === "beezping-widget") {
           Object.defineProperty(window, rootProperty, { value: shadowRoot, configurable: true });
         }
         return shadowRoot;

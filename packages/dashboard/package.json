@@ -1,7 +1,7 @@
 {
   "name": "@beezping/dashboard",
   "version": "0.2.7",
-  "description": "Linear-style triage inbox React component for SitePing feedback",
+  "description": "Linear-style triage inbox React component for Beezping feedback",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -29,7 +29,7 @@
     "size": "NODE_PATH=./node_modules size-limit"
   },
   "keywords": [
-    "siteping",
+    "beezping",
     "feedback",
     "dashboard",
     "inbox",
@@ -41,14 +41,14 @@
   ],
   "author": "neosianexus",
   "license": "MIT",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://github.com/guidomodarelli/beezping",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/guidomodarelli/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/beezping.git",
     "directory": "packages/dashboard"
   },
   "bugs": {
-    "url": "https://github.com/guidomodarelli/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/beezping/issues"
   },
   "publishConfig": {
     "access": "public"

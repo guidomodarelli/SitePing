@@ -1,4 +1,5 @@
 import { type AnchorData, type FeedbackResponse, isClosedStatus, type RectData } from "@beezping/core";
+import { MARKERS_LAYER_ID } from "./constants/branding.js";
 import { Z_INDEX_MAX } from "./constants.js";
 import { resolveAnnotation } from "./dom/resolver.js";
 import { classifyVisibility } from "./dom/visibility.js";
@@ -145,7 +146,7 @@ export class MarkerManager {
     this.container = el("div", {
       style: `position:absolute;top:0;left:0;pointer-events:none;z-index:${Z_INDEX_MAX - 1};`,
     });
-    this.container.id = "siteping-markers";
+    this.container.id = MARKERS_LAYER_ID;
     isolateFromHost(this.container);
     document.body.appendChild(this.container);
 

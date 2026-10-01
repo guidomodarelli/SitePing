@@ -38,7 +38,7 @@ describe("canonicalizeLocale", () => {
   it.each(["", "not a locale", "fr__FR"])("falls back to en, with a warning, for the malformed tag %j", (input) => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(canonicalizeLocale(input)).toBe("en");
-    expect(warn).toHaveBeenCalledExactlyOnceWith(`[siteping] Invalid locale "${input}", falling back to "en"`);
+    expect(warn).toHaveBeenCalledExactlyOnceWith(`[beezping] Invalid locale "${input}", falling back to "en"`);
   });
 });
 

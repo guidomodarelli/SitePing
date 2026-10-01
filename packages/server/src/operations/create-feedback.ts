@@ -1,28 +1,28 @@
 import {
+  type BeezpingStore,
   type FeedbackCreateInput,
   type FeedbackPayload,
   type FeedbackRecord,
   flattenAnnotation,
   isStoreDuplicate,
   isStoreValueTooLong,
-  type SitepingStore,
 } from "@beezping/core";
 import { ERROR_MESSAGES, MAX_ANNOTATIONS_PER_FEEDBACK } from "../constants.js";
-import type { SitepingHandlerBaseOptions, SitepingLifecycleHooks } from "../options.js";
+import type { BeezpingHandlerBaseOptions, BeezpingLifecycleHooks } from "../options.js";
 import type { Pipeline, Scope } from "../pipeline.js";
 import { feedbackCreateSchema } from "../validation.js";
 import { dispatchWebhooks, type WebhookConfig } from "../webhooks.js";
 
 interface CreateFeedbackDependencies<Principal> {
-  store: SitepingStore;
+  store: BeezpingStore;
   pipeline: Pipeline<Principal>;
   webhooks: ReadonlyArray<WebhookConfig>;
-  waitUntil: SitepingHandlerBaseOptions<Principal>["waitUntil"];
-  beforeCreate: SitepingHandlerBaseOptions<Principal>["beforeCreate"];
-  onCreated: SitepingLifecycleHooks<Principal>["onCreated"];
+  waitUntil: BeezpingHandlerBaseOptions<Principal>["waitUntil"];
+  beforeCreate: BeezpingHandlerBaseOptions<Principal>["beforeCreate"];
+  onCreated: BeezpingLifecycleHooks<Principal>["onCreated"];
 }
 
-const FAILED_TO_CREATE = "[siteping] Failed to create feedback";
+const FAILED_TO_CREATE = "[beezping] Failed to create feedback";
 
 /** Outcome of one create: `inserted` is false for a replay. */
 interface CreateOutcome {
@@ -136,7 +136,7 @@ export function createFeedbackOperation<Principal>({
         try {
           existing = await store.findByClientId(input.clientId);
         } catch (lookupError) {
-          pipeline.logError(scope, "[siteping] Failed to look up the duplicate clientId", {
+          pipeline.logError(scope, "[beezping] Failed to look up the duplicate clientId", {
             error: lookupError,
             projectName: input.projectName,
           });
@@ -162,7 +162,7 @@ export function createFeedbackOperation<Principal>({
           try {
             waitUntil?.(delivery);
           } catch (error) {
-            pipeline.logError(scope, "[siteping] waitUntil failed", { error, ...subject });
+            pipeline.logError(scope, "[beezping] waitUntil failed", { error, ...subject });
           }
         }
         if (onCreated) await pipeline.runHook(scope, "onCreated", subject, () => onCreated(feedback, scope.context));

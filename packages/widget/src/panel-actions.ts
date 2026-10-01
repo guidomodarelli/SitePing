@@ -4,11 +4,11 @@
  * detail view goes through here before it touches the DOM.
  */
 
-import type { FeedbackResponse, SitepingPanelAction, SitepingPanelActionFeedback } from "@beezping/core";
+import type { BeezpingPanelAction, BeezpingPanelActionFeedback, FeedbackResponse } from "@beezping/core";
 
 /** A validated action, its icon parsed once and cloned on every render. */
 export interface PanelActionItem {
-  readonly action: SitepingPanelAction;
+  readonly action: BeezpingPanelAction;
   readonly icon: SVGSVGElement | null;
 }
 
@@ -98,14 +98,14 @@ export function safeHref(href: string): string | null {
  * `FeedbackResponse` is JSON by construction (`Serialized<FeedbackRecord>`),
  * so the round trip is lossless.
  */
-export function snapshotFeedback(feedback: FeedbackResponse): SitepingPanelActionFeedback {
+export function snapshotFeedback(feedback: FeedbackResponse): BeezpingPanelActionFeedback {
   return JSON.parse(JSON.stringify(feedback), (_key, value: unknown) =>
     typeof value === "object" && value !== null ? Object.freeze(value) : value,
   );
 }
 
-const isButton = (a: Partial<SitepingPanelAction>) => typeof a.onAction === "function" && a.href === undefined;
-const isLink = (a: Partial<SitepingPanelAction>) =>
+const isButton = (a: Partial<BeezpingPanelAction>) => typeof a.onAction === "function" && a.href === undefined;
+const isLink = (a: Partial<BeezpingPanelAction>) =>
   (typeof a.href === "string" || typeof a.href === "function") && a.onAction === undefined;
 
 /**
@@ -115,12 +115,12 @@ const isLink = (a: Partial<SitepingPanelAction>) =>
  * or reusing an earlier id are skipped with a console warning. An icon that
  * is not SVG markup is dropped with a warning — the action keeps its label.
  */
-export function normalizePanelActions(actions: readonly SitepingPanelAction[] | undefined): PanelActionItem[] {
+export function normalizePanelActions(actions: readonly BeezpingPanelAction[] | undefined): PanelActionItem[] {
   const items: PanelActionItem[] = [];
   if (!Array.isArray(actions)) return items;
   const ids = new Set<string>();
-  actions.forEach((action: Partial<SitepingPanelAction> | null | undefined, index) => {
-    const where = `[siteping] panelActions[${index}]`;
+  actions.forEach((action: Partial<BeezpingPanelAction> | null | undefined, index) => {
+    const where = `[beezping] panelActions[${index}]`;
     const id = action?.id;
     if (typeof id !== "string" || !id || typeof action?.label !== "string" || !action.label) {
       console.warn(`${where} ignored: it needs a non-empty string \`id\` and \`label\`.`);
@@ -136,7 +136,7 @@ export function normalizePanelActions(actions: readonly SitepingPanelAction[] | 
       if (action.icon !== undefined && !icon) {
         console.warn(`${where} ("${id}"): \`icon\` is not SVG markup — showing the label only.`);
       }
-      items.push({ action: action as SitepingPanelAction, icon });
+      items.push({ action: action as BeezpingPanelAction, icon });
     }
   });
   return items;

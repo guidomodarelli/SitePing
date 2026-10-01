@@ -1,12 +1,12 @@
 # @beezping/adapter-kit
 
-Everything needed to build — and conformance-test — a custom [Siteping](https://siteping.dev) store adapter.
+Everything needed to build — and conformance-test — a custom [Beezping](https://github.com/guidomodarelli/beezping) store adapter.
 
 ```ts
-import { createCollectionStore, type SitepingStore } from "@beezping/adapter-kit";
+import { createCollectionStore, type BeezpingStore } from "@beezping/adapter-kit";
 
 // A complete adapter over any snapshot backend, in ~15 lines:
-export function createMyStore(): SitepingStore {
+export function createMyStore(): BeezpingStore {
   let records = load();
   return createCollectionStore({
     load: () => records,
@@ -19,13 +19,13 @@ export function createMyStore(): SitepingStore {
 Verify it with the shared conformance suite (vitest):
 
 ```ts
-import { testSitepingStore } from "@beezping/adapter-kit/testing";
+import { testBeezpingStore } from "@beezping/adapter-kit/testing";
 import { createMyStore } from "../src/index.js";
 
-testSitepingStore(() => createMyStore());
+testBeezpingStore(() => createMyStore());
 ```
 
-**[Full guide → siteping.dev/docs/adapters/writing-an-adapter](https://siteping.dev/docs/adapters/writing-an-adapter)**
+**[Full guide → github.com/guidomodarelli/beezping/docs/adapters/writing-an-adapter](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/adapters/writing-an-adapter.mdx)**
 
 ## License
 

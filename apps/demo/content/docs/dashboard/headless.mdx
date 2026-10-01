@@ -1,16 +1,16 @@
 ---
 title: Headless hook
-description: useSitepingInbox — all the inbox logic, none of the UI. Build your own triage view.
+description: useBeezpingInbox — all the inbox logic, none of the UI. Build your own triage view.
 ---
 
-Everything `SitepingInbox` does — fetching, filters, optimistic mutations, undo, pagination — lives in one hook you can drive from your own components:
+Everything `BeezpingInbox` does — fetching, filters, optimistic mutations, undo, pagination — lives in one hook you can drive from your own components:
 
 ```tsx
-import { useSitepingInbox } from "@beezping/dashboard";
+import { useBeezpingInbox } from "@beezping/dashboard";
 
-const inbox = useSitepingInbox({
+const inbox = useBeezpingInbox({
   projects: "my-project",
-  endpoint: "/api/siteping",
+  endpoint: "/api/beezping",
 });
 ```
 
@@ -22,7 +22,7 @@ The options are a union over the three source modes: supply **exactly one** of `
 |---|---|---|---|
 | `projects` | `string` or `string[]` | **required** | An empty array throws at render. The first entry is selected initially |
 | `endpoint` | `string` | — | HTTP mode |
-| `store` | `SitepingStore` | — | Store mode |
+| `store` | `BeezpingStore` | — | Store mode |
 | `source` | `InboxSource` | — | Fully custom data source; see [Data sources](/docs/dashboard/sources) |
 | `apiKey` | `string` | — | Endpoint mode only. `Authorization: Bearer` on every request |
 | `headers` | object or function | — | Endpoint mode only. An explicit `Authorization`, in any casing, beats `apiKey`. Read live — changing it doesn't rebuild the source |
@@ -33,7 +33,7 @@ The options are a union over the three source modes: supply **exactly one** of `
 | `author` | `{ name, email? }` | — | Who posts replies from this inbox — see [Discussion threads](#discussion-threads). Without it, threads are read-only |
 | `readOnly` | `boolean` | `false` | No status change and no deletion, of feedbacks or of replies — see [Permissions](#permissions) |
 
-Each mode is exported on its own — `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions`, the shared `InboxSharedOptions`, and the `UseSitepingInboxOptions` union — so a wrapper component can accept just the mode it supports. Plain-JavaScript callers get the old behavior: no source at all still throws at render.
+Each mode is exported on its own — `InboxEndpointOptions`, `InboxStoreOptions`, `InboxCustomSourceOptions`, the shared `InboxSharedOptions`, and the `UseBeezpingInboxOptions` union — so a wrapper component can accept just the mode it supports. Plain-JavaScript callers get the old behavior: no source at all still throws at render.
 
 ## What you get back
 

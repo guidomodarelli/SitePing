@@ -10,14 +10,14 @@ npm i @beezping/dashboard
 ```
 
 ```tsx
-import { SitepingInbox } from "@beezping/dashboard";
+import { BeezpingInbox } from "@beezping/dashboard";
 
 export function Triage() {
   return (
-    <SitepingInbox
+    <BeezpingInbox
       projects="mon-projet"
-      endpoint="https://mon-site.com/api/siteping"
-      apiKey={process.env.NEXT_PUBLIC_SITEPING_KEY}
+      endpoint="https://mon-site.com/api/beezping"
+      apiKey={process.env.NEXT_PUBLIC_BEEZPING_KEY}
       theme="auto"
     />
   );
@@ -28,7 +28,7 @@ Compatible React 18 et 19, livré en ESM et CJS, sans aucune dépendance en deho
 
 ## Props
 
-`SitepingInbox` accepte toutes les [options de `useSitepingInbox`](/fr/docs/dashboard/headless) plus ces props de présentation :
+`BeezpingInbox` accepte toutes les [options de `useBeezpingInbox`](/fr/docs/dashboard/headless) plus ces props de présentation :
 
 | Prop | Type | Défaut | Ce que ça fait |
 |---|---|---|---|
@@ -36,7 +36,7 @@ Compatible React 18 et 19, livré en ESM et CJS, sans aucune dépendance en deho
 | `accentColor` | `string` | `"#0066ff"` | Hexadécimal uniquement ; toutes les nuances d'accent dérivent de cette seule valeur. Voir [Personnalisation](/fr/docs/dashboard/theming) |
 | `density` | `"comfortable"` \| `"compact"` | `"comfortable"` | Hauteur de ligne 44 px contre 36 px |
 | `locale` | `string` | `"en"` | N'importe quelle étiquette BCP-47 — voir [Langues](#langues) |
-| `deepLinkParam` | `string` | `"siteping"` | Paramètre d'URL utilisé par les liens « Ouvrir sur la page » ; doit correspondre au paramètre `deepLink` du widget |
+| `deepLinkParam` | `string` | `"beezping"` | Paramètre d'URL utilisé par les liens « Ouvrir sur la page » ; doit correspondre au paramètre `deepLink` du widget |
 | `emptyState` | `ReactNode` | — | Nœud personnalisé pour l'état « aucun feedback dans ce projet » uniquement — les états inbox-zéro et aucun-résultat gardent leurs valeurs par défaut |
 | `className` | `string` | — | Ajouté aux classes de l'élément racine |
 
@@ -67,7 +67,7 @@ Quatre statuts : `open`, `in_progress`, `resolved`, `wont_fix`. Le dashboard peu
 Le tiroir montre le fil du feedback ouvert — les réponses du relecteur depuis le widget, celles de votre équipe depuis ici. Passez `author` pour répondre et supprimer depuis l'inbox :
 
 ```tsx
-<SitepingInbox projects="my-project" endpoint="/api/siteping" apiKey={KEY} author={{ name: "Alex" }} />
+<BeezpingInbox projects="my-project" endpoint="/api/beezping" apiKey={KEY} author={{ name: "Alex" }} />
 ```
 
 Sans `author`, les fils sont en lecture seule. Les réponses demandent le rôle `team`, que votre serveur n'accorde qu'aux appelants de confiance — les détails sont dans [Fils de discussion](/fr/docs/comments#dans-le-dashboard).
@@ -77,7 +77,7 @@ Sans `author`, les fils sont en lecture seule. Les réponses demandent le rôle 
 `readOnly` masque les changements de statut et les suppressions, des feedbacks comme des réponses — pour une personne qui suit l'inbox, et répond quand `author` est défini :
 
 ```tsx
-<SitepingInbox projects="my-project" endpoint="/api/siteping" readOnly />
+<BeezpingInbox projects="my-project" endpoint="/api/beezping" readOnly />
 ```
 
 L'inbox suit aussi ce que le serveur permet à chaque appelant sur chaque feedback — ses [`permissions`](/fr/docs/server#ce-que-chaque-appelant-peut-faire). Le tiroir affiche le statut en texte quand il ne peut pas changer et retire la suppression quand le feedback ne peut pas être supprimé, `e` / `p` / `x` passent un tel feedback, et les aides retirent les touches de statut quand aucun feedback listé ne permet de changement. Elle ne fait que masquer : c'est le serveur qui décide de ce qu'il accepte.
@@ -92,7 +92,7 @@ Le dashboard accepte aussi des locales personnalisées à l'exécution :
 import { registerLocale } from "@beezping/dashboard";
 
 registerLocale("nl", { "status.open": "Open", "status.resolved": "Opgelost" });
-// plus tard : <SitepingInbox locale="nl" ... />
+// plus tard : <BeezpingInbox locale="nl" ... />
 ```
 
 **Les dictionnaires partiels sont acceptés** — toute clé omise retombe d'elle-même sur l'anglais, donc corriger un seul libellé n'oblige pas à maintenir tout le catalogue. Deux règles que l'implémentation impose : enregistrez sous le **code de langue de base** (`"nl"`, pas `"nl-BE"` — les recherches se normalisent vers la base), et appelez `registerLocale` **avant le montage de l'inbox**. Le `registerLocale` du widget fonctionne de la même façon sur [son propre jeu de clés](/fr/docs/widget/i18n).

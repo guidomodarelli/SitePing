@@ -9,19 +9,19 @@ import { deleteFeedbackOperation } from "./operations/delete-feedback.js";
 import { listFeedbacksOperation } from "./operations/list-feedbacks.js";
 import { updateFeedbackOperation } from "./operations/update-feedback.js";
 import type {
-  SitepingAccessHandlerOptions,
-  SitepingApiKeyHandlerOptions,
-  SitepingHandler,
-  SitepingHandlerBaseOptions,
-  SitepingHandlerOptions,
-  SitepingHttpMethod,
-  SitepingLogger,
-  SitepingPrincipal,
+  BeezpingAccessHandlerOptions,
+  BeezpingApiKeyHandlerOptions,
+  BeezpingHandler,
+  BeezpingHandlerBaseOptions,
+  BeezpingHandlerOptions,
+  BeezpingHttpMethod,
+  BeezpingLogger,
+  BeezpingPrincipal,
 } from "./options.js";
 import { createPipeline, type Pipeline, type Scope } from "./pipeline.js";
 import { checkWebhookTimeouts, type WebhookConfig } from "./webhooks.js";
 
-const consoleLogger: SitepingLogger = {
+const consoleLogger: BeezpingLogger = {
   error(message, context) {
     console.error(message, context);
   },
@@ -31,7 +31,7 @@ const consoleLogger: SitepingLogger = {
  * `logger`, made safe to call anywhere: a throw, or a rejection of what it
  * returns — unhandled, fatal in Node by default — falls back to `console.error`.
  */
-function safeLogger(logger: SitepingLogger): SitepingLogger {
+function safeLogger(logger: BeezpingLogger): BeezpingLogger {
   return {
     error(message, context) {
       try {
@@ -52,7 +52,7 @@ type BodyOperation<Principal> = (scope: Scope<Principal>, body: unknown) => Prom
  */
 function routeByBody<Principal>(
   pipeline: Pipeline<Principal>,
-  method: SitepingHttpMethod,
+  method: BeezpingHttpMethod,
   commentKey: "feedbackId" | "commentId",
   comment: BodyOperation<Principal>,
   feedback: BodyOperation<Principal>,
@@ -67,7 +67,7 @@ function routeByBody<Principal>(
 }
 
 /**
- * Create the SitePing HTTP API over any `SitepingStore`, using only the Fetch
+ * Create the Beezping HTTP API over any `BeezpingStore`, using only the Fetch
  * API (`Request` → `Response`): one handler per method, to mount in Next.js
  * route handlers, Hono, Remix, SvelteKit, Bun, Deno or edge workers.
  *
@@ -77,7 +77,7 @@ function routeByBody<Principal>(
  * the widget typically calls it from unauthenticated browser contexts.
  *
  * Access is either the built-in `apiKey` policy or your own `access` policy
- * (sessions, JWTs, roles…) — see `SitepingAccessHandlerOptions`.
+ * (sessions, JWTs, roles…) — see `BeezpingAccessHandlerOptions`.
  *
  * @throws Error without a `store`; with a `maxBodyBytes` that is not a
  * positive integer, or a webhook `timeoutMs` no timer holds; in production
@@ -86,28 +86,28 @@ function routeByBody<Principal>(
  * PATCH/DELETE could then reach a record of a project the caller is not
  * authorized for.
  *
- * @example Next.js App Router — `app/api/siteping/route.ts`
+ * @example Next.js App Router — `app/api/beezping/route.ts`
  * ```ts
- * import { createSitepingHandler } from '@beezping/server'
- * import { store } from '@/lib/siteping-store'
+ * import { createBeezpingHandler } from '@beezping/server'
+ * import { store } from '@/lib/beezping-store'
  *
- * export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
+ * export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({
  *   store,
- *   apiKey: process.env.SITEPING_API_KEY,
+ *   apiKey: process.env.BEEZPING_API_KEY,
  * })
  * ```
  */
-export function createSitepingHandler<Principal extends SitepingPrincipal>(
-  options: SitepingAccessHandlerOptions<Principal>,
-): SitepingHandler;
-export function createSitepingHandler(options: SitepingApiKeyHandlerOptions): SitepingHandler;
+export function createBeezpingHandler<Principal extends BeezpingPrincipal>(
+  options: BeezpingAccessHandlerOptions<Principal>,
+): BeezpingHandler;
+export function createBeezpingHandler(options: BeezpingApiKeyHandlerOptions): BeezpingHandler;
 /** Options assembled at runtime, either policy. */
-export function createSitepingHandler<Principal extends SitepingPrincipal>(
-  options: SitepingHandlerOptions<Principal>,
-): SitepingHandler;
-export function createSitepingHandler<Principal extends SitepingPrincipal>(
-  options: SitepingHandlerOptions<Principal>,
-): SitepingHandler {
+export function createBeezpingHandler<Principal extends BeezpingPrincipal>(
+  options: BeezpingHandlerOptions<Principal>,
+): BeezpingHandler;
+export function createBeezpingHandler<Principal extends BeezpingPrincipal>(
+  options: BeezpingHandlerOptions<Principal>,
+): BeezpingHandler {
   // Both policies share the callbacks, typed over `Principal` (`null` under apiKey).
   const {
     store,
@@ -121,13 +121,13 @@ export function createSitepingHandler<Principal extends SitepingPrincipal>(
     logger: customLogger,
     describeError,
     maxBodyBytes = DEFAULT_MAX_BODY_BYTES,
-  } = options as SitepingHandlerBaseOptions<Principal>;
+  } = options as BeezpingHandlerBaseOptions<Principal>;
   if (!store) {
-    throw new Error("[siteping] createSitepingHandler requires a `store`.");
+    throw new Error("[beezping] createBeezpingHandler requires a `store`.");
   }
   if (!Number.isSafeInteger(maxBodyBytes) || maxBodyBytes <= 0) {
     throw new Error(
-      `[siteping] createSitepingHandler: \`maxBodyBytes\` must be a positive integer, got ${maxBodyBytes}.`,
+      `[beezping] createBeezpingHandler: \`maxBodyBytes\` must be a positive integer, got ${maxBodyBytes}.`,
     );
   }
   // A custom `authorize` may scope callers to projects, but PATCH/DELETE
@@ -135,7 +135,7 @@ export function createSitepingHandler<Principal extends SitepingPrincipal>(
   // claims (and is authorized for) need not be the record's. Fail closed.
   if (options.access?.authorize && !store.verifyProjectOwnership) {
     throw new Error(
-      "[siteping] createSitepingHandler: `access.authorize` needs a store implementing `verifyProjectOwnership`. " +
+      "[beezping] createBeezpingHandler: `access.authorize` needs a store implementing `verifyProjectOwnership`. " +
         "Without it, a caller authorized for one project could PATCH or DELETE another project's feedback by id.",
     );
   }

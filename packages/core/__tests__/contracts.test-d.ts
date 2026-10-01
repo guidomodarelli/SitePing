@@ -18,6 +18,9 @@ import {
 } from "../src/index.js";
 import type {
   AnnotationResponse,
+  BeezpingCapabilities,
+  BeezpingConfig,
+  BeezpingStore,
   COMMENT_AUTHOR_ROLES,
   CommentAuthorRole,
   CommentCreateInput,
@@ -31,40 +34,37 @@ import type {
   FeedbackResponse,
   FeedbackResponseList,
   FeedbackUpdateInput,
-  SitepingCapabilities,
-  SitepingConfig,
-  SitepingStore,
 } from "../src/types.js";
 
-declare const store: SitepingStore;
+declare const store: BeezpingStore;
 
-describe("SitepingConfig discriminated union", () => {
+describe("BeezpingConfig discriminated union", () => {
   it("accepts each mode on its own", () => {
-    expectTypeOf({ projectName: "p", endpoint: "/api/siteping" }).toExtend<SitepingConfig>();
-    expectTypeOf({ projectName: "p", endpoint: "/api", apiKey: "k" }).toExtend<SitepingConfig>();
-    expectTypeOf({ projectName: "p", store }).toExtend<SitepingConfig>();
+    expectTypeOf({ projectName: "p", endpoint: "/api/beezping" }).toExtend<BeezpingConfig>();
+    expectTypeOf({ projectName: "p", endpoint: "/api", apiKey: "k" }).toExtend<BeezpingConfig>();
+    expectTypeOf({ projectName: "p", store }).toExtend<BeezpingConfig>();
   });
 
   it("rejects invalid mode combinations", () => {
     // @ts-expect-error — neither endpoint nor store: no union arm matches
-    const neither: SitepingConfig = { projectName: "p" };
+    const neither: BeezpingConfig = { projectName: "p" };
     void neither;
 
     // @ts-expect-error — endpoint and store are mutually exclusive
-    const both: SitepingConfig = { projectName: "p", endpoint: "/api", store };
+    const both: BeezpingConfig = { projectName: "p", endpoint: "/api", store };
     void both;
 
     // @ts-expect-error — apiKey is HTTP-mode only
-    const storeWithApiKey: SitepingConfig = { projectName: "p", store, apiKey: "leaked" };
+    const storeWithApiKey: BeezpingConfig = { projectName: "p", store, apiKey: "leaked" };
     void storeWithApiKey;
   });
 
   it("takes readOnly in both modes — a shared option, outside the union", () => {
-    expectTypeOf({ projectName: "p", endpoint: "/api", readOnly: true }).toExtend<SitepingConfig>();
-    expectTypeOf({ projectName: "p", store, readOnly: true }).toExtend<SitepingConfig>();
+    expectTypeOf({ projectName: "p", endpoint: "/api", readOnly: true }).toExtend<BeezpingConfig>();
+    expectTypeOf({ projectName: "p", store, readOnly: true }).toExtend<BeezpingConfig>();
 
     // @ts-expect-error — a flag, not a list of actions
-    const granular: SitepingConfig = { projectName: "p", store, readOnly: ["delete"] };
+    const granular: BeezpingConfig = { projectName: "p", store, readOnly: ["delete"] };
     void granular;
   });
 });
@@ -123,8 +123,8 @@ describe("wire types derived from record types", () => {
   });
 
   it("advertises capabilities on the list, optional for servers that predate them", () => {
-    expectTypeOf<FeedbackResponseList["capabilities"]>().toEqualTypeOf<SitepingCapabilities | undefined>();
-    expectTypeOf<SitepingCapabilities>().toEqualTypeOf<{ comments: boolean; deleteComments?: boolean | undefined }>();
+    expectTypeOf<FeedbackResponseList["capabilities"]>().toEqualTypeOf<BeezpingCapabilities | undefined>();
+    expectTypeOf<BeezpingCapabilities>().toEqualTypeOf<{ comments: boolean; deleteComments?: boolean | undefined }>();
   });
 
   it("keeps the requester's permissions off the record, optional for servers that predate them", () => {
@@ -153,23 +153,23 @@ describe("discussion threads", () => {
   });
 
   it("keeps addComment and deleteComment optional for minimal adapters", () => {
-    expectTypeOf<SitepingStore["addComment"]>().toEqualTypeOf<
+    expectTypeOf<BeezpingStore["addComment"]>().toEqualTypeOf<
       ((feedbackId: string, data: CommentCreateInput) => Promise<CommentRecord>) | undefined
     >();
-    expectTypeOf<SitepingStore["deleteComment"]>().toEqualTypeOf<
+    expectTypeOf<BeezpingStore["deleteComment"]>().toEqualTypeOf<
       ((feedbackId: string, commentId: string) => Promise<void>) | undefined
     >();
     expectTypeOf<Omit<CollectionStore, "addComment" | "deleteComment">>().toExtend<CollectionStore>();
   });
 });
 
-describe("SitepingStore contract", () => {
+describe("BeezpingStore contract", () => {
   it("is satisfied by the collection-store engine, including its optional members", () => {
     const engine = createCollectionStore({ load: () => [], persist: () => {}, generateId: () => "id", comments: true });
-    expectTypeOf(engine).toExtend<SitepingStore>();
+    expectTypeOf(engine).toExtend<BeezpingStore>();
     expectTypeOf(engine).toExtend<
       Required<
-        Pick<SitepingStore, "verifyProjectOwnership" | "createFeedbackIfAbsent" | "addComment" | "deleteComment">
+        Pick<BeezpingStore, "verifyProjectOwnership" | "createFeedbackIfAbsent" | "addComment" | "deleteComment">
       >
     >();
     expectTypeOf(engine.verifyProjectOwnership).returns.resolves.toEqualTypeOf<boolean>();
@@ -178,13 +178,13 @@ describe("SitepingStore contract", () => {
 
   it("guarantees threads only to an engine that opts in", () => {
     const threadless = createCollectionStore({ load: () => [], persist: () => {}, generateId: () => "id" });
-    expectTypeOf(threadless).toExtend<SitepingStore>();
-    expectTypeOf(threadless.addComment).toEqualTypeOf<SitepingStore["addComment"]>();
-    expectTypeOf(threadless.deleteComment).toEqualTypeOf<SitepingStore["deleteComment"]>();
+    expectTypeOf(threadless).toExtend<BeezpingStore>();
+    expectTypeOf(threadless.addComment).toEqualTypeOf<BeezpingStore["addComment"]>();
+    expectTypeOf(threadless.deleteComment).toEqualTypeOf<BeezpingStore["deleteComment"]>();
   });
 
   it("keeps createFeedbackIfAbsent optional for minimal adapters", () => {
-    expectTypeOf<SitepingStore["createFeedbackIfAbsent"]>().toEqualTypeOf<
+    expectTypeOf<BeezpingStore["createFeedbackIfAbsent"]>().toEqualTypeOf<
       ((data: FeedbackCreateInput) => Promise<FeedbackCreateOutcome>) | undefined
     >();
   });
@@ -194,7 +194,7 @@ describe("SitepingStore contract", () => {
   });
 
   it("keeps verifyProjectOwnership optional for minimal adapters", () => {
-    expectTypeOf<SitepingStore["verifyProjectOwnership"]>().toEqualTypeOf<
+    expectTypeOf<BeezpingStore["verifyProjectOwnership"]>().toEqualTypeOf<
       ((id: string, projectName: string) => Promise<boolean>) | undefined
     >();
   });

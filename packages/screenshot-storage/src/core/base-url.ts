@@ -37,12 +37,12 @@ function trimTrailingSlashes(value: string): string {
  */
 export function normalizeBaseUrl(value: string, option: string): string {
   const url = parseHttpUrl(value);
-  if (!url) throw new Error(`[siteping] ${option} must be an absolute http(s) URL`);
+  if (!url) throw new Error(`[beezping] ${option} must be an absolute http(s) URL`);
   if (url.username || url.password) {
-    throw new Error(`[siteping] ${option} must not contain credentials (user:password@)`);
+    throw new Error(`[beezping] ${option} must not contain credentials (user:password@)`);
   }
   if (value.includes("?") || value.includes("#")) {
-    throw new Error(`[siteping] ${option} must not contain a query or a fragment (? or #)`);
+    throw new Error(`[beezping] ${option} must not contain a query or a fragment (? or #)`);
   }
   return trimTrailingSlashes(`${url.origin}${url.pathname}`);
 }
@@ -72,7 +72,7 @@ function isLoopbackHostname(hostname: string): boolean {
 export function warnUnlessHttps(base: string, option: string): void {
   if (base.startsWith("https://") || isLoopbackHostname(new URL(base).hostname)) return;
   console.warn(
-    `[siteping] ${option} "${base}" is neither https nor on this machine: the widget's panel will not show ` +
+    `[beezping] ${option} "${base}" is neither https nor on this machine: the widget's panel will not show ` +
       "its screenshots, and a dashboard served over https blocks them as mixed content.",
   );
 }

@@ -10,14 +10,14 @@ npm i @beezping/dashboard
 ```
 
 ```tsx
-import { SitepingInbox } from "@beezping/dashboard";
+import { BeezpingInbox } from "@beezping/dashboard";
 
 export function Triage() {
   return (
-    <SitepingInbox
+    <BeezpingInbox
       projects="my-project"
-      endpoint="https://my-site.com/api/siteping"
-      apiKey={process.env.NEXT_PUBLIC_SITEPING_KEY}
+      endpoint="https://my-site.com/api/beezping"
+      apiKey={process.env.NEXT_PUBLIC_BEEZPING_KEY}
       theme="auto"
     />
   );
@@ -28,7 +28,7 @@ It works with React 18 and 19, ships ESM and CJS, and has zero dependencies besi
 
 ## Props
 
-`SitepingInbox` accepts every [`useSitepingInbox` option](/docs/dashboard/headless) plus these presentation props:
+`BeezpingInbox` accepts every [`useBeezpingInbox` option](/docs/dashboard/headless) plus these presentation props:
 
 | Prop | Type | Default | What it does |
 |---|---|---|---|
@@ -36,7 +36,7 @@ It works with React 18 and 19, ships ESM and CJS, and has zero dependencies besi
 | `accentColor` | `string` | `"#0066ff"` | Hex only; every accent shade derives from this one value. See [Theming](/docs/dashboard/theming) |
 | `density` | `"comfortable"` \| `"compact"` | `"comfortable"` | Row height 44 px vs 36 px |
 | `locale` | `string` | `"en"` | Any BCP-47 tag — see [Languages](#languages) |
-| `deepLinkParam` | `string` | `"siteping"` | Query param used by "Open on page" links; must match the widget's `deepLink` param |
+| `deepLinkParam` | `string` | `"beezping"` | Query param used by "Open on page" links; must match the widget's `deepLink` param |
 | `emptyState` | `ReactNode` | — | Custom node for the "no feedback in this project yet" state only — the inbox-zero and no-filter-match states keep their defaults |
 | `className` | `string` | — | Appended to the root element's classes |
 
@@ -67,7 +67,7 @@ Four statuses: `open`, `in_progress`, `resolved`, `wont_fix`. The dashboard can 
 The drawer shows the opened feedback's thread — the reviewer's replies from the widget, your team's from here. Pass `author` to reply and delete from the inbox:
 
 ```tsx
-<SitepingInbox projects="my-project" endpoint="/api/siteping" apiKey={KEY} author={{ name: "Alex" }} />
+<BeezpingInbox projects="my-project" endpoint="/api/beezping" apiKey={KEY} author={{ name: "Alex" }} />
 ```
 
 Without `author`, threads are read-only. Replies ask for the `team` role, which your server grants only to callers it trusts — the details are in [Discussion threads](/docs/comments#in-the-dashboard).
@@ -77,7 +77,7 @@ Without `author`, threads are read-only. Replies ask for the `team` role, which 
 `readOnly` hides status changes and deletions, of feedbacks and of replies — for a stakeholder who follows the inbox, and replies when `author` is set:
 
 ```tsx
-<SitepingInbox projects="my-project" endpoint="/api/siteping" readOnly />
+<BeezpingInbox projects="my-project" endpoint="/api/beezping" readOnly />
 ```
 
 The inbox also follows what the server says each requester may do with each feedback — its [`permissions`](/docs/server#what-each-requester-may-do). The drawer shows the status as text when it may not change and leaves out the delete when it may not be deleted, `e` / `p` / `x` skip such a feedback, and the hints leave the status keys out when no listed feedback allows a change. It only hides: the server decides what it accepts.
@@ -92,7 +92,7 @@ The dashboard also accepts custom locales at runtime:
 import { registerLocale } from "@beezping/dashboard";
 
 registerLocale("nl", { "status.open": "Open", "status.resolved": "Opgelost" });
-// later: <SitepingInbox locale="nl" ... />
+// later: <BeezpingInbox locale="nl" ... />
 ```
 
 **Partial dictionaries are accepted** — any key you leave out falls back to English on its own, so correcting a single label doesn't mean maintaining the whole catalog. Two rules the implementation enforces: register under the **base language code** (`"nl"`, not `"nl-BE"` — lookups normalize to the base), and call `registerLocale` **before the inbox mounts**. The widget's `registerLocale` works the same way against [its own key set](/docs/widget/i18n).

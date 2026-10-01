@@ -5,14 +5,14 @@
  * never exercises the server side. This one wires the widget and the
  * dashboard to the real thing — built dists, no mocks:
  *
- *   /api/siteping   → `createSitepingHandler` (adapter-prisma) over a
+ *   /api/beezping   → `createBeezpingHandler` (adapter-prisma) over a
  *                     `MemoryStore` (adapter-memory): real schema validation,
  *                     replay detection, webhooks, status/resolvedAt pairing.
- *   /api/siteping-keyed → the same store behind `apiKey: "e2e-key"`, reads
+ *   /api/beezping-keyed → the same store behind `apiKey: "e2e-key"`, reads
  *                     and submissions left public: what a visitor and the
  *                     key holder are each allowed to do.
  *   /               → a page running the widget in HTTP mode against it.
- *   /inbox          → `<SitepingInbox />` (dashboard) against the same API,
+ *   /inbox          → `<BeezpingInbox />` (dashboard) against the same API,
  *                     bundled with esbuild at startup.
  *   /__e2e/webhook  → generic-webhook receiver; GET /__e2e/webhooks lists
  *                     what it received, for assertions.
@@ -38,7 +38,7 @@ const pkg = (name) => join(root, "packages", name);
 
 // Workspace packages use isolated installs: resolve each dist by path, and
 // its own dependencies (zod, react, esbuild) from the package that owns them.
-const { createSitepingHandler } = await import(pathToFileURL(join(pkg("adapter-prisma"), "dist/index.js")).href);
+const { createBeezpingHandler } = await import(pathToFileURL(join(pkg("adapter-prisma"), "dist/index.js")).href);
 const { MemoryStore } = await import(pathToFileURL(join(pkg("adapter-memory"), "dist/index.js")).href);
 const esbuild = createRequire(join(pkg("widget"), "package.json"))("esbuild");
 
@@ -46,7 +46,7 @@ const store = new MemoryStore();
 /** Bodies received by the generic webhook, in arrival order. */
 const webhookLog = [];
 
-const handler = createSitepingHandler({
+const handler = createBeezpingHandler({
   store,
   // Same posture as the demo app: no apiKey, destructive methods left open
   // so the dashboard (PATCH/DELETE) works without auth plumbing.
@@ -55,7 +55,7 @@ const handler = createSitepingHandler({
 });
 
 // A public site: visitors read and submit, only the key holder triages.
-const keyedHandler = createSitepingHandler({
+const keyedHandler = createBeezpingHandler({
   store,
   apiKey: "e2e-key",
   publicEndpoints: ["GET", "POST", "OPTIONS"],
@@ -69,11 +69,11 @@ const inboxBundle = (
       contents: `
         import { createElement } from "react";
         import { createRoot } from "react-dom/client";
-        import { SitepingInbox } from ${JSON.stringify(join(pkg("dashboard"), "dist/index.js"))};
+        import { BeezpingInbox } from ${JSON.stringify(join(pkg("dashboard"), "dist/index.js"))};
         const params = new URLSearchParams(location.search);
         createRoot(document.getElementById("root")).render(
-          createElement(SitepingInbox, {
-            endpoint: params.get("endpoint") ?? "/api/siteping",
+          createElement(BeezpingInbox, {
+            endpoint: params.get("endpoint") ?? "/api/beezping",
             projects: [params.get("project") ?? "e2e-stack"],
             apiKey: params.get("apiKey") ?? undefined,
             locale: "en",
@@ -98,7 +98,7 @@ function widgetPage(params) {
   const rtl = params.get("rtl") === "1";
   const diag = Number(params.get("diag"));
   const config = {
-    endpoint: params.get("endpoint") ?? "/api/siteping",
+    endpoint: params.get("endpoint") ?? "/api/beezping",
     projectName: project,
     forceShow: true,
     // Skips the identity modal — the submission path is what's under test.
@@ -109,7 +109,7 @@ function widgetPage(params) {
 <html lang="en"${rtl ? ' dir="rtl"' : ""}>
 <head>
   <meta charset="UTF-8">
-  <title>Siteping real-stack E2E</title>
+  <title>Beezping real-stack E2E</title>
   <style>
     body { font-family: system-ui; margin: 0; padding: 40px; }
     #target-element { background: #e8f4ff; padding: 40px; width: 600px; }
@@ -124,8 +124,8 @@ function widgetPage(params) {
   <div style="height: 1500px"></div>
   <script>globalThis.process = { env: { NODE_ENV: "test" } };</script>
   <script type="module">
-    import { initSiteping } from "/widget.js";
-    window.__siteping = initSiteping(${scriptSafeJson(config)});
+    import { initBeezping } from "/widget.js";
+    window.__beezping = initBeezping(${scriptSafeJson(config)});
   </script>
 </body>
 </html>`;
@@ -133,7 +133,7 @@ function widgetPage(params) {
 
 const INBOX_PAGE = `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><title>Siteping inbox E2E</title></head>
+<head><meta charset="UTF-8"><title>Beezping inbox E2E</title></head>
 <body style="margin:0"><div id="root" style="height:100vh"></div><script type="module" src="/inbox.js"></script></body>
 </html>`;
 
@@ -164,8 +164,8 @@ async function callHandler(api, req, res, url) {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", ORIGIN);
   try {
-    if (url.pathname === "/api/siteping") return await callHandler(handler, req, res, url);
-    if (url.pathname === "/api/siteping-keyed") return await callHandler(keyedHandler, req, res, url);
+    if (url.pathname === "/api/beezping") return await callHandler(handler, req, res, url);
+    if (url.pathname === "/api/beezping-keyed") return await callHandler(keyedHandler, req, res, url);
 
     if (url.pathname === "/__e2e/webhook" && req.method === "POST") {
       webhookLog.push(JSON.parse((await readBody(req)).toString("utf-8")));

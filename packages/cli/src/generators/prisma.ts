@@ -2,7 +2,7 @@
 import "../utils/object-group-by-polyfill.js";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve } from "node:path";
-import { type FieldDef, type IndexDef, SITEPING_MODELS, type SitepingModelName } from "@beezping/core";
+import { BEEZPING_MODELS, type BeezpingModelName, type FieldDef, type IndexDef } from "@beezping/core";
 import type {
   Attribute,
   AttributeArgument,
@@ -27,7 +27,7 @@ export interface FieldChange {
   detail: string;
 }
 
-/** What reconciling a schema with `SITEPING_MODELS` had to change — empty means up to date. */
+/** What reconciling a schema with `BEEZPING_MODELS` had to change — empty means up to date. */
 export interface SchemaReconciliation {
   addedModels: string[];
   changes: FieldChange[];
@@ -38,21 +38,21 @@ export interface SyncResult extends SchemaReconciliation {
 }
 
 /**
- * Sync Siteping models into an existing Prisma schema.
+ * Sync Beezping models into an existing Prisma schema.
  *
  * Uses prisma-ast for AST-level manipulation (no regex/string concat).
  * - Missing models are created
  * - Missing fields are added
  * - Fields with wrong type/optional/attributes are updated (user-owned parts kept)
- * - User-added fields outside Siteping's definition are left untouched
+ * - User-added fields outside Beezping's definition are left untouched
  */
 export function syncPrismaModels(schemaPath: string = DEFAULT_SCHEMA_PATH): SyncResult {
   const [main, ...siblings] = loadSchemaFiles(schemaPath);
-  // In a schema folder the Siteping models can live in any file: only the
+  // In a schema folder the Beezping models can live in any file: only the
   // files whose printed form changed are written back.
   const files = [main, ...siblings];
   const before = files.map((file) => printPreservingDocs(file.schema));
-  const { addedModels, changes } = reconcileSitepingModels(
+  const { addedModels, changes } = reconcileBeezpingModels(
     main.schema,
     siblings.map((file) => file.schema),
   );
@@ -70,7 +70,7 @@ export function syncPrismaModels(schemaPath: string = DEFAULT_SCHEMA_PATH): Sync
 /** What `sync` would change in the schema at `schemaPath` — nothing is written. */
 export function diffPrismaSchema(schemaPath: string): SchemaReconciliation {
   const [main, ...siblings] = loadSchemaFiles(schemaPath);
-  return reconcileSitepingModels(
+  return reconcileBeezpingModels(
     main.schema,
     siblings.map((file) => file.schema),
   );
@@ -99,7 +99,7 @@ interface SchemaFile {
 /**
  * The parsed files of the schema at `schemaPath`, that file first. In a
  * multi-file schema folder (`prisma/schema/`, which `findPrismaSchema`
- * detects) Prisma merges every `.prisma` file under it, so a Siteping model in
+ * detects) Prisma merges every `.prisma` file under it, so a Beezping model in
  * a sibling file has to be found there rather than added again. A package
  * root is never such a folder, even one named `schema`.
  */
@@ -192,7 +192,7 @@ function readSchemaSource(schemaPath: string): string {
 }
 
 /**
- * Reconcile a parsed Prisma schema with the Siteping model definitions,
+ * Reconcile a parsed Prisma schema with the Beezping model definitions,
  * updating the AST in place, and report what had to change. This is the one
  * definition of "up to date" — `sync` writes the reconciled schema back,
  * `status` only reads the report — so both commands agree on type,
@@ -203,7 +203,7 @@ function readSchemaSource(schemaPath: string): string {
  * the datasource are looked up there too (and updated in place); missing
  * models are added to `schema`.
  */
-function reconcileSitepingModels(schema: Schema, siblings: readonly Schema[]): SchemaReconciliation {
+function reconcileBeezpingModels(schema: Schema, siblings: readonly Schema[]): SchemaReconciliation {
   const existingModelsMap = new Map<string, Model>();
   for (const item of [...siblings, schema].flatMap((file) => file.list)) {
     if (item.type === "model") {
@@ -213,14 +213,14 @@ function reconcileSitepingModels(schema: Schema, siblings: readonly Schema[]): S
 
   const provider = [schema, ...siblings].map((file) => datasourceProvider(file)).find((p) => p !== undefined);
   // A multi-schema datasource needs `@@schema` on every model: a model sync
-  // adds goes to the database schema the existing Siteping models live in.
-  const databaseSchema = Object.keys(SITEPING_MODELS)
+  // adds goes to the database schema the existing Beezping models live in.
+  const databaseSchema = Object.keys(BEEZPING_MODELS)
     .flatMap((name) => existingModelsMap.get(name)?.properties ?? [])
     .find((p): p is BlockAttribute => p.type === "attribute" && (p as BlockAttribute).name === "schema");
   const addedModels: string[] = [];
   const changes: FieldChange[] = [];
 
-  for (const [modelName, modelDef] of Object.entries(SITEPING_MODELS)) {
+  for (const [modelName, modelDef] of Object.entries(BEEZPING_MODELS)) {
     const existingModel = existingModelsMap.get(modelName);
 
     if (!existingModel) {
@@ -311,7 +311,7 @@ function reconcileSitepingModels(schema: Schema, siblings: readonly Schema[]): S
   return { addedModels, changes };
 }
 
-// ── User-owned parts of a Siteping field ───────────────────────────────
+// ── User-owned parts of a Beezping field ───────────────────────────────
 // The column name (`@map`), the relation name and its `onUpdate`, constraint
 // names (`map:` arguments) and the field's comment belong to the user: they're
 // never compared, and a rewrite carries them over. Dropping a `@map` makes
@@ -343,7 +343,7 @@ function isRelationName(attr: Attribute, arg: AttributeArgument): boolean {
 
 /**
  * A constraint name, the relation name, or the relation's `onUpdate` —
- * Siteping never sets it (its ids never change), while SQL Server may need
+ * Beezping never sets it (its ids never change), while SQL Server may need
  * `NoAction` there to break a cycle of cascade paths.
  */
 function isUserOwnedArg(attr: Attribute, arg: AttributeArgument): boolean {
@@ -353,10 +353,10 @@ function isUserOwnedArg(attr: Attribute, arg: AttributeArgument): boolean {
 
 /**
  * The attributes `sync` owns on a field — user-owned ones left out. A
- * `@relation` that only carries a name says nothing Siteping owns, so it's
- * left out too (`annotations SitepingAnnotation[] @relation("X")` is up to date).
+ * `@relation` that only carries a name says nothing Beezping owns, so it's
+ * left out too (`annotations BeezpingAnnotation[] @relation("X")` is up to date).
  */
-function sitepingAttributes(field: Field): Attribute[] {
+function beezpingAttributes(field: Field): Attribute[] {
   return (field.attributes ?? []).filter(
     (attr) =>
       !isUserOwnedAttribute(attr) && !(isRelation(attr) && (attr.args ?? []).every((arg) => isUserOwnedArg(attr, arg))),
@@ -411,7 +411,7 @@ function printValue(value: unknown): string {
 }
 
 /**
- * Canonical form of a Siteping-owned attribute — name plus arguments, so a
+ * Canonical form of a Beezping-owned attribute — name plus arguments, so a
  * removed `onDelete: Cascade` or a `@default(uuid())` counts as drift. User-owned
  * arguments are left out; keyed arguments are order-insensitive, so they're sorted.
  */
@@ -424,14 +424,14 @@ function attrKey(attr: Attribute): string {
   return printed.length > 0 ? `${name}(${printed.join(", ")})` : name;
 }
 
-/** Check if two fields have the same type, optionality, and Siteping-owned attributes. */
+/** Check if two fields have the same type, optionality, and Beezping-owned attributes. */
 function fieldsMatch(existing: Field, expected: Field): boolean {
   if (existing.fieldType !== expected.fieldType) return false;
   if ((existing.optional ?? false) !== (expected.optional ?? false)) return false;
   if ((existing.array ?? false) !== (expected.array ?? false)) return false;
 
-  const existingAttrs = sitepingAttributes(existing).map(attrKey).sort();
-  const expectedAttrs = sitepingAttributes(expected).map(attrKey).sort();
+  const existingAttrs = beezpingAttributes(existing).map(attrKey).sort();
+  const expectedAttrs = beezpingAttributes(expected).map(attrKey).sort();
 
   if (existingAttrs.length !== expectedAttrs.length) return false;
   return existingAttrs.every((key, i) => key === expectedAttrs[i]);
@@ -448,8 +448,8 @@ function describeChange(existing: Field, expected: Field): string {
     parts.push(expected.optional ? "required \u2192 optional" : "optional \u2192 required");
   }
 
-  const existingAttrs = sitepingAttributes(existing).map(attrKey);
-  const expectedAttrs = sitepingAttributes(expected).map(attrKey);
+  const existingAttrs = beezpingAttributes(existing).map(attrKey);
+  const expectedAttrs = beezpingAttributes(expected).map(attrKey);
   const nameOf = (key: string) => key.split("(")[0];
   const removed = existingAttrs.filter((key) => !expectedAttrs.includes(key));
   for (const key of expectedAttrs) {
@@ -474,18 +474,18 @@ function formatFieldSignature(def: FieldDef): string {
 
 // ── Native types per connector ─────────────────────────────────────────
 
-type SitepingFieldDef = {
-  [M in SitepingModelName]: (typeof SITEPING_MODELS)[M]["fields"][keyof (typeof SITEPING_MODELS)[M]["fields"]];
-}[SitepingModelName];
+type BeezpingFieldDef = {
+  [M in BeezpingModelName]: (typeof BEEZPING_MODELS)[M]["fields"][keyof (typeof BEEZPING_MODELS)[M]["fields"]];
+}[BeezpingModelName];
 
 /**
- * Connectors that accept each native type the Siteping models use — typed
- * off `SITEPING_MODELS`, so a new `nativeType` there needs an entry here.
+ * Connectors that accept each native type the Beezping models use — typed
+ * off `BEEZPING_MODELS`, so a new `nativeType` there needs an entry here.
  * SQLite, CockroachDB and MongoDB reject `@db.Text` ("Native type Text is not
  * supported"); their plain `String` is unbounded already.
  */
 const NATIVE_TYPE_PROVIDERS: Record<
-  Extract<SitepingFieldDef, { nativeType: string }>["nativeType"],
+  Extract<BeezpingFieldDef, { nativeType: string }>["nativeType"],
   ReadonlySet<string>
 > = {
   Text: new Set(["postgresql", "postgres", "mysql", "sqlserver"]),

@@ -5,8 +5,8 @@ import { buildDeepLink } from "../format.js";
 import { createT, getStatusLabel, loadLocale, tWithParams } from "../i18n/index.js";
 import { ensureStyles } from "../inject-styles.js";
 import { normalizeAccent, resolveInitialTheme, watchSystemTheme } from "../theme.js";
-import type { SitepingInboxProps } from "../types.js";
-import { useSitepingInbox } from "../use-inbox.js";
+import type { BeezpingInboxProps } from "../types.js";
+import { useBeezpingInbox } from "../use-inbox.js";
 import type { InboxUiContextValue } from "./context.js";
 import { InboxUiProvider } from "./context.js";
 import { Drawer } from "./drawer.js";
@@ -30,21 +30,21 @@ function toastStatusLabel(label: string, locale: string): string {
 }
 
 /**
- * Linear-style triage inbox for SitePing feedback.
+ * Linear-style triage inbox for Beezping feedback.
  *
  * Renders in plain DOM (no Shadow DOM) with all styles scoped under
  * `.spd-root`. Keyboard-first: j/k navigate, Enter opens, e/p/x change
  * status, u undoes, "?" shows the full cheat sheet — the status keys only
  * where the user may change a status.
  */
-export function SitepingInbox(props: SitepingInboxProps): ReactElement {
+export function BeezpingInbox(props: BeezpingInboxProps): ReactElement {
   const {
     accentColor,
     theme: themePref = "auto",
     density = "comfortable",
     locale = "en",
     className,
-    deepLinkParam = "siteping",
+    deepLinkParam = "beezping",
     emptyState,
   } = props;
 
@@ -84,7 +84,7 @@ export function SitepingInbox(props: SitepingInboxProps): ReactElement {
   // ----- data hook. Failure toasts come from each mutation's own rejection
   // (runMutation), never from onError: onError also fires for loads, and
   // mutations overlap — shared flags mixed their outcomes up.
-  const state = useSitepingInbox(props);
+  const state = useBeezpingInbox(props);
 
   /** Run a mutation; returns true when it succeeded, toasts the rollback when it didn't. */
   const runMutation = useCallback(

@@ -1,65 +1,65 @@
 import { describe, expect, it } from "vitest";
-import { SitepingAuthError, SitepingError, SitepingNetworkError, SitepingValidationError } from "../src/errors.js";
+import { BeezpingAuthError, BeezpingError, BeezpingNetworkError, BeezpingValidationError } from "../src/errors.js";
 import { StoreLimitError, StoreNotFoundError } from "../src/types.js";
 import { errorFromResponse, isCommentGone, isThreadFull } from "../src/wire.js";
 
-describe("SitepingError (base)", () => {
+describe("BeezpingError (base)", () => {
   it("constructs with explicit code and retryable flag", () => {
-    const err = new SitepingError("boom", "CUSTOM", true);
+    const err = new BeezpingError("boom", "CUSTOM", true);
     expect(err.message).toBe("boom");
     expect(err.code).toBe("CUSTOM");
     expect(err.retryable).toBe(true);
-    expect(err.name).toBe("SitepingError");
+    expect(err.name).toBe("BeezpingError");
   });
 
   it("is an Error subclass — instanceof Error", () => {
-    const err = new SitepingError("x", "X", false);
+    const err = new BeezpingError("x", "X", false);
     expect(err).toBeInstanceOf(Error);
   });
 
   it("retryable can be explicitly false", () => {
-    const err = new SitepingError("nope", "NOPE", false);
+    const err = new BeezpingError("nope", "NOPE", false);
     expect(err.retryable).toBe(false);
   });
 });
 
-describe("SitepingNetworkError", () => {
+describe("BeezpingNetworkError", () => {
   it("has code NETWORK and is retryable", () => {
-    const err = new SitepingNetworkError("connection refused");
+    const err = new BeezpingNetworkError("connection refused");
     expect(err.code).toBe("NETWORK");
     expect(err.retryable).toBe(true);
-    expect(err.name).toBe("SitepingNetworkError");
+    expect(err.name).toBe("BeezpingNetworkError");
   });
 
-  it("is instanceof SitepingError", () => {
-    const err = new SitepingNetworkError("x");
-    expect(err).toBeInstanceOf(SitepingError);
+  it("is instanceof BeezpingError", () => {
+    const err = new BeezpingNetworkError("x");
+    expect(err).toBeInstanceOf(BeezpingError);
   });
 
   it("preserves the message", () => {
-    const err = new SitepingNetworkError("timed out after 10s");
+    const err = new BeezpingNetworkError("timed out after 10s");
     expect(err.message).toBe("timed out after 10s");
   });
 });
 
-describe("SitepingValidationError", () => {
+describe("BeezpingValidationError", () => {
   it("has code VALIDATION and is not retryable", () => {
-    const err = new SitepingValidationError("bad shape");
+    const err = new BeezpingValidationError("bad shape");
     expect(err.code).toBe("VALIDATION");
     expect(err.retryable).toBe(false);
-    expect(err.name).toBe("SitepingValidationError");
+    expect(err.name).toBe("BeezpingValidationError");
   });
 
-  it("is instanceof SitepingError", () => {
-    const err = new SitepingValidationError("x");
-    expect(err).toBeInstanceOf(SitepingError);
+  it("is instanceof BeezpingError", () => {
+    const err = new BeezpingValidationError("x");
+    expect(err).toBeInstanceOf(BeezpingError);
   });
 
   it("carries the HTTP status a response gave it", async () => {
     const err = await errorFromResponse(new Response("{}", { status: 409 }), "Failed");
-    expect(err).toBeInstanceOf(SitepingValidationError);
-    expect((err as SitepingValidationError).status).toBe(409);
-    expect(new SitepingValidationError("x").status).toBeUndefined();
+    expect(err).toBeInstanceOf(BeezpingValidationError);
+    expect((err as BeezpingValidationError).status).toBe(409);
+    expect(new BeezpingValidationError("x").status).toBeUndefined();
   });
 });
 
@@ -99,25 +99,25 @@ describe("thread failures", () => {
   });
 });
 
-describe("SitepingAuthError", () => {
+describe("BeezpingAuthError", () => {
   it("has code AUTH and is not retryable", () => {
-    const err = new SitepingAuthError("401", 401);
+    const err = new BeezpingAuthError("401", 401);
     expect(err.code).toBe("AUTH");
     expect(err.retryable).toBe(false);
-    expect(err.name).toBe("SitepingAuthError");
+    expect(err.name).toBe("BeezpingAuthError");
   });
 
-  it("is instanceof SitepingError", () => {
-    const err = new SitepingAuthError("x", 403);
-    expect(err).toBeInstanceOf(SitepingError);
+  it("is instanceof BeezpingError", () => {
+    const err = new BeezpingAuthError("x", 403);
+    expect(err).toBeInstanceOf(BeezpingError);
   });
 
-  it("is distinguishable from SitepingValidationError despite both not retryable", () => {
-    const auth = new SitepingAuthError("401", 401);
-    const validation = new SitepingValidationError("400");
-    expect(auth).toBeInstanceOf(SitepingAuthError);
-    expect(auth).not.toBeInstanceOf(SitepingValidationError);
-    expect(validation).toBeInstanceOf(SitepingValidationError);
-    expect(validation).not.toBeInstanceOf(SitepingAuthError);
+  it("is distinguishable from BeezpingValidationError despite both not retryable", () => {
+    const auth = new BeezpingAuthError("401", 401);
+    const validation = new BeezpingValidationError("400");
+    expect(auth).toBeInstanceOf(BeezpingAuthError);
+    expect(auth).not.toBeInstanceOf(BeezpingValidationError);
+    expect(validation).toBeInstanceOf(BeezpingValidationError);
+    expect(validation).not.toBeInstanceOf(BeezpingAuthError);
   });
 });

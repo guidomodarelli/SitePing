@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SITEPING_MODELS } from "../src/schema.js";
+import { BEEZPING_MODELS } from "../src/schema.js";
 import type { FeedbackStatus, FeedbackType } from "../src/types.js";
 import { CLOSED_FEEDBACK_STATUSES, FEEDBACK_STATUSES, FEEDBACK_TYPES, isClosedStatus } from "../src/types.js";
 
@@ -23,18 +23,18 @@ const VALID_PRISMA_TYPES = new Set([
 // Model structure
 // ---------------------------------------------------------------------------
 
-describe("SITEPING_MODELS structure", () => {
-  it("contains exactly 3 models: SitepingFeedback, SitepingAnnotation and SitepingComment", () => {
-    expect(Object.keys(SITEPING_MODELS)).toEqual(["SitepingFeedback", "SitepingAnnotation", "SitepingComment"]);
+describe("BEEZPING_MODELS structure", () => {
+  it("contains exactly 3 models: BeezpingFeedback, BeezpingAnnotation and BeezpingComment", () => {
+    expect(Object.keys(BEEZPING_MODELS)).toEqual(["BeezpingFeedback", "BeezpingAnnotation", "BeezpingComment"]);
   });
 });
 
 // ---------------------------------------------------------------------------
-// SitepingFeedback model
+// BeezpingFeedback model
 // ---------------------------------------------------------------------------
 
-describe("SitepingFeedback model", () => {
-  const model = SITEPING_MODELS.SitepingFeedback;
+describe("BeezpingFeedback model", () => {
+  const model = BEEZPING_MODELS.BeezpingFeedback;
   const fields = model.fields;
 
   it("has all expected fields", () => {
@@ -108,17 +108,17 @@ describe("SitepingFeedback model", () => {
     expect(fields.updatedAt.isUpdatedAt).toBe(true);
   });
 
-  it("annotations is a 1-to-many relation to SitepingAnnotation", () => {
-    expect(fields.annotations.type).toBe("SitepingAnnotation");
+  it("annotations is a 1-to-many relation to BeezpingAnnotation", () => {
+    expect(fields.annotations.type).toBe("BeezpingAnnotation");
     expect(fields.annotations.relation).toBeDefined();
     expect(fields.annotations.relation!.kind).toBe("1-to-many");
-    expect(fields.annotations.relation!.model).toBe("SitepingAnnotation");
+    expect(fields.annotations.relation!.model).toBe("BeezpingAnnotation");
   });
 
-  it("comments is a 1-to-many relation to SitepingComment", () => {
-    expect(fields.comments.type).toBe("SitepingComment");
+  it("comments is a 1-to-many relation to BeezpingComment", () => {
+    expect(fields.comments.type).toBe("BeezpingComment");
     expect(fields.comments.relation.kind).toBe("1-to-many");
-    expect(fields.comments.relation.model).toBe("SitepingComment");
+    expect(fields.comments.relation.model).toBe("BeezpingComment");
   });
 
   it("has @@index([projectName]) for project-scoped queries", () => {
@@ -141,11 +141,11 @@ describe("SitepingFeedback model", () => {
 });
 
 // ---------------------------------------------------------------------------
-// SitepingAnnotation model
+// BeezpingAnnotation model
 // ---------------------------------------------------------------------------
 
-describe("SitepingAnnotation model", () => {
-  const model = SITEPING_MODELS.SitepingAnnotation;
+describe("BeezpingAnnotation model", () => {
+  const model = BEEZPING_MODELS.BeezpingAnnotation;
   const fields = model.fields;
 
   it("has all expected fields", () => {
@@ -185,11 +185,11 @@ describe("SitepingAnnotation model", () => {
     expect(fields.id.default).toBe("cuid()");
   });
 
-  it("feedback is a many-to-1 relation to SitepingFeedback with Cascade delete", () => {
+  it("feedback is a many-to-1 relation to BeezpingFeedback with Cascade delete", () => {
     const rel = fields.feedback.relation;
     expect(rel).toBeDefined();
     expect(rel!.kind).toBe("many-to-1");
-    expect(rel!.model).toBe("SitepingFeedback");
+    expect(rel!.model).toBe("BeezpingFeedback");
     expect(rel!.fields).toEqual(["feedbackId"]);
     expect(rel!.references).toEqual(["id"]);
     expect(rel!.onDelete).toBe("Cascade");
@@ -237,11 +237,11 @@ describe("SitepingAnnotation model", () => {
 // ---------------------------------------------------------------------------
 // Field type validation
 // ---------------------------------------------------------------------------
-// SitepingComment model
+// BeezpingComment model
 // ---------------------------------------------------------------------------
 
-describe("SitepingComment model", () => {
-  const model = SITEPING_MODELS.SitepingComment;
+describe("BeezpingComment model", () => {
+  const model = BEEZPING_MODELS.BeezpingComment;
   const fields = model.fields;
 
   it("has all expected fields", () => {
@@ -258,10 +258,10 @@ describe("SitepingComment model", () => {
     ]);
   });
 
-  it("feedback is a many-to-1 relation to SitepingFeedback with Cascade delete", () => {
+  it("feedback is a many-to-1 relation to BeezpingFeedback with Cascade delete", () => {
     expect(fields.feedback.relation).toEqual({
       kind: "many-to-1",
-      model: "SitepingFeedback",
+      model: "BeezpingFeedback",
       fields: ["feedbackId"],
       references: ["id"],
       onDelete: "Cascade",
@@ -282,7 +282,7 @@ describe("SitepingComment model", () => {
 // ---------------------------------------------------------------------------
 
 describe("Field type validity", () => {
-  for (const [modelName, modelDef] of Object.entries(SITEPING_MODELS)) {
+  for (const [modelName, modelDef] of Object.entries(BEEZPING_MODELS)) {
     it(`all non-relation fields in ${modelName} use valid Prisma types`, () => {
       for (const [fieldName, fieldDef] of Object.entries(modelDef.fields)) {
         if (fieldDef.relation) continue;
@@ -294,12 +294,12 @@ describe("Field type validity", () => {
     });
   }
 
-  for (const [modelName, modelDef] of Object.entries(SITEPING_MODELS)) {
+  for (const [modelName, modelDef] of Object.entries(BEEZPING_MODELS)) {
     it(`relation fields in ${modelName} reference existing models`, () => {
       for (const [fieldName, fieldDef] of Object.entries(modelDef.fields)) {
         if (!fieldDef.relation) continue;
         expect(
-          SITEPING_MODELS,
+          BEEZPING_MODELS,
           `${modelName}.${fieldName} references non-existent model "${fieldDef.relation.model}"`,
         ).toHaveProperty(fieldDef.relation.model);
       }

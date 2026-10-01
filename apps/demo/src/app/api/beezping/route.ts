@@ -1,13 +1,13 @@
-import { createSitepingHandler } from "@beezping/server";
+import { createBeezpingHandler } from "@beezping/server";
 import { memoryStore } from "@/lib/memory-store";
 
 // Webhook notifications — uncomment to ping Slack/Discord on each new feedback.
 // (Self-hosted demos: drop your incoming webhook URL into the env and you're done.)
 //
-// const SLACK_WEBHOOK = process.env.SITEPING_SLACK_WEBHOOK;
-// const DISCORD_WEBHOOK = process.env.SITEPING_DISCORD_WEBHOOK;
+// const SLACK_WEBHOOK = process.env.BEEZPING_SLACK_WEBHOOK;
+// const DISCORD_WEBHOOK = process.env.BEEZPING_DISCORD_WEBHOOK;
 
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({
   store: memoryStore,
   // Demo only: everyone can wipe the in-memory store. Never do this on a
   // real deployment — set `apiKey` instead.

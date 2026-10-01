@@ -1,15 +1,15 @@
-import type { FeedbackQuery, FeedbackStatus, FeedbackUpdateInput, SitepingStore } from "@beezping/core";
+import type { BeezpingStore, FeedbackQuery, FeedbackStatus, FeedbackUpdateInput } from "@beezping/core";
 import {
+  BeezpingAuthError,
+  BeezpingNetworkError,
+  BeezpingValidationError,
   createCollectionStore,
-  SitepingAuthError,
-  SitepingNetworkError,
-  SitepingValidationError,
 } from "@beezping/core";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { createEndpointSource, createStoreSource } from "../../src/source.js";
 import { errorFetch, jsonFetch, makeAnnotationResponse, makeRecord, makeResponse } from "../helpers.js";
 
-const ENDPOINT = "https://app.example/api/siteping";
+const ENDPOINT = "https://app.example/api/beezping";
 
 function lastCall(fetchFn: Mock<typeof fetch>): { url: string; init: RequestInit } {
   const [url, init] = fetchFn.mock.calls.at(-1) as [string, RequestInit];
@@ -299,17 +299,17 @@ describe("createEndpointSource — addComment() & removeComment()", () => {
 
   it("maps a refusal to its typed error", async () => {
     const source = createEndpointSource({ endpoint: ENDPOINT, fetchFn: errorFetch(403) });
-    await expect(source.addComment?.("fb-1", "demo", input)).rejects.toBeInstanceOf(SitepingAuthError);
-    await expect(source.removeComment?.("fb-1", "demo", "c-1")).rejects.toBeInstanceOf(SitepingAuthError);
+    await expect(source.addComment?.("fb-1", "demo", input)).rejects.toBeInstanceOf(BeezpingAuthError);
+    await expect(source.removeComment?.("fb-1", "demo", "c-1")).rejects.toBeInstanceOf(BeezpingAuthError);
   });
 });
 
 describe("createEndpointSource — error mapping", () => {
   it.each([
-    [401, SitepingAuthError],
-    [403, SitepingAuthError],
-    [400, SitepingValidationError],
-    [422, SitepingValidationError],
+    [401, BeezpingAuthError],
+    [403, BeezpingAuthError],
+    [400, BeezpingValidationError],
+    [422, BeezpingValidationError],
   ])("maps %i to the right typed error", async (status, ctor) => {
     const source = createEndpointSource({ endpoint: ENDPOINT, fetchFn: errorFetch(status) });
     await expect(source.list({ projectName: "demo" })).rejects.toBeInstanceOf(ctor);
@@ -324,7 +324,7 @@ describe("createEndpointSource — error mapping", () => {
     },
   );
 
-  it("maps 5xx to SitepingError with code SERVER (not retryable)", async () => {
+  it("maps 5xx to BeezpingError with code SERVER (not retryable)", async () => {
     const source = createEndpointSource({ endpoint: ENDPOINT, fetchFn: errorFetch(500, "kaboom") });
     await expect(source.list({ projectName: "demo" })).rejects.toMatchObject({
       code: "SERVER",
@@ -353,16 +353,16 @@ describe("createEndpointSource — error mapping", () => {
     await expect(source.list({ projectName: "demo" })).rejects.toThrow(/: 500$/);
   });
 
-  it("wraps a fetch rejection in SitepingNetworkError", async () => {
+  it("wraps a fetch rejection in BeezpingNetworkError", async () => {
     const fetchFn = vi.fn(async () => {
       throw new TypeError("Failed to fetch");
     });
     const source = createEndpointSource({ endpoint: ENDPOINT, fetchFn });
-    await expect(source.list({ projectName: "demo" })).rejects.toBeInstanceOf(SitepingNetworkError);
+    await expect(source.list({ projectName: "demo" })).rejects.toBeInstanceOf(BeezpingNetworkError);
   });
 
-  it("passes an existing SitepingNetworkError through unchanged", async () => {
-    const original = new SitepingNetworkError("already network");
+  it("passes an existing BeezpingNetworkError through unchanged", async () => {
+    const original = new BeezpingNetworkError("already network");
     const fetchFn = vi.fn(async () => {
       throw original;
     });
@@ -401,7 +401,7 @@ describe("createStoreSource", () => {
       createFeedback: vi.fn(),
       findByClientId: vi.fn(),
       deleteAllFeedbacks: vi.fn(),
-    } as unknown as SitepingStore & {
+    } as unknown as BeezpingStore & {
       getFeedbacks: ReturnType<typeof vi.fn>;
       updateFeedback: ReturnType<typeof vi.fn>;
       deleteFeedback: ReturnType<typeof vi.fn>;

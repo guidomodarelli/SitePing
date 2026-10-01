@@ -1,9 +1,9 @@
-import type { SitepingConfig } from "@beezping/core";
+import type { BeezpingConfig } from "@beezping/core";
 import { parseSvg, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { registerEscapeLayer } from "./host-isolation.js";
 import { type TFunction, type Translations, tWithParams } from "./i18n/index.js";
-import { ICON_CLOSE, ICON_EDIT, ICON_EYE, ICON_EYE_OFF, ICON_LIST, ICON_SITEPING } from "./icons.js";
+import { ICON_BEEZPING, ICON_CLOSE, ICON_EDIT, ICON_EYE, ICON_EYE_OFF, ICON_LIST } from "./icons.js";
 import { isCoarsePointer } from "./viewport.js";
 
 /** Closed set of radial menu item ids — keeps the label lookup exhaustive. */
@@ -46,7 +46,7 @@ export class Fab {
 
   constructor(
     shadowRoot: ShadowRoot,
-    config: SitepingConfig,
+    config: BeezpingConfig,
     private readonly bus: EventBus<WidgetEvents>,
     private readonly t: TFunction,
   ) {
@@ -71,7 +71,7 @@ export class Fab {
     this.fab = document.createElement("button");
     this.fab.className = `sp-fab sp-fab--${position} sp-anim-fab-in`;
     this.fab.style.position = "fixed"; // ensure fixed even with relative children
-    this.fab.appendChild(parseSvg(ICON_SITEPING));
+    this.fab.appendChild(parseSvg(ICON_BEEZPING));
     this.fab.setAttribute("aria-expanded", "false");
     this.fab.addEventListener("click", () => this.toggle());
 
@@ -258,7 +258,7 @@ export class Fab {
 
   private close(): void {
     this.isOpen = false;
-    this.setFabIcon(ICON_SITEPING);
+    this.setFabIcon(ICON_BEEZPING);
     this.fab.setAttribute("aria-expanded", "false");
     this.scrim.classList.remove("sp-scrim--open");
 

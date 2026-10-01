@@ -3,7 +3,7 @@ title: Theming
 description: Scoped styles, CSS variables, and the correct way to override them.
 ---
 
-The dashboard uses **no Shadow DOM** — it's your app's DOM, styled by one stylesheet injected as `<style id="siteping-inbox-styles">` into `document.head` on first mount (shared across instances, SSR-safe). Every selector is scoped under `.spd-root`, nothing uses `!important`, and all responsive behavior is driven by **container queries** — the inbox adapts to the width of the box you put it in, not the viewport. Below 960 px of container width, the detail drawer becomes a focus-trapped overlay; above, it docks side-by-side.
+The dashboard uses **no Shadow DOM** — it's your app's DOM, styled by one stylesheet injected as `<style id="beezping-inbox-styles">` into `document.head` on first mount (shared across instances, SSR-safe). Every selector is scoped under `.spd-root`, nothing uses `!important`, and all responsive behavior is driven by **container queries** — the inbox adapts to the width of the box you put it in, not the viewport. Below 960 px of container width, the detail drawer becomes a focus-trapped overlay; above, it docks side-by-side.
 
 > CSP note: the injected stylesheet requires `style-src` to allow it (a `'self'`-only policy without `'unsafe-inline'` or a nonce will block it).
 
@@ -12,7 +12,7 @@ The dashboard uses **no Shadow DOM** — it's your app's DOM, styled by one styl
 Set it with the prop — it's applied as an inline CSS variable, so a stylesheet rule can't override it:
 
 ```tsx
-<SitepingInbox accentColor="#7c3aed" ... />
+<BeezpingInbox accentColor="#7c3aed" ... />
 ```
 
 Hex only (`#RGB`, `#RRGGBB`, `#RRGGBBAA`); anything else warns and falls back to `#0066ff`. Every accent shade in the UI is a `color-mix()` derivation of this single value.

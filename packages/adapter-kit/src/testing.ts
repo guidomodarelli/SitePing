@@ -1,16 +1,16 @@
 /**
- * The `SitepingStore` conformance suite, published for third-party adapter
+ * The `BeezpingStore` conformance suite, published for third-party adapter
  * authors (requires `vitest` — an optional peer dependency of this
  * package).
  *
  * @example
  * ```ts
- * import { testSitepingStore } from "@beezping/adapter-kit/testing";
+ * import { testBeezpingStore } from "@beezping/adapter-kit/testing";
  * import { DrizzleStore } from "../src/index.js";
  *
- * testSitepingStore(() => new DrizzleStore(db));
+ * testBeezpingStore(() => new DrizzleStore(db));
  * ```
  */
 
 export type { StoreConformanceOptions } from "@beezping/core/testing";
-export { testSitepingStore } from "@beezping/core/testing";
+export { testBeezpingStore } from "@beezping/core/testing";

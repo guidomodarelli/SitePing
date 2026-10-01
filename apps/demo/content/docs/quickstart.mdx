@@ -30,7 +30,7 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 npx @beezping/cli init
 ```
 
-Confirm both prompts: the CLI adds the SitePing models to your Prisma schema and generates the API route (`app/api/siteping/route.ts`, or under `src/app/` if that's your layout). Then push the schema to your database:
+Confirm both prompts: the CLI adds the Beezping models to your Prisma schema and generates the API route (`app/api/beezping/route.ts`, or under `src/app/` if that's your layout). Then push the schema to your database:
 
 ```bash
 npx prisma db push
@@ -42,24 +42,24 @@ npx prisma generate   # Prisma 7 no longer runs it from db push
 ```tsx
 // Anywhere client-side — e.g. your root layout
 "use client";
-import { useSiteping } from "@beezping/widget/react";
+import { useBeezping } from "@beezping/widget/react";
 
 export function Feedback() {
-  useSiteping({ endpoint: "/api/siteping", projectName: "my-project" });
+  useBeezping({ endpoint: "/api/beezping", projectName: "my-project" });
   return null;
 }
 ```
 
-Run your dev server and look bottom-right: the SitePing button is there. Draw a rectangle on anything, type a comment, hit Send.
+Run your dev server and look bottom-right: the Beezping button is there. Draw a rectangle on anything, type a comment, hit Send.
 
 By default the widget shows in development but **never in production builds** — that's the point: clients review on dev/staging URLs. For a staging environment that builds in production mode, pass `forceShow: true`.
 
 ### 4. Triage what comes in
 
 ```tsx
-import { SitepingInbox } from "@beezping/dashboard";
+import { BeezpingInbox } from "@beezping/dashboard";
 
-<SitepingInbox projects="my-project" endpoint="/api/siteping" theme="auto" />
+<BeezpingInbox projects="my-project" endpoint="/api/beezping" theme="auto" />
 ```
 
 That's the whole loop. From here: [widget options](/docs/widget/configuration) · [screenshots](/docs/widget/screenshots) · [auth & security](/docs/server#the-security-model-honestly).
@@ -73,10 +73,10 @@ npm i @beezping/widget @beezping/adapter-localstorage
 ```
 
 ```ts
-import { initSiteping } from "@beezping/widget";
+import { initBeezping } from "@beezping/widget";
 import { LocalStorageStore } from "@beezping/adapter-localstorage";
 
-initSiteping({
+initBeezping({
   store: new LocalStorageStore(),
   projectName: "my-demo",
   forceShow: true,

@@ -25,7 +25,7 @@ Il tourne sur Node 20+, Bun, Deno et les runtimes edge : le client S3 signe ses 
 Chaque entrée exporte un **object store**, qui ne fait que déplacer des octets. `createScreenshotStorage` l'enveloppe dans le `ScreenshotStorage` qu'accepte votre store :
 
 ```ts
-// lib/siteping-screenshots.ts
+// lib/beezping-screenshots.ts
 import { createScreenshotStorage } from "@beezping/screenshot-storage";
 import { createS3ObjectStore } from "@beezping/screenshot-storage/s3";
 
@@ -36,17 +36,17 @@ export const screenshotStorage = createScreenshotStorage(objectStore);
 Puis passez-le à votre store :
 
 ```ts
-// Prisma : app/api/siteping/route.ts
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({ prisma, screenshotStorage });
+// Prisma : app/api/beezping/route.ts
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({ prisma, screenshotStorage });
 
 // Drizzle
-const store = createPgSitepingStore(db, { screenshotStorage, logger: console });
+const store = createPgBeezpingStore(db, { screenshotStorage, logger: console });
 ```
 
 `createScreenshotStorage` fait le travail commun à tous les backends :
 
 - Il valide l'URL `data:` avant tout accès réseau ou disque : un type d'image autorisé, puis sa taille.
-- Il stocke chaque envoi sous une clé aléatoire neuve (`siteping-<32 caractères hexadécimaux>.<extension>`) : deux feedbacks ne partagent jamais une URL, et le `clientId` du client n'entre jamais dans une clé. C'est la [règle de propriété des URL](/fr/docs/adapters/prisma#stockage-des-captures) sur laquelle s'appuient les stores quand ils suppriment des captures.
+- Il stocke chaque envoi sous une clé aléatoire neuve (`beezping-<32 caractères hexadécimaux>.<extension>`) : deux feedbacks ne partagent jamais une URL, et le `clientId` du client n'entre jamais dans une clé. C'est la [règle de propriété des URL](/fr/docs/adapters/prisma#stockage-des-captures) sur laquelle s'appuient les stores quand ils suppriment des captures.
 - Il supprime un envoi dont l'issue est inconnue (voir [plus bas](#envois-à-lissue-incertaine)).
 - `delete` ne supprime que [les objets qu'il a créés](#ce-que-supprime-delete).
 
@@ -60,7 +60,7 @@ import { createS3ObjectStore } from "@beezping/screenshot-storage/s3";
 // Cloudflare R2, servi depuis le domaine personnalisé du bucket
 export const objectStore = createS3ObjectStore({
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  bucket: "siteping-screenshots",
+  bucket: "beezping-screenshots",
   accessKeyId: process.env.R2_ACCESS_KEY_ID!,
   secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
   publicBaseUrl: "https://screenshots.example.com",
@@ -72,7 +72,7 @@ export const objectStore = createS3ObjectStore({
 export const objectStore = createS3ObjectStore({
   endpoint: "https://s3.eu-west-3.amazonaws.com",
   region: "eu-west-3",
-  bucket: "siteping-screenshots",
+  bucket: "beezping-screenshots",
   accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   sessionToken: process.env.AWS_SESSION_TOKEN, // identifiants temporaires uniquement
@@ -109,7 +109,7 @@ Ne donnez à la clé accès qu'à votre bucket et, sur AWS, limitez-la au préfi
     {
       "Effect": "Allow",
       "Action": ["s3:PutObject", "s3:DeleteObject", "s3:GetObject"],
-      "Resource": "arn:aws:s3:::siteping-screenshots/siteping-*"
+      "Resource": "arn:aws:s3:::beezping-screenshots/beezping-*"
     }
   ]
 }
@@ -138,28 +138,28 @@ Cloudflare n'autorise pas les URL signées pour les images à identifiant person
 Les backends système de fichiers, base de données et mémoire n'ont pas d'URL publique à eux, pas plus qu'un bucket privé. `createScreenshotServeHandler` les sert depuis une route de votre app, et `publicBaseUrl` pointe vers cette route :
 
 ```ts
-// lib/siteping-screenshots.ts
+// lib/beezping-screenshots.ts
 import { createScreenshotStorage } from "@beezping/screenshot-storage";
 import { createFilesystemObjectStore } from "@beezping/screenshot-storage/filesystem";
 
 export const objectStore = createFilesystemObjectStore({
-  directory: "/var/lib/siteping/screenshots", // créé s'il n'existe pas
-  publicBaseUrl: "https://app.example.com/api/siteping/screenshots",
+  directory: "/var/lib/beezping/screenshots", // créé s'il n'existe pas
+  publicBaseUrl: "https://app.example.com/api/beezping/screenshots",
 });
 export const screenshotStorage = createScreenshotStorage(objectStore);
 ```
 
 ```ts
-// app/api/siteping/screenshots/[key]/route.ts
+// app/api/beezping/screenshots/[key]/route.ts
 import { createScreenshotServeHandler } from "@beezping/screenshot-storage";
-import { objectStore } from "@/lib/siteping-screenshots";
+import { objectStore } from "@/lib/beezping-screenshots";
 
 export const { GET } = createScreenshotServeHandler(objectStore);
 ```
 
 Le handler lit la clé dans le dernier segment du chemin de la requête. C'est une fonction `Request` → `Response` de l'API Fetch : elle se monte de la même façon dans Hono, Express ou un Worker.
 
-- **Seulement ses propres clés.** Il sert les clés de la forme `siteping-<32 caractères hexadécimaux>.<extension>`, sous son `keyPrefix` (par défaut `siteping-` : passez celui donné à `createScreenshotStorage`), et répond `404` à tout le reste avant toute lecture. Aucune requête ne peut atteindre un autre fichier du répertoire, les objets d'une autre app dans un bucket partagé, ni un chemin hors du store.
+- **Seulement ses propres clés.** Il sert les clés de la forme `beezping-<32 caractères hexadécimaux>.<extension>`, sous son `keyPrefix` (par défaut `beezping-` : passez celui donné à `createScreenshotStorage`), et répond `404` à tout le reste avant toute lecture. Aucune requête ne peut atteindre un autre fichier du répertoire, les objets d'une autre app dans un bucket partagé, ni un chemin hors du store.
 - **Des images inertes uniquement.** Chaque réponse porte `Content-Security-Policy: default-src 'none'; sandbox` et `X-Content-Type-Options: nosniff`. JPEG, PNG, WebP et les autres formats matriciels sont servis en ligne. Tout autre contenu du backend, comme un SVG ou du `text/html` arrivé par un autre chemin, part en téléchargement `application/octet-stream` : il ne s'exécute jamais comme une page de l'origine de votre app.
 - **Mises en cache pour de bon.** Les réponses sont en `Cache-Control: public, max-age=31536000, immutable`, avec la clé pour `ETag` fort.
 - **Derrière votre connexion.** Passez `authorize: (request, { key }) => boolean | Promise<boolean>` pour vérifier la requête (le même cookie de session que votre app, par exemple) : un refus répond `403`. Les réponses passent alors en `private, no-cache` : aucun cache partagé ne les garde, et le navigateur revérifie à chaque réutilisation, ce qui coûte un `304` sans lire l'objet. Une déconnexion ou un accès retiré s'applique aussitôt. Le navigateur n'envoie les cookies de votre app avec la requête `<img>` que si le widget tourne sur le même site que la route.
@@ -172,26 +172,26 @@ Pour un déploiement modeste ou autonome, les entrées Drizzle gardent les captu
 
 ```ts
 // db/schema.ts
-import { createSitepingScreenshotsPgTable } from "@beezping/screenshot-storage/drizzle-pg";
+import { createBeezpingScreenshotsPgTable } from "@beezping/screenshot-storage/drizzle-pg";
 
-export const sitepingScreenshots = createSitepingScreenshotsPgTable(); // "siteping_screenshots"
+export const beezpingScreenshots = createBeezpingScreenshotsPgTable(); // "beezping_screenshots"
 ```
 
 ```ts
-// lib/siteping-screenshots.ts
+// lib/beezping-screenshots.ts
 import { createScreenshotStorage } from "@beezping/screenshot-storage";
 import { createPgScreenshotObjectStore } from "@beezping/screenshot-storage/drizzle-pg";
-import { sitepingScreenshots } from "@/db/schema";
+import { beezpingScreenshots } from "@/db/schema";
 import { db } from "@/db";
 
 export const objectStore = createPgScreenshotObjectStore(db, {
-  publicBaseUrl: "https://app.example.com/api/siteping/screenshots",
-  table: sitepingScreenshots,
+  publicBaseUrl: "https://app.example.com/api/beezping/screenshots",
+  table: beezpingScreenshots,
 });
 export const screenshotStorage = createScreenshotStorage(objectStore);
 ```
 
-Migrez la table avec `drizzle-kit` comme le reste de votre schéma, et servez-la avec la route ci-dessus. Sur Turso / libSQL, utilisez `createSitepingScreenshotsSqliteTable` et `createLibSQLScreenshotObjectStore` de `@beezping/screenshot-storage/drizzle-libsql`. Les deux demandent `drizzle-orm` 0.45 ou plus (sous 1.0), une dépendance peer optionnelle. La table est indépendante de celles du store : `createSitepingScreenshotsPgTable("mon_nom")` la renomme, et vous la passez en `table`.
+Migrez la table avec `drizzle-kit` comme le reste de votre schéma, et servez-la avec la route ci-dessus. Sur Turso / libSQL, utilisez `createBeezpingScreenshotsSqliteTable` et `createLibSQLScreenshotObjectStore` de `@beezping/screenshot-storage/drizzle-libsql`. Les deux demandent `drizzle-orm` 0.45 ou plus (sous 1.0), une dépendance peer optionnelle. La table est indépendante de celles du store : `createBeezpingScreenshotsPgTable("mon_nom")` la renomme, et vous la passez en `table`.
 
 Une requête qui échoue (une table pas encore migrée, une base injoignable) lève une `ObjectStoreRequestError` qui nomme l'instruction et la clé. Sa `cause` est le code et le message de l'erreur du driver, jamais les paramètres de la requête : ils contiennent toute l'image, qui finirait sinon dans vos logs à chaque envoi en échec.
 
@@ -203,7 +203,7 @@ Une requête qui échoue (une table pas encore migrée, une base injoignable) l�
 |---|---|---|
 | `allowedContentTypes` | `["image/jpeg", "image/png", "image/webp"]` | Types d'image acceptés, sans tenir compte de la casse. SVG et les autres types à base XML sont refusés à la création du stockage, car ils peuvent exécuter des scripts une fois ouverts. Le handler HTTP n'accepte de toute façon que les trois types par défaut : des types en plus ne comptent que pour du code qui appelle le store directement |
 | `maxBytes` | `1125000` | Plus grande image décodée, en octets : ce que donne, une fois décodée, la limite de 1,5 million de caractères que le serveur impose à l'URL `data:`. La longueur brute de l'URL et celle de son base64 sont vérifiées avant tout décodage |
-| `keyPrefix` | `"siteping-"` | Préfixe des clés générées (minuscules, chiffres, `-`, `_`). Gardez-le distinctif dans un bucket partagé, et passez la même valeur à `createScreenshotServeHandler` |
+| `keyPrefix` | `"beezping-"` | Préfixe des clés générées (minuscules, chiffres, `-`, `_`). Gardez-le distinctif dans un bucket partagé, et passez la même valeur à `createScreenshotServeHandler` |
 | `logger` | `console.warn` | Reçoit les cas dégradés mais gérés : une suppression refusée, une récupération qui échoue, un `onUncertainUpload` qui échoue |
 | `onUncertainUpload` | — | `(key) => void \| Promise<void>` : voir plus bas |
 
@@ -223,7 +223,7 @@ Le stockage attend la suppression et le hook 2 secondes au plus, puis relance l'
 
 Un refus définitif n'a rien stocké et n'est pas récupéré : un `4xx`, comme des identifiants invalides, ou un `3xx`, comme le `301 PermanentRedirect` que renvoie AWS quand `endpoint` n'est pas la région du bucket. Seule exception, le refus d'une nouvelle tentative : quand une tentative précédente du même envoi a échoué sur une erreur réseau ou un `5xx`, elle a pu stocker l'objet. L'issue est alors incertaine, et la clé est récupérée comme décrit plus haut.
 
-Une règle de cycle de vie qui fait expirer `siteping-*` ne remplace pas ce mécanisme : elle ne distingue pas les orphelins des captures qu'un feedback affiche encore. Elle ne convient donc que si vous voulez de toute façon que les captures expirent après une durée de conservation.
+Une règle de cycle de vie qui fait expirer `beezping-*` ne remplace pas ce mécanisme : elle ne distingue pas les orphelins des captures qu'un feedback affiche encore. Elle ne convient donc que si vous voulez de toute façon que les captures expirent après une durée de conservation.
 
 ## Votre propre backend
 

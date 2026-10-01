@@ -1,5 +1,5 @@
 /**
- * The one email pattern every Siteping surface validates against.
+ * The one email pattern every Beezping surface validates against.
  *
  * The widget's identity modal and the HTTP handler's schema used to disagree
  * (a permissive regex on one side, an ASCII-only default on the other), so an
@@ -20,7 +20,7 @@
 export const EMAIL_PATTERN =
   /^(?!\.)(?!.*\.\.)[\p{L}\p{M}\p{N}!#$%&'*+/=?^_`{|}~.-]{0,63}[\p{L}\p{M}\p{N}!#$%&'*+/=?^_`{|}~-]@(?:[\p{L}\p{N}](?:[\p{L}\p{M}\p{N}-]{0,61}[\p{L}\p{M}\p{N}])?\.)+[\p{L}\p{N}][\p{L}\p{M}\p{N}-]{0,61}[\p{L}\p{M}\p{N}]$/u;
 
-/** Whether `value` is an email address Siteping accepts — see {@link EMAIL_PATTERN}. */
+/** Whether `value` is an email address Beezping accepts — see {@link EMAIL_PATTERN}. */
 export function isValidEmail(value: string): boolean {
   return EMAIL_PATTERN.test(value);
 }

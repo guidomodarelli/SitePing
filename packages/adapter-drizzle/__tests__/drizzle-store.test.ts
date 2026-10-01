@@ -15,9 +15,9 @@ import { withReplicas as withPgReplicas } from "drizzle-orm/pg-core";
 import { withReplicas as withSQLiteReplicas } from "drizzle-orm/sqlite-core";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { PROJECT_DELETE_CHUNK_SIZE } from "../src/constants/deletes.js";
-import { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../src/constants/table-names.js";
-import { createLibSQLSitepingStore, createSitepingSqliteTables } from "../src/libsql/index.js";
-import { createPgSitepingStore, createSitepingPgTables } from "../src/pg/index.js";
+import { type BeezpingTableNames, DEFAULT_BEEZPING_TABLE_NAMES } from "../src/constants/table-names.js";
+import { createBeezpingSqliteTables, createLibSQLBeezpingStore } from "../src/libsql/index.js";
+import { createBeezpingPgTables, createPgBeezpingStore } from "../src/pg/index.js";
 import type { DrizzleStore, DrizzleStoreOptions } from "../src/shared/store.js";
 import { createLibSQLTestDatabase, createPgTestDatabase, type DriverCallInterceptor } from "./databases.js";
 
@@ -28,7 +28,7 @@ const RESPONSE_SIZE_LIMIT_BYTES = 16 * 1024;
 const DATABASE_OPENING_TEST_TIMEOUT_MS = 30_000;
 /** Time the injected test clocks start at, far from the real wall clock. */
 const FROZEN_TIME_MS = Date.parse("2026-01-01T00:00:00.000Z");
-const CUSTOM_TABLE_NAMES: SitepingTableNames = {
+const CUSTOM_TABLE_NAMES: BeezpingTableNames = {
   feedbacks: "review_feedbacks",
   annotations: "review_annotations",
   comments: "review_comments",
@@ -103,19 +103,19 @@ function orderedAnnotations(count: number): FeedbackCreateInput["annotations"] {
 
 /** Whether a driver call carries the store's feedback insert (PostgreSQL wraps it in a CTE, libSQL may batch it). */
 function isFeedbackInsert(statementSql: string): boolean {
-  return statementSql.toLowerCase().includes(`insert into "${DEFAULT_SITEPING_TABLE_NAMES.feedbacks}"`);
+  return statementSql.toLowerCase().includes(`insert into "${DEFAULT_BEEZPING_TABLE_NAMES.feedbacks}"`);
 }
 
 /** Whether a driver call deletes feedback rows (libSQL batches it with the annotation delete). */
 function isFeedbackDelete(statementSql: string): boolean {
-  return statementSql.toLowerCase().includes(`delete from "${DEFAULT_SITEPING_TABLE_NAMES.feedbacks}"`);
+  return statementSql.toLowerCase().includes(`delete from "${DEFAULT_BEEZPING_TABLE_NAMES.feedbacks}"`);
 }
 
 /** Whether a driver call reads feedback rows. */
 function isFeedbackRead(statementSql: string): boolean {
   const normalizedSql = statementSql.toLowerCase();
   return (
-    normalizedSql.startsWith("select") && normalizedSql.includes(`from "${DEFAULT_SITEPING_TABLE_NAMES.feedbacks}"`)
+    normalizedSql.startsWith("select") && normalizedSql.includes(`from "${DEFAULT_BEEZPING_TABLE_NAMES.feedbacks}"`)
   );
 }
 
@@ -123,20 +123,20 @@ function isFeedbackRead(statementSql: string): boolean {
 function isAnnotationRead(statementSql: string): boolean {
   const normalizedSql = statementSql.toLowerCase();
   return (
-    normalizedSql.startsWith("select") && normalizedSql.includes(`from "${DEFAULT_SITEPING_TABLE_NAMES.annotations}"`)
+    normalizedSql.startsWith("select") && normalizedSql.includes(`from "${DEFAULT_BEEZPING_TABLE_NAMES.annotations}"`)
   );
 }
 
 /** Whether a driver call writes comment rows. */
 function isCommentWrite(statementSql: string): boolean {
   const normalizedSql = statementSql.toLowerCase();
-  const table = `"${DEFAULT_SITEPING_TABLE_NAMES.comments}"`;
+  const table = `"${DEFAULT_BEEZPING_TABLE_NAMES.comments}"`;
   return normalizedSql.includes(`insert into ${table}`) || normalizedSql.includes(`delete from ${table}`);
 }
 
 /** Whether a driver call updates feedback rows. */
 function isFeedbackUpdate(statementSql: string): boolean {
-  return statementSql.toLowerCase().includes(`update "${DEFAULT_SITEPING_TABLE_NAMES.feedbacks}"`);
+  return statementSql.toLowerCase().includes(`update "${DEFAULT_BEEZPING_TABLE_NAMES.feedbacks}"`);
 }
 
 /** Rows per insert of a bulk application import — keeps each statement below SQLite's bound-parameter limit. */
@@ -182,7 +182,7 @@ const REJECTED_WRITE_OPERATIONS = ["INSERT", "UPDATE", "DELETE"] as const;
 
 interface DialectUnderTest {
   name: string;
-  open(names?: SitepingTableNames): Promise<{
+  open(names?: BeezpingTableNames): Promise<{
     createStore(options?: DrizzleStoreOptions): DrizzleStore;
     /** A store on the same database, reached through a driver that caps response size. */
     createStoreBehindResponseSizeLimit(maxResponseBytes: number, options?: DrizzleStoreOptions): DrizzleStore;
@@ -228,43 +228,43 @@ const dialects: DialectUnderTest[] = [
     name: "PostgreSQL (PGlite)",
     async open(names) {
       const database = await createPgTestDatabase(names);
-      const tables = createSitepingPgTables(names);
+      const tables = createBeezpingPgTables(names);
       return {
-        createStore: (options) => createPgSitepingStore(database.db, { ...options, tables }),
+        createStore: (options) => createPgBeezpingStore(database.db, { ...options, tables }),
         createStoreBehindResponseSizeLimit: (maxResponseBytes, options) =>
-          createPgSitepingStore(database.withResponseSizeLimit(maxResponseBytes), { ...options, tables }),
+          createPgBeezpingStore(database.withResponseSizeLimit(maxResponseBytes), { ...options, tables }),
         createStoreWithDriverInterceptor: (intercept, options) =>
-          createPgSitepingStore(database.withDriverCallInterceptor(intercept), { ...options, tables }),
-        countAnnotations: async () => (await database.db.select().from(tables.sitepingAnnotations)).length,
-        countComments: async () => (await database.db.select().from(tables.sitepingComments)).length,
+          createPgBeezpingStore(database.withDriverCallInterceptor(intercept), { ...options, tables }),
+        countAnnotations: async () => (await database.db.select().from(tables.beezpingAnnotations)).length,
+        countComments: async () => (await database.db.select().from(tables.beezpingComments)).length,
         async writeAsApplication() {
-          await database.db.insert(tables.sitepingFeedbacks).values(applicationFeedbackRow());
-          await database.db.update(tables.sitepingFeedbacks).set({ authorName: "Edited by the application" });
+          await database.db.insert(tables.beezpingFeedbacks).values(applicationFeedbackRow());
+          await database.db.update(tables.beezpingFeedbacks).set({ authorName: "Edited by the application" });
         },
         async insertFeedbackAsApplication(row) {
-          await database.db.insert(tables.sitepingFeedbacks).values(row);
+          await database.db.insert(tables.beezpingFeedbacks).values(row);
         },
         async insertFeedbacksAsApplication(rows) {
           for (let start = 0; start < rows.length; start += APPLICATION_INSERT_BATCH_SIZE) {
             await database.db
-              .insert(tables.sitepingFeedbacks)
+              .insert(tables.beezpingFeedbacks)
               .values(rows.slice(start, start + APPLICATION_INSERT_BATCH_SIZE));
           }
         },
         async reverseAnnotationStorageOrder() {
-          const rows = await database.db.select().from(tables.sitepingAnnotations);
-          await database.db.delete(tables.sitepingAnnotations);
-          for (const row of rows.reverse()) await database.db.insert(tables.sitepingAnnotations).values(row);
+          const rows = await database.db.select().from(tables.beezpingAnnotations);
+          await database.db.delete(tables.beezpingAnnotations);
+          for (const row of rows.reverse()) await database.db.insert(tables.beezpingAnnotations).values(row);
         },
         async reverseCommentStorageOrder() {
-          const rows = await database.db.select().from(tables.sitepingComments);
-          await database.db.delete(tables.sitepingComments);
-          for (const row of rows.reverse()) await database.db.insert(tables.sitepingComments).values(row);
+          const rows = await database.db.select().from(tables.beezpingComments);
+          await database.db.delete(tables.beezpingComments);
+          for (const row of rows.reverse()) await database.db.insert(tables.beezpingComments).values(row);
         },
         async foldMessageCaseAsciiOnly() {
           const alterMessageCollation = (collation: string) =>
             database.db.execute(
-              sql`ALTER TABLE ${tables.sitepingFeedbacks} ALTER COLUMN ${sql.identifier(tables.sitepingFeedbacks.message.name)} TYPE text COLLATE ${sql.identifier(collation)}`,
+              sql`ALTER TABLE ${tables.beezpingFeedbacks} ALTER COLUMN ${sql.identifier(tables.beezpingFeedbacks.message.name)} TYPE text COLLATE ${sql.identifier(collation)}`,
             );
           await alterMessageCollation("C");
           return async () => {
@@ -286,10 +286,10 @@ const dialects: DialectUnderTest[] = [
             sql`CREATE FUNCTION skip_feedback_delete() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END $$`,
           );
           await database.db.execute(
-            sql`CREATE TRIGGER skip_feedback_delete BEFORE DELETE ON ${tables.sitepingFeedbacks} FOR EACH ROW EXECUTE FUNCTION skip_feedback_delete()`,
+            sql`CREATE TRIGGER skip_feedback_delete BEFORE DELETE ON ${tables.beezpingFeedbacks} FOR EACH ROW EXECUTE FUNCTION skip_feedback_delete()`,
           );
           return async () => {
-            await database.db.execute(sql`DROP TRIGGER skip_feedback_delete ON ${tables.sitepingFeedbacks}`);
+            await database.db.execute(sql`DROP TRIGGER skip_feedback_delete ON ${tables.beezpingFeedbacks}`);
             await database.db.execute(sql`DROP FUNCTION skip_feedback_delete()`);
           };
         },
@@ -302,38 +302,38 @@ const dialects: DialectUnderTest[] = [
     name: "libSQL (Turso)",
     async open(names) {
       const database = await createLibSQLTestDatabase(names);
-      const tables = createSitepingSqliteTables(names);
+      const tables = createBeezpingSqliteTables(names);
       return {
-        createStore: (options) => createLibSQLSitepingStore(database.db, { ...options, tables }),
+        createStore: (options) => createLibSQLBeezpingStore(database.db, { ...options, tables }),
         createStoreBehindResponseSizeLimit: (maxResponseBytes, options) =>
-          createLibSQLSitepingStore(database.withResponseSizeLimit(maxResponseBytes), { ...options, tables }),
+          createLibSQLBeezpingStore(database.withResponseSizeLimit(maxResponseBytes), { ...options, tables }),
         createStoreWithDriverInterceptor: (intercept, options) =>
-          createLibSQLSitepingStore(database.withDriverCallInterceptor(intercept), { ...options, tables }),
-        countAnnotations: async () => (await database.db.select().from(tables.sitepingAnnotations)).length,
-        countComments: async () => (await database.db.select().from(tables.sitepingComments)).length,
+          createLibSQLBeezpingStore(database.withDriverCallInterceptor(intercept), { ...options, tables }),
+        countAnnotations: async () => (await database.db.select().from(tables.beezpingAnnotations)).length,
+        countComments: async () => (await database.db.select().from(tables.beezpingComments)).length,
         async writeAsApplication() {
-          await database.db.insert(tables.sitepingFeedbacks).values(applicationFeedbackRow());
-          await database.db.update(tables.sitepingFeedbacks).set({ authorName: "Edited by the application" });
+          await database.db.insert(tables.beezpingFeedbacks).values(applicationFeedbackRow());
+          await database.db.update(tables.beezpingFeedbacks).set({ authorName: "Edited by the application" });
         },
         async insertFeedbackAsApplication(row) {
-          await database.db.insert(tables.sitepingFeedbacks).values(row);
+          await database.db.insert(tables.beezpingFeedbacks).values(row);
         },
         async insertFeedbacksAsApplication(rows) {
           for (let start = 0; start < rows.length; start += APPLICATION_INSERT_BATCH_SIZE) {
             await database.db
-              .insert(tables.sitepingFeedbacks)
+              .insert(tables.beezpingFeedbacks)
               .values(rows.slice(start, start + APPLICATION_INSERT_BATCH_SIZE));
           }
         },
         async reverseAnnotationStorageOrder() {
-          const rows = await database.db.select().from(tables.sitepingAnnotations);
-          await database.db.delete(tables.sitepingAnnotations);
-          for (const row of rows.reverse()) await database.db.insert(tables.sitepingAnnotations).values(row);
+          const rows = await database.db.select().from(tables.beezpingAnnotations);
+          await database.db.delete(tables.beezpingAnnotations);
+          for (const row of rows.reverse()) await database.db.insert(tables.beezpingAnnotations).values(row);
         },
         async reverseCommentStorageOrder() {
-          const rows = await database.db.select().from(tables.sitepingComments);
-          await database.db.delete(tables.sitepingComments);
-          for (const row of rows.reverse()) await database.db.insert(tables.sitepingComments).values(row);
+          const rows = await database.db.select().from(tables.beezpingComments);
+          await database.db.delete(tables.beezpingComments);
+          for (const row of rows.reverse()) await database.db.insert(tables.beezpingComments).values(row);
         },
         async foldMessageCaseAsciiOnly() {
           return async () => {};
@@ -345,7 +345,7 @@ const dialects: DialectUnderTest[] = [
           };
         },
         async rejectFeedbackWrites() {
-          const feedbackTable = sql.identifier(getTableName(tables.sitepingFeedbacks));
+          const feedbackTable = sql.identifier(getTableName(tables.beezpingFeedbacks));
           const triggerName = (operation: string) => sql.identifier(`reject_feedback_${operation.toLowerCase()}`);
           for (const operation of REJECTED_WRITE_OPERATIONS) {
             await database.db.run(
@@ -359,7 +359,7 @@ const dialects: DialectUnderTest[] = [
           };
         },
         async skipFeedbackDeletes() {
-          const feedbackTable = sql.identifier(getTableName(tables.sitepingFeedbacks));
+          const feedbackTable = sql.identifier(getTableName(tables.beezpingFeedbacks));
           await database.db.run(
             sql`CREATE TRIGGER skip_feedback_delete BEFORE DELETE ON ${feedbackTable} BEGIN SELECT RAISE(IGNORE); END`,
           );
@@ -1322,7 +1322,7 @@ for (const dialect of dialects) {
       // foreign-key check: the insert fails on the foreign key.
       const foreignKeyViolation = Object.assign(
         new Error(
-          `insert or update on table "${DEFAULT_SITEPING_TABLE_NAMES.comments}" violates foreign key constraint`,
+          `insert or update on table "${DEFAULT_BEEZPING_TABLE_NAMES.comments}" violates foreign key constraint`,
         ),
         { code: "23503" },
       );
@@ -1779,10 +1779,10 @@ describe("DrizzleStore on a database built with withReplicas", () => {
     const [primary, replica] = await Promise.all([createPgTestDatabase(), createPgTestDatabase()]);
     try {
       await replica.db.execute(sql`SET default_transaction_read_only = on`);
-      const { sitepingFeedbacks } = createSitepingPgTables();
-      const store = createPgSitepingStore(withPgReplicas(primary.db, [replica.db]), { logger: { warn: () => {} } });
+      const { beezpingFeedbacks } = createBeezpingPgTables();
+      const store = createPgBeezpingStore(withPgReplicas(primary.db, [replica.db]), { logger: { warn: () => {} } });
 
-      await expectEverythingOnThePrimary(store, async () => (await primary.db.select().from(sitepingFeedbacks)).length);
+      await expectEverythingOnThePrimary(store, async () => (await primary.db.select().from(beezpingFeedbacks)).length);
     } finally {
       await Promise.all([primary.close(), replica.close()]);
     }
@@ -1793,12 +1793,12 @@ describe("DrizzleStore on a database built with withReplicas", () => {
   }, async () => {
     const [primary, replica] = await Promise.all([createLibSQLTestDatabase(), createLibSQLTestDatabase()]);
     try {
-      const { sitepingFeedbacks } = createSitepingSqliteTables();
-      const store = createLibSQLSitepingStore(withSQLiteReplicas(primary.db, [replica.db]), {
+      const { beezpingFeedbacks } = createBeezpingSqliteTables();
+      const store = createLibSQLBeezpingStore(withSQLiteReplicas(primary.db, [replica.db]), {
         logger: { warn: () => {} },
       });
 
-      await expectEverythingOnThePrimary(store, async () => (await primary.db.select().from(sitepingFeedbacks)).length);
+      await expectEverythingOnThePrimary(store, async () => (await primary.db.select().from(beezpingFeedbacks)).length);
     } finally {
       await Promise.all([primary.close(), replica.close()]);
     }
@@ -1807,9 +1807,9 @@ describe("DrizzleStore on a database built with withReplicas", () => {
 
 it("refuses a database from another SQLite driver, such as Cloudflare D1", () => {
   // Where @libsql/client's types do not resolve (a Workers project), the types accept it.
-  const d1 = drizzleD1({} as never) as unknown as Parameters<typeof createLibSQLSitepingStore>[0];
+  const d1 = drizzleD1({} as never) as unknown as Parameters<typeof createLibSQLBeezpingStore>[0];
 
-  expect(() => createLibSQLSitepingStore(d1)).toThrow(/needs a database from drizzle-orm\/libsql/);
+  expect(() => createLibSQLBeezpingStore(d1)).toThrow(/needs a database from drizzle-orm\/libsql/);
 });
 
 // Each entry bundles its own copy of core, so `instanceof` only matches the

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createSitepingHandler } from "../src/index.js";
+import { createBeezpingHandler } from "../src/index.js";
 import { validPayloadNoAnnotations } from "./fixtures.js";
 
 // ---------------------------------------------------------------------------
@@ -8,7 +8,7 @@ import { validPayloadNoAnnotations } from "./fixtures.js";
 
 function mockPrisma() {
   return {
-    sitepingFeedback: {
+    beezpingFeedback: {
       create: vi.fn().mockResolvedValue({
         id: "fb-1",
         ...validPayloadNoAnnotations,
@@ -47,7 +47,7 @@ const API_KEY = "test-secret-key-123";
 const ALLOWED_ORIGIN = "http://localhost:3000";
 
 function postRequest(body: unknown, headers?: Record<string, string>): Request {
-  return new Request("http://localhost/api/siteping", {
+  return new Request("http://localhost/api/beezping", {
     method: "POST",
     body: JSON.stringify(body),
     headers: { "Content-Type": "application/json", ...headers },
@@ -55,11 +55,11 @@ function postRequest(body: unknown, headers?: Record<string, string>): Request {
 }
 
 function getRequest(query: string, headers?: Record<string, string>): Request {
-  return new Request(`http://localhost/api/siteping?${query}`, headers ? { headers } : undefined);
+  return new Request(`http://localhost/api/beezping?${query}`, headers ? { headers } : undefined);
 }
 
 function patchRequest(body: unknown, headers?: Record<string, string>): Request {
-  return new Request("http://localhost/api/siteping", {
+  return new Request("http://localhost/api/beezping", {
     method: "PATCH",
     body: JSON.stringify(body),
     headers: { "Content-Type": "application/json", ...headers },
@@ -67,7 +67,7 @@ function patchRequest(body: unknown, headers?: Record<string, string>): Request 
 }
 
 function deleteRequest(body: unknown, headers?: Record<string, string>): Request {
-  return new Request("http://localhost/api/siteping", {
+  return new Request("http://localhost/api/beezping", {
     method: "DELETE",
     body: JSON.stringify(body),
     headers: { "Content-Type": "application/json", ...headers },
@@ -75,7 +75,7 @@ function deleteRequest(body: unknown, headers?: Record<string, string>): Request
 }
 
 function optionsRequest(headers?: Record<string, string>): Request {
-  return new Request("http://localhost/api/siteping", {
+  return new Request("http://localhost/api/beezping", {
     method: "OPTIONS",
     ...(headers ? { headers } : {}),
   });
@@ -94,20 +94,20 @@ describe("Authentication", () => {
 
   describe("POST is public by default when apiKey is set", () => {
     it("POST succeeds without Authorization header (public endpoint)", async () => {
-      const handler = createSitepingHandler({ prisma, apiKey: API_KEY });
+      const handler = createBeezpingHandler({ prisma, apiKey: API_KEY });
       const res = await handler.POST(postRequest(validPayloadNoAnnotations));
       // POST defaults to public in publicEndpoints
       expect(res.status).toBe(201);
     });
 
     it("POST with valid Bearer token also succeeds", async () => {
-      const handler = createSitepingHandler({ prisma, apiKey: API_KEY });
+      const handler = createBeezpingHandler({ prisma, apiKey: API_KEY });
       const res = await handler.POST(postRequest(validPayloadNoAnnotations, { Authorization: `Bearer ${API_KEY}` }));
       expect(res.status).toBe(201);
     });
 
     it("POST requires auth when publicEndpoints excludes POST", async () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         apiKey: API_KEY,
         publicEndpoints: ["OPTIONS"],
@@ -119,7 +119,7 @@ describe("Authentication", () => {
     });
 
     it("POST with valid Bearer succeeds when publicEndpoints excludes POST", async () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         apiKey: API_KEY,
         publicEndpoints: ["OPTIONS"],
@@ -131,7 +131,7 @@ describe("Authentication", () => {
 
   describe("GET with apiKey", () => {
     it("returns 401 without Authorization header", async () => {
-      const handler = createSitepingHandler({ prisma, apiKey: API_KEY });
+      const handler = createBeezpingHandler({ prisma, apiKey: API_KEY });
       const res = await handler.GET(getRequest("projectName=test"));
       expect(res.status).toBe(401);
       const body = await res.json();
@@ -139,19 +139,19 @@ describe("Authentication", () => {
     });
 
     it("succeeds with valid Bearer token", async () => {
-      const handler = createSitepingHandler({ prisma, apiKey: API_KEY });
+      const handler = createBeezpingHandler({ prisma, apiKey: API_KEY });
       const res = await handler.GET(getRequest("projectName=test", { Authorization: `Bearer ${API_KEY}` }));
       expect(res.status).toBe(200);
     });
 
     it("returns 401 with wrong API key", async () => {
-      const handler = createSitepingHandler({ prisma, apiKey: API_KEY });
+      const handler = createBeezpingHandler({ prisma, apiKey: API_KEY });
       const res = await handler.GET(getRequest("projectName=test", { Authorization: "Bearer wrong-key" }));
       expect(res.status).toBe(401);
     });
 
     it("returns 401 with malformed Authorization header", async () => {
-      const handler = createSitepingHandler({ prisma, apiKey: API_KEY });
+      const handler = createBeezpingHandler({ prisma, apiKey: API_KEY });
       const res = await handler.GET(getRequest("projectName=test", { Authorization: API_KEY }));
       expect(res.status).toBe(401);
     });
@@ -159,13 +159,13 @@ describe("Authentication", () => {
 
   describe("PATCH with apiKey", () => {
     it("returns 401 without Authorization header", async () => {
-      const handler = createSitepingHandler({ prisma, apiKey: API_KEY });
+      const handler = createBeezpingHandler({ prisma, apiKey: API_KEY });
       const res = await handler.PATCH(patchRequest({ id: "fb-1", projectName: "test", status: "resolved" }));
       expect(res.status).toBe(401);
     });
 
     it("succeeds with valid Bearer token", async () => {
-      const handler = createSitepingHandler({ prisma, apiKey: API_KEY });
+      const handler = createBeezpingHandler({ prisma, apiKey: API_KEY });
       const res = await handler.PATCH(
         patchRequest({ id: "fb-1", projectName: "test", status: "resolved" }, { Authorization: `Bearer ${API_KEY}` }),
       );
@@ -175,13 +175,13 @@ describe("Authentication", () => {
 
   describe("DELETE with apiKey", () => {
     it("returns 401 without Authorization header", async () => {
-      const handler = createSitepingHandler({ prisma, apiKey: API_KEY });
+      const handler = createBeezpingHandler({ prisma, apiKey: API_KEY });
       const res = await handler.DELETE(deleteRequest({ id: "fb-1", projectName: "test" }));
       expect(res.status).toBe(401);
     });
 
     it("succeeds with valid Bearer token", async () => {
-      const handler = createSitepingHandler({ prisma, apiKey: API_KEY });
+      const handler = createBeezpingHandler({ prisma, apiKey: API_KEY });
       const res = await handler.DELETE(
         deleteRequest({ id: "fb-1", projectName: "test" }, { Authorization: `Bearer ${API_KEY}` }),
       );
@@ -191,19 +191,19 @@ describe("Authentication", () => {
 
   describe("without apiKey configured (dev mode)", () => {
     it("POST succeeds without any Authorization header (public by default)", async () => {
-      const handler = createSitepingHandler({ prisma });
+      const handler = createBeezpingHandler({ prisma });
       const res = await handler.POST(postRequest(validPayloadNoAnnotations));
       expect(res.status).toBe(201);
     });
 
     it("GET succeeds without any Authorization header (public by default)", async () => {
-      const handler = createSitepingHandler({ prisma });
+      const handler = createBeezpingHandler({ prisma });
       const res = await handler.GET(getRequest("projectName=test"));
       expect(res.status).toBe(200);
     });
 
     it("PATCH without apiKey returns 401 (destructive ops require auth by default)", async () => {
-      const handler = createSitepingHandler({ prisma });
+      const handler = createBeezpingHandler({ prisma });
       const res = await handler.PATCH(patchRequest({ id: "fb-1", projectName: "test", status: "resolved" }));
       expect(res.status).toBe(401);
       const body = await res.json();
@@ -211,7 +211,7 @@ describe("Authentication", () => {
     });
 
     it("DELETE without apiKey returns 401 (destructive ops require auth by default)", async () => {
-      const handler = createSitepingHandler({ prisma });
+      const handler = createBeezpingHandler({ prisma });
       const res = await handler.DELETE(deleteRequest({ id: "fb-1", projectName: "test" }));
       expect(res.status).toBe(401);
       const body = await res.json();
@@ -219,19 +219,19 @@ describe("Authentication", () => {
     });
 
     it("DELETE { deleteAll: true } without apiKey returns 401 (closes the wipe-everything hole)", async () => {
-      const handler = createSitepingHandler({ prisma });
+      const handler = createBeezpingHandler({ prisma });
       const res = await handler.DELETE(deleteRequest({ projectName: "test", deleteAll: true }));
       expect(res.status).toBe(401);
     });
 
     it("PATCH succeeds when requireAuthForDestructive=false (explicit escape hatch)", async () => {
-      const handler = createSitepingHandler({ prisma, requireAuthForDestructive: false });
+      const handler = createBeezpingHandler({ prisma, requireAuthForDestructive: false });
       const res = await handler.PATCH(patchRequest({ id: "fb-1", projectName: "test", status: "resolved" }));
       expect(res.status).toBe(200);
     });
 
     it("DELETE succeeds when requireAuthForDestructive=false (explicit escape hatch)", async () => {
-      const handler = createSitepingHandler({ prisma, requireAuthForDestructive: false });
+      const handler = createBeezpingHandler({ prisma, requireAuthForDestructive: false });
       const res = await handler.DELETE(deleteRequest({ id: "fb-1", projectName: "test" }));
       expect(res.status).toBe(200);
     });
@@ -239,7 +239,7 @@ describe("Authentication", () => {
 
   describe("PII redaction follows Bearer authentication (#105)", () => {
     function seedFindMany() {
-      prisma.sitepingFeedback.findMany.mockResolvedValue([
+      prisma.beezpingFeedback.findMany.mockResolvedValue([
         {
           id: "fb-1",
           ...validPayloadNoAnnotations,
@@ -250,12 +250,12 @@ describe("Authentication", () => {
           annotations: [],
         },
       ]);
-      prisma.sitepingFeedback.count.mockResolvedValue(1);
+      prisma.beezpingFeedback.count.mockResolvedValue(1);
     }
 
     it("GET with valid Bearer returns the full authorEmail (clientId still stripped)", async () => {
       seedFindMany();
-      const handler = createSitepingHandler({ prisma, apiKey: API_KEY });
+      const handler = createBeezpingHandler({ prisma, apiKey: API_KEY });
       const res = await handler.GET(getRequest("projectName=test-project", { Authorization: `Bearer ${API_KEY}` }));
       expect(res.status).toBe(200);
       const body = await res.json();
@@ -265,7 +265,7 @@ describe("Authentication", () => {
 
     it("public GET (via publicEndpoints) without a token blanks authorEmail", async () => {
       seedFindMany();
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         apiKey: API_KEY,
         publicEndpoints: ["POST", "OPTIONS", "GET"],
@@ -279,7 +279,7 @@ describe("Authentication", () => {
 
     it("public GET with a valid Bearer still counts as authenticated — full authorEmail", async () => {
       seedFindMany();
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         apiKey: API_KEY,
         publicEndpoints: ["POST", "OPTIONS", "GET"],
@@ -296,7 +296,7 @@ describe("Authentication", () => {
       // attacker-controlled header into a 500 (and an apiKey length oracle).
       seedFindMany();
       const wrongKey = `${API_KEY.slice(0, -1)}é`;
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         apiKey: API_KEY,
         publicEndpoints: ["POST", "OPTIONS", "GET"],
@@ -307,7 +307,7 @@ describe("Authentication", () => {
       expect(body.feedbacks[0].authorEmail).toBe("");
 
       // On a protected method the same header must yield 401, not 500
-      const protectedHandler = createSitepingHandler({ prisma, apiKey: API_KEY });
+      const protectedHandler = createBeezpingHandler({ prisma, apiKey: API_KEY });
       const res401 = await protectedHandler.GET(
         getRequest("projectName=test-project", { Authorization: `Bearer ${wrongKey}` }),
       );
@@ -316,7 +316,7 @@ describe("Authentication", () => {
 
     it("redactUnauthenticatedEmails: false keeps authorEmail for unauthenticated requests", async () => {
       seedFindMany();
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         requireAuthForDestructive: false,
         redactUnauthenticatedEmails: false,
@@ -339,17 +339,17 @@ describe("Authentication", () => {
 
     it("throws when NODE_ENV=production and apiKey is missing", () => {
       process.env.NODE_ENV = "production";
-      expect(() => createSitepingHandler({ prisma })).toThrow(/apiKey is required in production/);
+      expect(() => createBeezpingHandler({ prisma })).toThrow(/apiKey is required in production/);
     });
 
     it("does not throw when apiKey is provided in production", () => {
       process.env.NODE_ENV = "production";
-      expect(() => createSitepingHandler({ prisma, apiKey: API_KEY })).not.toThrow();
+      expect(() => createBeezpingHandler({ prisma, apiKey: API_KEY })).not.toThrow();
     });
 
     it("does not throw in production when requireAuthForDestructive=false (delegated auth)", () => {
       process.env.NODE_ENV = "production";
-      expect(() => createSitepingHandler({ prisma, requireAuthForDestructive: false })).not.toThrow();
+      expect(() => createBeezpingHandler({ prisma, requireAuthForDestructive: false })).not.toThrow();
     });
   });
 });
@@ -367,7 +367,7 @@ describe("CORS", () => {
 
   describe("OPTIONS preflight", () => {
     it("returns 204 with CORS headers when origin matches allowedOrigins", () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         allowedOrigins: [ALLOWED_ORIGIN],
       });
@@ -386,7 +386,7 @@ describe("CORS", () => {
     });
 
     it("returns 204 without CORS headers when allowedOrigins is not set", () => {
-      const handler = createSitepingHandler({ prisma });
+      const handler = createBeezpingHandler({ prisma });
       const res = handler.OPTIONS(optionsRequest({ Origin: ALLOWED_ORIGIN }));
 
       expect(res.status).toBe(204);
@@ -395,7 +395,7 @@ describe("CORS", () => {
     });
 
     it("returns 204 without CORS headers when origin does not match", () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         allowedOrigins: [ALLOWED_ORIGIN],
       });
@@ -406,7 +406,7 @@ describe("CORS", () => {
     });
 
     it("returns 204 without CORS headers when no Origin header is sent", () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         allowedOrigins: [ALLOWED_ORIGIN],
       });
@@ -417,7 +417,7 @@ describe("CORS", () => {
     });
 
     it("sets Vary: Origin header when origin matches", async () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         allowedOrigins: [ALLOWED_ORIGIN],
       });
@@ -432,7 +432,7 @@ describe("CORS", () => {
     // With an allowlist, a header-less response is still Origin-dependent: a
     // shared cache must not serve it to an allowed origin (or vice versa).
     it("sets Vary: Origin when the Origin is absent or not allowlisted", async () => {
-      const handler = createSitepingHandler({ prisma, allowedOrigins: [ALLOWED_ORIGIN] });
+      const handler = createBeezpingHandler({ prisma, allowedOrigins: [ALLOWED_ORIGIN] });
 
       expect(handler.OPTIONS(optionsRequest()).headers.get("Vary")).toBe("Origin");
       expect(handler.OPTIONS(optionsRequest({ Origin: "http://evil.com" })).headers.get("Vary")).toBe("Origin");
@@ -445,7 +445,7 @@ describe("CORS", () => {
     // The widget's `headers` option lets hosts send custom headers (e.g. a
     // session token); a cross-origin preflight for them must succeed.
     it("allows the custom headers an allowlisted origin's preflight requests, keeping the defaults", () => {
-      const handler = createSitepingHandler({ prisma, allowedOrigins: [ALLOWED_ORIGIN] });
+      const handler = createBeezpingHandler({ prisma, allowedOrigins: [ALLOWED_ORIGIN] });
       const res = handler.OPTIONS(
         optionsRequest({ Origin: ALLOWED_ORIGIN, "Access-Control-Request-Headers": "content-type,x-session-token" }),
       );
@@ -456,7 +456,7 @@ describe("CORS", () => {
     });
 
     it("drops requested header names that are not valid header tokens", () => {
-      const handler = createSitepingHandler({ prisma, allowedOrigins: [ALLOWED_ORIGIN] });
+      const handler = createBeezpingHandler({ prisma, allowedOrigins: [ALLOWED_ORIGIN] });
       const res = handler.OPTIONS(
         optionsRequest({ Origin: ALLOWED_ORIGIN, "Access-Control-Request-Headers": "x-ok, x(bad), x:bad, , x-tenant" }),
       );
@@ -464,7 +464,7 @@ describe("CORS", () => {
     });
 
     it("never reflects requested headers for an origin outside the allowlist", () => {
-      const handler = createSitepingHandler({ prisma, allowedOrigins: [ALLOWED_ORIGIN] });
+      const handler = createBeezpingHandler({ prisma, allowedOrigins: [ALLOWED_ORIGIN] });
       const res = handler.OPTIONS(
         optionsRequest({ Origin: "http://evil.com", "Access-Control-Request-Headers": "x-session-token" }),
       );
@@ -472,14 +472,14 @@ describe("CORS", () => {
     });
 
     it("sends no Vary when allowedOrigins is not configured (responses don't vary by Origin)", () => {
-      const handler = createSitepingHandler({ prisma });
+      const handler = createBeezpingHandler({ prisma });
       expect(handler.OPTIONS(optionsRequest({ Origin: ALLOWED_ORIGIN })).headers.get("Vary")).toBeNull();
     });
   });
 
   describe("CORS on data endpoints", () => {
     it("POST includes CORS headers when origin matches", async () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         allowedOrigins: [ALLOWED_ORIGIN],
       });
@@ -490,7 +490,7 @@ describe("CORS", () => {
     });
 
     it("POST omits CORS headers when origin does not match", async () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         allowedOrigins: [ALLOWED_ORIGIN],
       });
@@ -501,7 +501,7 @@ describe("CORS", () => {
     });
 
     it("GET includes CORS headers when origin matches", async () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         allowedOrigins: [ALLOWED_ORIGIN],
       });
@@ -512,7 +512,7 @@ describe("CORS", () => {
     });
 
     it("PATCH includes CORS headers when origin matches", async () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         allowedOrigins: [ALLOWED_ORIGIN],
         requireAuthForDestructive: false,
@@ -526,7 +526,7 @@ describe("CORS", () => {
     });
 
     it("DELETE includes CORS headers when origin matches", async () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         allowedOrigins: [ALLOWED_ORIGIN],
         requireAuthForDestructive: false,
@@ -538,7 +538,7 @@ describe("CORS", () => {
     });
 
     it("omits CORS headers entirely when allowedOrigins is not configured", async () => {
-      const handler = createSitepingHandler({ prisma });
+      const handler = createBeezpingHandler({ prisma });
       const res = await handler.POST(postRequest(validPayloadNoAnnotations, { Origin: ALLOWED_ORIGIN }));
 
       expect(res.status).toBe(201);
@@ -551,7 +551,7 @@ describe("CORS", () => {
     const SECOND_ORIGIN = "https://app.example.com";
 
     it("reflects the matching origin from the list", async () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         allowedOrigins: [ALLOWED_ORIGIN, SECOND_ORIGIN],
       });
@@ -564,7 +564,7 @@ describe("CORS", () => {
     });
 
     it("rejects origins not in the list", async () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         allowedOrigins: [ALLOWED_ORIGIN, SECOND_ORIGIN],
       });
@@ -575,7 +575,7 @@ describe("CORS", () => {
 
   describe("CORS on auth error responses", () => {
     it("includes CORS headers on 401 responses so the browser can read the error", async () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         apiKey: API_KEY,
         allowedOrigins: [ALLOWED_ORIGIN],
@@ -588,7 +588,7 @@ describe("CORS", () => {
     });
 
     it("omits CORS headers on 401 when origin does not match", async () => {
-      const handler = createSitepingHandler({
+      const handler = createBeezpingHandler({
         prisma,
         apiKey: API_KEY,
         allowedOrigins: [ALLOWED_ORIGIN],

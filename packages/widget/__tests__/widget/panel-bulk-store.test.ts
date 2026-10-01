@@ -2,7 +2,7 @@
 
 import { LocalStorageStore } from "@beezping/adapter-localstorage";
 import { MemoryStore } from "@beezping/adapter-memory";
-import type { SitepingStore } from "@beezping/core";
+import type { BeezpingStore } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EventBus, type WidgetEvents } from "../../src/events.js";
 import { createT } from "../../src/i18n/index.js";
@@ -20,10 +20,10 @@ if (typeof globalThis.CSS === "undefined") {
 
 /**
  * The bulk bar fires one mutation per selected card with `Promise.all`. In
- * client-side mode (`initSiteping({ store })`) those land on the published
+ * client-side mode (`initBeezping({ store })`) those land on the published
  * stores in the same tick — the path that used to apply 1 of N (#341).
  */
-const stores: Array<[string, () => SitepingStore]> = [
+const stores: Array<[string, () => BeezpingStore]> = [
   ["MemoryStore", () => new MemoryStore()],
   [
     "LocalStorageStore",
@@ -35,7 +35,7 @@ const stores: Array<[string, () => SitepingStore]> = [
 ];
 
 describe.each(stores)("Panel bulk actions over StoreClient + %s", (_label, makeStore) => {
-  let store: SitepingStore;
+  let store: BeezpingStore;
   let shadow: ShadowRoot;
   let panel: Panel;
   let errors: Error[];

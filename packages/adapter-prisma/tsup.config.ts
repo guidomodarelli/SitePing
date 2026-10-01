@@ -1,8 +1,8 @@
 import { defineConfig } from "tsup";
-import { sitepingLibrary } from "../../tsup.preset.js";
+import { beezpingLibrary } from "../../tsup.preset.js";
 
 export default defineConfig(
-  sitepingLibrary({
+  beezpingLibrary({
     platform: "node",
     target: "node18",
     external: ["@prisma/client"],

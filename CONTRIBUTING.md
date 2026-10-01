@@ -1,4 +1,4 @@
-# Contributing to SitePing
+# Contributing to Beezping
 
 Thanks for your interest in contributing! This guide covers everything you need to get started.
 
@@ -11,8 +11,8 @@ Thanks for your interest in contributing! This guide covers everything you need 
 ## Setup
 
 ```bash
-git clone https://github.com/NeosiaNexus/SitePing.git
-cd SitePing
+git clone https://github.com/guidomodarelli/beezping.git
+cd beezping
 bun install
 ```
 
@@ -52,7 +52,7 @@ Monorepo with bun workspaces + Turborepo. Libraries live in `packages/`, the web
 |---------|-----|--------|-------------|
 | `@beezping/core` | private | — | Shared types, schema, store errors, helpers, conformance tests |
 | `@beezping/widget` | published | Browser | Feedback widget (Shadow DOM, closed). Accepts `store` for client-side mode |
-| `@beezping/dashboard` | published | Browser (React) | Linear-style triage inbox (`<SitepingInbox />` + headless `useSitepingInbox()`) |
+| `@beezping/dashboard` | published | Browser (React) | Linear-style triage inbox (`<BeezpingInbox />` + headless `useBeezpingInbox()`) |
 | `@beezping/server` | published | Any | Store-agnostic HTTP handler on the Fetch API (auth, CORS, hooks, webhooks) |
 | `@beezping/adapter-prisma` | published | Node | Prisma database adapter — `@beezping/server`'s handler with a Prisma store built in |
 | `@beezping/adapter-drizzle` | published | Node | Drizzle ORM store (PostgreSQL, Turso/libSQL) |
@@ -62,7 +62,7 @@ Monorepo with bun workspaces + Turborepo. Libraries live in `packages/`, the web
 | `@beezping/adapter-localstorage` | published | Browser | localStorage adapter (demos, prototyping) |
 | `@beezping/adapter-kit` | published | Any | Everything third-party adapter authors need: store contract, helpers, `createCollectionStore`, and the conformance suite (`/testing`) |
 | `@beezping/cli` | published | Node | CLI tool (`npx @beezping/cli init/sync/status/doctor`) |
-| `@beezping/demo` (`apps/demo`) | private | Next.js | [siteping.dev](https://siteping.dev) — landing, live demo, **and the documentation site** ([editing it](#editing-the-documentation)) |
+| `@beezping/demo` (`apps/demo`) | private | Next.js | [github.com/guidomodarelli/beezping](https://github.com/guidomodarelli/beezping) — landing, live demo, **and the documentation site** ([editing it](#editing-the-documentation)) |
 
 - **Core** is an Internal Package — it exports raw TypeScript (no build step). Consumers bundle it via `noExternal: ["@beezping/core"]` in their tsup config.
 - **Turborepo** handles build orchestration, dependency ordering, and local caching.
@@ -72,7 +72,7 @@ Monorepo with bun workspaces + Turborepo. Libraries live in `packages/`, the web
 
 ## Editing the Documentation
 
-All end-user documentation lives at **[siteping.dev/docs](https://siteping.dev/docs)**, built from MDX in this repo — the package READMEs are deliberately thin npm cards that point at it. Every docs page has an "Edit on GitHub" link that drops you straight on the right file.
+All end-user documentation lives at **[github.com/guidomodarelli/beezping/docs](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/index.mdx)**, built from MDX in this repo — the package READMEs are deliberately thin npm cards that point at it. Every docs page has an "Edit on GitHub" link that drops you straight on the right file.
 
 ```bash
 cd apps/demo
@@ -138,9 +138,9 @@ is the smallest). The pieces that matter:
 3. **`tsup.config.ts`** — use the shared preset:
    ```ts
    import { defineConfig } from "tsup";
-   import { sitepingLibrary } from "../../tsup.preset.js";
+   import { beezpingLibrary } from "../../tsup.preset.js";
 
-   export default defineConfig(sitepingLibrary({ platform: "node" }));
+   export default defineConfig(beezpingLibrary({ platform: "node" }));
    ```
 4. **Register in release-please** — add the package to
    `release-please-config.json` (release-type `node`, `bump-minor-pre-major`)
@@ -162,9 +162,9 @@ registration above is complete — nothing can be *silently* forgotten anymore.
 
 ## Creating a New Adapter
 
-Adapters implement the `SitepingStore` interface. **Third-party adapters**
+Adapters implement the `BeezpingStore` interface. **Third-party adapters**
 (outside this repo) depend on the published
-[`@beezping/adapter-kit`](https://siteping.dev/docs/adapters/writing-an-adapter),
+[`@beezping/adapter-kit`](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/adapters/writing-an-adapter.mdx),
 which exports the contract, the building blocks and the conformance suite.
 **First-party adapters** start with the scaffold:
 
@@ -183,7 +183,7 @@ Two implementation strategies:
   `adapter-memory` is the ~80-line reference.
 - **Query backends** (SQL, ORMs): implement the 6 methods directly. Use
   `buildFeedbackRecord` / `buildAnnotationRecord` for input→record
-  construction, and follow the error contract documented on `SitepingStore`:
+  construction, and follow the error contract documented on `BeezpingStore`:
   `createFeedback` idempotent on `clientId` (or throw `StoreDuplicateError`),
   `updateFeedback`/`deleteFeedback` throw `StoreNotFoundError`,
   `deleteAllFeedbacks` is a no-op when empty, every lost write throws
@@ -200,12 +200,12 @@ this file):
 
 ```ts
 // __tests__/my-store.test.ts
-import { testSitepingStore } from "@beezping/core/testing";
+import { testBeezpingStore } from "@beezping/core/testing";
 import { MyStore } from "../src/index.js";
 
-testSitepingStore(() => new MyStore(testConfig));
+testBeezpingStore(() => new MyStore(testConfig));
 // Options for legitimately varying contracts:
-//   testSitepingStore(factory, { duplicateBehavior: "throw", caseInsensitiveSearch: false })
+//   testBeezpingStore(factory, { duplicateBehavior: "throw", caseInsensitiveSearch: false })
 
 // Add adapter-specific tests below (connection handling, serialization, etc.)
 ```
@@ -284,8 +284,8 @@ misses the new locale, and a picker that does not offer it.
   They load the built packages, so run `bun run build` first. Two servers
   back them: `e2e/server.mjs`, a hand-written fake API for widget UI flows
   (`widget.spec.ts`, `host-modal.spec.ts`), and `e2e/stack-server.mjs`, the
-  real `createSitepingHandler` over a `MemoryStore` with a webhook receiver,
-  serving the widget and `<SitepingInbox />` (`stack.spec.ts`). Anything the
+  real `createBeezpingHandler` over a `MemoryStore` with a webhook receiver,
+  serving the widget and `<BeezpingInbox />` (`stack.spec.ts`). Anything the
   server validates, persists or dispatches belongs on the real stack. Both
   servers listen on `127.0.0.1` only, and whatever they take from the request
   URL into a page's inline script goes through `scriptSafeJson`
@@ -304,7 +304,7 @@ non-positive page number, which no hand-written case had thought to try.
 
 ## Supply-chain posture
 
-The repo is scored by [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/NeosiaNexus/SitePing)
+The repo is scored by [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/guidomodarelli/beezping)
 on every push to `main`. Three of its checks are deliberately left alone, and
 each one looks like an easy win until you measure it:
 

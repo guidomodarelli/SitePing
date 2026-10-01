@@ -352,7 +352,7 @@ export function Features() {
             </div>
             <h3 className="mt-4 text-xl font-semibold text-white">Triage inbox</h3>
             <p className="mt-2 max-w-xl leading-relaxed text-gray-400">
-              Drop <code className="font-mono text-sm text-accent-light">&lt;SitepingInbox /&gt;</code> into your admin
+              Drop <code className="font-mono text-sm text-accent-light">&lt;BeezpingInbox /&gt;</code> into your admin
               page and work through reports with <kbd className="font-mono text-sm text-gray-300">j</kbd>/
               <kbd className="font-mono text-sm text-gray-300">k</kbd> — four statuses, the client&apos;s annotation
               re-drawn on the screenshot. Slack, Discord, and generic webhooks ping your team the moment feedback lands.

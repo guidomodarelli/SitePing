@@ -17,7 +17,7 @@ import type { Options } from "tsup";
  * run after the declarations exist. `scripts/check-consistency.mjs` asserts
  * no package forgets the chain.
  */
-export function sitepingLibrary(overrides: Partial<Options> & Pick<Options, "platform">): Options {
+export function beezpingLibrary(overrides: Partial<Options> & Pick<Options, "platform">): Options {
   return {
     entry: ["src/index.ts"],
     format: ["esm", "cjs"],

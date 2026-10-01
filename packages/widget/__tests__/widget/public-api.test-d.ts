@@ -4,56 +4,56 @@
  */
 
 import type {
+  BeezpingInstance,
+  BeezpingPublicEvents,
+  BeezpingStore,
   CommentResponse as CoreCommentResponse,
   FeedbackQuery,
   FeedbackResponse,
-  SitepingInstance,
-  SitepingPublicEvents,
-  SitepingStore,
 } from "@beezping/core";
 import { describe, expectTypeOf, it } from "vitest";
 import type { GetFeedbacksOptions } from "../../src/api-client.js";
 import {
+  type BeezpingConfig,
+  type BeezpingPanelAction,
+  type BeezpingPanelActionContext,
+  type BeezpingPanelActionFeedback,
+  type BeezpingPanelButtonAction,
+  type BeezpingPanelLinkAction,
   type CommentResponse,
-  initSiteping,
+  initBeezping,
   registerLocale,
-  type SitepingConfig,
-  type SitepingPanelAction,
-  type SitepingPanelActionContext,
-  type SitepingPanelActionFeedback,
-  type SitepingPanelButtonAction,
-  type SitepingPanelLinkAction,
   type Translations,
 } from "../../src/index.js";
 
-declare const store: SitepingStore;
-declare const instance: SitepingInstance;
+declare const store: BeezpingStore;
+declare const instance: BeezpingInstance;
 
-describe("initSiteping config modes", () => {
+describe("initBeezping config modes", () => {
   it("accepts HTTP mode and store mode", () => {
-    expectTypeOf(initSiteping).toBeCallableWith({ projectName: "p", endpoint: "/api/siteping" });
-    expectTypeOf(initSiteping).toBeCallableWith({ projectName: "p", store });
+    expectTypeOf(initBeezping).toBeCallableWith({ projectName: "p", endpoint: "/api/beezping" });
+    expectTypeOf(initBeezping).toBeCallableWith({ projectName: "p", store });
   });
 
   it("rejects mixed modes", () => {
     // @ts-expect-error — endpoint and store are mutually exclusive
-    initSiteping({ projectName: "p", endpoint: "/api", store });
+    initBeezping({ projectName: "p", endpoint: "/api", store });
   });
 });
 
 describe("readOnly", () => {
   it("is a shared option, in both modes", () => {
-    expectTypeOf(initSiteping).toBeCallableWith({ projectName: "p", endpoint: "/api/siteping", readOnly: true });
-    expectTypeOf(initSiteping).toBeCallableWith({ projectName: "p", store, readOnly: false });
-    expectTypeOf<SitepingConfig["readOnly"]>().toEqualTypeOf<boolean | undefined>();
+    expectTypeOf(initBeezping).toBeCallableWith({ projectName: "p", endpoint: "/api/beezping", readOnly: true });
+    expectTypeOf(initBeezping).toBeCallableWith({ projectName: "p", store, readOnly: false });
+    expectTypeOf<BeezpingConfig["readOnly"]>().toEqualTypeOf<boolean | undefined>();
   });
 });
 
 describe("panelActions", () => {
   it("accepts button and link actions in both modes", () => {
-    expectTypeOf(initSiteping).toBeCallableWith({
+    expectTypeOf(initBeezping).toBeCallableWith({
       projectName: "p",
-      endpoint: "/api/siteping",
+      endpoint: "/api/beezping",
       panelActions: [
         { id: "sync", label: "Sync", onAction: () => {} },
         { id: "async", label: "Async", onAction: async () => {}, icon: "<svg/>", visible: () => true },
@@ -61,34 +61,34 @@ describe("panelActions", () => {
         { id: "computed", label: "Mail", href: (fb) => `mailto:${fb.authorEmail}` },
       ],
     });
-    expectTypeOf(initSiteping).toBeCallableWith({ projectName: "p", store, panelActions: [] });
+    expectTypeOf(initBeezping).toBeCallableWith({ projectName: "p", store, panelActions: [] });
   });
 
   it("is a button XOR a link", () => {
-    expectTypeOf<SitepingPanelAction>().toEqualTypeOf<SitepingPanelButtonAction | SitepingPanelLinkAction>();
+    expectTypeOf<BeezpingPanelAction>().toEqualTypeOf<BeezpingPanelButtonAction | BeezpingPanelLinkAction>();
     // @ts-expect-error — onAction and href are mutually exclusive
-    const both: SitepingPanelAction = { id: "x", label: "X", onAction: () => {}, href: "https://x.example" };
+    const both: BeezpingPanelAction = { id: "x", label: "X", onAction: () => {}, href: "https://x.example" };
     // @ts-expect-error — one of onAction / href is required
-    const neither: SitepingPanelAction = { id: "x", label: "X" };
+    const neither: BeezpingPanelAction = { id: "x", label: "X" };
     void [both, neither];
   });
 
   it("hands callbacks a read-only feedback and the context", () => {
-    expectTypeOf<Parameters<SitepingPanelButtonAction["onAction"]>>().toEqualTypeOf<
-      [SitepingPanelActionFeedback, SitepingPanelActionContext]
+    expectTypeOf<Parameters<BeezpingPanelButtonAction["onAction"]>>().toEqualTypeOf<
+      [BeezpingPanelActionFeedback, BeezpingPanelActionContext]
     >();
-    expectTypeOf<FeedbackResponse>().toExtend<SitepingPanelActionFeedback>();
-    expectTypeOf<ReturnType<SitepingPanelButtonAction["onAction"]>>().toEqualTypeOf<void | Promise<void>>();
-    expectTypeOf<SitepingPanelActionContext>().toEqualTypeOf<{ refresh: () => Promise<void>; close: () => void }>();
-    expectTypeOf<SitepingPanelLinkAction["href"]>().toEqualTypeOf<
-      string | ((feedback: SitepingPanelActionFeedback) => string)
+    expectTypeOf<FeedbackResponse>().toExtend<BeezpingPanelActionFeedback>();
+    expectTypeOf<ReturnType<BeezpingPanelButtonAction["onAction"]>>().toEqualTypeOf<void | Promise<void>>();
+    expectTypeOf<BeezpingPanelActionContext>().toEqualTypeOf<{ refresh: () => Promise<void>; close: () => void }>();
+    expectTypeOf<BeezpingPanelLinkAction["href"]>().toEqualTypeOf<
+      string | ((feedback: BeezpingPanelActionFeedback) => string)
     >();
   });
 
-  it("accepts helpers typed with SitepingPanelActionFeedback", () => {
-    const createTicket = (_fb: SitepingPanelActionFeedback): Promise<void> => Promise.resolve();
-    const hasPin = (fb: SitepingPanelActionFeedback) => fb.annotations.length > 0;
-    expectTypeOf(initSiteping).toBeCallableWith({
+  it("accepts helpers typed with BeezpingPanelActionFeedback", () => {
+    const createTicket = (_fb: BeezpingPanelActionFeedback): Promise<void> => Promise.resolve();
+    const hasPin = (fb: BeezpingPanelActionFeedback) => fb.annotations.length > 0;
+    expectTypeOf(initBeezping).toBeCallableWith({
       projectName: "p",
       endpoint: "/api",
       panelActions: [{ id: "t", label: "Ticket", onAction: createTicket, visible: hasPin }],
@@ -96,7 +96,7 @@ describe("panelActions", () => {
   });
 
   it("rejects writes to the feedback", () => {
-    const action: SitepingPanelButtonAction = {
+    const action: BeezpingPanelButtonAction = {
       id: "x",
       label: "X",
       onAction: (fb) => {
@@ -136,17 +136,17 @@ describe("public events", () => {
   });
 
   it("keeps the public map in sync with the instance signature", () => {
-    expectTypeOf<Parameters<SitepingInstance["on"]>[0]>().toEqualTypeOf<keyof SitepingPublicEvents>();
+    expectTypeOf<Parameters<BeezpingInstance["on"]>[0]>().toEqualTypeOf<keyof BeezpingPublicEvents>();
   });
 
   it("types onCommentAdded like the comment:added listener, in both modes", () => {
-    expectTypeOf(initSiteping).toBeCallableWith({
+    expectTypeOf(initBeezping).toBeCallableWith({
       projectName: "p",
-      endpoint: "/api/siteping",
+      endpoint: "/api/beezping",
       onCommentAdded: (comment: CommentResponse) => void comment.authorRole,
     });
-    expectTypeOf(initSiteping).toBeCallableWith({ projectName: "p", store, onCommentAdded: () => {} });
-    expectTypeOf<SitepingPublicEvents["comment:added"]>().toEqualTypeOf<[CommentResponse]>();
+    expectTypeOf(initBeezping).toBeCallableWith({ projectName: "p", store, onCommentAdded: () => {} });
+    expectTypeOf<BeezpingPublicEvents["comment:added"]>().toEqualTypeOf<[CommentResponse]>();
     expectTypeOf<CommentResponse>().toEqualTypeOf<CoreCommentResponse>();
     // The wire shape never carries the dedup key.
     expectTypeOf<CommentResponse>().not.toHaveProperty("clientId");

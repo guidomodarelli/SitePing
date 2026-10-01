@@ -4,9 +4,9 @@ test.beforeEach(async ({ page, browserName }) => {
   const project = `e2e-${browserName}`;
   await page.request.get(`http://localhost:3999/api/reset?projectName=${project}`);
   await page.goto(`http://localhost:3999?project=${project}`);
-  await page.waitForSelector("siteping-widget", { state: "attached" });
+  await page.waitForSelector("beezping-widget", { state: "attached" });
   await page.waitForFunction(() => {
-    const host = document.querySelector("siteping-widget");
+    const host = document.querySelector("beezping-widget");
     return host?.shadowRoot?.querySelector(".sp-fab") !== null;
   });
 });
@@ -25,28 +25,28 @@ function shadow(page: Page) {
     /** Query inside the shadow root */
     async query(selector: string) {
       return page.evaluate((sel) => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         return host?.shadowRoot?.querySelector(sel) !== null;
       }, selector);
     },
     /** Get text content of an element inside shadow root */
     async text(selector: string) {
       return page.evaluate((sel) => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         return host?.shadowRoot?.querySelector(sel)?.textContent ?? null;
       }, selector);
     },
     /** Click an element inside shadow root */
     async click(selector: string) {
       await page.evaluate((sel) => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         (host?.shadowRoot?.querySelector(sel) as HTMLElement)?.click();
       }, selector);
     },
     /** Count matching elements */
     async count(selector: string) {
       return page.evaluate((sel) => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         return host?.shadowRoot?.querySelectorAll(sel).length ?? 0;
       }, selector);
     },
@@ -54,7 +54,7 @@ function shadow(page: Page) {
     async attr(selector: string, attr: string) {
       return page.evaluate(
         ({ sel, a }) => {
-          const host = document.querySelector("siteping-widget");
+          const host = document.querySelector("beezping-widget");
           return host?.shadowRoot?.querySelector(sel)?.getAttribute(a) ?? null;
         },
         { sel: selector, a: attr },
@@ -64,7 +64,7 @@ function shadow(page: Page) {
     async waitFor(selector: string, options?: { timeout?: number }) {
       await page.waitForFunction(
         (sel) => {
-          const host = document.querySelector("siteping-widget");
+          const host = document.querySelector("beezping-widget");
           return host?.shadowRoot?.querySelector(sel) !== null;
         },
         selector,
@@ -75,7 +75,7 @@ function shadow(page: Page) {
     async waitForHidden(selector: string, options?: { timeout?: number }) {
       await page.waitForFunction(
         (sel) => {
-          const host = document.querySelector("siteping-widget");
+          const host = document.querySelector("beezping-widget");
           return host?.shadowRoot?.querySelector(sel) === null;
         },
         selector,
@@ -90,8 +90,8 @@ function shadow(page: Page) {
 // ---------------------------------------------------------------------------
 
 test.describe("Widget injection", () => {
-  test("injects the siteping-widget element", async ({ page }) => {
-    await expect(page.locator("siteping-widget")).toBeAttached();
+  test("injects the beezping-widget element", async ({ page }) => {
+    await expect(page.locator("beezping-widget")).toBeAttached();
   });
 
   test("renders the FAB button", async ({ page }) => {
@@ -100,7 +100,7 @@ test.describe("Widget injection", () => {
   });
 
   test("FAB has correct z-index on host", async ({ page }) => {
-    const zIndex = await page.locator("siteping-widget").evaluate((el) => getComputedStyle(el).zIndex);
+    const zIndex = await page.locator("beezping-widget").evaluate((el) => getComputedStyle(el).zIndex);
     expect(zIndex).toBe("2147483647");
   });
 });
@@ -297,7 +297,7 @@ test.describe("Annotation popup lifecycle", () => {
     await page.mouse.down();
     await page.mouse.move(box!.x + 250, box!.y + 60, { steps: 5 });
     await page.mouse.up();
-    const dialog = page.locator('body > [role="dialog"][data-siteping-ignore]');
+    const dialog = page.locator('body > [role="dialog"][data-beezping-ignore]');
     await expect(dialog).toHaveCSS("opacity", "1");
     return dialog;
   }
@@ -311,7 +311,7 @@ test.describe("Annotation popup lifecycle", () => {
     await drawAndOpenPopup(page);
     // Cancel and hit-test in the same task: deterministic, whatever the fade's timing
     const hit = await page.evaluate(() => {
-      const dialog = document.querySelector<HTMLElement>('body > [role="dialog"][data-siteping-ignore]')!;
+      const dialog = document.querySelector<HTMLElement>('body > [role="dialog"][data-beezping-ignore]')!;
       const textarea = dialog.querySelector("textarea")!.getBoundingClientRect();
       Array.from(dialog.querySelectorAll("button"))
         .find((button) => button.textContent === "Cancel")!
@@ -326,7 +326,7 @@ test.describe("Annotation popup lifecycle", () => {
   test("the toolbar Cancel closes an open popup and ends the session", async ({ page }) => {
     const dialog = await drawAndOpenPopup(page);
 
-    await page.locator("body > div[data-siteping-ignore] > button", { hasText: "Cancel" }).click();
+    await page.locator("body > div[data-beezping-ignore] > button", { hasText: "Cancel" }).click();
 
     await expect(dialog).toBeHidden();
     await expect(page.locator("div[style*='crosshair']")).toHaveCount(0);
@@ -335,7 +335,7 @@ test.describe("Annotation popup lifecycle", () => {
 
 test.describe("Annotation popup placement", () => {
   const toolbarCancel = (page: Page) =>
-    page.locator("body > div[data-siteping-ignore] > button", { hasText: "Cancel" });
+    page.locator("body > div[data-beezping-ignore] > button", { hasText: "Cancel" });
 
   async function startAnnotating(page: Page) {
     const s = shadow(page);
@@ -429,7 +429,7 @@ test.describe("Keyboard-only annotation", () => {
 
     // 2. Open the FAB via keyboard (Enter on the focused button = click).
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       (host?.shadowRoot?.querySelector(".sp-fab") as HTMLElement)?.focus();
     });
     await page.keyboard.press("Enter");
@@ -438,12 +438,12 @@ test.describe("Keyboard-only annotation", () => {
     // 3. The first radial item (chat) receives focus after the open animation
     //    — ArrowDown to the annotate item, then Enter to activate it.
     await page.waitForFunction(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       return host?.shadowRoot?.activeElement?.classList.contains("sp-radial-item") ?? false;
     });
     await page.keyboard.press("ArrowDown");
     await page.waitForFunction(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       return host?.shadowRoot?.activeElement?.getAttribute("data-item-id") === "annotate";
     });
     await page.keyboard.press("Enter");
@@ -460,7 +460,7 @@ test.describe("Keyboard-only annotation", () => {
     // covers the target element.
     const hasHighlight = await page.evaluate(() => {
       const overlay = document.querySelector("div[style*='crosshair']");
-      const rect = overlay?.querySelector("div[data-siteping-ignore]") as HTMLElement | null;
+      const rect = overlay?.querySelector("div[data-beezping-ignore]") as HTMLElement | null;
       return !!rect && rect.style.position === "fixed" && parseFloat(rect.style.width) > 0;
     });
     expect(hasHighlight).toBe(true);
@@ -507,22 +507,22 @@ test.describe("Full annotation flow", () => {
     // Wait for either the identity modal to appear or a marker to be created
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         const hasIdentity = host?.shadowRoot?.querySelector(".sp-identity-title") !== null;
         const hasMarker =
-          (document.getElementById("siteping-markers")?.querySelectorAll("[data-feedback-id]").length ?? 0) >= 1;
+          (document.getElementById("beezping-markers")?.querySelectorAll("[data-feedback-id]").length ?? 0) >= 1;
         return hasIdentity || hasMarker;
       },
       undefined,
       { timeout: 5000 },
     );
     const identityTitle = await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       return host?.shadowRoot?.querySelector(".sp-identity-title") !== null;
     });
     if (identityTitle) {
       await page.evaluate(() => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         const sr = host?.shadowRoot;
         const inputs = sr?.querySelectorAll(".sp-input") as NodeListOf<HTMLInputElement>;
         const [nameInput, emailInput] = Array.from(inputs ?? []);
@@ -537,7 +537,7 @@ test.describe("Full annotation flow", () => {
       // Wait for the feedback to be submitted and a marker to appear
       await page.waitForFunction(
         () => {
-          const c = document.getElementById("siteping-markers");
+          const c = document.getElementById("beezping-markers");
           return (c?.querySelectorAll("[data-feedback-id]").length ?? 0) >= 1;
         },
         undefined,
@@ -548,14 +548,14 @@ test.describe("Full annotation flow", () => {
     // 7. Verify marker appeared
     await page.waitForFunction(
       () => {
-        const c = document.getElementById("siteping-markers");
+        const c = document.getElementById("beezping-markers");
         return (c?.querySelectorAll("[data-feedback-id]").length ?? 0) >= 1;
       },
       undefined,
       { timeout: 5000 },
     );
     const markerCount = await page.evaluate(() => {
-      const c = document.getElementById("siteping-markers");
+      const c = document.getElementById("beezping-markers");
       return c?.querySelectorAll("[data-feedback-id]").length ?? 0;
     });
     expect(markerCount).toBeGreaterThanOrEqual(1);
@@ -564,14 +564,14 @@ test.describe("Full annotation flow", () => {
     const project = getProject(page);
     await page.waitForFunction(
       async (pn) => {
-        const r = await fetch(`http://localhost:3999/api/siteping?projectName=${pn}`);
+        const r = await fetch(`http://localhost:3999/api/beezping?projectName=${pn}`);
         const d = await r.json();
         return d.total >= 1;
       },
       project,
       { timeout: 5000 },
     );
-    const res = await page.request.get(`http://localhost:3999/api/siteping?projectName=${project}`);
+    const res = await page.request.get(`http://localhost:3999/api/beezping?projectName=${project}`);
     const data = await res.json();
     expect(data.total).toBe(1);
     expect(data.feedbacks[0].type).toBe("bug");
@@ -602,12 +602,12 @@ test.describe("Shadow DOM anchoring (#177)", () => {
         card.style.cssText = "display:block;margin-bottom:20px";
         document.getElementById("hero")?.after(card);
       });
-      localStorage.setItem("siteping_identity", JSON.stringify({ name: "Test User", email: "test@example.com" }));
+      localStorage.setItem("beezping_identity", JSON.stringify({ name: "Test User", email: "test@example.com" }));
     });
 
     const ready = async () => {
       await page.waitForFunction(() => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         return host?.shadowRoot?.querySelector(".sp-fab") !== null && !!document.getElementById("e2e-component");
       });
     };
@@ -637,11 +637,11 @@ test.describe("Shadow DOM anchoring (#177)", () => {
     // 2. Capture pierced the boundary: one selector per tree, a shadow-rooted XPath.
     const project = getProject(page);
     await page.waitForFunction(
-      async (pn) => (await (await fetch(`/api/siteping?projectName=${pn}`)).json()).total >= 1,
+      async (pn) => (await (await fetch(`/api/beezping?projectName=${pn}`)).json()).total >= 1,
       project,
       { timeout: 5000 },
     );
-    const data = await (await page.request.get(`http://localhost:3999/api/siteping?projectName=${project}`)).json();
+    const data = await (await page.request.get(`http://localhost:3999/api/beezping?projectName=${project}`)).json();
     const annotation = data.feedbacks[0].annotations[0];
     expect(annotation.cssSelector).toBe("#e2e-component >>> #shadow-target");
     expect(annotation.xpath).toBe("./p[@id='shadow-target']");
@@ -652,10 +652,10 @@ test.describe("Shadow DOM anchoring (#177)", () => {
     //    "approximate").
     await page.reload();
     await ready();
-    const marker = page.locator("#siteping-markers [data-feedback-id]");
+    const marker = page.locator("#beezping-markers [data-feedback-id]");
     await expect(marker).toBeVisible();
     const placed = await page.evaluate(() => {
-      const m = document.querySelector<HTMLElement>("#siteping-markers [data-feedback-id]");
+      const m = document.querySelector<HTMLElement>("#beezping-markers [data-feedback-id]");
       const r = document.getElementById("e2e-component")?.shadowRoot?.getElementById("shadow-target");
       const b = r?.getBoundingClientRect();
       return m && b
@@ -685,11 +685,11 @@ test.describe("Annotation toggle", () => {
     await s.click('[data-item-id="toggle-annotations"]');
 
     await page.waitForFunction(() => {
-      const c = document.getElementById("siteping-markers");
+      const c = document.getElementById("beezping-markers");
       return c?.style.display === "none";
     });
     const hidden = await page.evaluate(() => {
-      const c = document.getElementById("siteping-markers");
+      const c = document.getElementById("beezping-markers");
       return c?.style.display === "none";
     });
     expect(hidden).toBe(true);
@@ -700,11 +700,11 @@ test.describe("Annotation toggle", () => {
     await s.click('[data-item-id="toggle-annotations"]');
 
     await page.waitForFunction(() => {
-      const c = document.getElementById("siteping-markers");
+      const c = document.getElementById("beezping-markers");
       return c?.style.display !== "none";
     });
     const visible = await page.evaluate(() => {
-      const c = document.getElementById("siteping-markers");
+      const c = document.getElementById("beezping-markers");
       return c?.style.display !== "none";
     });
     expect(visible).toBe(true);
@@ -716,17 +716,17 @@ test.describe("Annotation toggle", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("Double-init guard", () => {
-  test("calling initSiteping() twice does not create duplicate widgets", async ({ page }) => {
-    // Call initSiteping a second time from the page context
+  test("calling initBeezping() twice does not create duplicate widgets", async ({ page }) => {
+    // Call initBeezping a second time from the page context
     const project = getProject(page);
     await page.evaluate((pn) => {
-      // Dynamic import to call initSiteping again
+      // Dynamic import to call initBeezping again
       const script = document.createElement("script");
       script.type = "module";
       script.textContent = `
-        import { initSiteping } from '/widget.js';
-        window.__siteping2 = initSiteping({
-          endpoint: '/api/siteping',
+        import { initBeezping } from '/widget.js';
+        window.__beezping2 = initBeezping({
+          endpoint: '/api/beezping',
           projectName: '${pn}',
           forceShow: true,
           accentColor: '#6366f1',
@@ -737,20 +737,20 @@ test.describe("Double-init guard", () => {
 
     // Wait for the second script to execute
     await page.waitForFunction(
-      () => (window as unknown as Record<string, unknown>).__siteping2 !== undefined,
+      () => (window as unknown as Record<string, unknown>).__beezping2 !== undefined,
       undefined,
       {
         timeout: 3000,
       },
     );
 
-    // There should still be exactly one <siteping-widget> element
-    const widgetCount = await page.evaluate(() => document.querySelectorAll("siteping-widget").length);
+    // There should still be exactly one <beezping-widget> element
+    const widgetCount = await page.evaluate(() => document.querySelectorAll("beezping-widget").length);
     expect(widgetCount).toBe(1);
 
     // There should still be exactly one FAB inside the shadow root
     const fabCount = await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       return host?.shadowRoot?.querySelectorAll(".sp-fab").length ?? 0;
     });
     expect(fabCount).toBe(1);
@@ -764,7 +764,7 @@ test.describe("Event delegation", () => {
    */
   async function createFeedbackAndOpenPanel(page: Page) {
     // Seed a feedback via the API
-    const res = await page.request.post("http://localhost:3999/api/siteping", {
+    const res = await page.request.post("http://localhost:3999/api/beezping", {
       data: {
         projectName: getProject(page),
         type: "bug",
@@ -797,7 +797,7 @@ test.describe("Event delegation", () => {
 
     // Find the card and its resolve button
     const hasResolveBtn = await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       const card = host?.shadowRoot?.querySelector(".sp-card");
       return card?.querySelector('[data-action="resolve"]') !== null;
     });
@@ -805,7 +805,7 @@ test.describe("Event delegation", () => {
 
     // Click the resolve button via evaluate (event delegation should handle it)
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       const resolveBtn = host?.shadowRoot?.querySelector('[data-action="resolve"]') as HTMLElement;
       resolveBtn?.click();
     });
@@ -813,27 +813,27 @@ test.describe("Event delegation", () => {
     // Wait for the card to get the resolved class (panel reloads after resolve)
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         return host?.shadowRoot?.querySelector(".sp-card--resolved") !== null;
       },
       undefined,
       { timeout: 5000 },
     );
     const isResolved = await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       return host?.shadowRoot?.querySelector(".sp-card--resolved") !== null;
     });
     expect(isResolved).toBe(true);
 
     // Verify via API that the status changed
-    const apiRes = await page.request.get(`http://localhost:3999/api/siteping?projectName=${getProject(page)}`);
+    const apiRes = await page.request.get(`http://localhost:3999/api/beezping?projectName=${getProject(page)}`);
     const data = await apiRes.json();
     expect(data.feedbacks[0].status).toBe("resolved");
   });
 
   test("clicking resolve button on a resolved card reopens it", async ({ page }) => {
     // Seed a feedback and resolve it via API
-    const createRes = await page.request.post("http://localhost:3999/api/siteping", {
+    const createRes = await page.request.post("http://localhost:3999/api/beezping", {
       data: {
         projectName: getProject(page),
         type: "change",
@@ -849,7 +849,7 @@ test.describe("Event delegation", () => {
     const fb = await createRes.json();
 
     // Resolve it via PATCH
-    await page.request.patch("http://localhost:3999/api/siteping", {
+    await page.request.patch("http://localhost:3999/api/beezping", {
       data: { id: fb.id, status: "resolved" },
     });
 
@@ -863,7 +863,7 @@ test.describe("Event delegation", () => {
 
     // Click the resolve (reopen) button
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       const card = host?.shadowRoot?.querySelector(".sp-card--resolved");
       const reopenBtn = card?.querySelector('[data-action="resolve"]') as HTMLElement;
       reopenBtn?.click();
@@ -872,7 +872,7 @@ test.describe("Event delegation", () => {
     // Wait for the card to lose the resolved class
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         const cards = host?.shadowRoot?.querySelectorAll(".sp-card") ?? [];
         // All cards should not have the resolved class (we only have one feedback)
         return cards.length > 0 && host?.shadowRoot?.querySelector(".sp-card--resolved") === null;
@@ -881,7 +881,7 @@ test.describe("Event delegation", () => {
       { timeout: 5000 },
     );
 
-    const apiRes = await page.request.get(`http://localhost:3999/api/siteping?projectName=${getProject(page)}`);
+    const apiRes = await page.request.get(`http://localhost:3999/api/beezping?projectName=${getProject(page)}`);
     const data = await apiRes.json();
     expect(data.feedbacks[0].status).toBe("open");
   });
@@ -891,8 +891,8 @@ test.describe("Default locale is English", () => {
   test("FAB aria-label uses English text", async ({ page }) => {
     const s = shadow(page);
     const ariaLabel = await s.attr(".sp-fab", "aria-label");
-    // English: "Siteping — Feedback menu"
-    expect(ariaLabel).toBe("Siteping \u2014 Feedback menu");
+    // English: "Beezping — Feedback menu"
+    expect(ariaLabel).toBe("Beezping \u2014 Feedback menu");
   });
 
   test("radial menu items use English labels", async ({ page }) => {
@@ -935,7 +935,7 @@ test.describe("Default locale is English", () => {
     await s.waitFor(".sp-panel--open");
 
     const placeholder = await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       const input = host?.shadowRoot?.querySelector(".sp-search") as HTMLInputElement;
       return input?.placeholder ?? null;
     });
@@ -964,7 +964,7 @@ test.describe("Panel search", () => {
   test("typing in search input filters feedbacks", async ({ page }) => {
     const project = getProject(page);
     // Seed two feedbacks with different messages
-    await page.request.post("http://localhost:3999/api/siteping", {
+    await page.request.post("http://localhost:3999/api/beezping", {
       data: {
         projectName: project,
         type: "bug",
@@ -977,7 +977,7 @@ test.describe("Panel search", () => {
         annotations: [],
       },
     });
-    await page.request.post("http://localhost:3999/api/siteping", {
+    await page.request.post("http://localhost:3999/api/beezping", {
       data: {
         projectName: project,
         type: "question",
@@ -1001,7 +1001,7 @@ test.describe("Panel search", () => {
     // Wait for at least 2 cards (parallel workers may add more via shared store)
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         return (host?.shadowRoot?.querySelectorAll(".sp-card").length ?? 0) >= 2;
       },
       undefined,
@@ -1012,7 +1012,7 @@ test.describe("Panel search", () => {
 
     // Type in the search input — "login" should filter to only matching feedbacks
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       const input = host?.shadowRoot?.querySelector(".sp-search") as HTMLInputElement;
       input.value = "login";
       input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -1021,7 +1021,7 @@ test.describe("Panel search", () => {
     // Wait for cards to decrease (search is filtering)
     await page.waitForFunction(
       (before) => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         return (host?.shadowRoot?.querySelectorAll(".sp-card").length ?? before) < before;
       },
       countBefore,
@@ -1030,7 +1030,7 @@ test.describe("Panel search", () => {
 
     // The remaining card(s) should all contain "login"
     const cardText = await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       const card = host?.shadowRoot?.querySelector(".sp-card-message");
       return card?.textContent ?? "";
     });
@@ -1040,7 +1040,7 @@ test.describe("Panel search", () => {
   test("clearing search shows all feedbacks again", async ({ page }) => {
     const project = getProject(page);
     // Seed two feedbacks
-    await page.request.post("http://localhost:3999/api/siteping", {
+    await page.request.post("http://localhost:3999/api/beezping", {
       data: {
         projectName: project,
         type: "bug",
@@ -1053,7 +1053,7 @@ test.describe("Panel search", () => {
         annotations: [],
       },
     });
-    await page.request.post("http://localhost:3999/api/siteping", {
+    await page.request.post("http://localhost:3999/api/beezping", {
       data: {
         projectName: project,
         type: "change",
@@ -1076,7 +1076,7 @@ test.describe("Panel search", () => {
     // Wait for both cards
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         return (host?.shadowRoot?.querySelectorAll(".sp-card").length ?? 0) >= 2;
       },
       undefined,
@@ -1085,7 +1085,7 @@ test.describe("Panel search", () => {
 
     // Search for "Alpha"
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       const input = host?.shadowRoot?.querySelector(".sp-search") as HTMLInputElement;
       input.value = "Alpha";
       input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -1093,7 +1093,7 @@ test.describe("Panel search", () => {
 
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         return (host?.shadowRoot?.querySelectorAll(".sp-card").length ?? 0) === 1;
       },
       undefined,
@@ -1102,7 +1102,7 @@ test.describe("Panel search", () => {
 
     // Clear the search
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       const input = host?.shadowRoot?.querySelector(".sp-search") as HTMLInputElement;
       input.value = "";
       input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -1111,7 +1111,7 @@ test.describe("Panel search", () => {
     // All feedbacks should reappear
     await page.waitForFunction(
       () => {
-        const host = document.querySelector("siteping-widget");
+        const host = document.querySelector("beezping-widget");
         return (host?.shadowRoot?.querySelectorAll(".sp-card").length ?? 0) >= 2;
       },
       undefined,
@@ -1122,7 +1122,7 @@ test.describe("Panel search", () => {
 
   test("search with no matches shows empty state", async ({ page }) => {
     // Seed a feedback
-    await page.request.post("http://localhost:3999/api/siteping", {
+    await page.request.post("http://localhost:3999/api/beezping", {
       data: {
         projectName: getProject(page),
         type: "bug",
@@ -1145,7 +1145,7 @@ test.describe("Panel search", () => {
 
     // Search for something that does not exist
     await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       const input = host?.shadowRoot?.querySelector(".sp-search") as HTMLInputElement;
       input.value = "xyznonexistent";
       input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -1257,12 +1257,12 @@ test.describe("Production guard at dist level (#104)", () => {
     const project = `e2e-${browserName}-noforce`;
     await page.request.get(`http://localhost:3999/api/reset?projectName=${project}`);
     await page.goto(`http://localhost:3999?project=${project}&noForceShow=1`);
-    await page.waitForSelector("siteping-widget", { state: "attached" });
+    await page.waitForSelector("beezping-widget", { state: "attached" });
     await page.waitForFunction(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       return host?.shadowRoot?.querySelector(".sp-fab") !== null;
     });
-    await expect(page.locator("siteping-widget")).toBeAttached();
+    await expect(page.locator("beezping-widget")).toBeAttached();
   });
 });
 
@@ -1272,7 +1272,7 @@ test.describe("Fixture page", () => {
   // the page in through String#replace.
   test("inlines ?project= into the init script as data, never markup", async ({ page, browserName }) => {
     const project = `e2e-${browserName}-$'</script><script>window.__pwned = true</script>\u2028`;
-    const listed = page.waitForRequest((req) => new URL(req.url()).pathname === "/api/siteping");
+    const listed = page.waitForRequest((req) => new URL(req.url()).pathname === "/api/beezping");
     await page.goto(`http://localhost:3999?project=${encodeURIComponent(project)}`);
     expect(new URL((await listed).url()).searchParams.get("projectName")).toBe(project);
     expect(await page.evaluate(() => "__pwned" in window)).toBe(false);
@@ -1295,7 +1295,7 @@ test.describe("Panel actions", () => {
     });
     const project = `e2e-${browserName}-actions`;
     await page.request.get(`http://localhost:3999/api/reset?projectName=${project}`);
-    const created = await page.request.post("http://localhost:3999/api/siteping", {
+    const created = await page.request.post("http://localhost:3999/api/beezping", {
       data: {
         projectName: project,
         type: "bug",
@@ -1325,7 +1325,7 @@ test.describe("Panel actions", () => {
     // the icon's CSS-parsed attributes time to request their resources.
     await page.waitForTimeout(500);
     const result = await page.evaluate(() => {
-      const root = document.querySelector("siteping-widget")!.shadowRoot!;
+      const root = document.querySelector("beezping-widget")!.shadowRoot!;
       const control = (id: string) => root.querySelector<HTMLElement>(`[data-action-id="${id}"]`)!;
       const link = (id: string) => control(id) as HTMLAnchorElement;
       return {
@@ -1375,7 +1375,7 @@ test.describe("Panel actions", () => {
 
     await page.evaluate(() => (window as { __releasePanelAction?: () => void }).__releasePanelAction?.());
     await page.waitForFunction(() => {
-      const root = document.querySelector("siteping-widget")!.shadowRoot!;
+      const root = document.querySelector("beezping-widget")!.shadowRoot!;
       return !root.querySelector<HTMLButtonElement>(".sp-detail-btn-resolve")!.disabled;
     });
     expect(await s.attr('[data-action-id="record"]', "aria-busy")).toBeNull();
@@ -1384,7 +1384,7 @@ test.describe("Panel actions", () => {
 
   test("host actions wrap and truncate instead of squashing Resolve/Delete", async ({ page }) => {
     const layout = await page.evaluate(() => {
-      const root = document.querySelector("siteping-widget")!.shadowRoot!;
+      const root = document.querySelector("beezping-widget")!.shadowRoot!;
       const row = root.querySelector<HTMLElement>(".sp-detail-actions--custom")!;
       const rowRect = row.getBoundingClientRect();
       const longLabel = root.querySelector<HTMLElement>('[data-action-id="long"] span')!;
@@ -1414,7 +1414,7 @@ test.describe("Go to annotation", () => {
 
   async function seed(page: Page, project: string, anchor: Record<string, unknown>) {
     await page.request.get(`http://localhost:3999/api/reset?projectName=${project}`);
-    await page.request.post("http://localhost:3999/api/siteping", {
+    await page.request.post("http://localhost:3999/api/beezping", {
       data: {
         projectName: project,
         type: "bug",
@@ -1474,12 +1474,12 @@ test.describe("Go to annotation", () => {
       elementTag: "P",
       elementId: "target-element",
     });
-    await expect(page.locator("#siteping-markers [data-feedback-id]")).toBeVisible();
+    await expect(page.locator("#beezping-markers [data-feedback-id]")).toBeVisible();
     const s = shadow(page);
     await s.click(".sp-fab");
     await s.waitFor('[data-item-id="toggle-annotations"]');
     await s.click('[data-item-id="toggle-annotations"]');
-    await expect(page.locator("#siteping-markers")).toBeHidden();
+    await expect(page.locator("#beezping-markers")).toBeHidden();
 
     await goToAnnotation(page);
 
@@ -1489,15 +1489,15 @@ test.describe("Go to annotation", () => {
 
 test.describe("Cleanup", () => {
   test("destroy() removes all injected elements", async ({ page }) => {
-    await expect(page.locator("siteping-widget")).toBeAttached();
+    await expect(page.locator("beezping-widget")).toBeAttached();
 
     await page.evaluate(() => {
-      (window as unknown as { __siteping: { destroy: () => void } }).__siteping.destroy();
+      (window as unknown as { __beezping: { destroy: () => void } }).__beezping.destroy();
     });
 
-    await page.waitForFunction(() => !document.querySelector("siteping-widget"));
-    const widgetGone = await page.evaluate(() => !document.querySelector("siteping-widget"));
-    const markersGone = await page.evaluate(() => !document.getElementById("siteping-markers"));
+    await page.waitForFunction(() => !document.querySelector("beezping-widget"));
+    const widgetGone = await page.evaluate(() => !document.querySelector("beezping-widget"));
+    const markersGone = await page.evaluate(() => !document.getElementById("beezping-markers"));
     expect(widgetGone).toBe(true);
     expect(markersGone).toBe(true);
   });

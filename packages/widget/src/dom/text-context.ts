@@ -1,3 +1,4 @@
+import { WIDGET_IGNORE_ATTRIBUTE } from "../constants/branding.js";
 /**
  * Shared text-context helpers for DOM anchoring.
  * Used by both anchor generation (anchor.ts) and resolution (resolver.ts).
@@ -25,7 +26,7 @@ function pageSibling(sibling: Element | null, prop: SiblingProp): Element | null
 
 /** The host's privacy mask (see screenshot.ts), which widget chrome carries too. */
 function isMasked(node: Node): boolean {
-  return node.nodeType === 1 && (node as Element).getAttribute("data-siteping-ignore") === "true";
+  return node.nodeType === 1 && (node as Element).getAttribute(WIDGET_IGNORE_ATTRIBUTE) === "true";
 }
 
 /** TreeWalker filter for `skipMasked`: text nodes only, a masked subtree rejected whole. */
@@ -83,7 +84,7 @@ export function neighborText(element: Element): string {
  * A TreeWalker yields the same text nodes in the same (tree) order and stops
  * as soon as the budget is reached.
  *
- * `skipMasked` leaves out text under a `data-siteping-ignore="true"`
+ * `skipMasked` leaves out text under a `data-beezping-ignore="true"`
  * descendant.
  */
 export function boundedText(element: Element, cap: number, skipMasked = false): string {

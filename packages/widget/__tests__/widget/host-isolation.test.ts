@@ -101,9 +101,9 @@ describe("host isolation", () => {
       expect(isWidgetSurface(hostInput)).toBe(false);
     });
 
-    it("does not treat host elements masked with data-siteping-ignore as widget surfaces", () => {
+    it("does not treat host elements masked with data-beezping-ignore as widget surfaces", () => {
       const maskedInput = document.createElement("input");
-      maskedInput.setAttribute("data-siteping-ignore", "true");
+      maskedInput.setAttribute("data-beezping-ignore", "true");
       document.body.appendChild(maskedInput);
 
       expect(isWidgetSurface(maskedInput)).toBe(false);
@@ -342,9 +342,9 @@ describe("host isolation", () => {
       expect(onHostFieldBlur).toHaveBeenCalledTimes(1);
     });
 
-    it("keeps focusout when focus moves to a host element masked with data-siteping-ignore", () => {
+    it("keeps focusout when focus moves to a host element masked with data-beezping-ignore", () => {
       const maskedInput = document.createElement("input");
-      maskedInput.setAttribute("data-siteping-ignore", "true");
+      maskedInput.setAttribute("data-beezping-ignore", "true");
       document.body.appendChild(maskedInput);
       const onHostFieldBlur = vi.fn();
       hostInput.addEventListener("focusout", onHostFieldBlur);

@@ -6,8 +6,8 @@ description: Add your own buttons and links to the feedback detail view — crea
 `panelActions` adds your own controls to the feedback detail view, in a row below **Resolve** and **Delete**. Use them to bridge a feedback into the tools you already run, without forking the panel.
 
 ```ts
-initSiteping({
-  endpoint: "/api/siteping",
+initBeezping({
+  endpoint: "/api/beezping",
   projectName: "my-project",
   panelActions: [
     {
@@ -46,7 +46,7 @@ Each action is **either** a button (`onAction`) or a link (`href`). TypeScript r
 | `onAction` | `(feedback, context) => void \| Promise<void>` | **Button.** Runs on click |
 | `href` | `string` or `(feedback) => string` | **Link.** Where it points — `http:`, `https:` or `mailto:` only |
 
-The types are exported from `@beezping/widget`: `SitepingPanelAction` (the union), `SitepingPanelButtonAction`, `SitepingPanelLinkAction`, `SitepingPanelActionContext` and `SitepingPanelActionFeedback`.
+The types are exported from `@beezping/widget`: `BeezpingPanelAction` (the union), `BeezpingPanelButtonAction`, `BeezpingPanelLinkAction`, `BeezpingPanelActionContext` and `BeezpingPanelActionFeedback`.
 
 ## Running an action
 
@@ -57,7 +57,7 @@ The second argument gives you two helpers:
 - `refresh()` reloads the list and the markers, then re-renders the detail view with the updated feedback — or goes back to the list when it no longer matches the panel filters. Call it when your action changed the feedback server-side.
 - `close()` closes the panel.
 
-Callbacks receive a **frozen copy** of the feedback, typed `SitepingPanelActionFeedback`: read-only all the way down, arrays and nested records included. Read anything you need. Writes are rejected — TypeScript flags them, and at runtime they throw in strict-mode code (and are silently ignored otherwise) — and could never change what the panel shows anyway. Type your own helpers with `SitepingPanelActionFeedback`: a `FeedbackResponse` parameter does not accept the frozen copy.
+Callbacks receive a **frozen copy** of the feedback, typed `BeezpingPanelActionFeedback`: read-only all the way down, arrays and nested records included. Read anything you need. Writes are rejected — TypeScript flags them, and at runtime they throw in strict-mode code (and are silently ignored otherwise) — and could never change what the panel shows anyway. Type your own helpers with `BeezpingPanelActionFeedback`: a `FeedbackResponse` parameter does not accept the frozen copy.
 
 ## Links
 
@@ -67,11 +67,11 @@ Any other scheme — `javascript:`, `data:`, `file:`… — is never rendered. A
 
 ## Errors
 
-Whatever `onAction` throws or rejects with, and a `visible` or `href` function that throws, is always logged to the console as `[siteping] Panel action failed:`, then goes to [`onError`](/docs/widget#handling-errors) when you set one — non-`Error` values are wrapped — and the buttons come back. The widget has no UI of its own for these errors, so the console entry makes sure a bug in your handler never fails silently. These are failures of your code, not of the feedback API, so they are **not** emitted on the public `feedback:error` event, and they can never be mistaken for a failed submission in the comment popup.
+Whatever `onAction` throws or rejects with, and a `visible` or `href` function that throws, is always logged to the console as `[beezping] Panel action failed:`, then goes to [`onError`](/docs/widget#handling-errors) when you set one — non-`Error` values are wrapped — and the buttons come back. The widget has no UI of its own for these errors, so the console entry makes sure a bug in your handler never fails silently. These are failures of your code, not of the feedback API, so they are **not** emitted on the public `feedback:error` event, and they can never be mistaken for a failed submission in the comment popup.
 
 ```ts
-initSiteping({
-  endpoint: "/api/siteping",
+initBeezping({
+  endpoint: "/api/beezping",
   projectName: "my-project",
   onError: (error) => showToast(error.message),
   panelActions: [
@@ -89,7 +89,7 @@ initSiteping({
 
 ## Validation
 
-`panelActions` is read once, when the panel loads. An entry without a non-empty `id` and `label`, without exactly one of `onAction` / `href`, with an unsafe static `href`, or reusing an earlier `id` is skipped with a `[siteping]` console warning. The other actions still render.
+`panelActions` is read once, when the panel loads. An entry without a non-empty `id` and `label`, without exactly one of `onAction` / `href`, with an unsafe static `href`, or reusing an earlier `id` is skipped with a `[beezping]` console warning. The other actions still render.
 
 ## Icons
 
@@ -97,4 +97,4 @@ initSiteping({
 
 ## React
 
-With [`useSiteping`](/docs/widget#react), `onAction`, `visible` and a function `href` are read at call time, so they can close over fresh state (an auth token, the current user) without re-initializing the widget. The list itself — ids, labels, icons, static hrefs — is read at mount, like every other structural option.
+With [`useBeezping`](/docs/widget#react), `onAction`, `visible` and a function `href` are read at call time, so they can close over fresh state (an auth token, the current user) without re-initializing the widget. The list itself — ids, labels, icons, static hrefs — is read at mount, like every other structural option.

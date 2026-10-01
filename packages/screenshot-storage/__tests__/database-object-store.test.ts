@@ -7,7 +7,7 @@ import {
 import { isObjectStoreRequestError } from "../src/core/http.js";
 import type { ScreenshotObject } from "../src/core/object-store.js";
 
-const PUBLIC_BASE_URL = "https://app.example.com/api/siteping/screenshots";
+const PUBLIC_BASE_URL = "https://app.example.com/api/beezping/screenshots";
 
 /** A table held in a `Map`, enforcing the primary key like the real dialects do. */
 function createInMemoryTableGateway(): ScreenshotTableGateway & { rows: Map<string, ScreenshotRow> } {
@@ -58,7 +58,7 @@ describe("createDatabaseObjectStore", () => {
     await store.put({ key: "shot.png", bytes, contentType: "image/png" });
     await expect(store.put({ key: "shot.png", bytes: new Uint8Array([9]), contentType: "image/webp" })).rejects.toThrow(
       expect.objectContaining({
-        message: "[siteping] test-db INSERT shot.png failed",
+        message: "[beezping] test-db INSERT shot.png failed",
         cause: "duplicate primary key: shot.png",
       }),
     );
@@ -67,7 +67,7 @@ describe("createDatabaseObjectStore", () => {
 
   it("reports a failed query by statement and key, with the code and first line of the driver's error only", async () => {
     // What Drizzle throws: its message and `params` quote every bound value, the image bytes included.
-    const driverError = Object.assign(new Error('relation "siteping_screenshots" does not exist'), { code: "42P01" });
+    const driverError = Object.assign(new Error('relation "beezping_screenshots" does not exist'), { code: "42P01" });
     const queryError = Object.assign(new Error(`Failed query: insert into …\nparams: shot.png,image/png,${bytes}`), {
       params: ["shot.png", "image/png", bytes],
       cause: driverError,
@@ -93,8 +93,8 @@ describe("createDatabaseObjectStore", () => {
 
       expect(isObjectStoreRequestError(failure)).toBe(true);
       expect(failure).toMatchObject({
-        message: `[siteping] test-db ${statement} shot.png failed`,
-        cause: '42P01: relation "siteping_screenshots" does not exist',
+        message: `[beezping] test-db ${statement} shot.png failed`,
+        cause: '42P01: relation "beezping_screenshots" does not exist',
       });
     }
   });
@@ -116,7 +116,7 @@ describe("createDatabaseObjectStore", () => {
     });
 
     await expect(store.put({ key: "shot.png", bytes, contentType: "image/png" })).rejects.toMatchObject({
-      message: "[siteping] test-db INSERT shot.png failed",
+      message: "[beezping] test-db INSERT shot.png failed",
       cause: "Failed query: insert into …",
     });
   });

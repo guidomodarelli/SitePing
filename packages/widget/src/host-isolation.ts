@@ -59,7 +59,7 @@ const composedParent = (node: Node): Node | null => (node instanceof ShadowRoot 
 /**
  * True when `node` is, or lives inside, a surface registered through
  * {@link isolateFromHost}. Narrower than `isWidgetChrome`: host elements
- * masked with `data-siteping-ignore` are not widget surfaces.
+ * masked with `data-beezping-ignore` are not widget surfaces.
  */
 export function isWidgetSurface(node: Node): boolean {
   for (let current: Node | null = node; current; current = composedParent(current)) {

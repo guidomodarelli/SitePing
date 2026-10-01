@@ -1,5 +1,5 @@
 /** Default table holding screenshot bytes when they are stored in the database. */
-export const DEFAULT_SCREENSHOTS_TABLE_NAME = "siteping_screenshots";
+export const DEFAULT_SCREENSHOTS_TABLE_NAME = "beezping_screenshots";
 
 /** Backend name of the PostgreSQL screenshot store, used in error messages. */
 export const POSTGRES_OBJECT_STORE_NAME = "PostgreSQL";
@@ -27,5 +27,5 @@ export const SCREENSHOTS_TABLE_COLUMNS = {
  * @returns The actionable error message, naming the received type.
  */
 export function formatUnexpectedBinaryColumnDataMessage(receivedType: string): string {
-  return `[siteping] database screenshot store: expected binary column data (Buffer, Uint8Array or ArrayBuffer), got ${receivedType}`;
+  return `[beezping] database screenshot store: expected binary column data (Buffer, Uint8Array or ArrayBuffer), got ${receivedType}`;
 }

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { SitepingConfig } from "@beezping/core";
+import type { BeezpingConfig } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EventBus, type WidgetEvents } from "../../src/events.js";
 import { Fab } from "../../src/fab.js";
@@ -14,7 +14,7 @@ import { createShadowRoot, mockMediaQueries } from "../helpers.js";
 
 function defaultConfig() {
   return {
-    endpoint: "/api/siteping",
+    endpoint: "/api/beezping",
     projectName: "test-project",
     position: "bottom-right" as const,
   };
@@ -619,7 +619,7 @@ describe("Fab", () => {
       shadow.host.remove();
 
       shadow = createShadowRoot();
-      const config: SitepingConfig = { endpoint: "/api/siteping", projectName: "test-project" };
+      const config: BeezpingConfig = { endpoint: "/api/beezping", projectName: "test-project" };
       fab = new Fab(shadow, config, bus, createT("fr"));
 
       const btn = shadow.querySelector<HTMLButtonElement>(".sp-fab")!;

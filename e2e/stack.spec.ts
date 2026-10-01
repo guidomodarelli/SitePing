@@ -3,14 +3,14 @@ import type { FeedbackPayload, FeedbackResponse, FeedbackResponseList } from "..
 
 /**
  * Real-stack E2E — the widget and the dashboard against the real
- * `createSitepingHandler` + `MemoryStore` (see `stack-server.mjs`), where
+ * `createBeezpingHandler` + `MemoryStore` (see `stack-server.mjs`), where
  * `widget.spec.ts` runs against a hand-written fake API. Each scenario here
  * is one the fake could not catch: server-side validation, webhooks, and
  * the dashboard's optimistic updates against real PATCH responses.
  */
 
 const ORIGIN = "http://localhost:3998";
-const API = `${ORIGIN}/api/siteping`;
+const API = `${ORIGIN}/api/beezping`;
 
 /**
  * One project per test attempt — the store is shared and never reset, so this
@@ -58,16 +58,16 @@ async function seed(request: APIRequestContext, projectName: string, message: st
 
 async function openWidgetPage(page: Page, query: Record<string, string>): Promise<void> {
   await page.goto(`${ORIGIN}/?${new URLSearchParams(query)}`);
-  await page.waitForFunction(() => !!document.querySelector("siteping-widget")?.shadowRoot?.querySelector(".sp-fab"));
+  await page.waitForFunction(() => !!document.querySelector("beezping-widget")?.shadowRoot?.querySelector(".sp-fab"));
 }
 
 async function clickInShadow(page: Page, selector: string): Promise<void> {
   await page.waitForFunction(
-    (sel) => !!document.querySelector("siteping-widget")?.shadowRoot?.querySelector(sel),
+    (sel) => !!document.querySelector("beezping-widget")?.shadowRoot?.querySelector(sel),
     selector,
   );
   await page.evaluate((sel) => {
-    document.querySelector("siteping-widget")?.shadowRoot?.querySelector<HTMLElement>(sel)?.click();
+    document.querySelector("beezping-widget")?.shadowRoot?.querySelector<HTMLElement>(sel)?.click();
   }, selector);
 }
 
@@ -185,14 +185,14 @@ test.describe("Widget against the real handler", () => {
   test("the panel loads from an endpoint that already carries a query string", async ({ page, request }, testInfo) => {
     const project = projectFor(testInfo);
     await seed(request, project, "Seeded for the panel");
-    await openWidgetPage(page, { project, endpoint: "/api/siteping?tenant=acme" });
+    await openWidgetPage(page, { project, endpoint: "/api/beezping?tenant=acme" });
 
     await clickInShadow(page, ".sp-fab");
     await clickInShadow(page, '[data-item-id="chat"]');
     await page.waitForFunction(
       () =>
         document
-          .querySelector("siteping-widget")
+          .querySelector("beezping-widget")
           ?.shadowRoot?.querySelector(".sp-card")
           ?.textContent?.includes("Seeded for the panel") ?? false,
     );
@@ -208,7 +208,7 @@ test.describe("Widget against the real handler", () => {
     expect((await annotateAndSend(page, "Sent from here")).status()).toBe(201);
     const cardMessages = () =>
       page.evaluate(() =>
-        [...(document.querySelector("siteping-widget")?.shadowRoot?.querySelectorAll(".sp-card-message") ?? [])].map(
+        [...(document.querySelector("beezping-widget")?.shadowRoot?.querySelectorAll(".sp-card-message") ?? [])].map(
           (message) => message.textContent,
         ),
       );
@@ -309,7 +309,7 @@ test.describe("Dashboard inbox against the real handler", () => {
   test("the inbox loads from an endpoint that already carries a query string", async ({ page, request }, testInfo) => {
     const project = projectFor(testInfo);
     await seed(request, project, "Tenant-scoped");
-    await openInbox(page, { project, endpoint: "/api/siteping?tenant=acme" });
+    await openInbox(page, { project, endpoint: "/api/beezping?tenant=acme" });
     await expect(rowMessages(page)).toHaveText(["Tenant-scoped"]);
   });
 });
@@ -325,14 +325,14 @@ async function openWidgetThread(page: Page, project: string): Promise<void> {
   await clickInShadow(page, '[data-item-id="chat"]');
   await clickInShadow(page, ".sp-card");
   await page.waitForFunction(
-    () => !!document.querySelector("siteping-widget")?.shadowRoot?.querySelector(".sp-detail textarea"),
+    () => !!document.querySelector("beezping-widget")?.shadowRoot?.querySelector(".sp-detail textarea"),
   );
 }
 
 /** The replies the widget's detail view shows, as text. */
 function widgetReplies(page: Page): Promise<string[]> {
   return page.evaluate(() =>
-    [...(document.querySelector("siteping-widget")?.shadowRoot?.querySelectorAll(".sp-comment") ?? [])].map(
+    [...(document.querySelector("beezping-widget")?.shadowRoot?.querySelectorAll(".sp-comment") ?? [])].map(
       (reply) => reply.textContent ?? "",
     ),
   );
@@ -350,7 +350,7 @@ test.describe("Discussion thread across the widget and the inbox", () => {
     await openWidgetThread(page, project);
     const posted = page.waitForResponse((r) => r.url().startsWith(API) && r.request().method() === "POST");
     await page.evaluate(() => {
-      const shadow = document.querySelector("siteping-widget")?.shadowRoot;
+      const shadow = document.querySelector("beezping-widget")?.shadowRoot;
       const input = shadow?.querySelector<HTMLTextAreaElement>(".sp-detail textarea");
       if (input) input.value = "  16 px, please  ";
       shadow?.querySelector<HTMLButtonElement>(".sp-thread-foot button")?.click();
@@ -412,7 +412,7 @@ test.describe("Typing in the widget's reply box", () => {
     // The detail view focuses its back button on the next frame: once it has,
     // nothing takes the focus from the field.
     await page.waitForFunction(() =>
-      document.querySelector("siteping-widget")?.shadowRoot?.activeElement?.classList.contains("sp-detail-back"),
+      document.querySelector("beezping-widget")?.shadowRoot?.activeElement?.classList.contains("sp-detail-back"),
     );
     // DocSearch-style: `/` opens the page's search, `s` stars — outside text fields.
     await page.evaluate(() => {
@@ -426,7 +426,7 @@ test.describe("Typing in the widget's reply box", () => {
         }
       });
       document
-        .querySelector("siteping-widget")
+        .querySelector("beezping-widget")
         ?.shadowRoot?.querySelector<HTMLTextAreaElement>(".sp-detail textarea")
         ?.focus();
     });
@@ -435,7 +435,7 @@ test.describe("Typing in the widget's reply box", () => {
 
     const typed = await page.evaluate(
       () =>
-        document.querySelector("siteping-widget")?.shadowRoot?.querySelector<HTMLTextAreaElement>(".sp-detail textarea")
+        document.querySelector("beezping-widget")?.shadowRoot?.querySelector<HTMLTextAreaElement>(".sp-detail textarea")
           ?.value,
     );
     expect(typed).toBe("see https://x.io/a s");
@@ -448,7 +448,7 @@ test.describe("Typing in the widget's reply box", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("Permissions sent by the real handler", () => {
-  const KEYED = "/api/siteping-keyed";
+  const KEYED = "/api/beezping-keyed";
 
   test("a visitor without the key gets no triage action; the key holder's inbox has them", async ({
     page,
@@ -463,10 +463,10 @@ test.describe("Permissions sent by the real handler", () => {
     await clickInShadow(page, '[data-item-id="chat"]');
     await clickInShadow(page, ".sp-card");
     await page.waitForFunction(
-      () => !!document.querySelector("siteping-widget")?.shadowRoot?.querySelector(".sp-detail textarea"),
+      () => !!document.querySelector("beezping-widget")?.shadowRoot?.querySelector(".sp-detail textarea"),
     );
     const offered = await page.evaluate(() => {
-      const shadow = document.querySelector("siteping-widget")?.shadowRoot;
+      const shadow = document.querySelector("beezping-widget")?.shadowRoot;
       return {
         card: !!shadow?.querySelector(".sp-card .sp-btn-resolve, .sp-card .sp-btn-delete"),
         detail: !!shadow?.querySelector(".sp-detail-btn-resolve, .sp-detail-btn-delete"),

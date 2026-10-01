@@ -29,8 +29,8 @@ export const DEFAULT_MAX_SCREENSHOT_BYTES = 1_125_000;
  */
 export const UNCERTAIN_UPLOAD_RECLAIM_TIMEOUT_MS = 2_000;
 
-/** Prefix of generated object keys; keeps SitePing objects recognizable in a shared bucket. */
-export const DEFAULT_KEY_PREFIX = "siteping-";
+/** Prefix of generated object keys; keeps Beezping objects recognizable in a shared bucket. */
+export const DEFAULT_KEY_PREFIX = "beezping-";
 
 /** Random bytes in a generated key (hex-encoded: twice as many characters). */
 export const KEY_RANDOM_BYTES = 16;

@@ -1,22 +1,22 @@
 import { MemoryStore } from "@beezping/adapter-memory";
 import {
   type AnnotationPayload,
+  BeezpingError,
+  type BeezpingStore,
   type CommentRecord,
   type FeedbackCreateInput,
   type FeedbackPayload,
   type FeedbackRecord,
-  SitepingError,
-  type SitepingStore,
   StoreDuplicateError,
 } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StoreClient } from "../../src/store-client.js";
 
 // ---------------------------------------------------------------------------
-// Mock SitepingStore
+// Mock BeezpingStore
 // ---------------------------------------------------------------------------
 
-function mockStore(): SitepingStore {
+function mockStore(): BeezpingStore {
   return {
     createFeedback: vi.fn(),
     getFeedbacks: vi.fn(),
@@ -134,7 +134,7 @@ describe("StoreClient", () => {
   // -----------------------------------------------------------------------
 
   // -----------------------------------------------------------------------
-  // sendFeedback — a write that never settles (#342): SitepingStore takes no
+  // sendFeedback — a write that never settles (#342): BeezpingStore takes no
   // AbortSignal, and the popup holds the user until the send settles.
   // -----------------------------------------------------------------------
 
@@ -143,7 +143,7 @@ describe("StoreClient", () => {
       vi.useRealTimers();
     });
 
-    it("rejects with a retryable TIMEOUT SitepingError at 30 s, not before, and leaves no timer pending", async () => {
+    it("rejects with a retryable TIMEOUT BeezpingError at 30 s, not before, and leaves no timer pending", async () => {
       vi.useFakeTimers();
       vi.mocked(store.createFeedback).mockReturnValue(new Promise(() => {}));
       const settled = vi.fn();
@@ -157,7 +157,7 @@ describe("StoreClient", () => {
       await vi.advanceTimersByTimeAsync(1);
 
       const error = await outcome;
-      expect(error).toBeInstanceOf(SitepingError);
+      expect(error).toBeInstanceOf(BeezpingError);
       expect(error).toMatchObject({ code: "TIMEOUT", retryable: true });
       expect(vi.getTimerCount()).toBe(0);
     });
@@ -519,7 +519,7 @@ describe("StoreClient", () => {
 
     it("bounds a reply by the same 30 s as a feedback", async () => {
       vi.useFakeTimers();
-      const hanging: SitepingStore = { ...store, addComment: () => new Promise(() => {}) };
+      const hanging: BeezpingStore = { ...store, addComment: () => new Promise(() => {}) };
       const outcome = new StoreClient(hanging, "p").addComment("fb-1", reply).catch((error: unknown) => error);
 
       await vi.advanceTimersByTimeAsync(30_000);
@@ -529,7 +529,7 @@ describe("StoreClient", () => {
     });
 
     it("refuses a reply when the store keeps no comments", async () => {
-      await expect(client.addComment("fb-1", reply)).rejects.toBeInstanceOf(SitepingError);
+      await expect(client.addComment("fb-1", reply)).rejects.toBeInstanceOf(BeezpingError);
     });
   });
 

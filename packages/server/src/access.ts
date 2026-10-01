@@ -1,11 +1,11 @@
 import { ERROR_MESSAGES } from "./constants.js";
 import type {
-  SitepingAccessControl,
-  SitepingApiKeyHandlerOptions,
-  SitepingAuthorizationContext,
-  SitepingHttpMethod,
-  SitepingPrincipal,
-  SitepingRequestContext,
+  BeezpingAccessControl,
+  BeezpingApiKeyHandlerOptions,
+  BeezpingAuthorizationContext,
+  BeezpingHttpMethod,
+  BeezpingPrincipal,
+  BeezpingRequestContext,
 } from "./options.js";
 
 /** Outcome of the access check that opens every request. */
@@ -26,19 +26,19 @@ export interface AccessGate<Principal> {
   readonly guardsMutations: boolean;
   /** `Cache-Control` of the list response. */
   readonly listCacheControl: string;
-  authenticate(request: Request, method: SitepingHttpMethod): Promise<AccessOutcome<Principal>>;
+  authenticate(request: Request, method: BeezpingHttpMethod): Promise<AccessOutcome<Principal>>;
   /**
    * Whether the caller of an admitted request would be admitted on `method`
    * too — the first half of each `permissions` answer, `authorize` the second.
    */
-  admits(request: Request, method: SitepingHttpMethod): Promise<boolean>;
-  authorize(context: SitepingAuthorizationContext<Principal>): Promise<boolean>;
+  admits(request: Request, method: BeezpingHttpMethod): Promise<boolean>;
+  authorize(context: BeezpingAuthorizationContext<Principal>): Promise<boolean>;
   /**
    * Whether an authenticated caller's comment keeps the `team` role it asks
    * for. Asked only when a comment does, so a GET never runs the policy's
    * callback for it.
    */
-  canCommentAsTeam(context: SitepingRequestContext<Principal>, canReadAuthorEmail: boolean): Promise<boolean>;
+  canCommentAsTeam(context: BeezpingRequestContext<Principal>, canReadAuthorEmail: boolean): Promise<boolean>;
 }
 
 const textEncoder = new TextEncoder();
@@ -82,19 +82,19 @@ export function createApiKeyGate({
   requireAuthForDestructive = true,
   redactUnauthenticatedEmails = true,
 }: Pick<
-  SitepingApiKeyHandlerOptions,
+  BeezpingApiKeyHandlerOptions,
   "apiKey" | "publicEndpoints" | "requireAuthForDestructive" | "redactUnauthenticatedEmails"
 >): AccessGate<null> {
   // Without this guard, anyone could `DELETE { deleteAll: true }` against the API.
   if (!apiKey && requireAuthForDestructive && isProductionEnvironment()) {
     throw new Error(
-      "[siteping] createSitepingHandler: apiKey is required in production. " +
+      "[beezping] createBeezpingHandler: apiKey is required in production. " +
         "Set `apiKey` to enable destructive endpoints, pass `access` to plug in your own authentication, " +
-        "or pass `requireAuthForDestructive: false` if SitePing sits behind your own auth middleware.",
+        "or pass `requireAuthForDestructive: false` if Beezping sits behind your own auth middleware.",
     );
   }
 
-  const publicMethods: ReadonlySet<SitepingHttpMethod> | null = publicEndpoints ? new Set(publicEndpoints) : null;
+  const publicMethods: ReadonlySet<BeezpingHttpMethod> | null = publicEndpoints ? new Set(publicEndpoints) : null;
 
   /**
    * True iff `apiKey` is configured AND the request carries a matching Bearer
@@ -143,8 +143,8 @@ export function createApiKeyGate({
 }
 
 /** A custom `access` policy. */
-export function createAccessGate<Principal extends SitepingPrincipal>(
-  access: SitepingAccessControl<Principal>,
+export function createAccessGate<Principal extends BeezpingPrincipal>(
+  access: BeezpingAccessControl<Principal>,
 ): AccessGate<Principal> {
   return {
     echoesAuthorEmailOnCreate: false,

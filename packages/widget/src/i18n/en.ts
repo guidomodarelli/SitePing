@@ -3,7 +3,7 @@ import type { Translations } from "./types.js";
 export const en: Translations = {
   // Panel
   "panel.title": "Feedbacks",
-  "panel.ariaLabel": "Siteping feedback panel",
+  "panel.ariaLabel": "Beezping feedback panel",
   "panel.feedbackList": "Feedback list",
   "panel.loading": "Loading feedbacks",
   "panel.close": "Close panel",
@@ -53,7 +53,7 @@ export const en: Translations = {
   "panel.filterMineHint": "Only the feedback sent from this browser",
 
   // FAB menu
-  "fab.aria": "Siteping \u2014 Feedback menu",
+  "fab.aria": "Beezping \u2014 Feedback menu",
   "fab.messages": "Show sidebar",
   "fab.annotate": "Create new annotation",
   "fab.annotations": "Show or hide markers",

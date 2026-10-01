@@ -2,15 +2,15 @@ import { MemoryStore } from "@beezping/adapter-memory";
 import { createCollectionStore, type FeedbackRecord } from "@beezping/core";
 import { describe, expect, it, vi } from "vitest";
 import {
-  createSitepingHandler,
-  type SitepingAccessControl,
-  type SitepingDeletionTarget,
-  type SitepingHandler,
-  type SitepingLogger,
+  type BeezpingAccessControl,
+  type BeezpingDeletionTarget,
+  type BeezpingHandler,
+  type BeezpingLogger,
+  createBeezpingHandler,
 } from "../src/index.js";
 import { validPayloadNoAnnotations } from "./fixtures.js";
 
-const ENDPOINT = "http://localhost/api/siteping";
+const ENDPOINT = "http://localhost/api/beezping";
 const PROJECT = validPayloadNoAnnotations.projectName;
 
 interface Reviewer {
@@ -20,7 +20,7 @@ interface Reviewer {
 const REVIEWER: Reviewer = { email: "reviewer@example.com" };
 
 /** Session stand-in: every request carrying `x-session` belongs to the reviewer. */
-const sessionAccess: SitepingAccessControl<Reviewer> = {
+const sessionAccess: BeezpingAccessControl<Reviewer> = {
   authenticate: (request) => (request.headers.get("x-session") ? REVIEWER : null),
 };
 
@@ -34,19 +34,19 @@ function jsonRequest(method: string, body: unknown): Request {
 
 const listRequest = () => new Request(`${ENDPOINT}?projectName=${PROJECT}`, { headers: { "x-session": "1" } });
 
-const silentLogger = () => ({ error: vi.fn<SitepingLogger["error"]>() });
+const silentLogger = () => ({ error: vi.fn<BeezpingLogger["error"]>() });
 
-async function createFeedback(handler: SitepingHandler, body: unknown = validPayloadNoAnnotations) {
+async function createFeedback(handler: BeezpingHandler, body: unknown = validPayloadNoAnnotations) {
   const response = await handler.POST(jsonRequest("POST", body));
   expect(response.status).toBe(201);
   return (await response.json()) as FeedbackRecord;
 }
 
-describe("createSitepingHandler — beforeCreate and presentFeedback", () => {
+describe("createBeezpingHandler — beforeCreate and presentFeedback", () => {
   it("stores the input rewritten by beforeCreate and authorizes its effective project", async () => {
     const authorizedProjects: string[] = [];
     const store = new MemoryStore();
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store,
       access: {
         ...sessionAccess,
@@ -74,7 +74,7 @@ describe("createSitepingHandler — beforeCreate and presentFeedback", () => {
     const store = new MemoryStore();
     const logger = silentLogger();
     const failure = new Error("directory lookup failed");
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store,
       access: sessionAccess,
       logger,
@@ -85,14 +85,14 @@ describe("createSitepingHandler — beforeCreate and presentFeedback", () => {
 
     expect(response.status).toBe(500);
     expect(logger.error).toHaveBeenCalledWith(
-      "[siteping] Failed to create feedback",
+      "[beezping] Failed to create feedback",
       expect.objectContaining({ error: failure }),
     );
     expect((await store.getFeedbacks({ projectName: PROJECT })).total).toBe(0);
   });
 
   it("applies presentFeedback to every serialized record, then strips clientId", async () => {
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: sessionAccess,
       presentFeedback: (feedback) => ({ ...feedback, message: feedback.message.toUpperCase() }),
@@ -111,9 +111,9 @@ describe("createSitepingHandler — beforeCreate and presentFeedback", () => {
   });
 });
 
-describe("createSitepingHandler — presentFeedback and email redaction", () => {
+describe("createBeezpingHandler — presentFeedback and email redaction", () => {
   it("still blanks reviewer emails after presentFeedback, on the feedback and on its thread", async () => {
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: { ...sessionAccess, canReadAuthorEmail: () => false },
       // Returns the record untouched: redaction must not rely on it.
@@ -142,10 +142,10 @@ describe("createSitepingHandler — presentFeedback and email redaction", () => 
   });
 });
 
-describe("createSitepingHandler — lifecycle hooks", () => {
+describe("createBeezpingHandler — lifecycle hooks", () => {
   it("runs onCreated once per new feedback with the principal, never on a replayed clientId", async () => {
     const onCreated = vi.fn();
-    const handler = createSitepingHandler({ store: new MemoryStore(), access: sessionAccess, hooks: { onCreated } });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), access: sessionAccess, hooks: { onCreated } });
 
     const feedback = await createFeedback(handler);
     await createFeedback(handler);
@@ -173,7 +173,7 @@ describe("createSitepingHandler — lifecycle hooks", () => {
       generateId: () => `id-${++seq}`,
     });
     const onCreated = vi.fn();
-    const handler = createSitepingHandler({ store, access: sessionAccess, hooks: { onCreated } });
+    const handler = createBeezpingHandler({ store, access: sessionAccess, hooks: { onCreated } });
 
     const [first, second] = await Promise.all([createFeedback(handler), createFeedback(handler)]);
 
@@ -183,7 +183,7 @@ describe("createSitepingHandler — lifecycle hooks", () => {
 
   it("runs under the apiKey policy too, with a null principal", async () => {
     const onCreated = vi.fn();
-    const handler = createSitepingHandler({ store: new MemoryStore(), apiKey: "secret-key", hooks: { onCreated } });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), apiKey: "secret-key", hooks: { onCreated } });
 
     await createFeedback(handler);
 
@@ -199,15 +199,15 @@ describe("createSitepingHandler — lifecycle hooks", () => {
       onUpdated(feedback: FeedbackRecord): void {
         this.events.push(`updated ${feedback.id}`);
       }
-      onDeleting(target: SitepingDeletionTarget): void {
+      onDeleting(target: BeezpingDeletionTarget): void {
         this.events.push(`deleting ${target.kind}`);
       }
-      onDeleted(target: SitepingDeletionTarget): void {
+      onDeleted(target: BeezpingDeletionTarget): void {
         this.events.push(`deleted ${target.kind}`);
       }
     }
     const tracker = new IssueTrackerHooks();
-    const handler = createSitepingHandler({ store: new MemoryStore(), access: sessionAccess, hooks: tracker });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), access: sessionAccess, hooks: tracker });
 
     const feedback = await createFeedback(handler);
     await handler.PATCH(jsonRequest("PATCH", { id: feedback.id, projectName: PROJECT, status: "resolved" }));
@@ -225,7 +225,7 @@ describe("createSitepingHandler — lifecycle hooks", () => {
   it("logs a failing onCreated hook without failing the request", async () => {
     const logger = silentLogger();
     const hookError = new Error("issue tracker down");
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: sessionAccess,
       logger,
@@ -235,18 +235,18 @@ describe("createSitepingHandler — lifecycle hooks", () => {
     const feedback = await createFeedback(handler);
 
     // With what an operator needs to find the feedback that missed its side effect.
-    expect(logger.error).toHaveBeenCalledWith("[siteping] Hook onCreated failed", {
+    expect(logger.error).toHaveBeenCalledWith("[beezping] Hook onCreated failed", {
       error: hookError,
       feedbackId: feedback.id,
       projectName: PROJECT,
       method: "POST",
-      path: "/api/siteping",
+      path: "/api/beezping",
     });
   });
 
   it("runs onUpdated with the stored record", async () => {
     const onUpdated = vi.fn();
-    const handler = createSitepingHandler({ store: new MemoryStore(), access: sessionAccess, hooks: { onUpdated } });
+    const handler = createBeezpingHandler({ store: new MemoryStore(), access: sessionAccess, hooks: { onUpdated } });
     const feedback = await createFeedback(handler);
 
     await handler.PATCH(jsonRequest("PATCH", { id: feedback.id, projectName: PROJECT, status: "wont_fix" }));
@@ -258,7 +258,7 @@ describe("createSitepingHandler — lifecycle hooks", () => {
   it("logs a failing onUpdated hook without failing the request", async () => {
     const logger = silentLogger();
     const hookError = new Error("search index down");
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: sessionAccess,
       logger,
@@ -272,12 +272,12 @@ describe("createSitepingHandler — lifecycle hooks", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ id: feedback.id, status: "resolved" });
-    expect(logger.error).toHaveBeenCalledWith("[siteping] Hook onUpdated failed", {
+    expect(logger.error).toHaveBeenCalledWith("[beezping] Hook onUpdated failed", {
       error: hookError,
       feedbackId: feedback.id,
       projectName: PROJECT,
       method: "PATCH",
-      path: "/api/siteping",
+      path: "/api/beezping",
     });
   });
 
@@ -285,7 +285,7 @@ describe("createSitepingHandler — lifecycle hooks", () => {
     const store = new MemoryStore();
     const logger = silentLogger();
     const hookError = new Error("audit log down");
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store,
       access: sessionAccess,
       logger,
@@ -301,11 +301,11 @@ describe("createSitepingHandler — lifecycle hooks", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ deleted: true });
-    expect(logger.error).toHaveBeenCalledWith("[siteping] Hook onDeleted failed", {
+    expect(logger.error).toHaveBeenCalledWith("[beezping] Hook onDeleted failed", {
       error: hookError,
       target: { kind: "single", id: feedback.id, projectName: PROJECT },
       method: "DELETE",
-      path: "/api/siteping",
+      path: "/api/beezping",
     });
     expect((await store.getFeedbacks({ projectName: PROJECT })).total).toBe(0);
   });
@@ -314,7 +314,7 @@ describe("createSitepingHandler — lifecycle hooks", () => {
     const store = new MemoryStore();
     store.deleteFeedback = () => Promise.reject(new Error("deadlock detected"));
     const onDeleted = vi.fn();
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store,
       access: sessionAccess,
       logger: silentLogger(),
@@ -332,7 +332,7 @@ describe("createSitepingHandler — lifecycle hooks", () => {
     const store = new MemoryStore();
     const onDeleted = vi.fn();
     const logger = silentLogger();
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store,
       access: sessionAccess,
       logger,
@@ -350,7 +350,7 @@ describe("createSitepingHandler — lifecycle hooks", () => {
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({ error: "Deletion aborted: a linked resource could not be cleaned up" });
     expect(onDeleted).not.toHaveBeenCalled();
-    expect(logger.error).toHaveBeenCalledWith("[siteping] Hook onDeleting aborted the deletion", expect.anything());
+    expect(logger.error).toHaveBeenCalledWith("[beezping] Hook onDeleting aborted the deletion", expect.anything());
     expect((await store.getFeedbacks({ projectName: PROJECT })).total).toBe(1);
   });
 
@@ -358,7 +358,7 @@ describe("createSitepingHandler — lifecycle hooks", () => {
     const store = new MemoryStore();
     const onDeleting = vi.fn();
     const onDeleted = vi.fn();
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store,
       // Anyone may report; only PROJECT's feedback may be deleted.
       access: {
@@ -382,7 +382,7 @@ describe("createSitepingHandler — lifecycle hooks", () => {
   it("passes single and whole-project deletion targets to onDeleting and onDeleted", async () => {
     const onDeleting = vi.fn();
     const onDeleted = vi.fn();
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: sessionAccess,
       hooks: { onDeleting, onDeleted },
@@ -402,7 +402,7 @@ describe("createSitepingHandler — lifecycle hooks", () => {
 
   it("runs no hook for a mutation the CSRF guards refuse", async () => {
     const onCreated = vi.fn();
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       store: new MemoryStore(),
       access: sessionAccess,
       allowedOrigins: ["https://client-site.example"],

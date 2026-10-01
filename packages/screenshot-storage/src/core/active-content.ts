@@ -27,7 +27,7 @@ export function assertInertContentTypes(allowedContentTypes: readonly string[]):
   for (const contentType of allowedContentTypes) {
     if (inertImageContentType(contentType) === null) {
       throw new Error(
-        `[siteping] createScreenshotStorage: allowed content type "${contentType}" is an active format that can run ` +
+        `[beezping] createScreenshotStorage: allowed content type "${contentType}" is an active format that can run ` +
           "scripts when opened directly — drop it from allowedContentTypes (screenshots are raster images)",
       );
     }

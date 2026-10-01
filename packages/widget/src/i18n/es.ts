@@ -3,7 +3,7 @@ import type { Translations } from "./types.js";
 export const es: Translations = {
   // Panel
   "panel.title": "Comentarios",
-  "panel.ariaLabel": "Panel de comentarios de Siteping",
+  "panel.ariaLabel": "Panel de comentarios de Beezping",
   "panel.feedbackList": "Lista de comentarios",
   "panel.loading": "Cargando comentarios",
   "panel.close": "Cerrar panel",
@@ -54,7 +54,7 @@ export const es: Translations = {
   "panel.filterMineHint": "Solo los comentarios enviados desde este navegador",
 
   // FAB menu
-  "fab.aria": "Siteping — Menú de comentarios",
+  "fab.aria": "Beezping — Menú de comentarios",
   "fab.messages": "Mostrar barra lateral",
   "fab.annotate": "Crear nueva anotación",
   "fab.annotations": "Mostrar u ocultar marcadores",

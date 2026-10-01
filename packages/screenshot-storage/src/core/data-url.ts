@@ -17,7 +17,7 @@ export interface DecodedImage {
 /** Why a data URL was refused — part of the error message, never the payload. */
 export class InvalidScreenshotError extends Error {
   constructor(reason: string) {
-    super(`[siteping] screenshot rejected: ${reason}`);
+    super(`[beezping] screenshot rejected: ${reason}`);
     this.name = "InvalidScreenshotError";
   }
 }
@@ -33,7 +33,7 @@ export class InvalidScreenshotError extends Error {
 export function assertMaxBytes(maxBytes: number): void {
   if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) {
     throw new Error(
-      `[siteping] createScreenshotStorage: maxBytes must be a positive integer number of bytes, got ${String(maxBytes)}`,
+      `[beezping] createScreenshotStorage: maxBytes must be a positive integer number of bytes, got ${String(maxBytes)}`,
     );
   }
 }
@@ -70,7 +70,7 @@ export function assertParsableContentTypes(allowedContentTypes: readonly string[
   for (const contentType of allowedContentTypes) {
     if (!IMAGE_CONTENT_TYPE_PATTERN.test(contentType)) {
       throw new Error(
-        `[siteping] createScreenshotStorage: allowed content type "${contentType}" does not match ${IMAGE_CONTENT_TYPE_PATTERN.source}: ` +
+        `[beezping] createScreenshotStorage: allowed content type "${contentType}" does not match ${IMAGE_CONTENT_TYPE_PATTERN.source}: ` +
           "no image data URL can carry it — drop it from allowedContentTypes",
       );
     }

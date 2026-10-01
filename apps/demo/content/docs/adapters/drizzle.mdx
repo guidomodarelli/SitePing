@@ -3,7 +3,7 @@ title: Drizzle adapter
 description: A production store on PostgreSQL or Turso / libSQL through Drizzle ORM — tables you own in your schema, migrations through drizzle-kit.
 ---
 
-`@beezping/adapter-drizzle` is a `SitepingStore` backed by [Drizzle ORM](https://orm.drizzle.team). It has one entry per database family:
+`@beezping/adapter-drizzle` is a `BeezpingStore` backed by [Drizzle ORM](https://orm.drizzle.team). It has one entry per database family:
 
 | Entry | Database | Drivers |
 |---|---|---|
@@ -24,16 +24,16 @@ The adapter never creates tables at runtime: it gives you Drizzle table definiti
 
 ```ts
 // db/schema.ts — PostgreSQL
-import { createSitepingPgTables } from "@beezping/adapter-drizzle/pg";
+import { createBeezpingPgTables } from "@beezping/adapter-drizzle/pg";
 
-export const { sitepingFeedbacks, sitepingAnnotations, sitepingComments } = createSitepingPgTables();
+export const { beezpingFeedbacks, beezpingAnnotations, beezpingComments } = createBeezpingPgTables();
 ```
 
 ```ts
 // db/schema.ts — Turso / libSQL
-import { createSitepingSqliteTables } from "@beezping/adapter-drizzle/libsql";
+import { createBeezpingSqliteTables } from "@beezping/adapter-drizzle/libsql";
 
-export const { sitepingFeedbacks, sitepingAnnotations, sitepingComments } = createSitepingSqliteTables();
+export const { beezpingFeedbacks, beezpingAnnotations, beezpingComments } = createBeezpingSqliteTables();
 ```
 
 Then generate and apply the migration as usual, with a `drizzle.config.ts` pointing at that schema (`dialect: "postgresql"` or `dialect: "turso"`):
@@ -45,7 +45,7 @@ npx drizzle-kit migrate    # applies it — or `npx drizzle-kit push` while prot
 
 ### What gets created
 
-Three tables, `siteping_feedbacks`, `siteping_annotations` and `siteping_comments` by default — export and migrate all three: the store reads every feedback's thread, so the comments table is required even if nobody ever comments. Annotations and [comments](/docs/comments) reference their feedback with `ON DELETE CASCADE` (on PostgreSQL, through the foreign keys `<annotations>_feedback_id_fk` and `<comments>_feedback_id_fk`).
+Three tables, `beezping_feedbacks`, `beezping_annotations` and `beezping_comments` by default — export and migrate all three: the store reads every feedback's thread, so the comments table is required even if nobody ever comments. Annotations and [comments](/docs/comments) reference their feedback with `ON DELETE CASCADE` (on PostgreSQL, through the foreign keys `<annotations>_feedback_id_fk` and `<comments>_feedback_id_fk`).
 
 | Index | Columns |
 |---|---|
@@ -66,28 +66,28 @@ Pass `{ feedbacks, annotations, comments }` to rename the tables (index names fo
 
 ```ts
 // db/schema.ts
-export const { sitepingFeedbacks, sitepingAnnotations, sitepingComments } = createSitepingPgTables({
+export const { beezpingFeedbacks, beezpingAnnotations, beezpingComments } = createBeezpingPgTables({
   feedbacks: "client_feedbacks",
   annotations: "client_feedback_annotations",
   comments: "client_feedback_comments",
 });
 
 // server
-const store = createPgSitepingStore(db, { tables: { sitepingFeedbacks, sitepingAnnotations, sitepingComments } });
+const store = createPgBeezpingStore(db, { tables: { beezpingFeedbacks, beezpingAnnotations, beezpingComments } });
 ```
 
-The defaults are exported as `DEFAULT_SITEPING_TABLE_NAMES`.
+The defaults are exported as `DEFAULT_BEEZPING_TABLE_NAMES`.
 
-On PostgreSQL, keep the feedback table's name within 36 bytes, the annotations' within 47 and the comments' within 42. PostgreSQL silently truncates identifiers past 63 bytes, and index and foreign-key names add a suffix to their table's name: a truncated name would make every later `drizzle-kit push` drop and recreate that index or constraint. `createSitepingPgTables` throws a `RangeError` for a name that is too long.
+On PostgreSQL, keep the feedback table's name within 36 bytes, the annotations' within 47 and the comments' within 42. PostgreSQL silently truncates identifiers past 63 bytes, and index and foreign-key names add a suffix to their table's name: a truncated name would make every later `drizzle-kit push` drop and recreate that index or constraint. `createBeezpingPgTables` throws a `RangeError` for a name that is too long.
 
 ## 2. Create the store
 
 ```ts
 // PostgreSQL — node-postgres
 import { drizzle } from "drizzle-orm/node-postgres";
-import { createPgSitepingStore } from "@beezping/adapter-drizzle/pg";
+import { createPgBeezpingStore } from "@beezping/adapter-drizzle/pg";
 
-export const store = createPgSitepingStore(drizzle(process.env.DATABASE_URL!), { logger: console });
+export const store = createPgBeezpingStore(drizzle(process.env.DATABASE_URL!), { logger: console });
 ```
 
 Every PostgreSQL driver works the same way — swap the `drizzle` import (`drizzle-orm/neon-http`, `drizzle-orm/postgres-js`, `drizzle-orm/pglite`…). The store never opens an interactive `db.transaction`: every write is a single statement, so drivers without interactive transactions, like Neon HTTP, are fully supported.
@@ -97,9 +97,9 @@ A database built with Drizzle's `withReplicas(primary, replicas)` works on both 
 ```ts
 // Turso / libSQL
 import { drizzle } from "drizzle-orm/libsql";
-import { createLibSQLSitepingStore } from "@beezping/adapter-drizzle/libsql";
+import { createLibSQLBeezpingStore } from "@beezping/adapter-drizzle/libsql";
 
-export const store = createLibSQLSitepingStore(
+export const store = createLibSQLBeezpingStore(
   drizzle({ connection: { url: process.env.TURSO_DATABASE_URL!, authToken: process.env.TURSO_AUTH_TOKEN! } }),
   { logger: console },
 );
@@ -109,16 +109,16 @@ Both factories also take a `screenshotStorage`, to keep screenshots out of the d
 
 ## 3. Serve it
 
-The store is storage only. Mount it behind `createSitepingHandler({ store })` from [`@beezping/server`](/docs/server) to get validation, auth, CORS, redaction and webhooks:
+The store is storage only. Mount it behind `createBeezpingHandler({ store })` from [`@beezping/server`](/docs/server) to get validation, auth, CORS, redaction and webhooks:
 
 ```ts
-// app/api/siteping/route.ts
-import { createSitepingHandler } from "@beezping/server";
-import { store } from "@/lib/siteping-store";
+// app/api/beezping/route.ts
+import { createBeezpingHandler } from "@beezping/server";
+import { store } from "@/lib/beezping-store";
 
-export const { GET, POST, PATCH, DELETE, OPTIONS } = createSitepingHandler({
+export const { GET, POST, PATCH, DELETE, OPTIONS } = createBeezpingHandler({
   store,
-  apiKey: process.env.SITEPING_API_KEY,
+  apiKey: process.env.BEEZPING_API_KEY,
 });
 ```
 
@@ -128,7 +128,7 @@ Both factories take the same options:
 
 | Option | Type | Default | What it does |
 |---|---|---|---|
-| `tables` | `SitepingPgTables` / `SitepingSqliteTables` | default-named tables | The tables from your schema — required when you [renamed them](#custom-table-names) |
+| `tables` | `BeezpingPgTables` / `BeezpingSqliteTables` | default-named tables | The tables from your schema — required when you [renamed them](#custom-table-names) |
 | `screenshotStorage` | `ScreenshotStorage` | — | Upload screenshots elsewhere and store only the URL — see [screenshots](#screenshots) |
 | `logger` | `{ warn(message, context) }` | none — events are dropped | Degraded-but-non-fatal events: a failed upload (the feedback is saved without its screenshot), a failed cleanup, inline screenshots. The store never picks a logging backend itself — pass your application's logger, or `console` |
 | `now` | `() => Date` | the system clock | Clock for `createdAt` of new feedbacks and comments, and `updatedAt` on status updates — inject one for tests or a controlled time source |
@@ -180,15 +180,15 @@ Rows without it — inserted by your own code outside the store — fall back to
 import { eq, isNull } from "drizzle-orm";
 
 const rows = await db
-  .select({ id: sitepingFeedbacks.id, message: sitepingFeedbacks.message })
-  .from(sitepingFeedbacks)
-  .where(isNull(sitepingFeedbacks.messageSearch));
+  .select({ id: beezpingFeedbacks.id, message: beezpingFeedbacks.message })
+  .from(beezpingFeedbacks)
+  .where(isNull(beezpingFeedbacks.messageSearch));
 
 for (const row of rows) {
   await db
-    .update(sitepingFeedbacks)
+    .update(beezpingFeedbacks)
     .set({ messageSearch: row.message.toLowerCase() })
-    .where(eq(sitepingFeedbacks.id, row.id));
+    .where(eq(beezpingFeedbacks.id, row.id));
 }
 ```
 
@@ -206,7 +206,7 @@ Both entries re-export `StorePersistenceError`, `isStorePersistence`, `StoreNotF
 ## Limitations
 
 - **PostgreSQL and libSQL only.** There is no MySQL entry yet.
-- **libSQL only through `drizzle-orm/libsql`** or its variants (`/web`, `/http`, `/ws`…). Other SQLite drivers (better-sqlite3, Cloudflare D1) are not supported: `createLibSQLSitepingStore` throws a `TypeError` when given their database, which the types of a Workers project may accept.
-- **One local libSQL file shared by several processes.** SQLite runs one writer at a time: with `@libsql/client` 0.17.4 or later, set the client's busy timeout — `drizzle({ connection: { url: "file:siteping.db", timeout: 5000 } })` — so concurrent writes queue instead of failing with `SQLITE_BUSY`. Older clients ignore it silently, even where TypeScript accepts it (client 0.17.3 installs a newer `@libsql/core`, which declares it): upgrade first.
+- **libSQL only through `drizzle-orm/libsql`** or its variants (`/web`, `/http`, `/ws`…). Other SQLite drivers (better-sqlite3, Cloudflare D1) are not supported: `createLibSQLBeezpingStore` throws a `TypeError` when given their database, which the types of a Workers project may accept.
+- **One local libSQL file shared by several processes.** SQLite runs one writer at a time: with `@libsql/client` 0.17.4 or later, set the client's busy timeout — `drizzle({ connection: { url: "file:beezping.db", timeout: 5000 } })` — so concurrent writes queue instead of failing with `SQLITE_BUSY`. Older clients ignore it silently, even where TypeScript accepts it (client 0.17.3 installs a newer `@libsql/core`, which declares it): upgrade first.
 - **Foreign keys on libSQL.** Cascades need `PRAGMA foreign_keys = ON`, which libSQL does not guarantee, so the store deletes annotations and comments explicitly alongside their feedback. Feedbacks you delete yourself outside the store need the same care.
 - **Search on rows without `message_search`** folds case the database's way (ASCII-only on libSQL, and on PostgreSQL under a `C` collation / `LC_CTYPE`) until you [backfill them](#text-search-and-non-ascii-case).

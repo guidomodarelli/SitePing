@@ -1,14 +1,14 @@
 [![npm version](https://img.shields.io/npm/v/@beezping/dashboard)](https://www.npmjs.com/package/@beezping/dashboard)
-[![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/dashboard)
+[![Docs](https://img.shields.io/badge/docs-github.com/guidomodarelli/beezping-0066ff)](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/dashboard)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
 # @beezping/dashboard
 
-**A Linear-style triage inbox for your SitePing feedback.**
+**A Linear-style triage inbox for your Beezping feedback.**
 
-`<SitepingInbox />` is a keyboard-first React component that lists every feedback your clients sent through [`@beezping/widget`](https://www.npmjs.com/package/@beezping/widget) — annotated screenshots re-rendered as the client framed them, status triage (open / in progress / resolved / won't fix) with undo, search, and deep links back to the live page.
+`<BeezpingInbox />` is a keyboard-first React component that lists every feedback your clients sent through [`@beezping/widget`](https://www.npmjs.com/package/@beezping/widget) — annotated screenshots re-rendered as the client framed them, status triage (open / in progress / resolved / won't fix) with undo, search, and deep links back to the live page.
 
-Part of [SitePing](https://github.com/NeosiaNexus/SitePing) — **[documentation](https://siteping.dev/docs/dashboard)**.
+Part of [Beezping](https://github.com/guidomodarelli/beezping) — **[documentation](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/dashboard)**.
 
 ## Install
 
@@ -21,11 +21,11 @@ React 18 or 19 (peer dependency). Ships ESM **and** CJS, zero runtime dependenci
 ## Quick start
 
 ```tsx
-import { SitepingInbox } from "@beezping/dashboard";
+import { BeezpingInbox } from "@beezping/dashboard";
 
-<SitepingInbox
+<BeezpingInbox
   projects="my-app"
-  endpoint="/api/siteping"
+  endpoint="/api/beezping"
   apiKey={KEY}
   theme="auto"
 />
@@ -36,7 +36,7 @@ Give it a container with a height — it fills its parent (min 480 px) and adapt
 Prefer your own UI? All the logic — fetching, filters, optimistic mutations, undo, pagination — is exposed as a headless hook:
 
 ```tsx
-const inbox = useSitepingInbox({ projects: "my-app", endpoint: "/api/siteping" });
+const inbox = useBeezpingInbox({ projects: "my-app", endpoint: "/api/beezping" });
 ```
 
 ## Highlights
@@ -48,8 +48,8 @@ const inbox = useSitepingInbox({ projects: "my-app", endpoint: "/api/siteping" }
 
 ## Documentation
 
-Props, headless API, theming variables with the correct override selectors, custom sources: **[siteping.dev/docs/dashboard](https://siteping.dev/docs/dashboard)**.
+Props, headless API, theming variables with the correct override selectors, custom sources: **[github.com/guidomodarelli/beezping/docs/dashboard](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/dashboard)**.
 
 ## License
 
-[MIT](https://github.com/NeosiaNexus/SitePing/blob/main/LICENSE)
+[MIT](https://github.com/guidomodarelli/beezping/blob/main/LICENSE)

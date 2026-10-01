@@ -1,4 +1,4 @@
-import type { SitepingHttpMethod } from "./options.js";
+import type { BeezpingHttpMethod } from "./options.js";
 
 // Cross-site request forgery guards of the mutating methods, for policies
 // that may authenticate with cookies. CORS only hides a response from a
@@ -25,7 +25,7 @@ export type CsrfRefusal = { status: 403; origin: string } | { status: 415 };
  */
 export function csrfRefusal(
   request: Request,
-  method: SitepingHttpMethod,
+  method: BeezpingHttpMethod,
   allowedOrigins: ReadonlyArray<string> | undefined,
 ): CsrfRefusal | null {
   if (method !== "POST" && method !== "PATCH" && method !== "DELETE") return null;

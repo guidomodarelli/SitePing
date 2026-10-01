@@ -1,12 +1,12 @@
 [![npm version](https://img.shields.io/npm/v/@beezping/adapter-drizzle)](https://www.npmjs.com/package/@beezping/adapter-drizzle)
-[![Docs](https://img.shields.io/badge/docs-siteping.dev-0066ff)](https://siteping.dev/docs/adapters/drizzle)
+[![Docs](https://img.shields.io/badge/docs-github.com/guidomodarelli/beezping-0066ff)](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/adapters/drizzle.mdx)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 
 # @beezping/adapter-drizzle
 
-[Drizzle ORM](https://orm.drizzle.team) store for [SitePing](https://github.com/NeosiaNexus/SitePing), on **PostgreSQL** (node-postgres, postgres.js, Neon HTTP, PGlite…) or **Turso / libSQL**.
+[Drizzle ORM](https://orm.drizzle.team) store for [Beezping](https://github.com/guidomodarelli/beezping), on **PostgreSQL** (node-postgres, postgres.js, Neon HTTP, PGlite…) or **Turso / libSQL**.
 
-**[Documentation](https://siteping.dev/docs/adapters/drizzle)**
+**[Documentation](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/adapters/drizzle.mdx)**
 
 ## Install
 
@@ -20,21 +20,21 @@ npm install @beezping/adapter-drizzle @beezping/server drizzle-orm
 
 ```ts
 // db/schema.ts — then `drizzle-kit generate` as usual
-import { createSitepingPgTables } from "@beezping/adapter-drizzle/pg";
-export const { sitepingFeedbacks, sitepingAnnotations, sitepingComments } = createSitepingPgTables();
+import { createBeezpingPgTables } from "@beezping/adapter-drizzle/pg";
+export const { beezpingFeedbacks, beezpingAnnotations, beezpingComments } = createBeezpingPgTables();
 
 // server
 import { drizzle } from "drizzle-orm/node-postgres";
-import { createPgSitepingStore } from "@beezping/adapter-drizzle/pg";
-const store = createPgSitepingStore(drizzle(process.env.DATABASE_URL!), { logger: console });
+import { createPgBeezpingStore } from "@beezping/adapter-drizzle/pg";
+const store = createPgBeezpingStore(drizzle(process.env.DATABASE_URL!), { logger: console });
 ```
 
-Turso / libSQL: same shape with `createSitepingSqliteTables` and `createLibSQLSitepingStore` from `@beezping/adapter-drizzle/libsql`. Serve the store with `createSitepingHandler({ store })` from `@beezping/server`.
+Turso / libSQL: same shape with `createBeezpingSqliteTables` and `createLibSQLBeezpingStore` from `@beezping/adapter-drizzle/libsql`. Serve the store with `createBeezpingHandler({ store })` from `@beezping/server`.
 
 ## Documentation
 
-Schema setup and migrations, serving the store, options, the screenshot storage contract, concurrency guarantees and limitations: **[siteping.dev/docs/adapters/drizzle](https://siteping.dev/docs/adapters/drizzle)**.
+Schema setup and migrations, serving the store, options, the screenshot storage contract, concurrency guarantees and limitations: **[github.com/guidomodarelli/beezping/docs/adapters/drizzle](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/adapters/drizzle.mdx)**.
 
 ## License
 
-[MIT](https://github.com/NeosiaNexus/SitePing/blob/main/LICENSE)
+[MIT](https://github.com/guidomodarelli/beezping/blob/main/LICENSE)

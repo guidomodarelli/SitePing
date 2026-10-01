@@ -1,9 +1,9 @@
-import { testSitepingStore } from "@beezping/core/testing";
+import { testBeezpingStore } from "@beezping/core/testing";
 import { describe, expect, it } from "vitest";
 import { MemoryStore } from "../src/index.js";
 
-// Run the full SitepingStore conformance suite
-testSitepingStore(() => new MemoryStore());
+// Run the full BeezpingStore conformance suite
+testBeezpingStore(() => new MemoryStore());
 
 // ---------------------------------------------------------------------------
 // MemoryStore-specific tests

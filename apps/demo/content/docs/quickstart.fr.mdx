@@ -30,7 +30,7 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 npx @beezping/cli init
 ```
 
-Confirmez les deux questions : le CLI ajoute les modèles SitePing à votre schéma Prisma et génère la route API (`app/api/siteping/route.ts`, ou sous `src/app/` selon votre projet). Poussez ensuite le schéma vers votre base :
+Confirmez les deux questions : le CLI ajoute les modèles Beezping à votre schéma Prisma et génère la route API (`app/api/beezping/route.ts`, ou sous `src/app/` selon votre projet). Poussez ensuite le schéma vers votre base :
 
 ```bash
 npx prisma db push
@@ -42,24 +42,24 @@ npx prisma generate   # Prisma 7 ne le lance plus depuis db push
 ```tsx
 // N'importe où côté client — par exemple votre layout racine
 "use client";
-import { useSiteping } from "@beezping/widget/react";
+import { useBeezping } from "@beezping/widget/react";
 
 export function Feedback() {
-  useSiteping({ endpoint: "/api/siteping", projectName: "mon-projet" });
+  useBeezping({ endpoint: "/api/beezping", projectName: "mon-projet" });
   return null;
 }
 ```
 
-Lancez votre serveur de dev et regardez en bas à droite : le bouton SitePing est là. Dessinez un rectangle sur n'importe quoi, tapez un commentaire, envoyez.
+Lancez votre serveur de dev et regardez en bas à droite : le bouton Beezping est là. Dessinez un rectangle sur n'importe quoi, tapez un commentaire, envoyez.
 
 Par défaut le widget apparaît en développement mais **jamais dans un build de production** — c'est voulu : les clients relisent sur des URLs de dev/staging. Pour un staging construit en mode production, passez `forceShow: true`.
 
 ### 4. Trier ce qui arrive
 
 ```tsx
-import { SitepingInbox } from "@beezping/dashboard";
+import { BeezpingInbox } from "@beezping/dashboard";
 
-<SitepingInbox projects="mon-projet" endpoint="/api/siteping" theme="auto" />
+<BeezpingInbox projects="mon-projet" endpoint="/api/beezping" theme="auto" />
 ```
 
 La boucle est complète. Pour aller plus loin : [options du widget](/fr/docs/widget/configuration) · [captures d'écran](/fr/docs/widget/screenshots) · [auth et sécurité](/fr/docs/server#le-modèle-de-sécurité-franchement).
@@ -73,10 +73,10 @@ npm i @beezping/widget @beezping/adapter-localstorage
 ```
 
 ```ts
-import { initSiteping } from "@beezping/widget";
+import { initBeezping } from "@beezping/widget";
 import { LocalStorageStore } from "@beezping/adapter-localstorage";
 
-initSiteping({
+initBeezping({
   store: new LocalStorageStore(),
   projectName: "ma-demo",
   forceShow: true,

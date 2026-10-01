@@ -35,7 +35,7 @@ const flush = () => new Promise((r) => setTimeout(r, 20));
 const waitForHide = () => new Promise((r) => setTimeout(r, POPUP_HIDE_TRANSITION_MS + 50));
 
 function findOverlay(): HTMLElement {
-  return document.body.querySelector<HTMLElement>('div[data-siteping-ignore][tabindex="0"]')!;
+  return document.body.querySelector<HTMLElement>('div[data-beezping-ignore][tabindex="0"]')!;
 }
 
 function drag(overlay: HTMLElement, x1: number, y1: number, x2: number, y2: number) {

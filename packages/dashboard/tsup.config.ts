@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { defineConfig, type Options } from "tsup";
-import { sitepingLibrary, terserPass } from "../../tsup.preset.js";
+import { beezpingLibrary, terserPass } from "../../tsup.preset.js";
 
 type EsbuildPlugin = NonNullable<Options["esbuildPlugins"]>[number];
 
@@ -50,7 +50,7 @@ async function terserDist(): Promise<void> {
 // `console.error` are kept because they signal real problems consumers need
 // to see in their dashboards.
 export default defineConfig(
-  sitepingLibrary({
+  beezpingLibrary({
     platform: "browser",
     minify: true,
     splitting: true,

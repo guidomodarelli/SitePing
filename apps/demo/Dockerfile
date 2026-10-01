@@ -15,7 +15,13 @@ RUN bun run --filter='@beezping/core' build && \
     bun run --filter='@beezping/adapter-memory' build && \
     bun run --filter='@beezping/adapter-localstorage' build && \
     bun run --filter='@beezping/server' build
-RUN cd apps/demo && bun run build
+# Public origin of the deployed demo (e.g. `https://demo.example.com`). It is
+# baked into the statically generated Open Graph metadata, canonical and
+# hreflang links, robots.txt and the sitemap, so it is required at build time:
+#   docker build --build-arg BEEZPING_SITE_URL=https://demo.example.com ...
+ARG BEEZPING_SITE_URL
+RUN : "${BEEZPING_SITE_URL:?apps/demo/Dockerfile: set --build-arg BEEZPING_SITE_URL to the public origin of the deployed demo (e.g. https://demo.example.com); without it metadata, robots.txt and the sitemap point at http://localhost:3000}" && \
+    cd apps/demo && bun run build
 
 # --- Runner ---
 FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS runner

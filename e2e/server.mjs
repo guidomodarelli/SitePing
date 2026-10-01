@@ -31,7 +31,7 @@ const radixDialogJs = esbuild.buildSync({
 // attaches its production closed shadow root instead of the open test one.
 const MODAL_HTML = `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><title>Siteping E2E host modal</title></head>
+<head><meta charset="UTF-8"><title>Beezping E2E host modal</title></head>
 <body style="margin:0;font-family:system-ui">
   <p id="page-content" style="padding:40px">Page behind the modal.</p>
   <script>
@@ -40,9 +40,9 @@ const MODAL_HTML = `<!DOCTYPE html>
   </script>
   <script type="module" src="/radix-dialog.js"></script>
   <script type="module">
-    import { initSiteping } from "/widget.js";
+    import { initBeezping } from "/widget.js";
     const projectName = new URLSearchParams(location.search).get("project") || "e2e-test";
-    window.__siteping = initSiteping({ endpoint: "/api/siteping", projectName, forceShow: true });
+    window.__beezping = initBeezping({ endpoint: "/api/beezping", projectName, forceShow: true });
   </script>
 </body>
 </html>`;
@@ -61,7 +61,7 @@ const HTML = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Siteping E2E Test Page</title>
+  <title>Beezping E2E Test Page</title>
   <style>
     body { font-family: system-ui; margin: 0; padding: 40px; background: #f5f5f5; }
     .hero { background: #fff; padding: 60px 40px; border-radius: 12px; margin-bottom: 20px; }
@@ -84,7 +84,7 @@ const HTML = `<!DOCTYPE html>
 <body>
   <div class="hero" id="hero">
     <h1>Page de test E2E</h1>
-    <p>Cette page simule un site client pour tester le widget Siteping.</p>
+    <p>Cette page simule un site client pour tester le widget Beezping.</p>
   </div>
   <div class="section">
     <h2>Section avec contenu</h2>
@@ -108,7 +108,7 @@ const HTML = `<!DOCTYPE html>
   </div>
   <div class="section">
     <h2>Comment ça marche</h2>
-    <p>Siteping s'intègre directement dans votre site web. Le widget permet à vos clients de laisser des retours visuels en annotant directement les éléments de la page.</p>
+    <p>Beezping s'intègre directement dans votre site web. Le widget permet à vos clients de laisser des retours visuels en annotant directement les éléments de la page.</p>
     <p>Chaque annotation est ancrée à un élément du DOM grâce à un sélecteur CSS, un XPath de secours et un extrait de texte pour garantir la fiabilité du positionnement.</p>
   </div>
   <div class="section">
@@ -135,7 +135,7 @@ const HTML = `<!DOCTYPE html>
     <h2>FAQ</h2>
     <details style="margin-bottom: 12px;">
       <summary style="cursor: pointer; font-weight: 600;">Comment installer le widget ?</summary>
-      <p style="color: #666; margin-top: 8px;">Ajoutez simplement le script sur votre page et appelez initSiteping() avec votre configuration.</p>
+      <p style="color: #666; margin-top: 8px;">Ajoutez simplement le script sur votre page et appelez initBeezping() avec votre configuration.</p>
     </details>
     <details style="margin-bottom: 12px;">
       <summary style="cursor: pointer; font-weight: 600;">Le widget ralentit-il mon site ?</summary>
@@ -149,7 +149,7 @@ const HTML = `<!DOCTYPE html>
   <div class="section">
     <h2>Témoignages</h2>
     <blockquote style="border-left: 4px solid #6366f1; margin: 16px 0; padding: 12px 20px; background: #f9f9ff; border-radius: 0 8px 8px 0;">
-      <p style="margin: 0; font-style: italic; color: #444;">"Siteping a transformé notre processus de relecture avec nos clients. Plus besoin de captures d'écran par email !"</p>
+      <p style="margin: 0; font-style: italic; color: #444;">"Beezping a transformé notre processus de relecture avec nos clients. Plus besoin de captures d'écran par email !"</p>
       <p style="margin: 8px 0 0; color: #999; font-size: 0.9em;">— Marie D., Agence Web</p>
     </blockquote>
     <blockquote style="border-left: 4px solid #6366f1; margin: 16px 0; padding: 12px 20px; background: #f9f9ff; border-radius: 0 8px 8px 0;">
@@ -163,22 +163,22 @@ const HTML = `<!DOCTYPE html>
   </div>
   <div class="section">
     <h2>Contact</h2>
-    <p>Des questions ? Contactez-nous à <a href="#">support@siteping.dev</a></p>
-    <p style="color: #999; margin-top: 40px; text-align: center;">© 2026 Siteping — Tous droits réservés</p>
+    <p>Des questions ? Contactez-nous à <a href="#">support@example.com</a></p>
+    <p style="color: #999; margin-top: 40px; text-align: center;">© 2026 Beezping — Tous droits réservés</p>
   </div>
   <script>
     // Expose process.env so the widget detects test mode and uses an open Shadow DOM
     globalThis.process = { env: { NODE_ENV: 'test' } };
   </script>
   <script type="module">
-    import { initSiteping } from '/widget.js';
-    const instance = initSiteping({
-      endpoint: '/api/siteping',
+    import { initBeezping } from '/widget.js';
+    const instance = initBeezping({
+      endpoint: '/api/beezping',
       projectName: 'e2e-test',
       forceShow: true,
       accentColor: '#6366f1',
     });
-    window.__siteping = instance;
+    window.__beezping = instance;
   </script>
 </body>
 </html>`;
@@ -279,9 +279,9 @@ const server = createServer((req, res) => {
       html = stripped;
     }
     // ?script=1 loads the IIFE bundle through a classic <script> tag and
-    // calls the `SitePing` global, like a site without a bundler.
+    // calls the `Beezping` global, like a site without a bundler.
     if (url.searchParams.get("script") === "1") {
-      const moduleImport = "<script type=\"module\">\n    import { initSiteping } from '/widget.js';\n    const instance = initSiteping({";
+      const moduleImport = "<script type=\"module\">\n    import { initBeezping } from '/widget.js';\n    const instance = initBeezping({";
       if (!html.includes(moduleImport)) {
         res.writeHead(500, { "Content-Type": "text/plain" });
         res.end("script=1: failed to swap the module import for the script bundle");
@@ -289,7 +289,7 @@ const server = createServer((req, res) => {
       }
       html = html.replace(
         moduleImport,
-        '<script src="/widget.global.js"></script>\n  <script>\n    const instance = SitePing.initSiteping({',
+        '<script src="/widget.global.js"></script>\n  <script>\n    const instance = Beezping.initBeezping({',
       );
     }
     // ?screenshot=1 turns on the screenshot capture (html2canvas-pro).
@@ -330,7 +330,7 @@ const server = createServer((req, res) => {
   }
 
   // API endpoint
-  if (url.pathname === "/api/siteping") {
+  if (url.pathname === "/api/beezping") {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");

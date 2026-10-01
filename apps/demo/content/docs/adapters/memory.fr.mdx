@@ -12,15 +12,15 @@ npm i @beezping/server # seulement pour le servir en HTTP
 
 ```ts
 import { MemoryStore } from "@beezping/adapter-memory";
-import { createSitepingHandler } from "@beezping/server";
+import { createBeezpingHandler } from "@beezping/server";
 
 const store = new MemoryStore();
 
 // Côté serveur, derrière le handler HTTP (sans Prisma) :
-createSitepingHandler({ store });
+createBeezpingHandler({ store });
 
 // Ou côté client, directement dans le widget :
-initSiteping({ store, projectName: "preview" });
+initBeezping({ store, projectName: "preview" });
 ```
 
 ## Notes de comportement

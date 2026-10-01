@@ -1,13 +1,13 @@
 "use client";
 
 import { LocalStorageStore } from "@beezping/adapter-localstorage";
-import { createStoreSource, SitepingInbox } from "@beezping/dashboard";
+import { BeezpingInbox, createStoreSource } from "@beezping/dashboard";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useMemo } from "react";
 
 // Same key the /demo playground writes to in local mode.
-const LOCAL_STORE_KEY = "siteping_demo_local";
+const LOCAL_STORE_KEY = "beezping_demo_local";
 
 /** In-copy link back to /demo — keeps ?mode=local so local-mode visitors stay on their store. */
 export function DemoSiteLink({ children }: { children: ReactNode }) {
@@ -94,7 +94,7 @@ export function DemoInbox() {
     locale,
     className: "h-full",
     // Who the demo replies as: without an author, threads are read-only.
-    author: { name: "SitePing demo" },
+    author: { name: "Beezping demo" },
   } as const;
 
   return (
@@ -139,9 +139,9 @@ export function DemoInbox() {
       </div>
       <div className="min-h-0 flex-1">
         {source ? (
-          <SitepingInbox source={source} projects={["demo"]} {...shared} />
+          <BeezpingInbox source={source} projects={["demo"]} {...shared} />
         ) : (
-          <SitepingInbox endpoint="/api/siteping" projects={["demo", "landing"]} {...shared} />
+          <BeezpingInbox endpoint="/api/beezping" projects={["demo", "landing"]} {...shared} />
         )}
       </div>
     </div>

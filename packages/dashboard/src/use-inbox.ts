@@ -1,4 +1,5 @@
 import {
+  type BeezpingCapabilities,
   FEEDBACK_STATUSES,
   type FeedbackPermissions,
   type FeedbackQuery,
@@ -8,7 +9,6 @@ import {
   isCommentGone,
   matchesFeedbackQuery,
   newClientId,
-  type SitepingCapabilities,
 } from "@beezping/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createEndpointSource, createStoreSource } from "./source.js";
@@ -18,7 +18,7 @@ import type {
   InboxState,
   InboxStatusFilter,
   InboxTypeFilter,
-  UseSitepingInboxOptions,
+  UseBeezpingInboxOptions,
 } from "./types.js";
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -86,7 +86,7 @@ function insertByCreatedAtDesc(list: FeedbackRecord[], record: FeedbackRecord): 
 }
 
 /**
- * Headless triage-inbox hook — full state + actions behind `<SitepingInbox />`.
+ * Headless triage-inbox hook — full state + actions behind `<BeezpingInbox />`.
  *
  * - Fetches on mount and whenever project / status / type / debounced search
  *   change; stale responses are discarded via a request token (latest wins).
@@ -96,7 +96,7 @@ function insertByCreatedAtDesc(list: FeedbackRecord[], record: FeedbackRecord): 
  *   the rejected promise carries the error so UIs can toast on top of the
  *   `onError` callback.
  */
-export function useSitepingInbox(options: UseSitepingInboxOptions): InboxState {
+export function useBeezpingInbox(options: UseBeezpingInboxOptions): InboxState {
   const { source, store, endpoint, apiKey, author, readOnly, onStatusChange, onDelete, onError } = options;
 
   const projects = useMemo<readonly string[]>(
@@ -105,7 +105,7 @@ export function useSitepingInbox(options: UseSitepingInboxOptions): InboxState {
   );
   const firstProject = projects[0];
   if (firstProject === undefined) {
-    throw new Error("[siteping] useSitepingInbox: `projects` must contain at least one project name.");
+    throw new Error("[beezping] useBeezpingInbox: `projects` must contain at least one project name.");
   }
 
   const pageSize = clampPageSize(options.pageSize);
@@ -131,7 +131,7 @@ export function useSitepingInbox(options: UseSitepingInboxOptions): InboxState {
         },
       });
     }
-    throw new Error("[siteping] useSitepingInbox requires one of `source`, `store` or `endpoint`.");
+    throw new Error("[beezping] useBeezpingInbox requires one of `source`, `store` or `endpoint`.");
   }, [source, store, endpoint, apiKey]);
 
   // -------------------------------------------------------------------------
@@ -153,7 +153,7 @@ export function useSitepingInbox(options: UseSitepingInboxOptions): InboxState {
   const [openedId, setOpenedId] = useState<string | null>(null);
   const [pendingUndo, setPendingUndo] = useState<InboxState["pendingUndo"]>(null);
   /** What the last list advertised — the endpoint's store may keep no comments, or not delete them. */
-  const [advertised, setAdvertised] = useState<SitepingCapabilities | undefined>(undefined);
+  const [advertised, setAdvertised] = useState<BeezpingCapabilities | undefined>(undefined);
 
   const canComment = author !== undefined && src.addComment !== undefined && advertised?.comments !== false;
   const canDeleteComment =

@@ -4,7 +4,7 @@ import { createCloudflareImagesObjectStore } from "../src/backends/cloudflare-im
 import { createS3ObjectStore } from "../src/backends/s3.js";
 import { createPublicUrlMapping } from "../src/index.js";
 
-const KEY = "siteping-0123456789abcdef.jpg";
+const KEY = "beezping-0123456789abcdef.jpg";
 /** Long run of `/` — quadratic for a backtracking `/\/+$/`, linear for the scan. */
 const SLASH_RUN = "/".repeat(100_000);
 
@@ -118,7 +118,7 @@ describe("base URLs — validation", () => {
   });
 
   it.each([
-    ["/api/siteping/screenshots", "must be an absolute http(s) URL"],
+    ["/api/beezping/screenshots", "must be an absolute http(s) URL"],
     ["app.example.com/screenshots", "must be an absolute http(s) URL"],
     ["ftp://files.example.com/screenshots", "must be an absolute http(s) URL"],
     ["javascript:alert(1)//", "must be an absolute http(s) URL"],
@@ -128,7 +128,7 @@ describe("base URLs — validation", () => {
     ["https://cdn.example.com/screens#", "must not contain a query or a fragment (? or #)"],
   ])("refuses the publicBaseUrl %s, under which keys would not resolve to the object", (publicBaseUrl, reason) => {
     // The whole message: the option and the reason, never the refused value.
-    expect(() => createPublicUrlMapping(publicBaseUrl)).toThrow(new Error(`[siteping] publicBaseUrl ${reason}`));
+    expect(() => createPublicUrlMapping(publicBaseUrl)).toThrow(new Error(`[beezping] publicBaseUrl ${reason}`));
   });
 
   describe("never quotes a refused value, which may carry a secret", () => {
@@ -158,7 +158,7 @@ describe("base URLs — validation", () => {
         const failure = thrownBy(() => open(value));
 
         expect(failure).toBeInstanceOf(Error);
-        expect((failure as Error).message).toMatch(new RegExp(`^\\[siteping\\] ${option} must`));
+        expect((failure as Error).message).toMatch(new RegExp(`^\\[beezping\\] ${option} must`));
         expect(inspect(failure)).not.toContain("SECRET");
       });
     }
@@ -171,7 +171,7 @@ describe("base URLs — validation", () => {
   ])("refuses the publicBaseUrl %s, whose credentials every screenshot URL would carry", (publicBaseUrl) => {
     // The whole message: the refused value, which holds the password, is not echoed.
     expect(() => createPublicUrlMapping(publicBaseUrl)).toThrow(
-      /^\[siteping\] publicBaseUrl must not contain credentials \(user:password@\)$/,
+      /^\[beezping\] publicBaseUrl must not contain credentials \(user:password@\)$/,
     );
   });
 
@@ -193,7 +193,7 @@ describe("base URLs — validation", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     createPublicUrlMapping("http://minio.internal:9000/screenshots");
-    createPublicUrlMapping("https://app.example.com/api/siteping/screenshots");
+    createPublicUrlMapping("https://app.example.com/api/beezping/screenshots");
 
     expect(warn).toHaveBeenCalledExactlyOnceWith(
       expect.stringContaining('"http://minio.internal:9000/screenshots" is neither https nor on this machine'),
@@ -201,7 +201,7 @@ describe("base URLs — validation", () => {
   });
 
   it.each([
-    "http://localhost:3000/api/siteping/screenshots",
+    "http://localhost:3000/api/beezping/screenshots",
     "http://minio.localhost/screenshots",
     "http://127.0.0.1:9000/screenshots",
     "http://[::1]:9000/screenshots",

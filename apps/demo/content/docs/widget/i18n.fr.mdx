@@ -6,8 +6,8 @@ description: 8 locales intégrées, chargées à la demande, avec des replis sen
 Le widget est livré avec **8 locales intégrées** : anglais (`en`), français (`fr`), allemand (`de`), espagnol (`es`), italien (`it`), portugais brésilien (`pt`), russe (`ru`) et japonais (`ja`).
 
 ```ts
-initSiteping({
-  endpoint: "/api/siteping",
+initBeezping({
+  endpoint: "/api/beezping",
   projectName: "mon-projet",
   locale: "fr",
 });
@@ -25,13 +25,13 @@ initSiteping({
 `registerLocale(code, translations)` ajoute une langue que le widget ne fournit pas, et `loadLocale(code)` charge un dictionnaire intégré à l'avance. Les deux sont des exports runtime de `@beezping/widget` :
 
 ```ts
-import { initSiteping, registerLocale, type Translations } from "@beezping/widget";
+import { initBeezping, registerLocale, type Translations } from "@beezping/widget";
 
 registerLocale("nl", { "panel.title": "Feedbacks", "fab.annotate": "Nieuwe annotatie maken" });
-initSiteping({ endpoint: "/api/siteping", projectName: "mon-projet", locale: "nl" });
+initBeezping({ endpoint: "/api/beezping", projectName: "mon-projet", locale: "nl" });
 ```
 
-**Les dictionnaires partiels sont acceptés.** Les clés manquantes retombent sur l'anglais clé par clé : redéfinir une seule chaîne n'oblige jamais à recopier tout le catalogue — passez le type `Translations` uniquement si vous voulez que l'ensemble complet soit vérifié. Deux règles que l'implémentation impose : enregistrez sous le **code de langue de base** (`"nl"`, pas `"nl-BE"` — les recherches se normalisent vers la base), et appelez `registerLocale` **avant** `initSiteping`.
+**Les dictionnaires partiels sont acceptés.** Les clés manquantes retombent sur l'anglais clé par clé : redéfinir une seule chaîne n'oblige jamais à recopier tout le catalogue — passez le type `Translations` uniquement si vous voulez que l'ensemble complet soit vérifié. Deux règles que l'implémentation impose : enregistrez sous le **code de langue de base** (`"nl"`, pas `"nl-BE"` — les recherches se normalisent vers la base), et appelez `registerLocale` **avant** `initBeezping`.
 
 Faites `await loadLocale("fr")` avant l'init si vous voulez une locale intégrée à l'écran dès le premier rendu, sans bref passage par l'anglais.
 
@@ -39,4 +39,4 @@ Faites `await loadLocale("fr")` avant l'init si vous voulez une locale intégré
 
 `@beezping/dashboard` embarque les mêmes locales avec les mêmes règles de résolution, et expose son propre `registerLocale` avec le même comportement de dictionnaire partiel — voir [la documentation du dashboard](/fr/docs/dashboard#langues).
 
-Vous voulez votre langue en natif ? Les contributions de locales sont la porte d'entrée la plus accessible de ce projet — voir [CONTRIBUTING](https://github.com/NeosiaNexus/SitePing/blob/main/CONTRIBUTING.md) (« Adding a Locale »).
+Vous voulez votre langue en natif ? Les contributions de locales sont la porte d'entrée la plus accessible de ce projet — voir [CONTRIBUTING](https://github.com/guidomodarelli/beezping/blob/main/CONTRIBUTING.md) (« Adding a Locale »).

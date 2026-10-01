@@ -1,16 +1,16 @@
 /**
  * The conformance suite must pass every duplicate-`clientId` pattern the
- * `SitepingStore` contract allows, not only the engine's. This store returns
+ * `BeezpingStore` contract allows, not only the engine's. This store returns
  * the existing record on a sequential repeat but, like a find-then-insert
  * over a unique index, throws `StoreDuplicateError` when it loses a
  * concurrent insert race — the case the HTTP handler recovers through
  * `findByClientId`.
  */
 
-import { createCollectionStore, type FeedbackRecord, type SitepingStore, StoreDuplicateError } from "../src/index.js";
-import { testSitepingStore } from "../src/testing.js";
+import { type BeezpingStore, createCollectionStore, type FeedbackRecord, StoreDuplicateError } from "../src/index.js";
+import { testBeezpingStore } from "../src/testing.js";
 
-function createUniqueIndexStore(): SitepingStore {
+function createUniqueIndexStore(): BeezpingStore {
   let feedbacks: FeedbackRecord[] = [];
   let counter = 1;
   const base = createCollectionStore({
@@ -39,4 +39,4 @@ function createUniqueIndexStore(): SitepingStore {
   };
 }
 
-testSitepingStore(createUniqueIndexStore);
+testBeezpingStore(createUniqueIndexStore);

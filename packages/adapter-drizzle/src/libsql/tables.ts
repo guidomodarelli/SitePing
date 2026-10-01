@@ -6,15 +6,15 @@ import type {
   ScreenshotRegion,
 } from "@beezping/core";
 import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
-import { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../constants/table-names.js";
+import { type BeezpingTableNames, DEFAULT_BEEZPING_TABLE_NAMES } from "../constants/table-names.js";
 
 /**
- * Build the SitePing tables for SQLite / libSQL (Turso). Export them from
+ * Build the Beezping tables for SQLite / libSQL (Turso). Export them from
  * your Drizzle schema so `drizzle-kit generate` / `push` creates them:
  *
  * ```ts
  * // db/schema.ts
- * export const { sitepingFeedbacks, sitepingAnnotations, sitepingComments } = createSitepingSqliteTables();
+ * export const { beezpingFeedbacks, beezpingAnnotations, beezpingComments } = createBeezpingSqliteTables();
  * ```
  *
  * JSON columns are stored as text and timestamps as epoch milliseconds. The
@@ -22,8 +22,8 @@ import { DEFAULT_SITEPING_TABLE_NAMES, type SitepingTableNames } from "../consta
  * database assigns on every insert, breaks `createdAt` ties in the "newest
  * first" ordering — never redeclare it `WITHOUT ROWID`.
  */
-export function createSitepingSqliteTables(names: SitepingTableNames = DEFAULT_SITEPING_TABLE_NAMES) {
-  const sitepingFeedbacks = sqliteTable(
+export function createBeezpingSqliteTables(names: BeezpingTableNames = DEFAULT_BEEZPING_TABLE_NAMES) {
+  const beezpingFeedbacks = sqliteTable(
     names.feedbacks,
     {
       id: text("id").primaryKey(),
@@ -58,13 +58,13 @@ export function createSitepingSqliteTables(names: SitepingTableNames = DEFAULT_S
     ],
   );
 
-  const sitepingAnnotations = sqliteTable(
+  const beezpingAnnotations = sqliteTable(
     names.annotations,
     {
       id: text("id").primaryKey(),
       feedbackId: text("feedback_id")
         .notNull()
-        .references(() => sitepingFeedbacks.id, { onDelete: "cascade" }),
+        .references(() => beezpingFeedbacks.id, { onDelete: "cascade" }),
       cssSelector: text("css_selector").notNull(),
       xpath: text("xpath").notNull(),
       textSnippet: text("text_snippet").notNull(),
@@ -93,13 +93,13 @@ export function createSitepingSqliteTables(names: SitepingTableNames = DEFAULT_S
     (table) => [index(`${names.annotations}_feedback_id_idx`).on(table.feedbackId)],
   );
 
-  const sitepingComments = sqliteTable(
+  const beezpingComments = sqliteTable(
     names.comments,
     {
       id: text("id").primaryKey(),
       feedbackId: text("feedback_id")
         .notNull()
-        .references(() => sitepingFeedbacks.id, { onDelete: "cascade" }),
+        .references(() => beezpingFeedbacks.id, { onDelete: "cascade" }),
       body: text("body").notNull(),
       authorName: text("author_name").notNull(),
       authorEmail: text("author_email").notNull(),
@@ -117,7 +117,7 @@ export function createSitepingSqliteTables(names: SitepingTableNames = DEFAULT_S
     ],
   );
 
-  return { sitepingFeedbacks, sitepingAnnotations, sitepingComments };
+  return { beezpingFeedbacks, beezpingAnnotations, beezpingComments };
 }
 
-export type SitepingSqliteTables = ReturnType<typeof createSitepingSqliteTables>;
+export type BeezpingSqliteTables = ReturnType<typeof createBeezpingSqliteTables>;

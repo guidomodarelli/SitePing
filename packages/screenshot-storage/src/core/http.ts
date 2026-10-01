@@ -26,7 +26,7 @@ export class ObjectStoreRequestError extends Error {
     readonly status: number | null,
     options?: { cause?: unknown },
   ) {
-    super(`[siteping] ${backend} ${method} ${path} failed${status === null ? "" : ` with status ${status}`}`, options);
+    super(`[beezping] ${backend} ${method} ${path} failed${status === null ? "" : ` with status ${status}`}`, options);
     this.name = "ObjectStoreRequestError";
   }
 }

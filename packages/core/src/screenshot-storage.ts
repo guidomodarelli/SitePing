@@ -22,7 +22,7 @@
  * const screenshotStorage: ScreenshotStorage = {
  *   async upload(dataUrl, { mimeType }) {
  *     const body = Buffer.from(dataUrl.slice(dataUrl.indexOf(",") + 1), "base64");
- *     const key = `siteping/${crypto.randomUUID()}`; // fresh per upload, see URL ownership
+ *     const key = `beezping/${crypto.randomUUID()}`; // fresh per upload, see URL ownership
  *     await s3.send(new PutObjectCommand({
  *       Bucket: "my-bucket", Key: key, Body: body, ContentType: mimeType,
  *     }));
@@ -30,7 +30,7 @@
  *   },
  * };
  *
- * createSitepingHandler({ prisma, screenshotStorage });
+ * createBeezpingHandler({ prisma, screenshotStorage });
  * ```
  */
 export interface ScreenshotStorage {

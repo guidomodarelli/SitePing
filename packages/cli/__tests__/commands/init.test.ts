@@ -53,7 +53,7 @@ function createAppDir(dir: string): void {
 }
 
 function createApiRoute(dir: string): void {
-  const routeDir = join(dir, "app", "api", "siteping");
+  const routeDir = join(dir, "app", "api", "beezping");
   mkdirSync(routeDir, { recursive: true });
   writeFileSync(join(routeDir, "route.ts"), "export const GET = () => {};");
 }
@@ -71,7 +71,7 @@ describe("initCommand", () => {
   let originalCwd: string;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "siteping-init-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "beezping-init-test-"));
     originalCwd = process.cwd();
     process.chdir(tmpDir);
 
@@ -115,8 +115,8 @@ describe("initCommand", () => {
       await initCommand();
 
       expect(p.log.info).toHaveBeenCalledWith(expect.stringContaining("Prisma schema found"));
-      expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining("SitepingFeedback"));
-      expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining("SitepingAnnotation"));
+      expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining("BeezpingFeedback"));
+      expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining("BeezpingAnnotation"));
     });
 
     it("logs field changes for partial schema (added + updated)", async () => {
@@ -132,7 +132,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model SitepingFeedback {
+model BeezpingFeedback {
   id          String   @id @default(cuid())
   projectName String
   type        String
@@ -149,8 +149,8 @@ model SitepingFeedback {
       await initCommand();
 
       const successes = allMessages(vi.mocked(p.log.success));
-      // SitepingAnnotation model should be added
-      expect(successes.some((m) => m.includes("SitepingAnnotation"))).toBe(true);
+      // BeezpingAnnotation model should be added
+      expect(successes.some((m) => m.includes("BeezpingAnnotation"))).toBe(true);
       // Missing fields should be logged
       expect(successes.some((m) => m.includes("added"))).toBe(true);
     });
@@ -220,7 +220,7 @@ model SitepingFeedback {
 
       await initCommand();
 
-      // Schema should not have been modified (no SitepingFeedback model)
+      // Schema should not have been modified (no BeezpingFeedback model)
       const successes = allMessages(vi.mocked(p.log.success));
       expect(successes.some((m) => m.includes("Models synced"))).toBe(false);
     });
@@ -240,7 +240,7 @@ model SitepingFeedback {
 
       expect(p.log.warn).toHaveBeenCalledWith(expect.stringContaining("No schema.prisma file found"));
       expect(p.log.info).toHaveBeenCalledWith(
-        expect.stringContaining("https://github.com/NeosiaNexus/SitePing#prisma-schema-1"),
+        expect.stringContaining("https://github.com/guidomodarelli/beezping#prisma-schema-1"),
       );
     });
   });
@@ -259,7 +259,7 @@ model SitepingFeedback {
 
       expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining("Route created:"));
       // Verify the file was actually created
-      expect(existsSync(join(tmpDir, "app", "api", "siteping", "route.ts"))).toBe(true);
+      expect(existsSync(join(tmpDir, "app", "api", "beezping", "route.ts"))).toBe(true);
     });
 
     it("shows info when route already exists", async () => {
@@ -303,7 +303,7 @@ model SitepingFeedback {
 
       await initCommand();
 
-      expect(existsSync(join(tmpDir, "app", "api", "siteping", "route.ts"))).toBe(false);
+      expect(existsSync(join(tmpDir, "app", "api", "beezping", "route.ts"))).toBe(false);
     });
   });
 
@@ -323,9 +323,9 @@ model SitepingFeedback {
       await initCommand();
 
       const successes = allMessages(vi.mocked(p.log.success));
-      expect(successes.some((m) => m.includes("SitepingFeedback"))).toBe(true);
+      expect(successes.some((m) => m.includes("BeezpingFeedback"))).toBe(true);
       expect(successes.some((m) => m.includes("Route created"))).toBe(true);
-      expect(existsSync(join(tmpDir, "app", "api", "siteping", "route.ts"))).toBe(true);
+      expect(existsSync(join(tmpDir, "app", "api", "beezping", "route.ts"))).toBe(true);
     });
   });
 
@@ -339,7 +339,7 @@ model SitepingFeedback {
 
       await initCommand();
 
-      expect(p.intro).toHaveBeenCalledWith("siteping — Setup");
+      expect(p.intro).toHaveBeenCalledWith("beezping — Setup");
       expect(p.outro).toHaveBeenCalledWith("Setup complete!");
     });
 

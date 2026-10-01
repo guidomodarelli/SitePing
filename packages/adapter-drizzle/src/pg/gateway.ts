@@ -10,10 +10,10 @@ import { guardedCommentInsert } from "../shared/comments.js";
 import { deletedFeedbackColumns, toDeletedFeedbacks } from "../shared/deletes.js";
 import { feedbackRecordColumns, newestFeedbackFirst } from "../shared/feedbacks.js";
 import { buildFeedbackWhere, withSearchableMessage } from "../shared/filters.js";
-import type { FeedbackFilter, SitepingSqlGateway } from "../shared/gateway.js";
+import type { BeezpingSqlGateway, FeedbackFilter } from "../shared/gateway.js";
 import { recordColumns, selectValues } from "../shared/rows.js";
 import { monotonicUpdatedAt } from "../shared/timestamps.js";
-import type { SitepingPgTables } from "./tables.js";
+import type { BeezpingPgTables } from "./tables.js";
 
 /**
  * Any Drizzle PostgreSQL database — node-postgres, postgres.js, Neon
@@ -32,18 +32,18 @@ function castToColumnType(param: SQL, column: Column): SQL {
   return sql`CAST(${param} AS ${sql.raw(column.getSQLType())})`;
 }
 
-/** The PostgreSQL SQL behind `createPgSitepingStore`. */
+/** The PostgreSQL SQL behind `createPgBeezpingStore`. */
 export function createPgGateway(
   db: AnyPgDatabase,
-  { sitepingFeedbacks, sitepingAnnotations, sitepingComments }: SitepingPgTables,
-): SitepingSqlGateway {
+  { beezpingFeedbacks, beezpingAnnotations, beezpingComments }: BeezpingPgTables,
+): BeezpingSqlGateway {
   const whereClause = (filter: FeedbackFilter) =>
-    buildFeedbackWhere(sitepingFeedbacks, filter, CASE_INSENSITIVE_LIKE_OPERATOR.postgres);
-  const feedbackColumns = feedbackRecordColumns(getTableColumns(sitepingFeedbacks));
-  const commentColumns = recordColumns(getTableColumns(sitepingComments));
+    buildFeedbackWhere(beezpingFeedbacks, filter, CASE_INSENSITIVE_LIKE_OPERATOR.postgres);
+  const feedbackColumns = feedbackRecordColumns(getTableColumns(beezpingFeedbacks));
+  const commentColumns = recordColumns(getTableColumns(beezpingComments));
   /** Number of feedback rows matching a where clause — the page `total`. */
   const countMatching = async (where: ReturnType<typeof whereClause>): Promise<number> => {
-    const [totals] = await db.select({ total: count() }).from(sitepingFeedbacks).where(where);
+    const [totals] = await db.select({ total: count() }).from(beezpingFeedbacks).where(where);
     return totals?.total ?? 0;
   };
 
@@ -58,19 +58,19 @@ export function createPgGateway(
         .$with(INSERTED_FEEDBACK_CTE_ALIAS)
         .as(
           db
-            .insert(sitepingFeedbacks)
+            .insert(beezpingFeedbacks)
             .values(withSearchableMessage(feedback))
-            .onConflictDoNothing({ target: sitepingFeedbacks.clientId })
-            .returning({ id: sitepingFeedbacks.id }),
+            .onConflictDoNothing({ target: beezpingFeedbacks.clientId })
+            .returning({ id: beezpingFeedbacks.id }),
         );
       const statements: WithSubquery[] = [insertedFeedback];
       if (annotations.length > 0) {
         // Data-modifying CTEs always run to completion, even unreferenced.
         statements.push(
           db.$with(INSERTED_ANNOTATIONS_CTE_ALIAS).as(
-            db.insert(sitepingAnnotations).select(
+            db.insert(beezpingAnnotations).select(
               selectValues(
-                sitepingAnnotations,
+                beezpingAnnotations,
                 annotations.map((annotation, position) => ({ ...annotation, position })),
                 sql`EXISTS (SELECT 1 FROM ${insertedFeedback})`,
                 castToColumnType,
@@ -90,9 +90,9 @@ export function createPgGateway(
       const [rows, total] = await Promise.all([
         db
           .select(feedbackColumns)
-          .from(sitepingFeedbacks)
+          .from(beezpingFeedbacks)
           .where(where)
-          .orderBy(...newestFeedbackFirst(sitepingFeedbacks.createdAt, sitepingFeedbacks.creationSequence))
+          .orderBy(...newestFeedbackFirst(beezpingFeedbacks.createdAt, beezpingFeedbacks.creationSequence))
           .limit(limit)
           .offset(offset),
         countMatching(where),
@@ -104,103 +104,103 @@ export function createPgGateway(
     },
     async findAnnotations(feedbackIds) {
       return db
-        .select(recordColumns(getTableColumns(sitepingAnnotations)))
-        .from(sitepingAnnotations)
-        .where(inArray(sitepingAnnotations.feedbackId, [...feedbackIds]))
-        .orderBy(sitepingAnnotations.createdAt, sitepingAnnotations.position);
+        .select(recordColumns(getTableColumns(beezpingAnnotations)))
+        .from(beezpingAnnotations)
+        .where(inArray(beezpingAnnotations.feedbackId, [...feedbackIds]))
+        .orderBy(beezpingAnnotations.createdAt, beezpingAnnotations.position);
     },
     async findComments(feedbackIds) {
       return db
         .select(commentColumns)
-        .from(sitepingComments)
-        .where(inArray(sitepingComments.feedbackId, [...feedbackIds]))
-        .orderBy(sitepingComments.createdAt, sitepingComments.position);
+        .from(beezpingComments)
+        .where(inArray(beezpingComments.feedbackId, [...feedbackIds]))
+        .orderBy(beezpingComments.createdAt, beezpingComments.position);
     },
     async findCommentByClientId(clientId) {
       const [row] = await db
         .select(commentColumns)
-        .from(sitepingComments)
-        .where(eq(sitepingComments.clientId, clientId))
+        .from(beezpingComments)
+        .where(eq(beezpingComments.clientId, clientId))
         .limit(1);
       return row ?? null;
     },
     async insertComment(comment, maxComments) {
       const { values, condition } = guardedCommentInsert(
-        { feedbacks: sitepingFeedbacks, comments: sitepingComments },
+        { feedbacks: beezpingFeedbacks, comments: beezpingComments },
         comment,
         maxComments,
       );
       const inserted = await db
-        .insert(sitepingComments)
-        .select(selectValues(sitepingComments, [values], condition, castToColumnType))
-        .onConflictDoNothing({ target: sitepingComments.clientId })
-        .returning({ id: sitepingComments.id });
+        .insert(beezpingComments)
+        .select(selectValues(beezpingComments, [values], condition, castToColumnType))
+        .onConflictDoNothing({ target: beezpingComments.clientId })
+        .returning({ id: beezpingComments.id });
       return inserted.length > 0;
     },
     async deleteComment(feedbackId, commentId) {
       const deleted = await db
-        .delete(sitepingComments)
-        .where(and(eq(sitepingComments.id, commentId), eq(sitepingComments.feedbackId, feedbackId)))
-        .returning({ id: sitepingComments.id });
+        .delete(beezpingComments)
+        .where(and(eq(beezpingComments.id, commentId), eq(beezpingComments.feedbackId, feedbackId)))
+        .returning({ id: beezpingComments.id });
       return deleted.length > 0;
     },
     async findByClientId(clientId) {
       const [row] = await db
         .select(feedbackColumns)
-        .from(sitepingFeedbacks)
-        .where(eq(sitepingFeedbacks.clientId, clientId))
+        .from(beezpingFeedbacks)
+        .where(eq(beezpingFeedbacks.clientId, clientId))
         .limit(1);
       return row ?? null;
     },
     async findProjectName(id) {
       const [row] = await db
-        .select({ projectName: sitepingFeedbacks.projectName })
-        .from(sitepingFeedbacks)
-        .where(eq(sitepingFeedbacks.id, id))
+        .select({ projectName: beezpingFeedbacks.projectName })
+        .from(beezpingFeedbacks)
+        .where(eq(beezpingFeedbacks.id, id))
         .limit(1);
       return row?.projectName ?? null;
     },
     async updateStatus(id, { status, resolvedAt, updatedAt }) {
       const [row] = await db
-        .update(sitepingFeedbacks)
+        .update(beezpingFeedbacks)
         .set({
           status,
           resolvedAt,
-          updatedAt: monotonicUpdatedAt(sitepingFeedbacks, updatedAt, GREATEST_VALUE_FUNCTION.postgres),
+          updatedAt: monotonicUpdatedAt(beezpingFeedbacks, updatedAt, GREATEST_VALUE_FUNCTION.postgres),
         })
-        .where(eq(sitepingFeedbacks.id, id))
+        .where(eq(beezpingFeedbacks.id, id))
         .returning(feedbackColumns);
       return row ?? null;
     },
     async deleteById(id, options) {
       const rows = await db
-        .delete(sitepingFeedbacks)
-        .where(eq(sitepingFeedbacks.id, id))
-        .returning(deletedFeedbackColumns(sitepingFeedbacks, options));
+        .delete(beezpingFeedbacks)
+        .where(eq(beezpingFeedbacks.id, id))
+        .returning(deletedFeedbackColumns(beezpingFeedbacks, options));
       return rows.length > 0 ? toDeletedFeedbacks(rows) : null;
     },
     // Annotations and comments follow their feedback through the `ON DELETE CASCADE` foreign keys.
     async deleteByProject(projectName) {
-      await db.delete(sitepingFeedbacks).where(eq(sitepingFeedbacks.projectName, projectName));
+      await db.delete(beezpingFeedbacks).where(eq(beezpingFeedbacks.projectName, projectName));
     },
     async deleteProjectChunk(projectName, chunkSize) {
       const chunkIds = db
-        .select({ id: sitepingFeedbacks.id })
-        .from(sitepingFeedbacks)
-        .where(eq(sitepingFeedbacks.projectName, projectName))
-        .orderBy(sitepingFeedbacks.id)
+        .select({ id: beezpingFeedbacks.id })
+        .from(beezpingFeedbacks)
+        .where(eq(beezpingFeedbacks.projectName, projectName))
+        .orderBy(beezpingFeedbacks.id)
         .limit(chunkSize);
       const rows = await db
-        .delete(sitepingFeedbacks)
-        .where(inArray(sitepingFeedbacks.id, chunkIds))
-        .returning(deletedFeedbackColumns(sitepingFeedbacks, { collectScreenshotUrls: true }));
+        .delete(beezpingFeedbacks)
+        .where(inArray(beezpingFeedbacks.id, chunkIds))
+        .returning(deletedFeedbackColumns(beezpingFeedbacks, { collectScreenshotUrls: true }));
       return toDeletedFeedbacks(rows);
     },
     async findReferencedScreenshotUrls(screenshotUrls) {
       const rows = await db
-        .selectDistinct({ screenshotUrl: sitepingFeedbacks.screenshotUrl })
-        .from(sitepingFeedbacks)
-        .where(inArray(sitepingFeedbacks.screenshotUrl, [...screenshotUrls]));
+        .selectDistinct({ screenshotUrl: beezpingFeedbacks.screenshotUrl })
+        .from(beezpingFeedbacks)
+        .where(inArray(beezpingFeedbacks.screenshotUrl, [...screenshotUrls]));
       return new Set(rows.flatMap((row) => (row.screenshotUrl === null ? [] : [row.screenshotUrl])));
     },
   };

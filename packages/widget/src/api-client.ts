@@ -1,5 +1,8 @@
 import {
   type AnnotationPayload,
+  BeezpingError,
+  type BeezpingHeadersOption,
+  BeezpingNetworkError,
   type CommentCreateInput,
   type CommentResponse,
   errorFromResponse,
@@ -12,11 +15,9 @@ import {
   mergeRequestHeaders,
   networkErrorFromException,
   type Prettify,
-  SitepingError,
-  type SitepingHeadersOption,
-  SitepingNetworkError,
   withSearchParams,
 } from "@beezping/core";
+import { RETRY_QUEUE_KEY } from "./constants/storage.js";
 import type { Identity } from "./identity.js";
 import { ownFeedback } from "./own-feedback.js";
 
@@ -49,12 +50,11 @@ export interface ApiClientAuth {
   /** Sent as `Authorization: Bearer <apiKey>` on every request. */
   apiKey?: string | undefined;
   /** Extra headers, static or per-request factory. An explicit `Authorization` entry wins over `apiKey`. */
-  headers?: SitepingHeadersOption | undefined;
+  headers?: BeezpingHeadersOption | undefined;
 }
 
 const MAX_RETRIES = 3;
 const TIMEOUT_MS = 10_000;
-const RETRY_QUEUE_KEY = "siteping_retry_queue";
 const MAX_QUEUE_SIZE = 20;
 
 /**
@@ -112,7 +112,7 @@ export async function buildRequestHeaders(auth: ApiClientAuth, json: boolean): P
  * a page of inline screenshots can legitimately take longer on a slow link.
  *
  * Failures come out typed: a non-OK status as `errorFromResponse` maps it,
- * anything else (fetch, abort, body read or parse) as a `SitepingNetworkError`.
+ * anything else (fetch, abort, body read or parse) as a `BeezpingNetworkError`.
  */
 async function resilientFetch<T>(
   url: string,
@@ -167,7 +167,7 @@ interface RetryEntry {
  * a queued rejection used to be replayed, and rejected, on every page load.
  */
 function isTransientFailure(error: unknown): boolean {
-  return error instanceof SitepingNetworkError || (error instanceof SitepingError && error.code === "SERVER");
+  return error instanceof BeezpingNetworkError || (error instanceof BeezpingError && error.code === "SERVER");
 }
 
 /** Same verdict for a replayed request: keep 5xx for the next flush, drop 4xx for good. */
@@ -175,7 +175,7 @@ function isTransientStatus(status: number): boolean {
   return status >= 500;
 }
 
-const LOCK_NAME = "siteping_retry_queue";
+const LOCK_NAME = "beezping_retry_queue";
 
 /**
  * Acquire a Web Lock to serialize cross-tab access to the retry queue.
@@ -217,7 +217,7 @@ function readQueue(): RetryEntry[] {
     // writer put this value in place. Nothing in it can be replayed; clear it
     // so the queue works again instead of every write failing on this parse.
     localStorage.removeItem(RETRY_QUEUE_KEY);
-    console.warn(`[siteping] discarded an unreadable retry queue from localStorage (${raw.length} chars)`);
+    console.warn(`[beezping] discarded an unreadable retry queue from localStorage (${raw.length} chars)`);
     return [];
   }
   return Array.isArray(parsed) ? parsed.filter(isRetryEntry) : [];
@@ -256,7 +256,7 @@ function queueForRetry(endpoint: string, payload: FeedbackPayload): void {
         stripped += 1;
         if (tryWriteQueue(kept)) {
           console.warn(
-            `[siteping] retry queue exceeded the localStorage quota — dropped the screenshot of ${stripped} of ${queue.length} queued feedback(s)`,
+            `[beezping] retry queue exceeded the localStorage quota — dropped the screenshot of ${stripped} of ${queue.length} queued feedback(s)`,
           );
           return;
         }
@@ -267,13 +267,13 @@ function queueForRetry(endpoint: string, payload: FeedbackPayload): void {
           const dropped = queue.length - kept.length;
           const lost = queue.slice(dropped).filter(hasScreenshot).length;
           console.warn(
-            `[siteping] retry queue exceeded the localStorage quota — dropped the ${dropped} oldest of ${queue.length} queued feedback(s)${lost > 0 ? `, and the screenshot of ${lost} of the rest` : ""}`,
+            `[beezping] retry queue exceeded the localStorage quota — dropped the ${dropped} oldest of ${queue.length} queued feedback(s)${lost > 0 ? `, and the screenshot of ${lost} of the rest` : ""}`,
           );
           return;
         }
       }
       // Every write failed, so the queue already stored is left as it was.
-      console.warn("[siteping] feedback could not be queued for retry — localStorage is full or unavailable");
+      console.warn("[beezping] feedback could not be queued for retry — localStorage is full or unavailable");
     } catch {
       // localStorage unavailable — the new entry is dropped
     }
@@ -370,7 +370,7 @@ export async function flushRetryQueue(
       if (toRetry.length === 0 && dropped === 0) return;
 
       if (dropped > 0) {
-        console.debug("[siteping] flushRetryQueue: dropped", dropped, "stale entries (identity changed)");
+        console.debug("[beezping] flushRetryQueue: dropped", dropped, "stale entries (identity changed)");
       }
 
       // Process items sequentially to avoid overwhelming the server
@@ -411,7 +411,7 @@ export async function flushRetryQueue(
 
       if (rejected > 0) {
         console.warn(
-          `[siteping] flushRetryQueue: dropped ${rejected} queued feedback(s) the server rejected (4xx) — they would fail identically on every replay`,
+          `[beezping] flushRetryQueue: dropped ${rejected} queued feedback(s) the server rejected (4xx) — they would fail identically on every replay`,
         );
       }
 
@@ -468,7 +468,7 @@ export class ApiClient implements WidgetClient {
     private readonly auth: ApiClientAuth = {},
   ) {}
 
-  /** `buildRequestHeaders`, with a failing headers factory normalised to a `SitepingNetworkError`. */
+  /** `buildRequestHeaders`, with a failing headers factory normalised to a `BeezpingNetworkError`. */
   private async headers(json: boolean, label: string): Promise<Record<string, string>> {
     try {
       return await buildRequestHeaders(this.auth, json);

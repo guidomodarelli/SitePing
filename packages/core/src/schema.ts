@@ -1,5 +1,5 @@
 /**
- * Siteping database models — single source of truth.
+ * Beezping database models — single source of truth.
  *
  * Used by:
  * - CLI to generate Prisma schema (via prisma-ast)
@@ -10,10 +10,11 @@
  * The CLI generates the actual Prisma schema from this definition.
  */
 
+import type { BEEZPING_MODELS } from "./constants/schema.js";
 import type { AssertEqual } from "./type-utils.js";
 import type { AnnotationRecord, CommentRecord, FeedbackRecord } from "./types.js";
 
-/** Prisma scalar types supported by Siteping field definitions. */
+/** Prisma scalar types supported by Beezping field definitions. */
 export type PrismaScalarType =
   | "String"
   | "Boolean"
@@ -28,7 +29,7 @@ export type PrismaScalarType =
 /** Prisma native column hints applied via `@db.<NativeType>`. */
 export type PrismaNativeType = "Text" | "VarChar" | "Char" | "MediumText" | "LongText" | (string & {});
 
-/** Relation cardinality between two Siteping models. */
+/** Relation cardinality between two Beezping models. */
 export type RelationKind = "1-to-many" | "many-to-1";
 
 /** Prisma `onDelete` referential action. */
@@ -51,7 +52,7 @@ export interface RelationDef {
 }
 
 /**
- * Definition of a single field in a Siteping database model.
+ * Definition of a single field in a Beezping database model.
  *
  * The interface intentionally keeps a wide structural shape so it stays
  * easy to extend, but consumers can narrow via {@link isRelationField} /
@@ -84,146 +85,46 @@ export function isScalarField(field: FieldDef): field is FieldDef & { relation?:
   return field.relation === undefined;
 }
 
-/** Definition of a composite index on a Siteping database model. */
+/** Definition of a composite index on a Beezping database model. */
 export interface IndexDef {
   fields: readonly string[];
 }
 
-/** Definition of a single Siteping database model (fields + indexes). */
+/** Definition of a single Beezping database model (fields + indexes). */
 export interface ModelDef {
   fields: Record<string, FieldDef>;
   indexes?: readonly IndexDef[];
 }
 
-const _SITEPING_MODELS = {
-  SitepingFeedback: {
-    fields: {
-      id: { type: "String", isId: true, default: "cuid()" },
-      projectName: { type: "String" },
-      type: { type: "String" },
-      message: { type: "String", nativeType: "Text" },
-      status: { type: "String", default: '"open"' },
-      url: { type: "String" },
-      urlPattern: { type: "String", optional: true },
-      screenshotUrl: { type: "String", optional: true, nativeType: "Text" },
-      screenshotRegion: { type: "Json", optional: true },
-      diagnostics: { type: "Json", optional: true },
-      viewport: { type: "String" },
-      userAgent: { type: "String" },
-      authorName: { type: "String" },
-      authorEmail: { type: "String" },
-      clientId: { type: "String", isUnique: true },
-      resolvedAt: { type: "DateTime", optional: true },
-      createdAt: { type: "DateTime", default: "now()" },
-      updatedAt: { type: "DateTime", isUpdatedAt: true },
-      annotations: {
-        type: "SitepingAnnotation",
-        relation: { kind: "1-to-many", model: "SitepingAnnotation" },
-      },
-      comments: {
-        type: "SitepingComment",
-        relation: { kind: "1-to-many", model: "SitepingComment" },
-      },
-    },
-    indexes: [
-      { fields: ["projectName"] },
-      { fields: ["projectName", "status", "createdAt"] },
-      { fields: ["projectName", "url"] },
-    ],
-  },
-  SitepingAnnotation: {
-    fields: {
-      id: { type: "String", isId: true, default: "cuid()" },
-      feedbackId: { type: "String" },
-      feedback: {
-        type: "SitepingFeedback",
-        relation: {
-          kind: "many-to-1",
-          model: "SitepingFeedback",
-          fields: ["feedbackId"],
-          references: ["id"],
-          onDelete: "Cascade",
-        },
-      },
-      cssSelector: { type: "String", nativeType: "Text" },
-      xpath: { type: "String", nativeType: "Text" },
-      textSnippet: { type: "String", nativeType: "Text" },
-      elementTag: { type: "String" },
-      elementId: { type: "String", optional: true },
-      textPrefix: { type: "String", nativeType: "Text" },
-      textSuffix: { type: "String", nativeType: "Text" },
-      fingerprint: { type: "String" },
-      neighborText: { type: "String", nativeType: "Text" },
-      anchorKey: { type: "String", optional: true },
-      xPct: { type: "Float" },
-      yPct: { type: "Float" },
-      wPct: { type: "Float" },
-      hPct: { type: "Float" },
-      scrollX: { type: "Float" },
-      scrollY: { type: "Float" },
-      viewportW: { type: "Int" },
-      viewportH: { type: "Int" },
-      devicePixelRatio: { type: "Float", default: "1" },
-      createdAt: { type: "DateTime", default: "now()" },
-    },
-    indexes: [{ fields: ["feedbackId"] }],
-  },
-  SitepingComment: {
-    fields: {
-      id: { type: "String", isId: true, default: "cuid()" },
-      feedbackId: { type: "String" },
-      feedback: {
-        type: "SitepingFeedback",
-        relation: {
-          kind: "many-to-1",
-          model: "SitepingFeedback",
-          fields: ["feedbackId"],
-          references: ["id"],
-          onDelete: "Cascade",
-        },
-      },
-      body: { type: "String", nativeType: "Text" },
-      authorName: { type: "String" },
-      authorEmail: { type: "String" },
-      authorRole: { type: "String", default: '"client"' },
-      clientId: { type: "String", isUnique: true },
-      createdAt: { type: "DateTime", default: "now()" },
-    },
-    // A thread is read oldest first, one feedback at a time.
-    indexes: [{ fields: ["feedbackId", "createdAt"] }],
-  },
-} as const satisfies Record<string, ModelDef>;
+export { BEEZPING_MODELS } from "./constants/schema.js";
 
-/** Map of Siteping models keyed by model name — frozen at runtime. */
-export const SITEPING_MODELS: typeof _SITEPING_MODELS = Object.freeze(_SITEPING_MODELS);
+/** Union of every Beezping model name as a string literal. */
+export type BeezpingModelName = "BeezpingFeedback" | "BeezpingAnnotation" | "BeezpingComment";
 
-/** Union of every Siteping model name as a string literal. */
-export type SitepingModelName = keyof typeof SITEPING_MODELS;
-
-/** Field names declared on a specific Siteping model. */
-export type SitepingModelFieldName<M extends SitepingModelName> = keyof (typeof SITEPING_MODELS)[M]["fields"];
+/** Field names declared on a specific Beezping model. */
+export type BeezpingModelFieldName<M extends BeezpingModelName> = keyof (typeof BEEZPING_MODELS)[M]["fields"];
 
 // ---------------------------------------------------------------------------
 // Compile-time locks — the Prisma model definitions and the store record
 // interfaces describe the same columns. Adding a field to one side without
 // the other is a compile error here (the CLI generates the actual Prisma
-// schema from SITEPING_MODELS, so a missed column would otherwise only
+// schema from BEEZPING_MODELS, so a missed column would otherwise only
 // surface as a runtime Prisma error).
 // ---------------------------------------------------------------------------
 
-const _feedbackModelMatchesRecord: AssertEqual<SitepingModelFieldName<"SitepingFeedback">, keyof FeedbackRecord> = true;
+const _feedbackModelMatchesRecord: AssertEqual<BeezpingModelFieldName<"BeezpingFeedback">, keyof FeedbackRecord> = true;
 void _feedbackModelMatchesRecord;
 
 // `feedback` is the relation back-reference — the only field with no record
 // counterpart.
 const _annotationModelMatchesRecord: AssertEqual<
-  Exclude<SitepingModelFieldName<"SitepingAnnotation">, "feedback">,
+  Exclude<BeezpingModelFieldName<"BeezpingAnnotation">, "feedback">,
   keyof AnnotationRecord
 > = true;
 void _annotationModelMatchesRecord;
 
 const _commentModelMatchesRecord: AssertEqual<
-  Exclude<SitepingModelFieldName<"SitepingComment">, "feedback">,
+  Exclude<BeezpingModelFieldName<"BeezpingComment">, "feedback">,
   keyof CommentRecord
 > = true;
 void _commentModelMatchesRecord;

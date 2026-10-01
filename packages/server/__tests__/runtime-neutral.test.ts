@@ -21,7 +21,7 @@ const ENTRY = fileURLToPath(new URL("../src/index.ts", import.meta.url));
 
 /** The package bundle as CommonJS, like its published `index.cjs`. */
 async function bundleServer(): Promise<string> {
-  const outDir = await mkdtemp(join(tmpdir(), "siteping-server-"));
+  const outDir = await mkdtemp(join(tmpdir(), "beezping-server-"));
   try {
     await build({
       entry: { index: ENTRY },
@@ -72,7 +72,7 @@ function loadInWebRuntime(code: string): typeof Server {
 }
 
 /** A minimal store over an array. */
-function arrayStore(): Server.SitepingStore {
+function arrayStore(): Server.BeezpingStore {
   const records: FeedbackRecord[] = [];
   return {
     async createFeedback({ screenshotDataUrl, annotations: _annotations, ...data }) {
@@ -118,8 +118,8 @@ describe("@beezping/server outside Node", () => {
   }, 30_000);
 
   it("serves a create, a list and an API-key update with Web APIs only", async () => {
-    const endpoint = "https://example.com/api/siteping";
-    const handler = server.createSitepingHandler({ store: arrayStore(), apiKey: "secret-key" });
+    const endpoint = "https://example.com/api/beezping";
+    const handler = server.createBeezpingHandler({ store: arrayStore(), apiKey: "secret-key" });
 
     const created = await handler.POST(
       new Request(endpoint, { method: "POST", body: JSON.stringify(validPayloadNoAnnotations) }),
@@ -147,10 +147,10 @@ describe("@beezping/server outside Node", () => {
   });
 
   it("starts without an apiKey where there is no process.env to read", () => {
-    expect(() => server.createSitepingHandler({ store: arrayStore() })).not.toThrow();
+    expect(() => server.createBeezpingHandler({ store: arrayStore() })).not.toThrow();
   });
 
   it("exports only the handler and webhook dispatch as values: schemas and payload builders stay internal", () => {
-    expect(Object.keys(server).sort()).toEqual(["createSitepingHandler", "dispatchWebhook", "dispatchWebhooks"]);
+    expect(Object.keys(server).sort()).toEqual(["createBeezpingHandler", "dispatchWebhook", "dispatchWebhooks"]);
   });
 });

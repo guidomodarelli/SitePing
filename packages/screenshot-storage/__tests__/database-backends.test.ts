@@ -2,10 +2,10 @@ import { inspect } from "node:util";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+  createBeezpingScreenshotsSqliteTable,
   createLibSQLScreenshotObjectStore,
-  createSitepingScreenshotsSqliteTable,
 } from "../src/backends/drizzle-libsql.js";
-import { createPgScreenshotObjectStore, createSitepingScreenshotsPgTable } from "../src/backends/drizzle-pg.js";
+import { createBeezpingScreenshotsPgTable, createPgScreenshotObjectStore } from "../src/backends/drizzle-pg.js";
 import { createScreenshotStorage, isObjectStoreRequestError } from "../src/index.js";
 import { describeBackendContract, PUBLIC_BASE_URL, silentLogger, UPLOAD_CONTEXT } from "./backend-contract.js";
 import { createLibSQLScreenshotsDatabase, createPgScreenshotsDatabase } from "./databases.js";
@@ -92,7 +92,7 @@ describe("database backends — a failed query", () => {
   // quotes the bound parameters — the whole screenshot — unless it is scrubbed.
   const image = new Uint8Array(200_000).fill(0x41);
   const dataUrl = `data:image/png;base64,${Buffer.from(image).toString("base64")}`;
-  const notMigrated = "siteping_not_migrated";
+  const notMigrated = "beezping_not_migrated";
 
   it.each([
     [
@@ -100,7 +100,7 @@ describe("database backends — a failed query", () => {
       () =>
         createPgScreenshotObjectStore(pg.db, {
           publicBaseUrl: PUBLIC_BASE_URL,
-          table: createSitepingScreenshotsPgTable(notMigrated),
+          table: createBeezpingScreenshotsPgTable(notMigrated),
         }),
       `42P01: relation "${notMigrated}" does not exist`,
     ],
@@ -109,7 +109,7 @@ describe("database backends — a failed query", () => {
       () =>
         createLibSQLScreenshotObjectStore(libsql.db, {
           publicBaseUrl: PUBLIC_BASE_URL,
-          table: createSitepingScreenshotsSqliteTable(notMigrated),
+          table: createBeezpingScreenshotsSqliteTable(notMigrated),
         }),
       `SQLITE_ERROR: no such table: ${notMigrated}`,
     ],
@@ -122,7 +122,7 @@ describe("database backends — a failed query", () => {
 
     expect(isObjectStoreRequestError(failure)).toBe(true);
     expect(failure).toMatchObject({
-      message: expect.stringMatching(/ INSERT siteping-[a-f0-9]{32}\.png failed$/),
+      message: expect.stringMatching(/ INSERT beezping-[a-f0-9]{32}\.png failed$/),
       cause: driverError,
     });
     // What a store logs: the upload failure, and the warning of the reclaim that failed too.

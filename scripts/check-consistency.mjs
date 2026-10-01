@@ -243,7 +243,7 @@ for (const dir of toolingDirs) {
 // out. That is only safe while the source never imports it — not even as a
 // type, which would leave an import the consumer may not resolve in the
 // published declarations. The client shape is structural on purpose
-// (SitepingPrismaClient).
+// (BeezpingPrismaClient).
 const PRISMA_CLIENT_IMPORT = /(?:\bfrom|\bimport|\brequire)\s*\(?\s*["']@prisma\/client(?:\/[^"']*)?["']/;
 const prismaSourceFiles = (dir) =>
   readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) =>

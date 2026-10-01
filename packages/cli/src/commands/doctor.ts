@@ -1,17 +1,17 @@
 import { p } from "../prompts.js";
 
-/** Options accepted by the `siteping doctor` subcommand. */
+/** Options accepted by the `beezping doctor` subcommand. */
 export interface DoctorCommandOptions {
   /** Override the site base URL; a path in it prefixes the endpoint (defaults to prompt / `http://localhost:3000`). */
   url?: string;
-  /** Override the API endpoint path (defaults to prompt / `/api/siteping`). */
+  /** Override the API endpoint path (defaults to prompt / `/api/beezping`). */
   endpoint?: string;
   /** Bearer token for endpoints configured with `apiKey` (sent as `Authorization: Bearer <key>`). */
   apiKey?: string;
 }
 
-/** Shape of the `GET /api/siteping?projectName=…` health-check response. */
-interface SitepingHealthResponse {
+/** Shape of the `GET /api/beezping?projectName=…` health-check response. */
+interface BeezpingHealthResponse {
   total?: number;
 }
 
@@ -25,12 +25,12 @@ function healthCheckUrl(url: string, endpoint: string): string {
   const { pathname, searchParams } = new URL(endpoint, "http://endpoint.invalid");
   target.pathname = target.pathname.replace(/\/+$/, "") + pathname;
   target.search = searchParams.toString();
-  target.searchParams.set("projectName", "__siteping_health_check__");
+  target.searchParams.set("projectName", "__beezping_health_check__");
   return target.toString();
 }
 
 export async function doctorCommand(options: DoctorCommandOptions): Promise<void> {
-  p.intro("siteping — Network diagnostics");
+  p.intro("beezping — Network diagnostics");
 
   const url =
     options.url ??
@@ -54,8 +54,8 @@ export async function doctorCommand(options: DoctorCommandOptions): Promise<void
     options.endpoint ??
     (await p.text({
       message: "API endpoint path",
-      placeholder: "/api/siteping",
-      defaultValue: "/api/siteping",
+      placeholder: "/api/beezping",
+      defaultValue: "/api/beezping",
     }));
 
   if (p.isCancel(endpoint)) {
@@ -77,9 +77,9 @@ export async function doctorCommand(options: DoctorCommandOptions): Promise<void
     const elapsed = Math.round(performance.now() - start);
 
     if (response.ok) {
-      let data: SitepingHealthResponse | null;
+      let data: BeezpingHealthResponse | null;
       try {
-        data = (await response.json()) as SitepingHealthResponse;
+        data = (await response.json()) as BeezpingHealthResponse;
       } catch {
         data = null;
       }
@@ -88,7 +88,7 @@ export async function doctorCommand(options: DoctorCommandOptions): Promise<void
       if (data && typeof data.total === "number") {
         p.log.success(`API is working — ${data.total} feedback(s) found`);
       } else {
-        p.log.warn("Unexpected response — make sure the endpoint uses createSitepingHandler()");
+        p.log.warn("Unexpected response — make sure the endpoint uses createBeezpingHandler()");
       }
     } else {
       spinner.stop(`HTTP error ${response.status} (${elapsed}ms)`);

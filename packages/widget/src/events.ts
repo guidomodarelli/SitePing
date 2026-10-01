@@ -1,4 +1,4 @@
-import type { CommentResponse, FeedbackResponse, SitepingUnsubscribe } from "@beezping/core";
+import type { BeezpingUnsubscribe, CommentResponse, FeedbackResponse } from "@beezping/core";
 import type { AnnotationComplete } from "./annotator.js";
 
 /** Listener signature for a single key of an `EventBus` event map. */
@@ -13,7 +13,7 @@ export type EventListener<E extends Record<keyof E, unknown[]>, K extends keyof 
 export class EventBus<E extends Record<keyof E, unknown[]>> {
   private readonly listeners = new Map<keyof E, Set<EventListener<E, keyof E>>>();
 
-  on<K extends keyof E>(event: K, listener: EventListener<E, K>): SitepingUnsubscribe {
+  on<K extends keyof E>(event: K, listener: EventListener<E, K>): BeezpingUnsubscribe {
     let set = this.listeners.get(event);
     if (!set) {
       set = new Set();
@@ -38,7 +38,7 @@ export class EventBus<E extends Record<keyof E, unknown[]>> {
         (fn as (...a: E[K]) => void)(...args);
       } catch (err) {
         // Isolate listener errors — one bad listener must not kill others
-        console.error(`[siteping] Error in event listener for "${String(event)}":`, err);
+        console.error(`[beezping] Error in event listener for "${String(event)}":`, err);
       }
     }
   }
@@ -70,7 +70,7 @@ export interface WidgetEvents {
    * Internal-only: a feedback submission was aborted by a benign user action
    * (e.g. cancelling the identity prompt). Distinct from `feedback:error` so a
    * cancellation does not surface through the host's `onError` callback. Not
-   * part of `SitepingPublicEvents` — never exposed to consumers.
+   * part of `BeezpingPublicEvents` — never exposed to consumers.
    */
   "submission:cancelled": [];
   /**
@@ -84,8 +84,8 @@ export interface WidgetEvents {
   "panel:toggle": [boolean];
 }
 
-// NOTE: the public event surface is `SitepingPublicEvents` from
+// NOTE: the public event surface is `BeezpingPublicEvents` from
 // `@beezping/core`. The launcher bridges internal events onto the public bus
-// through a mapped object keyed by `keyof SitepingPublicEvents`, so adding a
+// through a mapped object keyed by `keyof BeezpingPublicEvents`, so adding a
 // public event without bridging it is a compile error there — no alias or
 // duplicate map is needed on this side.

@@ -1,11 +1,11 @@
 import {
   type AnnotationPayload,
+  BeezpingAuthError,
+  type BeezpingError,
+  BeezpingNetworkError,
+  BeezpingValidationError,
   type FeedbackPayload,
   type RectData,
-  SitepingAuthError,
-  type SitepingError,
-  SitepingNetworkError,
-  SitepingValidationError,
 } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiClient, flushRetryQueue } from "../../src/api-client.js";
@@ -26,13 +26,13 @@ async function expectTransientFailure(client: ApiClient, payload: FeedbackPayloa
   vi.useFakeTimers();
   const promise = client.sendFeedback(payload).catch((e: Error) => e);
   await drainRetryBackoff();
-  expect(await promise).toBeInstanceOf(SitepingNetworkError);
+  expect(await promise).toBeInstanceOf(BeezpingNetworkError);
   vi.useRealTimers();
 }
 
 describe("ApiClient", () => {
   let client: ApiClient;
-  const endpoint = "http://localhost/api/siteping";
+  const endpoint = "http://localhost/api/beezping";
 
   beforeEach(() => {
     client = new ApiClient(endpoint, "test");
@@ -196,7 +196,7 @@ describe("ApiClient", () => {
   }
 
   function readQueue(store: Map<string, string>): Array<{ endpoint: string; payload: Record<string, unknown> }> {
-    const raw = store.get("siteping_retry_queue");
+    const raw = store.get("beezping_retry_queue");
     return raw ? (JSON.parse(raw) as Array<{ endpoint: string; payload: Record<string, unknown> }>) : [];
   }
 
@@ -224,7 +224,7 @@ describe("ApiClient", () => {
 
     const promise = client.sendFeedback(basePayload).catch((e: Error) => e);
     await drainRetryBackoff();
-    expect(await promise).toBeInstanceOf(SitepingNetworkError);
+    expect(await promise).toBeInstanceOf(BeezpingNetworkError);
     vi.useRealTimers();
 
     expect(readQueue(store)).toHaveLength(1);
@@ -299,7 +299,7 @@ describe("ApiClient", () => {
       { endpoint, payload: third },
     ]);
     expect(warn).toHaveBeenCalledExactlyOnceWith(
-      "[siteping] retry queue exceeded the localStorage quota — dropped the screenshot of 2 of 3 queued feedback(s)",
+      "[beezping] retry queue exceeded the localStorage quota — dropped the screenshot of 2 of 3 queued feedback(s)",
     );
 
     vi.unstubAllGlobals();
@@ -313,14 +313,14 @@ describe("ApiClient", () => {
     const newest = { ...screenshotPayload, message: "newest", clientId: "cid-3" };
     const expected = [{ endpoint, payload: withoutScreenshot(newest) }];
     const store = stubLocalStorage(JSON.stringify(expected).length);
-    store.set("siteping_retry_queue", JSON.stringify(older)); // seeded behind the quota check
+    store.set("beezping_retry_queue", JSON.stringify(older)); // seeded behind the quota check
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     await failWithNetworkError(newest);
 
     expect(readQueue(store)).toEqual(expected);
     expect(warn).toHaveBeenCalledExactlyOnceWith(
-      "[siteping] retry queue exceeded the localStorage quota — dropped the 2 oldest of 3 queued feedback(s), and the screenshot of 1 of the rest",
+      "[beezping] retry queue exceeded the localStorage quota — dropped the 2 oldest of 3 queued feedback(s), and the screenshot of 1 of the rest",
     );
 
     vi.unstubAllGlobals();
@@ -340,7 +340,7 @@ describe("ApiClient", () => {
     ];
     const store = stubLocalStorage(JSON.stringify(expected).length);
     store.set(
-      "siteping_retry_queue",
+      "beezping_retry_queue",
       JSON.stringify([
         { endpoint, payload: textOnly("a") },
         { endpoint, payload: textOnly("b") },
@@ -352,7 +352,7 @@ describe("ApiClient", () => {
 
     expect(readQueue(store)).toEqual(expected);
     expect(warn).toHaveBeenCalledExactlyOnceWith(
-      "[siteping] retry queue exceeded the localStorage quota — dropped the 1 oldest of 3 queued feedback(s)",
+      "[beezping] retry queue exceeded the localStorage quota — dropped the 1 oldest of 3 queued feedback(s)",
     );
 
     vi.unstubAllGlobals();
@@ -363,14 +363,14 @@ describe("ApiClient", () => {
     const previous = JSON.stringify([
       { endpoint, payload: { ...basePayload, message: "previous", clientId: "cid-0" } },
     ]);
-    store.set("siteping_retry_queue", previous); // seeded behind the quota check
+    store.set("beezping_retry_queue", previous); // seeded behind the quota check
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     await failWithNetworkError({ ...screenshotPayload, message: "newest" });
 
-    expect(store.get("siteping_retry_queue")).toBe(previous);
+    expect(store.get("beezping_retry_queue")).toBe(previous);
     expect(warn).toHaveBeenCalledExactlyOnceWith(
-      "[siteping] feedback could not be queued for retry — localStorage is full or unavailable",
+      "[beezping] feedback could not be queued for retry — localStorage is full or unavailable",
     );
 
     vi.unstubAllGlobals();
@@ -384,7 +384,7 @@ describe("ApiClient", () => {
 
     // Give the fire-and-forget queue write every chance to run before asserting.
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(store.has("siteping_retry_queue")).toBe(false);
+    expect(store.has("beezping_retry_queue")).toBe(false);
 
     vi.unstubAllGlobals();
   });
@@ -412,46 +412,46 @@ describe("ApiClient", () => {
   });
 
   // -------------------------------------------------------------------------
-  // Typed error mapping — surface SitepingError subclasses by status code
+  // Typed error mapping — surface BeezpingError subclasses by status code
   // so host apps can `instanceof`-check instead of grepping messages.
   // -------------------------------------------------------------------------
 
-  it("maps 401 to SitepingAuthError (not retryable)", async () => {
+  it("maps 401 to BeezpingAuthError (not retryable)", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response("Nope", { status: 401 }));
-    const err = (await client.getFeedbacks("test").catch((e: SitepingError) => e)) as SitepingError;
-    expect(err).toBeInstanceOf(SitepingAuthError);
+    const err = (await client.getFeedbacks("test").catch((e: BeezpingError) => e)) as BeezpingError;
+    expect(err).toBeInstanceOf(BeezpingAuthError);
     expect(err.code).toBe("AUTH");
     expect(err.retryable).toBe(false);
-    expect((err as SitepingAuthError).status).toBe(401);
+    expect((err as BeezpingAuthError).status).toBe(401);
   });
 
-  it("maps 403 to SitepingAuthError, telling it from a 401 by its status", async () => {
+  it("maps 403 to BeezpingAuthError, telling it from a 401 by its status", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response("Forbidden", { status: 403 }));
-    const err = (await client.getFeedbacks("test").catch((e: SitepingError) => e)) as SitepingError;
-    expect(err).toBeInstanceOf(SitepingAuthError);
+    const err = (await client.getFeedbacks("test").catch((e: BeezpingError) => e)) as BeezpingError;
+    expect(err).toBeInstanceOf(BeezpingAuthError);
     // A policy refusal: the credentials still work, so a host must not drop them.
-    expect((err as SitepingAuthError).status).toBe(403);
+    expect((err as BeezpingAuthError).status).toBe(403);
   });
 
-  it("maps other 4xx to SitepingValidationError (not retryable)", async () => {
+  it("maps other 4xx to BeezpingValidationError (not retryable)", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response("Bad", { status: 400 }));
-    const err = (await client.getFeedbacks("test").catch((e: SitepingError) => e)) as SitepingError;
-    expect(err).toBeInstanceOf(SitepingValidationError);
+    const err = (await client.getFeedbacks("test").catch((e: BeezpingError) => e)) as BeezpingError;
+    expect(err).toBeInstanceOf(BeezpingValidationError);
     expect(err.code).toBe("VALIDATION");
     expect(err.retryable).toBe(false);
   });
 
-  it("maps a thrown network exception to SitepingNetworkError (retryable)", async () => {
+  it("maps a thrown network exception to BeezpingNetworkError (retryable)", async () => {
     vi.useFakeTimers();
     const fetchMock = vi.fn().mockRejectedValue(new TypeError("offline"));
     vi.stubGlobal("fetch", fetchMock);
-    const promise = client.getFeedbacks("test").catch((e: SitepingError) => e);
+    const promise = client.getFeedbacks("test").catch((e: BeezpingError) => e);
     // 1s + 2s + 4s of backoff before throwing
     await vi.advanceTimersByTimeAsync(1500);
     await vi.advanceTimersByTimeAsync(2500);
     await vi.advanceTimersByTimeAsync(4500);
-    const err = (await promise) as SitepingError;
-    expect(err).toBeInstanceOf(SitepingNetworkError);
+    const err = (await promise) as BeezpingError;
+    expect(err).toBeInstanceOf(BeezpingNetworkError);
     expect(err.code).toBe("NETWORK");
     expect(err.retryable).toBe(true);
     vi.useRealTimers();
@@ -605,10 +605,10 @@ describe("ApiClient", () => {
     await vi.advanceTimersByTimeAsync(4500);
 
     const error = (await promise) as Error;
-    // Network failures are now wrapped in SitepingNetworkError (retryable=true)
+    // Network failures are now wrapped in BeezpingNetworkError (retryable=true)
     // so host apps get a typed signal — the original cause is preserved in
     // the message so existing log scraping still works.
-    expect(error.name).toBe("SitepingNetworkError");
+    expect(error.name).toBe("BeezpingNetworkError");
     expect((error as Error).message).toContain("network down");
     expect(fetchMock).toHaveBeenCalledTimes(4);
 
@@ -664,9 +664,9 @@ describe("ApiClient", () => {
   });
 
   it.each([
-    ["/api/siteping?tenant=acme", "/api/siteping?tenant=acme&projectName=test-project&limit=10"],
-    ["/api/siteping?", "/api/siteping?projectName=test-project&limit=10"],
-    ["/api/siteping#top", "/api/siteping?projectName=test-project&limit=10#top"],
+    ["/api/beezping?tenant=acme", "/api/beezping?tenant=acme&projectName=test-project&limit=10"],
+    ["/api/beezping?", "/api/beezping?projectName=test-project&limit=10"],
+    ["/api/beezping#top", "/api/beezping?projectName=test-project&limit=10#top"],
   ])("appends GET params to an endpoint that already has a query or hash (%s)", async (withQuery, expected) => {
     // `${endpoint}?${params}` produced "?tenant=acme?projectName=…" — a 400.
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ feedbacks: [], total: 0 })));
@@ -825,7 +825,7 @@ describe("ApiClient", () => {
 
       const promise = client.addComment("fb-1", input).catch((e: Error) => e);
       await drainRetryBackoff();
-      expect(await promise).toBeInstanceOf(SitepingNetworkError);
+      expect(await promise).toBeInstanceOf(BeezpingNetworkError);
       vi.useRealTimers();
 
       expect(readQueue(store)).toHaveLength(0);
@@ -834,10 +834,10 @@ describe("ApiClient", () => {
 
     it("maps a refusal to its typed error", async () => {
       vi.mocked(fetch).mockResolvedValue(new Response("Forbidden", { status: 403 }));
-      await expect(client.addComment("fb-1", input)).rejects.toBeInstanceOf(SitepingAuthError);
+      await expect(client.addComment("fb-1", input)).rejects.toBeInstanceOf(BeezpingAuthError);
 
       vi.mocked(fetch).mockResolvedValue(new Response('{"errors":[]}', { status: 400 }));
-      await expect(client.addComment("fb-1", input)).rejects.toBeInstanceOf(SitepingValidationError);
+      await expect(client.addComment("fb-1", input)).rejects.toBeInstanceOf(BeezpingValidationError);
     });
   });
 });
@@ -847,7 +847,7 @@ describe("ApiClient", () => {
 // ---------------------------------------------------------------------------
 
 describe("ApiClient — auth & headers", () => {
-  const endpoint = "http://localhost/api/siteping";
+  const endpoint = "http://localhost/api/beezping";
 
   const payload = {
     projectName: "test",
@@ -974,7 +974,7 @@ describe("ApiClient — auth & headers", () => {
       },
     });
     const err = await client.getFeedbacks("test").catch((e: unknown) => e);
-    expect(err).toBeInstanceOf(SitepingNetworkError);
+    expect(err).toBeInstanceOf(BeezpingNetworkError);
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -1013,7 +1013,7 @@ describe("ApiClient — auth & headers", () => {
     expect(await promise).toBeInstanceOf(Error);
     vi.useRealTimers();
 
-    const raw = store.get("siteping_retry_queue");
+    const raw = store.get("beezping_retry_queue");
     expect(raw).toBeDefined();
     const queue = JSON.parse(raw!) as Array<Record<string, unknown>>;
     expect(queue).toEqual([{ endpoint, payload }]);
@@ -1030,7 +1030,7 @@ describe("ApiClient — auth & headers", () => {
 // ---------------------------------------------------------------------------
 
 describe("flushRetryQueue", () => {
-  const endpoint = "http://localhost/api/siteping";
+  const endpoint = "http://localhost/api/beezping";
 
   beforeEach(() => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("", { status: 201 }));
@@ -1096,7 +1096,7 @@ describe("flushRetryQueue", () => {
     // The 4xx entry is gone for good — replaying it would fail identically
     // on every page load; the 5xx one waits for the next flush.
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      "siteping_retry_queue",
+      "beezping_retry_queue",
       JSON.stringify([{ endpoint, payload: transient }]),
     );
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("dropped 1 queued feedback"));
@@ -1131,7 +1131,7 @@ describe("flushRetryQueue", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(JSON.parse(vi.mocked(fetch).mock.calls[0]?.[1]?.body as string)).toEqual(valid);
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("beezping_retry_queue");
   });
 
   it("retries queued items and removes on success", async () => {
@@ -1154,7 +1154,7 @@ describe("flushRetryQueue", () => {
     await flushRetryQueue(endpoint);
 
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("beezping_retry_queue");
   });
 
   describe("a replay that lands", () => {
@@ -1172,7 +1172,7 @@ describe("flushRetryQueue", () => {
     };
 
     beforeEach(() => {
-      localStorage.setItem("siteping_retry_queue", JSON.stringify([{ endpoint, payload }]));
+      localStorage.setItem("beezping_retry_queue", JSON.stringify([{ endpoint, payload }]));
     });
 
     it("remembers the created feedback as sent from this browser (the panel's 'Mine' filter)", async () => {
@@ -1181,7 +1181,7 @@ describe("flushRetryQueue", () => {
       await flushRetryQueue(endpoint);
 
       expect([...ownFeedback("test", endpoint).ids()]).toEqual(["fb-offline"]);
-      expect(localStorage.getItem("siteping_retry_queue")).toBeNull();
+      expect(localStorage.getItem("beezping_retry_queue")).toBeNull();
     });
 
     it("is still dropped from the queue when its response body is unreadable", async () => {
@@ -1190,7 +1190,7 @@ describe("flushRetryQueue", () => {
       await flushRetryQueue(endpoint);
 
       expect(ownFeedback("test", endpoint).ids().size).toBe(0);
-      expect(localStorage.getItem("siteping_retry_queue")).toBeNull();
+      expect(localStorage.getItem("beezping_retry_queue")).toBeNull();
     });
   });
 
@@ -1222,7 +1222,7 @@ describe("flushRetryQueue", () => {
       Authorization: "Bearer flush-key",
       "X-Flush": "1",
     });
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("beezping_retry_queue");
   });
 
   it("preserves legacy replay behavior when current identity is omitted", async () => {
@@ -1256,7 +1256,7 @@ describe("flushRetryQueue", () => {
     await flushRetryQueue(endpoint);
 
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("beezping_retry_queue");
   });
 
   it("drops stale queued feedback when the current identity differs", async () => {
@@ -1278,9 +1278,9 @@ describe("flushRetryQueue", () => {
     await flushRetryQueue(endpoint, { name: "Bob", email: "bob@example.com" });
 
     expect(fetch).not.toHaveBeenCalled();
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("beezping_retry_queue");
     expect(console.debug).toHaveBeenCalledWith(
-      "[siteping] flushRetryQueue: dropped",
+      "[beezping] flushRetryQueue: dropped",
       1,
       "stale entries (identity changed)",
     );
@@ -1306,7 +1306,7 @@ describe("flushRetryQueue", () => {
     await flushRetryQueue(endpoint, { name: "Alice", email: "alice@example.com" });
 
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("beezping_retry_queue");
   });
 
   it("retries queued feedback when email casing differs only by case", async () => {
@@ -1329,7 +1329,7 @@ describe("flushRetryQueue", () => {
     await flushRetryQueue(endpoint, { name: "Alice", email: "alice@example.com" });
 
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("beezping_retry_queue");
   });
 
   it("drops only stale same-endpoint entries while retrying matching ones", async () => {
@@ -1369,11 +1369,11 @@ describe("flushRetryQueue", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(JSON.parse(vi.mocked(fetch).mock.calls[0]![1]!.body as string).clientId).toBe("mixed-1");
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      "siteping_retry_queue",
+      "beezping_retry_queue",
       JSON.stringify([{ endpoint: otherEndpoint, payload: otherPayload }]),
     );
     expect(console.debug).toHaveBeenCalledWith(
-      "[siteping] flushRetryQueue: dropped",
+      "[beezping] flushRetryQueue: dropped",
       1,
       "stale entries (identity changed)",
     );
@@ -1406,7 +1406,7 @@ describe("flushRetryQueue", () => {
 
     expect(fetch).not.toHaveBeenCalled();
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      "siteping_retry_queue",
+      "beezping_retry_queue",
       JSON.stringify([{ endpoint: otherEndpoint, payload: otherPayload }]),
     );
   });
@@ -1442,7 +1442,7 @@ describe("flushRetryQueue", () => {
 
     expect(fetch).toHaveBeenCalledTimes(2);
     // Should have saved the failed item back
-    expect(localStorage.setItem).toHaveBeenCalledWith("siteping_retry_queue", expect.stringContaining("item2"));
+    expect(localStorage.setItem).toHaveBeenCalledWith("beezping_retry_queue", expect.stringContaining("item2"));
   });
 
   it("preserves entries for other endpoints", async () => {
@@ -1475,7 +1475,7 @@ describe("flushRetryQueue", () => {
     // Should not throw
     await expect(flushRetryQueue(endpoint)).resolves.toBeUndefined();
     expect(fetch).not.toHaveBeenCalled();
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
+    expect(localStorage.removeItem).toHaveBeenCalledWith("beezping_retry_queue");
     expect(warnSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -1506,7 +1506,7 @@ describe("flushRetryQueue", () => {
     await flushRetryQueue(endpoint);
 
     // Failed item should be kept in queue
-    expect(localStorage.setItem).toHaveBeenCalledWith("siteping_retry_queue", expect.stringContaining("fail"));
+    expect(localStorage.setItem).toHaveBeenCalledWith("beezping_retry_queue", expect.stringContaining("fail"));
   });
 });
 
@@ -1517,7 +1517,7 @@ describe("flushRetryQueue", () => {
 // ---------------------------------------------------------------------------
 
 describe("ApiClient — bounded waits", () => {
-  const endpoint = "http://localhost/api/siteping";
+  const endpoint = "http://localhost/api/beezping";
   const payload: FeedbackPayload = {
     projectName: "test",
     type: "bug",
@@ -1585,7 +1585,7 @@ describe("ApiClient — bounded waits", () => {
 
     const error = await settlesAt(() => new ApiClient(endpoint, "test").sendFeedback(payload), 10_000);
 
-    expect(error).toBeInstanceOf(SitepingNetworkError);
+    expect(error).toBeInstanceOf(BeezpingNetworkError);
     // The headers said 201: the POST landed, so it is not re-sent (a queued replay dedupes by clientId).
     expect(fetchSpy).toHaveBeenCalledOnce();
   });
@@ -1596,7 +1596,7 @@ describe("ApiClient — bounded waits", () => {
 
     const error = await settlesAt(() => new ApiClient(endpoint, "test").addComment("fb-1", reply), 10_000);
 
-    expect(error).toBeInstanceOf(SitepingNetworkError);
+    expect(error).toBeInstanceOf(BeezpingNetworkError);
     expect(fetchSpy).toHaveBeenCalledOnce();
   });
 
@@ -1609,7 +1609,7 @@ describe("ApiClient — bounded waits", () => {
 
     const error = await settlesAt(() => new ApiClient(endpoint, "test").sendFeedback(payload), 16_000);
 
-    expect(error).toBeInstanceOf(SitepingNetworkError);
+    expect(error).toBeInstanceOf(BeezpingNetworkError);
   });
 
   it("leaves reads unbounded: a GET body that takes longer than one attempt window still loads", async () => {
@@ -1641,7 +1641,7 @@ describe("ApiClient — bounded waits", () => {
 
     const error = await settlesAt(() => new ApiClient(endpoint, "test").sendFeedback(payload), 10_000);
 
-    expect(error).toBeInstanceOf(SitepingValidationError);
+    expect(error).toBeInstanceOf(BeezpingValidationError);
     expect((error as Error).message).toBe("Failed to send feedback: 400 Unknown error");
   });
 
@@ -1651,7 +1651,7 @@ describe("ApiClient — bounded waits", () => {
 
     const error = await settlesAt(() => client.sendFeedback(payload), 10_000);
 
-    expect(error).toBeInstanceOf(SitepingNetworkError);
+    expect(error).toBeInstanceOf(BeezpingNetworkError);
     expect((error as Error).message).toBe("Failed to send feedback: headers factory did not settle within 10 s");
     expect(fetchSpy).not.toHaveBeenCalled();
   });
@@ -1664,11 +1664,11 @@ describe("ApiClient — bounded waits", () => {
         }),
     );
     const queued = JSON.stringify([{ endpoint, payload }]);
-    localStorage.setItem("siteping_retry_queue", queued);
+    localStorage.setItem("beezping_retry_queue", queued);
 
     await settlesAt(() => flushRetryQueue(endpoint), 10_000);
 
-    expect(localStorage.getItem("siteping_retry_queue")).toBe(queued);
+    expect(localStorage.getItem("beezping_retry_queue")).toBe(queued);
   });
 });
 
@@ -1679,8 +1679,8 @@ describe("ApiClient — bounded waits", () => {
 // ---------------------------------------------------------------------------
 
 describe("unparseable retry queue", () => {
-  const KEY = "siteping_retry_queue";
-  const endpoint = "http://localhost/api/siteping";
+  const KEY = "beezping_retry_queue";
+  const endpoint = "http://localhost/api/beezping";
   const payload = {
     projectName: "test",
     type: "bug" as const,
@@ -1726,12 +1726,12 @@ describe("unparseable retry queue", () => {
     ["garbage", "{not json"],
     ["a truncated valid queue", validQueue.slice(0, -10)],
   ])("holding %s", (_label, bad) => {
-    it("is replaced by the next transient failure, with one [siteping] warning", async () => {
+    it("is replaced by the next transient failure, with one [beezping] warning", async () => {
       store.set(KEY, bad);
       await failTransiently();
       expect(store.get(KEY)).toBe(queued);
       expect(console.warn).toHaveBeenCalledExactlyOnceWith(
-        `[siteping] discarded an unreadable retry queue from localStorage (${bad.length} chars)`,
+        `[beezping] discarded an unreadable retry queue from localStorage (${bad.length} chars)`,
       );
     });
 
@@ -1755,7 +1755,7 @@ describe("unparseable retry queue", () => {
 // ---------------------------------------------------------------------------
 
 describe("queueForRetry (via sendFeedback)", () => {
-  const endpoint = "http://localhost/api/siteping";
+  const endpoint = "http://localhost/api/beezping";
 
   beforeEach(() => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("", { status: 200 }));
@@ -1798,7 +1798,7 @@ describe("queueForRetry (via sendFeedback)", () => {
 
     await expectTransientFailure(client, payload);
 
-    expect(localStorage.setItem).toHaveBeenCalledWith("siteping_retry_queue", expect.stringContaining("queued"));
+    expect(localStorage.setItem).toHaveBeenCalledWith("beezping_retry_queue", expect.stringContaining("queued"));
   });
 
   it("treats non-array stored value as empty queue (queueForRetry via sendFeedback)", async () => {
@@ -1916,7 +1916,7 @@ describe("queueForRetry (via sendFeedback)", () => {
         clientId,
       },
     });
-    localStorage.setItem("siteping_retry_queue", JSON.stringify([queued("same-session"), queued("other")]));
+    localStorage.setItem("beezping_retry_queue", JSON.stringify([queued("same-session"), queued("other")]));
     vi.mocked(localStorage.setItem).mockClear();
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ id: "fb-1" }), { status: 201 }));
 
@@ -1924,7 +1924,7 @@ describe("queueForRetry (via sendFeedback)", () => {
     await new Promise((resolve) => setTimeout(resolve, 0)); // let the fire-and-forget queue write settle
 
     // Left queued, the next page load would re-POST it only to be deduped.
-    expect(JSON.parse(localStorage.getItem("siteping_retry_queue") ?? "[]")).toEqual([queued("other")]);
+    expect(JSON.parse(localStorage.getItem("beezping_retry_queue") ?? "[]")).toEqual([queued("other")]);
   });
 
   it("a successful send of the last queued clientId removes the queue key", async () => {
@@ -1940,14 +1940,14 @@ describe("queueForRetry (via sendFeedback)", () => {
       annotations: [],
       clientId: "same-session",
     };
-    localStorage.setItem("siteping_retry_queue", JSON.stringify([{ endpoint, payload }]));
+    localStorage.setItem("beezping_retry_queue", JSON.stringify([{ endpoint, payload }]));
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ id: "fb-1" }), { status: 201 }));
 
     await new ApiClient(endpoint, "test").sendFeedback(payload);
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(localStorage.removeItem).toHaveBeenCalledWith("siteping_retry_queue");
-    expect(localStorage.getItem("siteping_retry_queue")).toBeNull();
+    expect(localStorage.removeItem).toHaveBeenCalledWith("beezping_retry_queue");
+    expect(localStorage.getItem("beezping_retry_queue")).toBeNull();
   });
 
   it("drops the oldest entry when the queue exceeds MAX_QUEUE_SIZE (20)", async () => {
@@ -2000,7 +2000,7 @@ describe("queueForRetry (via sendFeedback)", () => {
 // ---------------------------------------------------------------------------
 
 describe("withRetryLock with navigator.locks present", () => {
-  const endpoint = "http://localhost/api/siteping";
+  const endpoint = "http://localhost/api/beezping";
   let originalNavigator: PropertyDescriptor | undefined;
 
   beforeEach(() => {
@@ -2060,7 +2060,7 @@ describe("withRetryLock with navigator.locks present", () => {
 
     expect(
       (navigator as unknown as { locks: { request: ReturnType<typeof vi.fn> } }).locks.request,
-    ).toHaveBeenCalledWith("siteping_retry_queue", expect.any(Function));
+    ).toHaveBeenCalledWith("beezping_retry_queue", expect.any(Function));
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
@@ -2087,6 +2087,6 @@ describe("withRetryLock with navigator.locks present", () => {
 
     expect(
       (navigator as unknown as { locks: { request: ReturnType<typeof vi.fn> } }).locks.request,
-    ).toHaveBeenCalledWith("siteping_retry_queue", expect.any(Function));
+    ).toHaveBeenCalledWith("beezping_retry_queue", expect.any(Function));
   });
 });

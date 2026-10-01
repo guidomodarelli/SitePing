@@ -54,7 +54,7 @@ export default defineConfig([
   {
     entry: ["src/index.ts"],
     format: ["iife"],
-    globalName: "SitePing",
+    globalName: "Beezping",
     platform: "browser",
     target: "es2022",
     dts: false,

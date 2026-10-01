@@ -19,7 +19,7 @@ import { TIMER_MAX_DELAY_MS } from "../constants/http.js";
 export function assertTimeoutMs(factory: string, timeoutMs: number | undefined): void {
   if (timeoutMs !== undefined && !(Number.isInteger(timeoutMs) && timeoutMs >= 1 && timeoutMs <= TIMER_MAX_DELAY_MS)) {
     throw new Error(
-      `[siteping] ${factory}: timeoutMs must be an integer number of milliseconds from 1 to ${TIMER_MAX_DELAY_MS}, got ${String(timeoutMs)}`,
+      `[beezping] ${factory}: timeoutMs must be an integer number of milliseconds from 1 to ${TIMER_MAX_DELAY_MS}, got ${String(timeoutMs)}`,
     );
   }
 }
@@ -34,7 +34,7 @@ export function assertTimeoutMs(factory: string, timeoutMs: number | undefined):
  */
 export function assertRequiredString(factory: string, option: string, value: unknown): asserts value is string {
   if (typeof value !== "string" || value.trim() === "") {
-    throw new Error(`[siteping] ${factory}: ${option} is required (a non-empty string)`);
+    throw new Error(`[beezping] ${factory}: ${option} is required (a non-empty string)`);
   }
 }
 
@@ -51,7 +51,7 @@ export function assertPathSegment(factory: string, option: string, value: unknow
   assertRequiredString(factory, option, value);
   if (/[/?#%\\\s]/.test(value)) {
     throw new Error(
-      `[siteping] ${factory}: ${option} must be a single URL path segment (no /, ?, #, %, \\ or whitespace)`,
+      `[beezping] ${factory}: ${option} must be a single URL path segment (no /, ?, #, %, \\ or whitespace)`,
     );
   }
 }

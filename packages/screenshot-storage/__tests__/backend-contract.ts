@@ -14,7 +14,7 @@ export const JPEG_DATA_URL = `data:image/jpeg;base64,${JPEG_BASE64}`;
 export const JPEG_BYTES = Uint8Array.from(atob(JPEG_BASE64), (character) => character.charCodeAt(0));
 /** A real 1×1 GIF — a type outside the defaults. */
 export const GIF_DATA_URL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-export const PUBLIC_BASE_URL = "https://app.example.com/api/siteping/screenshots";
+export const PUBLIC_BASE_URL = "https://app.example.com/api/beezping/screenshots";
 export const UPLOAD_CONTEXT = { feedbackId: "client-supplied-id", mimeType: "image/jpeg" };
 export const silentLogger = () => ({ warn: vi.fn() });
 
@@ -49,7 +49,7 @@ export function describeBackendContract(backend: BackendUnderTest): void {
       const { url } = await storage.upload(JPEG_DATA_URL, UPLOAD_CONTEXT);
       const key = objectStore.keyFromUrl(url);
 
-      expect(key).toMatch(/^siteping-[a-f0-9]{32}\.jpg$/);
+      expect(key).toMatch(/^beezping-[a-f0-9]{32}\.jpg$/);
       expect(url).not.toContain(UPLOAD_CONTEXT.feedbackId);
       expect(await storedBytes(key as string)).toEqual(JPEG_BYTES);
 
@@ -75,7 +75,7 @@ export function describeBackendContract(backend: BackendUnderTest): void {
 
       await expect(storage.delete?.(url)).resolves.toBeUndefined();
       await expect(storage.delete?.(JPEG_DATA_URL)).resolves.toBeUndefined();
-      await expect(storage.delete?.("https://elsewhere.example.com/siteping-x.jpg")).resolves.toBeUndefined();
+      await expect(storage.delete?.("https://elsewhere.example.com/beezping-x.jpg")).resolves.toBeUndefined();
     });
 
     it("treats a stored URL with malformed percent-encoding as not its own on delete", async () => {
@@ -104,7 +104,7 @@ export function describeBackendContract(backend: BackendUnderTest): void {
       expect(await storedBytes(foreignKey)).toEqual(JPEG_BYTES);
       expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("refusing to delete"), {
         key: foreignKey,
-        keyPrefix: "siteping-",
+        keyPrefix: "beezping-",
       });
     });
 
@@ -157,7 +157,7 @@ export function describeBackendContract(backend: BackendUnderTest): void {
 
       it("serves an SVG that reached the backend directly as a sandboxed download, never inline", async () => {
         const { objectStore } = await backend.open();
-        const legacyKey = `siteping-${"b".repeat(32)}.svg`;
+        const legacyKey = `beezping-${"b".repeat(32)}.svg`;
         const svgBytes = new TextEncoder().encode(
           '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
         );

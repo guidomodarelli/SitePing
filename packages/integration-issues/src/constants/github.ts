@@ -11,7 +11,7 @@ export const GITHUB_ACCEPT_HEADER = "application/vnd.github+json";
  * GitHub rejects REST requests without a User-Agent (403). Node sets one,
  * but not every runtime's fetch does (Cloudflare Workers, for one).
  */
-export const GITHUB_USER_AGENT = "siteping-integration-issues";
+export const GITHUB_USER_AGENT = "beezping-integration-issues";
 
 /** `owner/name`: letters, digits, `-`, `_` and `.`, without the `.git` of a clone URL. */
 export const GITHUB_REPOSITORY_PATTERN = /^[\w.-]+\/(?![\w.-]*\.git$)[\w.-]+$/;

@@ -1,4 +1,5 @@
 import type { FeedbackType } from "@beezping/core";
+import { WIDGET_IGNORE_ATTRIBUTE } from "./constants/branding.js";
 import { POPUP_HIDE_TRANSITION_MS, Z_INDEX_MAX } from "./constants.js";
 import { el, isMacPlatform, parseSvg, setText } from "./dom-utils.js";
 import { isolateFromHost, setSurfaceInert } from "./host-isolation.js";
@@ -140,7 +141,7 @@ export class Popup {
     // Screenshot capture now runs while the popup is still visible (so the
     // spinner can show during the upload). Without this attribute the popup
     // would appear baked into the captured JPEG.
-    this.root.setAttribute("data-siteping-ignore", "true");
+    this.root.setAttribute(WIDGET_IGNORE_ATTRIBUTE, "true");
     // The dialog `aria-label` is bound by `applyLabels()` at the end of the
     // constructor, alongside every other `t()`-derived string.
 

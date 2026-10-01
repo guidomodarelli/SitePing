@@ -11,13 +11,13 @@ export const GREATEST_VALUE_FUNCTION = {
 } as const satisfies Record<string, GreatestValueFunction>;
 
 /** CTE holding the feedback row the single-statement PostgreSQL insert actually wrote (none on a `clientId` conflict). */
-export const INSERTED_FEEDBACK_CTE_ALIAS = "siteping_inserted_feedback";
+export const INSERTED_FEEDBACK_CTE_ALIAS = "beezping_inserted_feedback";
 
 /** CTE of the PostgreSQL annotation insert chained to {@link INSERTED_FEEDBACK_CTE_ALIAS}. */
-export const INSERTED_ANNOTATIONS_CTE_ALIAS = "siteping_inserted_annotations";
+export const INSERTED_ANNOTATIONS_CTE_ALIAS = "beezping_inserted_annotations";
 
 /** Alias of the `VALUES` list an insert-select reads its annotation or comment rows from. */
-export const VALUES_LIST_ALIAS = "siteping_values";
+export const VALUES_LIST_ALIAS = "beezping_values";
 
 /**
  * Longest identifier PostgreSQL keeps (`NAMEDATALEN` - 1), in bytes: it

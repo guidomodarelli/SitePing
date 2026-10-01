@@ -1,8 +1,8 @@
-/** Label every SitePing issue carries on trackers with labels — narrows reference lookups. */
-export const SITEPING_ISSUE_LABEL = "siteping";
+/** Label every Beezping issue carries on trackers with labels — narrows reference lookups. */
+export const BEEZPING_ISSUE_LABEL = "beezping";
 
 /** Title prefix of the default issue format. */
-export const ISSUE_TITLE_PREFIX = "[SitePing]";
+export const ISSUE_TITLE_PREFIX = "[Beezping]";
 
 /** Longest title every built-in tracker accepts (GitLab: 255, GitHub: 256). */
 export const ISSUE_TITLE_MAX_LENGTH = 255;
@@ -34,8 +34,8 @@ export const ANNOTATION_FIELD_MAX_LENGTH = 300;
  */
 export const ISSUE_BODY_MAX_LENGTH = 60_000;
 
-/** Query parameter the widget reads to focus a feedback (`SitepingConfig.deepLink`). */
-export const DEFAULT_DEEP_LINK_PARAM = "siteping";
+/** Query parameter the widget reads to focus a feedback (`BeezpingConfig.deepLink`). */
+export const DEFAULT_DEEP_LINK_PARAM = "beezping";
 
 /**
  * Hidden marker linking an issue to its feedback, always the first line of
@@ -44,9 +44,9 @@ export const DEFAULT_DEEP_LINK_PARAM = "siteping";
  * rest of the body quotes visitor text, which may imitate the marker.
  */
 export const ISSUE_REFERENCE_MARKER = {
-  prefix: "<!-- siteping-feedback ",
+  prefix: "<!-- beezping-feedback ",
   suffix: " -->",
-  pattern: /^<!-- siteping-feedback (\{.*\}) -->$/,
+  pattern: /^<!-- beezping-feedback (\{.*\}) -->$/,
 } as const;
 
 /** Section headings of the default issue body. */
@@ -81,7 +81,7 @@ export const ISSUE_SECTION_SEPARATOR = "\n\n";
  * the issue marker. A retried delete looks for it rather than for the text
  * below it, which `deletedCommentText` may vary and GitLab trims.
  */
-export const DELETED_FEEDBACK_COMMENT_MARKER = "<!-- siteping-feedback-deleted -->";
+export const DELETED_FEEDBACK_COMMENT_MARKER = "<!-- beezping-feedback-deleted -->";
 
 /** Comment left on an issue whose feedback was deleted; `{feedbackId}` is replaced. */
-export const DELETED_FEEDBACK_COMMENT_TEMPLATE = "SitePing feedback `{feedbackId}` was deleted.";
+export const DELETED_FEEDBACK_COMMENT_TEMPLATE = "Beezping feedback `{feedbackId}` was deleted.";

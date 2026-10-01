@@ -1,7 +1,7 @@
 {
   "name": "@beezping/adapter-localstorage",
   "version": "0.5.4",
-  "description": "localStorage adapter for Siteping — client-side feedback persistence without a server",
+  "description": "localStorage adapter for Beezping — client-side feedback persistence without a server",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -28,7 +28,7 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "siteping",
+    "beezping",
     "localstorage",
     "adapter",
     "feedback",
@@ -39,14 +39,14 @@
   ],
   "author": "neosianexus",
   "license": "MIT",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://github.com/guidomodarelli/beezping",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/guidomodarelli/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/beezping.git",
     "directory": "packages/adapter-localstorage"
   },
   "bugs": {
-    "url": "https://github.com/guidomodarelli/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/beezping/issues"
   },
   "publishConfig": {
     "access": "public"

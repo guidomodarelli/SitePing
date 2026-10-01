@@ -17,7 +17,7 @@ import {
  */
 export function assertKeyPrefix(keyPrefix: string, caller: string): void {
   if (!KEY_PREFIX_PATTERN.test(keyPrefix)) {
-    throw new Error(`[siteping] ${caller}: keyPrefix "${keyPrefix}" must match ${KEY_PREFIX_PATTERN.source}`);
+    throw new Error(`[beezping] ${caller}: keyPrefix "${keyPrefix}" must match ${KEY_PREFIX_PATTERN.source}`);
   }
 }
 
@@ -48,7 +48,7 @@ export function assertKeyableContentTypes(allowedContentTypes: readonly string[]
     const extension = keyExtensionFor(contentType);
     if (!KEY_EXTENSION_PATTERN.test(extension)) {
       throw new Error(
-        `[siteping] createScreenshotStorage: allowed content type "${contentType}" yields key extension "${extension}", ` +
+        `[beezping] createScreenshotStorage: allowed content type "${contentType}" yields key extension "${extension}", ` +
           `which does not match ${KEY_EXTENSION_PATTERN.source}: its keys could not be served — drop it from allowedContentTypes`,
       );
     }

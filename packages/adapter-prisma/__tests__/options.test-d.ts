@@ -3,30 +3,30 @@
  * executed): every @beezping/server option, the `apiKey` policy XOR `access`.
  */
 
-import type { SitepingStore } from "@beezping/core";
+import type { BeezpingStore } from "@beezping/core";
 import { describe, expectTypeOf, it } from "vitest";
 import {
+  type BeezpingAccessControl,
+  type BeezpingAuthorizationContext,
+  type BeezpingDeletionTarget,
+  type BeezpingHandlerBaseOptions,
+  type BeezpingLifecycleHooks,
+  type BeezpingLogger,
+  type BeezpingPrismaClient,
+  type BeezpingRequestContext,
   type CommentPayload,
-  createSitepingHandler,
+  createBeezpingHandler,
   type FeedbackCreateInput,
   type FeedbackRecord,
   type HandlerOptions,
   type PrismaAccessHandlerOptions,
-  type SitepingAccessControl,
-  type SitepingAuthorizationContext,
-  type SitepingDeletionTarget,
-  type SitepingHandlerBaseOptions,
-  type SitepingLifecycleHooks,
-  type SitepingLogger,
-  type SitepingPrismaClient,
-  type SitepingRequestContext,
 } from "../src/index.js";
 
-declare const prisma: SitepingPrismaClient;
-declare const store: SitepingStore;
+declare const prisma: BeezpingPrismaClient;
+declare const store: BeezpingStore;
 declare function sessionUser(request: Request): Promise<{ id: string } | null>;
 
-describe("createSitepingHandler options", () => {
+describe("createBeezpingHandler options", () => {
   it("keeps the historical options", () => {
     expectTypeOf({
       prisma,
@@ -43,7 +43,7 @@ describe("createSitepingHandler options", () => {
   });
 
   it("takes a custom access policy, never alongside apiKey", () => {
-    createSitepingHandler({
+    createBeezpingHandler({
       prisma,
       access: {
         authenticate: sessionUser,
@@ -55,10 +55,10 @@ describe("createSitepingHandler options", () => {
     });
 
     // @ts-expect-error — apiKey and access are mutually exclusive
-    createSitepingHandler({ prisma, apiKey: "k", access: { authenticate: sessionUser } });
+    createBeezpingHandler({ prisma, apiKey: "k", access: { authenticate: sessionUser } });
 
     // @ts-expect-error — a boolean check is no principal: its false would read as a signed-in caller
-    createSitepingHandler({ prisma, access: { authenticate: (request) => request.headers.has("x-token") } });
+    createBeezpingHandler({ prisma, access: { authenticate: (request) => request.headers.has("x-token") } });
   });
 
   it("takes options assembled at runtime, either policy, like @beezping/server does", () => {
@@ -66,7 +66,7 @@ describe("createSitepingHandler options", () => {
       ? { prisma, access: { authenticate: sessionUser } }
       : { prisma, apiKey: "k" };
 
-    createSitepingHandler(options);
+    createBeezpingHandler(options);
   });
 });
 
@@ -76,21 +76,21 @@ describe("server option types", () => {
   }
 
   it("are re-exported, so standalone policies and hooks need no direct @beezping/server dependency", () => {
-    const access: SitepingAccessControl<Reviewer> = {
+    const access: BeezpingAccessControl<Reviewer> = {
       authenticate: sessionUser,
-      authorize: ({ action }: SitepingAuthorizationContext<Reviewer>) => action !== "deleteAll",
+      authorize: ({ action }: BeezpingAuthorizationContext<Reviewer>) => action !== "deleteAll",
     };
-    const hooks: SitepingLifecycleHooks<Reviewer> = {
-      onDeleted: (target: SitepingDeletionTarget, { principal }: SitepingRequestContext<Reviewer>) => {
+    const hooks: BeezpingLifecycleHooks<Reviewer> = {
+      onDeleted: (target: BeezpingDeletionTarget, { principal }: BeezpingRequestContext<Reviewer>) => {
         expectTypeOf(target.projectName).toEqualTypeOf<string>();
         expectTypeOf(principal).toEqualTypeOf<Reviewer>();
       },
     };
-    const logger: SitepingLogger = { error: () => {} };
+    const logger: BeezpingLogger = { error: () => {} };
     const beforeCreate = (input: FeedbackCreateInput): FeedbackCreateInput => input;
-    const beforeComment: SitepingHandlerBaseOptions<Reviewer>["beforeComment"] = (input: CommentPayload) => input;
+    const beforeComment: BeezpingHandlerBaseOptions<Reviewer>["beforeComment"] = (input: CommentPayload) => input;
     const presentFeedback = (feedback: FeedbackRecord): FeedbackRecord => feedback;
 
-    createSitepingHandler({ prisma, access, hooks, logger, beforeCreate, beforeComment, presentFeedback });
+    createBeezpingHandler({ prisma, access, hooks, logger, beforeCreate, beforeComment, presentFeedback });
   });
 });

@@ -3,7 +3,7 @@
 //
 // Creates packages/adapter-<name>/ with the exact layout the CI gates
 // expect (dual-exports package.json with the fix-dts build chain, shared
-// tsup preset, tsconfig, a SitepingStore skeleton, a test file pre-wired to
+// tsup preset, tsconfig, a BeezpingStore skeleton, a test file pre-wired to
 // the conformance suite) and registers it in the release-please config +
 // manifest. The remaining manual step — release.yml wiring — is printed at
 // the end and enforced by scripts/check-consistency.mjs until done.
@@ -48,7 +48,7 @@ writeFileSync(
     {
       name: `@beezping/adapter-${name}`,
       version: "0.0.0",
-      description: `${className} adapter for Siteping`,
+      description: `${className} adapter for Beezping`,
       type: "module",
       sideEffects: false,
       exports: {
@@ -66,16 +66,16 @@ writeFileSync(
         check: "tsc --noEmit",
         clean: "rm -rf dist",
       },
-      keywords: ["siteping", name, "adapter", "feedback", "typescript"],
+      keywords: ["beezping", name, "adapter", "feedback", "typescript"],
       author: "neosianexus",
       license: "MIT",
-      homepage: "https://siteping.dev",
+      homepage: "https://github.com/guidomodarelli/beezping",
       repository: {
         type: "git",
-        url: "git+https://github.com/guidomodarelli/SitePing.git",
+        url: "git+https://github.com/guidomodarelli/beezping.git",
         directory: pkgDir,
       },
-      bugs: { url: "https://github.com/guidomodarelli/SitePing/issues" },
+      bugs: { url: "https://github.com/guidomodarelli/beezping/issues" },
       publishConfig: { access: "public" },
       engines: { node: ">=20" },
       devDependencies: { "@beezping/core": "workspace:*" },
@@ -95,9 +95,9 @@ writeFileSync(
 writeFileSync(
   abs(`${pkgDir}/tsup.config.ts`),
   `import { defineConfig } from "tsup";
-import { sitepingLibrary } from "../../tsup.preset.js";
+import { beezpingLibrary } from "../../tsup.preset.js";
 
-export default defineConfig(sitepingLibrary({ platform: "${platform}" }));
+export default defineConfig(beezpingLibrary({ platform: "${platform}" }));
 `,
 );
 
@@ -111,14 +111,14 @@ writeFileSync(
   type FeedbackQuery,
   type FeedbackRecord,
   type FeedbackUpdateInput,
-  type SitepingStore,
+  type BeezpingStore,
 } from "@beezping/core";
 
-export type { SitepingStore } from "@beezping/core";
+export type { BeezpingStore } from "@beezping/core";
 export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersistenceError } from "@beezping/core";
 
 /**
- * ${className} — \`SitepingStore\` implementation backed by TODO.
+ * ${className} — \`BeezpingStore\` implementation backed by TODO.
  *
  * Two implementation strategies:
  * - Snapshot backend (KV, file, browser storage): delegate everything to
@@ -129,12 +129,12 @@ export { isStorePersistence, StoreDuplicateError, StoreNotFoundError, StorePersi
  *   conformance suite skips its thread tests.
  * - Query backend (SQL, ORM): implement the 6 methods below directly;
  *   \`buildFeedbackRecord\`/\`buildAnnotationRecord\` handle record
- *   construction, and the SitepingStore JSDoc documents the error contract.
+ *   construction, and the BeezpingStore JSDoc documents the error contract.
  *   For threads, add \`addComment\`/\`deleteComment\` (\`buildCommentRecord\`).
  *
- * Threads: https://siteping.dev/docs/adapters/writing-an-adapter#discussion-threads
+ * Threads: https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/adapters/writing-an-adapter.mdx#discussion-threads
  */
-export class ${className} implements SitepingStore {
+export class ${className} implements BeezpingStore {
   async createFeedback(_data: FeedbackCreateInput): Promise<FeedbackRecord> {
     throw new Error("TODO: implement createFeedback (idempotent on clientId)");
   }
@@ -170,14 +170,14 @@ export class ${className} implements SitepingStore {
 
 writeFileSync(
   abs(`${pkgDir}/__tests__/${name}-store.test.ts`),
-  `import { testSitepingStore } from "@beezping/core/testing";
+  `import { testBeezpingStore } from "@beezping/core/testing";
 import { ${className} } from "../src/index.js";
 
-// The shared conformance suite (~56 tests) verifies the full SitepingStore
+// The shared conformance suite (~56 tests) verifies the full BeezpingStore
 // contract. Options: { duplicateBehavior: "return" | "throw",
 // caseInsensitiveSearch: boolean } for backends whose contract legitimately
 // varies.
-testSitepingStore(() => new ${className}());
+testBeezpingStore(() => new ${className}());
 `,
 );
 
@@ -187,9 +187,9 @@ writeFileSync(
   abs(`${pkgDir}/README.md`),
   `# @beezping/adapter-${name}
 
-${className} adapter for [Siteping](https://siteping.dev).
+${className} adapter for [Beezping](https://github.com/guidomodarelli/beezping).
 
-**[Documentation → siteping.dev/docs](https://siteping.dev/docs)**
+**[Documentation → github.com/guidomodarelli/beezping/docs](https://github.com/guidomodarelli/beezping/tree/main/apps/demo/content/docs/index.mdx)**
 
 ## License
 

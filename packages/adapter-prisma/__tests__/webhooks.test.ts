@@ -1,6 +1,6 @@
 import type { FeedbackRecord } from "@beezping/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createSitepingHandler, type WebhookConfig } from "../src/index.js";
+import { createBeezpingHandler, type WebhookConfig } from "../src/index.js";
 import { validPayloadNoAnnotations } from "./fixtures.js";
 
 // ---------------------------------------------------------------------------
@@ -50,7 +50,7 @@ afterEach(() => {
 function mockPrisma() {
   const fbRecord = { ...FEEDBACK, createdAt: new Date(), updatedAt: new Date() };
   return {
-    sitepingFeedback: {
+    beezpingFeedback: {
       create: vi.fn().mockResolvedValue(fbRecord),
       findMany: vi.fn().mockResolvedValue([]),
       findUnique: vi.fn().mockResolvedValue(null),
@@ -62,13 +62,13 @@ function mockPrisma() {
   };
 }
 
-describe("createSitepingHandler — webhooks option", () => {
+describe("createBeezpingHandler — webhooks option", () => {
   it("dispatches a single webhook after a successful POST", async () => {
     const prisma = mockPrisma();
     const webhook: WebhookConfig = { url: "https://hooks.example.com" };
-    const handler = createSitepingHandler({ prisma, webhooks: webhook });
+    const handler = createBeezpingHandler({ prisma, webhooks: webhook });
 
-    const req = new Request("http://localhost/api/siteping", {
+    const req = new Request("http://localhost/api/beezping", {
       method: "POST",
       body: JSON.stringify(validPayloadNoAnnotations),
     });
@@ -81,7 +81,7 @@ describe("createSitepingHandler — webhooks option", () => {
 
   it("dispatches every webhook in an array config", async () => {
     const prisma = mockPrisma();
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       prisma,
       webhooks: [
         { url: "https://slack.example.com", type: "slack" },
@@ -89,7 +89,7 @@ describe("createSitepingHandler — webhooks option", () => {
       ],
     });
 
-    const req = new Request("http://localhost/api/siteping", {
+    const req = new Request("http://localhost/api/beezping", {
       method: "POST",
       body: JSON.stringify(validPayloadNoAnnotations),
     });
@@ -103,12 +103,12 @@ describe("createSitepingHandler — webhooks option", () => {
 
   it("does not fire webhooks when POST fails validation", async () => {
     const prisma = mockPrisma();
-    const handler = createSitepingHandler({
+    const handler = createBeezpingHandler({
       prisma,
       webhooks: { url: "https://hooks.example.com" },
     });
 
-    const req = new Request("http://localhost/api/siteping", {
+    const req = new Request("http://localhost/api/beezping", {
       method: "POST",
       body: JSON.stringify({ type: "bug" }), // missing required fields
     });

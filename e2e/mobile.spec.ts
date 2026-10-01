@@ -11,7 +11,7 @@ test.beforeEach(async ({ page, browserName }) => {
   // noForceShow=1 — a phone must get the widget from the defaults alone.
   await page.goto(`http://localhost:3999?project=${project}&noForceShow=1`);
   await page.waitForFunction(
-    () => document.querySelector("siteping-widget")?.shadowRoot?.querySelector(".sp-fab") != null,
+    () => document.querySelector("beezping-widget")?.shadowRoot?.querySelector(".sp-fab") != null,
   );
 });
 
@@ -58,15 +58,15 @@ test("tap an element → feedback sheet → identity sheet → saved against tha
   await identity.locator('input[type="email"]').fill("test@example.com");
   await identity.locator(".sp-btn-primary").tap();
 
-  await expect(page.locator("#siteping-markers [data-feedback-id]")).toHaveCount(1);
+  await expect(page.locator("#beezping-markers [data-feedback-id]")).toHaveCount(1);
   const project = getProject(page);
   await expect
     .poll(
       async () =>
-        (await (await page.request.get(`http://localhost:3999/api/siteping?projectName=${project}`)).json()).total,
+        (await (await page.request.get(`http://localhost:3999/api/beezping?projectName=${project}`)).json()).total,
     )
     .toBe(1);
-  const data = await (await page.request.get(`http://localhost:3999/api/siteping?projectName=${project}`)).json();
+  const data = await (await page.request.get(`http://localhost:3999/api/beezping?projectName=${project}`)).json();
   expect(data.feedbacks[0].message).toBe("Trop petit sur mobile");
   expect(data.feedbacks[0].annotations[0].elementId).toBe("target-element");
   expect(data.feedbacks[0].annotations[0]).toMatchObject({ xPct: 0, yPct: 0, wPct: 1, hPct: 1 });
@@ -135,7 +135,7 @@ test("the panel sheet is a modal dialog that Tab never leaves", async ({ page, b
   for (let i = 0; i < 40; i++) {
     await page.keyboard.press("Tab");
     const where = await page.evaluate(() => {
-      const host = document.querySelector("siteping-widget");
+      const host = document.querySelector("beezping-widget");
       const inner = host?.shadowRoot?.activeElement;
       return document.activeElement === host && inner?.closest(".sp-panel") ? null : document.activeElement?.tagName;
     });

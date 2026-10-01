@@ -1,7 +1,7 @@
 {
   "name": "@beezping/adapter-memory",
   "version": "0.5.3",
-  "description": "In-memory adapter for Siteping — zero dependencies, works everywhere",
+  "description": "In-memory adapter for Beezping — zero dependencies, works everywhere",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -28,7 +28,7 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "siteping",
+    "beezping",
     "memory",
     "adapter",
     "feedback",
@@ -38,14 +38,14 @@
   ],
   "author": "neosianexus",
   "license": "MIT",
-  "homepage": "https://siteping.dev",
+  "homepage": "https://github.com/guidomodarelli/beezping",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/guidomodarelli/SitePing.git",
+    "url": "git+https://github.com/guidomodarelli/beezping.git",
     "directory": "packages/adapter-memory"
   },
   "bugs": {
-    "url": "https://github.com/guidomodarelli/SitePing/issues"
+    "url": "https://github.com/guidomodarelli/beezping/issues"
   },
   "publishConfig": {
     "access": "public"

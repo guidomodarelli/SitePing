@@ -22,20 +22,20 @@ describe("ownFeedback", () => {
   });
 
   it("remembers ids across instances, as a new page load would", () => {
-    ownFeedback("site", "/api/siteping").add("fb-1");
-    ownFeedback("site", "/api/siteping").add("fb-2");
+    ownFeedback("site", "/api/beezping").add("fb-1");
+    ownFeedback("site", "/api/beezping").add("fb-2");
 
-    expect([...ownFeedback("site", "/api/siteping").ids()]).toEqual(["fb-1", "fb-2"]);
+    expect([...ownFeedback("site", "/api/beezping").ids()]).toEqual(["fb-1", "fb-2"]);
   });
 
   it("keeps one list per project and endpoint, store mode included", () => {
-    ownFeedback("site", "/api/siteping").add("http-site");
-    ownFeedback("other", "/api/siteping").add("http-other");
+    ownFeedback("site", "/api/beezping").add("http-site");
+    ownFeedback("other", "/api/beezping").add("http-other");
     ownFeedback("site", "/api/v2").add("v2-site");
     ownFeedback("site").add("store-site");
 
-    expect([...ownFeedback("site", "/api/siteping").ids()]).toEqual(["http-site"]);
-    expect([...ownFeedback("other", "/api/siteping").ids()]).toEqual(["http-other"]);
+    expect([...ownFeedback("site", "/api/beezping").ids()]).toEqual(["http-site"]);
+    expect([...ownFeedback("other", "/api/beezping").ids()]).toEqual(["http-other"]);
     expect([...ownFeedback("site", "/api/v2").ids()]).toEqual(["v2-site"]);
     expect([...ownFeedback("site").ids()]).toEqual(["store-site"]);
   });

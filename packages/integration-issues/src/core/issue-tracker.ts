@@ -13,14 +13,14 @@ export interface IssueDraft {
   labels: readonly string[];
 }
 
-/** An issue found while resolving references — its body carries the SitePing marker. */
+/** An issue found while resolving references — its body carries the Beezping marker. */
 export interface TrackedIssue {
   reference: IssueReference;
   body: string;
   isOpen: boolean;
 }
 
-/** What `findSitepingIssues` or `searchSitepingIssues` listed. */
+/** What `findBeezpingIssues` or `searchBeezpingIssues` listed. */
 export interface IssueListing {
   issues: TrackedIssue[];
   /**
@@ -55,13 +55,13 @@ export interface IssueTracker {
    */
   listComments(reference: IssueReference): Promise<string[]>;
   /**
-   * SitePing issues whose body contains `marker`, open or closed, newest
+   * Beezping issues whose body contains `marker`, open or closed, newest
    * first. Providers may narrow server-side (labels), must return every
    * match they list, and say whether they left issues unlisted. With
    * `maxPages`, list no more pages than that: the hooks look at the newest
    * issues first.
    */
-  findSitepingIssues(marker: string, options?: { maxPages?: number }): Promise<IssueListing>;
+  findBeezpingIssues(marker: string, options?: { maxPages?: number }): Promise<IssueListing>;
   /**
    * Optional fast path to one feedback's issue: what a server-side search
    * for `feedbackId` returns, and whether it found more than that. Search
@@ -70,5 +70,5 @@ export interface IssueTracker {
    * or a truncated answer. Without a search, every lookup the newest issues
    * do not settle lists up to the provider's cap, and is refused past it.
    */
-  searchSitepingIssues?(feedbackId: string): Promise<IssueListing>;
+  searchBeezpingIssues?(feedbackId: string): Promise<IssueListing>;
 }

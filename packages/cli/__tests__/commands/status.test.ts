@@ -560,9 +560,8 @@ describe("statusCommand", () => {
 
       statusCommand({});
 
-      expect(allMessages(logSuccessSpy)).toContainEqual(
-        expect.stringMatching(/^API route\s+app\/api\/beezping\/route\.js$/),
-      );
+      const routeMessage = allMessages(logSuccessSpy).find((message) => message.startsWith("API route"));
+      expect(routeMessage?.replace(/^API route\s+/, "")).toBe(join("app", "api", "beezping", "route.js"));
     });
 
     it("reports a src/app route as not found when app/ exists (Next.js ignores src/app)", () => {

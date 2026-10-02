@@ -161,6 +161,10 @@ const ATTACHED_DOC = "\uE000";
  * (Prisma then drops the documentation). The docs that sit directly on a
  * block are marked and the gap closed after printing; a doc the user had
  * already separated by a blank line stays separated.
+ * Normalizes the printer's platform line endings to LF so repeated syncs
+ * keep blank lines and attached documentation stable on Windows too.
+ * @param schema - Parsed schema whose documentation must remain attached.
+ * @returns Schema text with stable LF line endings.
  */
 function printPreservingDocs(schema: Schema): string {
   const list = schema.list.map((block, i) => {
@@ -171,6 +175,7 @@ function printPreservingDocs(schema: Schema): string {
       : block;
   });
   return printSchema({ ...schema, list })
+    .replaceAll("\r\n", "\n")
     .replace(new RegExp(`${ATTACHED_DOC}(\\r?\\n)(?:[ \\t]*\\r?\\n)+`, "g"), "$1")
     .replaceAll(ATTACHED_DOC, "");
 }

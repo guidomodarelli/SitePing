@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased]
+
 ## [0.4.0](https://github.com/guidomodarelli/beezping/releases/tag/dashboard-v0.4.0) (2026-10-01)
 
 ### Breaking Changes

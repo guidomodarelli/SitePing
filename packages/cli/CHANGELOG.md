@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Keep Prisma model documentation and repeated schema synchronization stable on Windows with consistent line endings.
+
 ## [0.7.0](https://github.com/guidomodarelli/beezping/releases/tag/cli-v0.7.0) (2026-10-01)
 
 ### Breaking Changes

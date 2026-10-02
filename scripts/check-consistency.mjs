@@ -8,9 +8,7 @@
 //      no longer matches BUILTIN_LOCALES.length or lists the locales without
 //      one of them, or a demo locale picker does not offer exactly
 //      BUILTIN_LOCALES;
-//   3. a non-private packages/* package is missing from the release-please
-//      config/manifest, or a manifest package is missing its release.yml
-//      wiring (output + publish job);
+//   3. a public workspace is missing its beez-rp changelog or build script;
 //   4. a published package's build script forgot the fix-dts chain its
 //      declarations need (cli is exempt: it ships no .d.ts);
 //   5. the root esbuild override drifted from the widget's esbuild spec;
@@ -18,13 +16,14 @@
 //      file URL's .pathname instead of fileURLToPath();
 //   7. adapter-prisma's source imports @prisma/client, which it declares as
 //      an optional peer dependency;
-//   8. a published package depends on another through `workspace:` without
-//      the release.yml step that pins the range before `npm publish`, or
-//      its publish job does not wait for the dependency's.
+//   8. a published workspace depends on a private or missing workspace.
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readUnreleased } from "beez-rp/changelog";
+import { PUBLISHED_DEPENDENCY_FIELDS, WORKSPACE_PROTOCOL } from "./constants/release.mjs";
+import { listPublicPackages } from "./release/packages.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (p) => readFileSync(join(root, p), "utf8");
@@ -131,36 +130,22 @@ for (const file of [
   }
 }
 
-// --- 3. Package registration ------------------------------------------------
+// --- 3. Workspace release metadata -----------------------------------------
 
-const manifest = JSON.parse(read(".release-please-manifest.json"));
-const releaseConfig = JSON.parse(read("release-please-config.json"));
-const releaseYml = read(".github/workflows/release.yml");
+const publicPackages = listPublicPackages(root);
+const manifest = Object.fromEntries(publicPackages.map(({ directory, manifest: pkg }) => [directory, pkg.version]));
 
-for (const dir of readdirSync(join(root, "packages"))) {
-  const pkgJsonPath = join(root, "packages", dir, "package.json");
-  if (!existsSync(pkgJsonPath)) continue;
-  const pkg = JSON.parse(readFileSync(pkgJsonPath, "utf8"));
-  if (pkg.private) continue;
-  const pkgPath = `packages/${dir}`;
-  if (!(pkgPath in manifest)) {
-    errors.push(`${pkgPath} is public but missing from .release-please-manifest.json`);
+for (const { directory, manifest: pkg } of publicPackages) {
+  const changelogPath = `${directory}/CHANGELOG.md`;
+  if (!existsSync(join(root, changelogPath))) {
+    errors.push(`${changelogPath} is required by beez-rp`);
+    continue;
   }
-  if (!(pkgPath in releaseConfig.packages)) {
-    errors.push(`${pkgPath} is public but missing from release-please-config.json`);
+  const unreleased = readUnreleased(read(changelogPath));
+  if (!unreleased.exists || unreleased.unknownSections.length > 0) {
+    errors.push(`${changelogPath} needs [Unreleased] with Keep a Changelog sections`);
   }
-}
-
-for (const pkgPath of Object.keys(manifest)) {
-  if (!releaseYml.includes(`${pkgPath}--release_created`)) {
-    errors.push(`${pkgPath} has no release_created output in release.yml`);
-  }
-  if (!releaseYml.includes(`working-directory: ${pkgPath}`)) {
-    errors.push(`${pkgPath} has no publish job (working-directory) in release.yml`);
-  }
-  if (!releaseYml.includes(`${pkgPath}/dist/`)) {
-    errors.push(`${pkgPath}/dist/ is missing from the release.yml build artifact paths`);
-  }
+  if (!pkg.scripts?.build) errors.push(`${directory} has no release build script`);
 }
 
 // --- 4. fix-dts chain -------------------------------------------------------
@@ -255,37 +240,14 @@ for (const file of prismaSourceFiles("packages/adapter-prisma/src")) {
   }
 }
 
-// --- 8. Workspace dependencies are pinned before publishing ------------------
+// --- 8. Published workspace dependencies must be public ---------------------
 
-// Bun links a `workspace:` range to the local package whatever its version
-// (a semver range stops matching as soon as release-please bumps it), but
-// `npm publish` ships the protocol verbatim, which npm cannot install. The
-// publish job must rewrite each one — `npm pkg set "dependencies.<name>=…"`
-// — and run after the dependency's, so the pinned version is on npm first.
-
-/** release.yml jobs: name → the lines indented under it. */
-const releaseJobs = [...releaseYml.matchAll(/^ {2}([\w-]+):\n((?: {4}.*\n|\s*\n)*)/gm)].map((m) => ({
-  name: m[1],
-  body: m[2],
-}));
-const publishJobOf = (pkgPath) => releaseJobs.find(({ body }) => body.includes(`working-directory: ${pkgPath}\n`));
-/** Jobs a release.yml job waits for (`needs: [a, b]` or `needs: a`). */
-const needsOf = (job) => job?.body.match(/^ {4}needs: \[?([^\]\n]*)/m)?.[1].split(/,\s*/) ?? [];
-const pkgPathByName = new Map(
-  Object.keys(manifest).map((pkgPath) => [JSON.parse(read(`${pkgPath}/package.json`)).name, pkgPath]),
-);
-
-for (const pkgPath of Object.keys(manifest)) {
-  const pkg = JSON.parse(read(`${pkgPath}/package.json`));
-  for (const field of ["dependencies", "optionalDependencies", "peerDependencies"]) {
-    for (const [name, spec] of Object.entries(pkg[field] ?? {})) {
-      if (!spec.startsWith("workspace:")) continue;
-      if (!releaseYml.includes(`npm pkg set "${field}.${name}=`)) {
-        errors.push(`${pkgPath} ${field} "${name}": "${spec}" is not pinned before npm publish in release.yml`);
-      }
-      const dependencyJob = pkgPathByName.has(name) && publishJobOf(pkgPathByName.get(name));
-      if (dependencyJob && !needsOf(publishJobOf(pkgPath)).includes(dependencyJob.name)) {
-        errors.push(`${pkgPath}'s publish job does not wait for ${dependencyJob.name} (${name}) in release.yml`);
+const publicNames = new Set(publicPackages.map(({ manifest: pkg }) => pkg.name));
+for (const { directory, manifest: pkg } of publicPackages) {
+  for (const field of PUBLISHED_DEPENDENCY_FIELDS) {
+    for (const [name, specifier] of Object.entries(pkg[field] ?? {})) {
+      if (specifier.startsWith(WORKSPACE_PROTOCOL) && !publicNames.has(name)) {
+        errors.push(`${directory} ${field}.${name} refers to a private or missing workspace`);
       }
     }
   }

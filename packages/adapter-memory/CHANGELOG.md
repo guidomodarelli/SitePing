@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased]
+
 ## [0.7.0](https://github.com/guidomodarelli/beezping/releases/tag/adapter-memory-v0.7.0) (2026-10-01)
 
 ### Breaking Changes

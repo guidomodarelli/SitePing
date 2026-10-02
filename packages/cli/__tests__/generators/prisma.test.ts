@@ -250,6 +250,20 @@ describe("syncPrismaModels", () => {
     expect(readFileSync(schemaPath, "utf-8")).toMatch(/model User \{\n\s*\/\/ note\n\s*id\s/);
   });
 
+  it("should preserve model documentation and schema output when syncing CRLF input repeatedly", () => {
+    const schema = `${MINIMAL_SCHEMA}\n/// User account\nmodel User {\n  id String @id\n}\n`;
+    writeFileSync(schemaPath, schema.replaceAll("\n", "\r\n"));
+
+    syncPrismaModels(schemaPath);
+    const firstOutput = readFileSync(schemaPath, "utf-8");
+    const secondResult = syncPrismaModels(schemaPath);
+
+    expect(firstOutput).toContain("/// User account\nmodel User {");
+    expect(firstOutput).not.toContain("\r\n");
+    expect(readFileSync(schemaPath, "utf-8")).toBe(firstOutput);
+    expect(secondResult).toMatchObject({ addedModels: [], changes: [] });
+  });
+
   // -----------------------------------------------------------------------
   // Adding models alongside existing models
   // -----------------------------------------------------------------------

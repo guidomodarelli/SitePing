@@ -116,7 +116,7 @@ New pages are picked up automatically — the sitemap, the search index, and the
 ## Adding a New Package
 
 For an adapter, use the scaffold — it writes every file below in the correct
-final shape and registers the package in release-please:
+final shape; beez-rp discovers it through Bun workspaces:
 
 ```bash
 bun run new:adapter kysely -- --platform=node   # node | browser | neutral
@@ -142,23 +142,15 @@ is the smallest). The pieces that matter:
 
    export default defineConfig(beezpingLibrary({ platform: "node" }));
    ```
-4. **Register in release-please** — add the package to
-   `release-please-config.json` (release-type `node`, `bump-minor-pre-major`)
-   and to `.release-please-manifest.json` with the pre-first-release
-   placeholder version `"0.0.0"` (the post-release npm check knows to skip it;
-   the root `initial-version` makes the first release `0.1.0`).
-5. **Wire `.github/workflows/release.yml`** (4 spots — copy an existing
-   publish job): the `release_created` output, the build-artifact path, the
-   publish job itself, and the `verify-publish` needs list. A package that
-   depends on another published workspace package (`workspace:^`) also needs
-   a step pinning that range before `npm publish` (`npm pkg set`, as in
-   `publish-adapter-prisma`), and its publish job must list the dependency's
-   publish job in `needs` (`check:consistency` fails if either is missing).
-6. **Verify** — `bun install`, then `bun run verify && bun run pkg-checks && bun run check:consistency`.
-
-The publint/attw gates and pkg-pr-new previews derive their package list from
-the manifest automatically, and `check:consistency` fails CI until every
-registration above is complete — nothing can be *silently* forgotten anymore.
+4. **Release metadata** — keep `private` unset, start `version` at `0.0.0`,
+   and add `## [Unreleased]` to `CHANGELOG.md`. Public workspaces are discovered
+   automatically by beez-rp, package-health checks and preview publication.
+5. **Dependencies** — bundled internal packages such as core belong in
+   `devDependencies`. Published runtime workspace dependencies may use
+   `workspace:^`; Bun resolves their versions when packing. Use a normal semver
+   range for a peer that supports multiple minor versions, as integration-issues
+   does for server (`>=0.2.0 <1.0.0`). beez-rp publishes dependencies first.
+6. **Verify** — `bun install`, then `bun run verify && bun run pkg-checks && bun run check:consistency && bun run test:release`.
 
 ## Creating a New Adapter
 
@@ -342,33 +334,56 @@ inaccurately for the same reason. Trust the published report for those.)
 
 ## Releases & Versioning
 
-Releases are **fully automated** via [Release Please](https://github.com/googleapis/release-please) + Turborepo.
+Releases use [beez-rp](https://github.com/guidomodarelli/beez-rp) with Bun
+workspaces. Node 24, Bun 1.3.11 or newer, Git, npm and an authenticated GitHub CLI
+are required for release tooling; package consumers still require only Node 20.
 
-**How it works:**
+```bash
+bun run create-version --dry-run           # read-only diagnosis and plan
+bun run create-version                     # choose versions per changed package
+bun run cv --accept-suggested               # accept Conventional Commit suggestions
+bun run cv --bump patch                     # same bump for all changed packages
+```
 
-1. Write code using [Conventional Commits](https://www.conventionalcommits.org/)
-2. Push to `main` (via squash-merged PR)
-3. Release Please detects which packages changed (by file paths) and opens a release PR
-4. Merge the release PR → GitHub Release + npm publish happen automatically
+Run from clean, up-to-date `main`. The config preserves existing
+`{component}-v{version}` tags, independent package versions and pre-1.0 rules
+(features suggest patch; breaking changes suggest minor). Private core changes
+also release the packages bundling them; the private demo is never published.
 
-**Version bumps are determined by your commit messages:**
+Add user-facing notes under each package's `## [Unreleased]`, using Keep a
+Changelog sections: Added, Changed, Deprecated, Removed, Fixed or Security.
+Historical release-please entries remain intact. When notes are empty, beez-rp
+uses the Codex CLI to generate them from that package's unreleased commits;
+install and authenticate Codex, or write the notes before releasing in CI.
+The CLI's marked version is updated with its package version automatically.
 
-| Commit prefix | Version bump (1.0+) | Pre-1.0 bump | Example |
-|--------------|---------------------|-------------|---------|
-| `fix(scope):` | Patch | Patch | `fix(widget): prevent double submit` |
-| `feat(scope):` | Minor | Patch | `feat(panel): add dark mode` |
-| `feat(scope)!:` | Major | Minor | `feat(api)!: redesign payload format` |
-| `docs:` / `test:` / `chore:` | — (included in next release) | — | `docs(widget): clarify config` |
+Before release commits, checks verify npm access, build, types, lint, unit tests,
+release integration tests and repository consistency. Preparation rebuilds and
+checks package exports. The publisher prepares a temporary package copy, resolves `workspace:` ranges
+from the release commit's manifests (not potentially stale lockfile versions),
+omits private build dependencies, and packs with `bun pm pack --ignore-scripts`.
+It then publishes that exact tarball through npm using beez-rp's temporary auth config.
+`prepare` never rewrites source manifests. The monorepo does not use
+`beez-rp ignore-build`: Vercel keeps its normal build behavior.
 
-> **Note:** The commit scope (`widget`, `cli`) is cosmetic. Release-please routes commits to packages based on which **files** the commit touches, not the scope name.
+Set `NPM_TOKEN` in your environment, the ignored root `.env`, or the shared
+`~/.config/beez-rp/.env`. Tokens never enter command arguments or tracked files.
+On a partial failure, rerun `bun run create-version`: beez-rp checks npm and
+resumes pending publications from their release commits, dependencies first.
+Do not bump versions manually or publish packages individually.
 
-> **Pre-1.0 behavior** (all current packages): `feat` bumps **patch** instead of minor, breaking changes (`!`) bump **minor** instead of major. `docs` / `test` / `chore` commits don't trigger releases on their own — they're included in the next release triggered by `feat` or `fix`.
+The **Release** workflow's manual dispatch offers the same bump choices and
+starts with `dry_run: true`. Disable that input to release after reviewing the
+plan. Configure `NPM_TOKEN` and `RELEASE_PAT` repository secrets; the latter
+allows the pushed main commit and GitHub releases to trigger follow-up workflows.
+Both secrets are required for an actual release. npm provenance is enabled in Actions.
+After CI succeeds for the pushed release commit on main, the workflow creates
+a GitHub release for each package tag on that commit from its changelog. This
+works for releases with more than three tags, pushed atomically by beez-rp.
 
-**What you don't need to do:**
-- Edit `package.json` version — Release Please does it
-- Write `CHANGELOG.md` — auto-generated from commits
-- Create git tags — auto-created on release
-- Run `npm publish` — CI handles it
+`node scripts/verify-npm-publish.mjs` checks every non-placeholder public workspace
+version against its resolved registry, with bounded retries for registry lag.
+A push to `main` runs CI; it no longer creates an automatic release PR.
 
 ## Pull Request Guidelines
 

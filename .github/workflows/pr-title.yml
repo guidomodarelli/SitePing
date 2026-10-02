@@ -1,7 +1,7 @@
 name: PR title
 
 # The repo is squash-only: the PR title becomes the commit message that
-# release-please and the auto-labeller parse. A malformed title silently
+# beez-rp and the auto-labeller parse. A malformed title silently
 # breaks changelogs and labels — validate it up front.
 #
 # Safe: reads only the PR title via the GitHub API; never checks out or

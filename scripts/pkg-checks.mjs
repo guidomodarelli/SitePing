@@ -5,17 +5,18 @@
 // enforces. Requires a prior `bun run build`.
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { listPublicPackages } from "./release/packages.mjs";
 
-const manifest = JSON.parse(readFileSync(new URL("../.release-please-manifest.json", import.meta.url), "utf8"));
-const packages = Object.keys(manifest);
+const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
+const packages = listPublicPackages(repositoryRoot).map(({ directory }) => directory);
 
 let failed = false;
 
 for (const pkg of packages) {
   for (const [label, bin, args] of [
-    ["publint", "./node_modules/.bin/publint", [pkg]],
-    ["attw", "./node_modules/.bin/attw", [pkg, "--pack"]],
+    ["publint", "node", ["node_modules/publint/src/cli.js", pkg]],
+    ["attw", "node", ["node_modules/@arethetypeswrong/cli/dist/index.js", pkg, "--pack"]],
   ]) {
     console.log(`\n=== ${label} ${pkg} ===`);
     try {

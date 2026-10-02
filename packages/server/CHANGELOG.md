@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased]
+
 ## [0.2.0](https://github.com/guidomodarelli/beezping/releases/tag/server-v0.2.0) (2026-10-01)
 
 ### Breaking Changes

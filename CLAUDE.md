@@ -10,20 +10,29 @@
 - `bun run lint` — biome check (types domain enabled)
 - `bun run lint:fix` — biome auto-fix
 - `bun run verify` — build + check + lint + test:run (the full pre-PR gate)
-- `bun run pkg-checks` — publint + attw over published packages (list derived from release-please manifest)
-- `bun run check:consistency` — locale counts and lists, demo locale pickers, package registration, fix-dts chains, esbuild override = widget spec, `fileURLToPath` (never a file URL's `.pathname`) in Node tooling, no `@prisma/client` import in adapter-prisma's src (optional peer), every published `workspace:` dependency pinned in release.yml with its publish job waiting for the dependency's (runs in CI)
+- `bun run pkg-checks` — publint + attw over published packages (list discovered from Bun workspaces)
+- `bun run check:consistency` — locale counts and lists, demo locale pickers, package registration, fix-dts chains, esbuild override = widget spec, `fileURLToPath` (never a file URL's `.pathname`) in Node tooling, no `@prisma/client` import in adapter-prisma's src (optional peer), every published `workspace:` dependency points to a public workspace (runs in CI)
 - `bun run new:locale <code>` / `bun run new:adapter <name>` — scaffolds (see CONTRIBUTING)
+
+## Releases
+- `bun run create-version --dry-run` — diagnose and plan independent workspace releases without writes
+- `bun run create-version` / `bun run cv --accept-suggested` — release from clean main through beez-rp
+- `bun run test:release` — real Git, Bun packing and local-registry release tests
+- `beez-rp.config.js` preserves component tags, pre-1.0 suggestions and the CLI version marker. Public packages are discovered from workspaces; no separate release registry.
+- Keep package notes under `[Unreleased]` with Keep a Changelog sections. Existing history stays intact.
+- Packaging resolves `workspace:` from release manifests in a temporary copy, then Bun packs it; npm publishes with beez-rp auth. Tracked manifests remain unchanged.
+- The Release workflow is manually dispatched (dry-run by default); push to main only runs CI. The main push reconciles package tags into GitHub releases after CI.
 
 ## Architecture
 - **Monorepo** with bun workspaces — 12 packages in `packages/`:
-  - `@beezping/core` — shared types, schema, store errors + helpers (internal, not published, no release-please entry, no npm publish job)
+  - `@beezping/core` — shared types, schema, store errors + helpers (internal, not published, excluded from beez-rp releases)
   - `@beezping/widget` — browser feedback widget (Shadow DOM, closed mode). Accepts `store` option for client-side mode (no server needed)
   - `@beezping/dashboard` — Linear-style triage inbox React component (`<BeezpingInbox />` + headless `useBeezpingInbox()`); no Shadow DOM — scoped `spd-` classes + `--spd-*` CSS vars injected once
   - `@beezping/server` — store-agnostic HTTP handler (`createBeezpingHandler({ store })`, Fetch API, platform neutral): `apiKey` policy XOR custom `access` (CSRF guards), hooks, `waitUntil`; owns the request schemas and webhooks
-  - `@beezping/adapter-prisma` — PrismaStore + `createBeezpingHandler` delegating to `@beezping/server` (`workspace:^` dependency, pinned by release.yml at publish; its publish job waits for the idempotent `publish-server`); `@prisma/client` optional peer
+  - `@beezping/adapter-prisma` — PrismaStore + `createBeezpingHandler` delegating to `@beezping/server` (`workspace:^` dependency, resolved by Bun when packing; beez-rp publishes server first); `@prisma/client` optional peer
   - `@beezping/adapter-drizzle` — Drizzle ORM store: `/pg` (any PostgreSQL driver, Neon HTTP included) and `/libsql` (Turso); `drizzle-orm` peer, mounted through `@beezping/server`
   - `@beezping/screenshot-storage` — ready-made `ScreenshotStorage` for the stores: `createScreenshotStorage(objectStore)` over `/s3` (SigV4 on Web Crypto, no AWS SDK), `/cloudflare-images`, `/drizzle-pg`, `/drizzle-libsql`, `/filesystem` (the only Node entry) and `/memory`, plus `createScreenshotServeHandler` (own keys only, inert images inline); random key per upload, `drizzle-orm` optional peer
-  - `@beezping/integration-issues` — `createIssueTrackerHooks` (server lifecycle hooks) over an `IssueTracker` port, providers `/github` and `/gitlab`: one issue per feedback, linked by a marker on the body's first line (the only line parsed), visitor text quoted as code; `@beezping/server` peer (`workspace:^`, pinned by release.yml, publish job waits for `publish-server`)
+  - `@beezping/integration-issues` — `createIssueTrackerHooks` (server lifecycle hooks) over an `IssueTracker` port, providers `/github` and `/gitlab`: one issue per feedback, linked by a marker on the body's first line (the only line parsed), visitor text quoted as code; `@beezping/server` peer (`>=0.2.0 <1.0.0`; beez-rp publishes server first)
   - `@beezping/adapter-memory` — in-memory adapter (testing, demos, serverless)
   - `@beezping/adapter-localstorage` — client-side localStorage adapter (demos, prototyping)
   - `@beezping/adapter-kit` — published toolkit for third-party adapters: store contract, `createCollectionStore` engine, record builders, conformance suite (`/testing`, vitest optional peer)

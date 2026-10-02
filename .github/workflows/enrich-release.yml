@@ -78,7 +78,7 @@ jobs:
             const prefixMatch = tag.match(/^(.*?)v?\d+\.\d+\.\d+/);
             const prefix = prefixMatch ? prefixMatch[1] : '';
 
-            // release-please scopes each release to commits touching the package
+            // beez-rp scopes each release to commits touching the package
             // directory; credit must use the same scope, or the raw tag range drags
             // in every repo commit since that package last released and mentions
             // people whose work shipped elsewhere.

@@ -80,6 +80,6 @@
     "mdast-util-from-markdown": "^2.0.3"
   },
   "peerDependencies": {
-    "@beezping/server": "workspace:^"
+    "@beezping/server": ">=0.2.0 <1.0.0"
   }
 }

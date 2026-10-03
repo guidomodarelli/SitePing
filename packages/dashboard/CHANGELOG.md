@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-03
+
+### Changed
+
+- Update the release process for @beezping/dashboard while preserving independent package versions and existing release tags.
+
 ## [0.4.0](https://github.com/guidomodarelli/beezping/releases/tag/dashboard-v0.4.0) (2026-10-01)
 
 ### Breaking Changes

@@ -1,6 +1,6 @@
 {
   "name": "@beezping/adapter-kit",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Everything needed to build and conformance-test a custom Beezping store adapter",
   "type": "module",
   "sideEffects": false,

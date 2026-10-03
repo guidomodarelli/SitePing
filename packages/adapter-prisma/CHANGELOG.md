@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-03
+
+### Changed
+
+- Published packages now use the @beezping/server version selected for each release.
+
 ## [0.8.0](https://github.com/guidomodarelli/beezping/releases/tag/adapter-prisma-v0.8.0) (2026-10-01)
 
 ### Breaking Changes

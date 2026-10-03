@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-03
+
+### Changed
+
+- Release @beezping/screenshot-storage with independent versioning from other Beezping packages.
+
 ## [0.2.0](https://github.com/guidomodarelli/beezping/releases/tag/screenshot-storage-v0.2.0) (2026-10-01)
 
 ### Breaking Changes

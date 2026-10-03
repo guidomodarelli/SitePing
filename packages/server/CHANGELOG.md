@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-03
+
+### Changed
+
+- Adopt Keep a Changelog release notes while preserving existing @beezping/server version tags and release history.
+
 ## [0.2.0](https://github.com/guidomodarelli/beezping/releases/tag/server-v0.2.0) (2026-10-01)
 
 ### Breaking Changes

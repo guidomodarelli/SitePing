@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-10-03
+
 ### Fixed
 
 - Keep Prisma model documentation and repeated schema synchronization stable on Windows with consistent line endings.

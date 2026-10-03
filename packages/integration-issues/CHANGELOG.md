@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-03
+
 ### Changed
 
 - Declare the supported server peer range directly so releases preserve compatibility across server minor versions.

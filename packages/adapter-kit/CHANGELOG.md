@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-03
+
+### Changed
+
+- Release @beezping/adapter-kit independently from other workspace packages while preserving existing version tags and changelog history.
+
 ## [0.3.0](https://github.com/guidomodarelli/beezping/releases/tag/adapter-kit-v0.3.0) (2026-10-01)
 
 ### Breaking Changes

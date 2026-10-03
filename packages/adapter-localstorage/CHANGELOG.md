@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-10-03
+
+### Changed
+
+- Release @beezping/adapter-localstorage independently, preserving existing version tags and release history.
+
 ## [0.7.0](https://github.com/guidomodarelli/beezping/releases/tag/adapter-localstorage-v0.7.0) (2026-10-01)
 
 ### Breaking Changes

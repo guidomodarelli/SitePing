@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-10-03
+
+### Changed
+
+- Update the release process for @beezping/widget with package-specific changelog notes following Keep a Changelog.
+
 ## [0.12.0](https://github.com/guidomodarelli/beezping/releases/tag/widget-v0.12.0) (2026-10-01)
 
 ### Breaking Changes

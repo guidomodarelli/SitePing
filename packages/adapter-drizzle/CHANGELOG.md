@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-03
+
+### Changed
+
+- Update package releases while preserving existing version tags and changelog history.
+
 ## [0.2.0](https://github.com/guidomodarelli/beezping/releases/tag/adapter-drizzle-v0.2.0) (2026-10-01)
 
 ### Breaking Changes

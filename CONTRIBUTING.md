@@ -27,7 +27,8 @@ bun run test:run           # run unit + type tests once
 bun run test:e2e           # run Playwright E2E tests
 bun run lint               # lint with Biome (includes the type-aware rules domain)
 bun run lint:fix           # auto-fix lint issues
-bun run verify             # build + check + lint + test:run — the full pre-PR gate
+bun run verify             # build + check + lint + test:run + test:tooling — the full pre-PR gate
+bun run test:tooling       # validation runner integration tests
 bun run pkg-checks         # publint + attw on every published package (same script CI runs)
 bun run check:consistency  # locale counts/lists + demo pickers, package registration, fix-dts chains, esbuild override,
                            # fileURLToPath in tooling, no @prisma/client import in adapter-prisma, workspace dependencies
@@ -38,6 +39,12 @@ bun run new:adapter <name> # scaffold a new first-party adapter (see Creating a 
 ```
 
 Run `bun run verify` before submitting a PR — it is exactly what CI enforces.
+
+Validation commands and release checks print a short progress line and `OK` on
+success. Failures print the full diagnostic output and retain the command's exit
+code. For live, complete output, set `BEEZPING_VERBOSE=1` (PowerShell:
+`$env:BEEZPING_VERBOSE = '1'`; Bash: `BEEZPING_VERBOSE=1 bun run verify`).
+Interactive test watching and release prompts retain their normal output.
 
 > **WSL note:** if a local `vitest` run hangs or balloons in memory, use the
 > real binary (`./node_modules/.bin/vitest run`) rather than `bunx vitest`

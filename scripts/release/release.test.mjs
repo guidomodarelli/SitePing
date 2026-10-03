@@ -230,12 +230,23 @@ test("should reject invalid credentials before uploading an archive", async (con
 test("should surface rejected npm publication without reporting success", async (context) => {
   const registry = await createRegistry(context, { rejectPublish: true });
   const root = createRepository(context, registry.url);
+  // Capture the expected npm rejection without hiding failures in real releases.
   await assert.rejects(
-    publishWorkspacePackage({
-      repositoryRoot: root,
-      releases: [{ name: "@release-fixture/client", version: "0.2.0", directory: "packages/client" }],
-    }),
-    /npm publish failed/,
+    execute(process.execPath, [
+      "--input-type=module",
+      "--eval",
+      `import { publishWorkspacePackage } from ${JSON.stringify(new URL("./publish.mjs", import.meta.url).href)};
+await publishWorkspacePackage(${JSON.stringify({
+        repositoryRoot: root,
+        releases: [{ name: "@release-fixture/client", version: "0.2.0", directory: "packages/client" }],
+      })});`,
+    ]),
+    (error) => {
+      assert.equal(error.code, 1);
+      assert.match(error.stderr, /Fixture publication denied/);
+      assert.match(error.stderr, /npm publish failed/);
+      return true;
+    },
   );
   assert.equal(registry.publications.length, 0);
 });

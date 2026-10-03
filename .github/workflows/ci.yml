@@ -41,6 +41,9 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
+      - name: Validation runner integration tests
+        run: bun run test:tooling
+
       - name: Build
         run: bun run build
 

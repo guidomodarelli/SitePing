@@ -16,8 +16,17 @@ export default {
   preMajorShift: true,
   changelog: { audience: "developers consuming {name}", language: "en" },
   registry: "npm",
-  checks: ["node scripts/release/preflight.mjs", "bun run verify", "bun run check:consistency", "bun run test:release"],
-  prepare: ["bun install --frozen-lockfile", "bun run build", "bun run pkg-checks"],
+  checks: [
+    "node scripts/run-check.mjs npm-access node scripts/release/preflight.mjs",
+    "bun run --silent verify",
+    "bun run --silent check:consistency",
+    "bun run --silent test:release",
+  ],
+  prepare: [
+    "node scripts/run-check.mjs install bun install --frozen-lockfile",
+    "bun run --silent build",
+    "bun run --silent pkg-checks",
+  ],
   publish: (context) => publishWorkspacePackage(context, repositoryRoot),
   versionFiles: ["packages/cli/src/index.ts"],
 };

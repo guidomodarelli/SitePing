@@ -22,7 +22,7 @@
         "react-dom": "^19.3.0",
         "terser": "^5.51.2",
         "tsup": "^8.5.1",
-        "turbo": "^2.10.13",
+        "turbo": "^2.11.7",
         "typescript": "^5.9.3",
         "vitest": "^5.0.1",
       },
@@ -55,7 +55,7 @@
     },
     "packages/adapter-drizzle": {
       "name": "@beezping/adapter-drizzle",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "devDependencies": {
         "@beezping/core": "workspace:*",
         "@beezping/server": "workspace:*",
@@ -70,7 +70,7 @@
     },
     "packages/adapter-kit": {
       "name": "@beezping/adapter-kit",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "devDependencies": {
         "@beezping/core": "workspace:*",
       },
@@ -83,21 +83,21 @@
     },
     "packages/adapter-localstorage": {
       "name": "@beezping/adapter-localstorage",
-      "version": "0.7.0",
+      "version": "0.7.1",
       "devDependencies": {
         "@beezping/core": "workspace:*",
       },
     },
     "packages/adapter-memory": {
       "name": "@beezping/adapter-memory",
-      "version": "0.7.0",
+      "version": "0.7.1",
       "devDependencies": {
         "@beezping/core": "workspace:*",
       },
     },
     "packages/adapter-prisma": {
       "name": "@beezping/adapter-prisma",
-      "version": "0.8.0",
+      "version": "0.8.1",
       "dependencies": {
         "@beezping/server": "workspace:^",
       },
@@ -114,7 +114,7 @@
     },
     "packages/cli": {
       "name": "@beezping/cli",
-      "version": "0.7.0",
+      "version": "0.7.1",
       "bin": {
         "beezping": "./dist/index.js",
       },
@@ -131,7 +131,7 @@
     },
     "packages/dashboard": {
       "name": "@beezping/dashboard",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "devDependencies": {
         "@beezping/core": "workspace:*",
         "@size-limit/file": "^14.0.0",
@@ -147,7 +147,7 @@
     },
     "packages/integration-issues": {
       "name": "@beezping/integration-issues",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "devDependencies": {
         "@beezping/adapter-memory": "workspace:*",
         "@beezping/core": "workspace:*",
@@ -160,7 +160,7 @@
     },
     "packages/screenshot-storage": {
       "name": "@beezping/screenshot-storage",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "devDependencies": {
         "@aws-crypto/sha256-js": "^5.2.0",
         "@beezping/core": "workspace:*",
@@ -179,7 +179,7 @@
     },
     "packages/server": {
       "name": "@beezping/server",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "dependencies": {
         "zod": "^4.6.5",
       },
@@ -192,7 +192,7 @@
     },
     "packages/widget": {
       "name": "@beezping/widget",
-      "version": "0.12.0",
+      "version": "0.12.1",
       "dependencies": {
         "@medv/finder": "^4.0.2",
         "html2canvas-pro": "^2.4.3",
@@ -850,17 +850,17 @@
 
     "@testing-library/react": ["@testing-library/react@16.3.3", "", { "dependencies": { "@babel/runtime": "^7.12.5" }, "peerDependencies": { "@testing-library/dom": "^10.0.0", "@types/react": "^18.0.0 || ^19.0.0", "@types/react-dom": "^18.0.0 || ^19.0.0", "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["@types/react", "@types/react-dom"] }, "sha512-Uo193NgQbPMz6lrrhtRQQFcMC6Re/ELLFbbuVL30WDlZxlpZf9/lMHTAVxPRLw1q1iu9OJmR1c2BLiENRstdBg=="],
 
-    "@turbo/darwin-64": ["@turbo/darwin-64@2.10.13", "", { "os": "darwin", "cpu": "x64" }, "sha512-m5DBcpkxmcKpEJHHFUfqf9GLUjSmw3cDnBJM9nghPW3kjCNb5OyNKmzG7/yT5x5AwzOO+HMwKN+UI4iVKL87YA=="],
+    "@turbo/darwin-64": ["@turbo/darwin-64@2.11.7", "", { "os": "darwin", "cpu": "x64" }, "sha512-Z2LFOxwbiJueD1miByXJS/BrW21vv6YaQXZustty5jEX4vQYw6zyh101Sz1QO7WG0mqBzKagZ/DoAeeujI0/Sw=="],
 
-    "@turbo/darwin-arm64": ["@turbo/darwin-arm64@2.10.13", "", { "os": "darwin", "cpu": "arm64" }, "sha512-vfKPvSuoY8BJGj8M8yN+a7aq1g+CejbEacDSDlJLDkSbPN3J/U1DbYAmPG8Ype5XvImI0SgfvUhIorNnFj67zw=="],
+    "@turbo/darwin-arm64": ["@turbo/darwin-arm64@2.11.7", "", { "os": "darwin", "cpu": "arm64" }, "sha512-Vhv8ybgIflosNDSSRD9fNXHlCFA60dsGyTqQmc7l28SEX5jOaweCCD4BBYNd8/p0WGkw3e7tZbfA9w6FsujGvw=="],
 
-    "@turbo/linux-64": ["@turbo/linux-64@2.10.13", "", { "os": [ "linux", "android", ], "cpu": "x64" }, "sha512-Zp0N5M6j9iEjJtFLTA2L+52TLuYy0VbXT3zLZzfMeqqdKSUJ7pDo2pA1NhqjoQcF2dIsktZ8xZRW3pGI6T81fw=="],
+    "@turbo/linux-64": ["@turbo/linux-64@2.11.7", "", { "os": [ "linux", "android", ], "cpu": "x64" }, "sha512-rAqRp3blQKk1+ylMGlZHAW0eJjVNuuGUm4ZrC6RU1Im8tLryvaO4a2zLQ/FQi1TRlmKqKV9YXBki2YeytlLbXA=="],
 
-    "@turbo/linux-arm64": ["@turbo/linux-arm64@2.10.13", "", { "os": [ "linux", "android", ], "cpu": "arm64" }, "sha512-M8XcfWdS2D4EP3wzd5ehUyCANucMIOsRE6gZuV0Mr2NIn+FpsUjXFCh7r9HY7GnNcjXH4tUnT76OsCDg2c0Fng=="],
+    "@turbo/linux-arm64": ["@turbo/linux-arm64@2.11.7", "", { "os": [ "linux", "android", ], "cpu": "arm64" }, "sha512-thVYGov7S+llXAxrl3kBb/efalav0xhrjl5NHCR6AfKx14JkbqaetvbVwyss4FvZ9rt+Pv3xsTb+8SIYix8DTg=="],
 
-    "@turbo/windows-64": ["@turbo/windows-64@2.10.13", "", { "os": "win32", "cpu": "x64" }, "sha512-QFd3KBMpBBCc31TbxMnxgdBivie8lxJXV8EqmanH8fg8l2e1BdCLWpZJbxk48VNvcF4LHUnwO0FJOq+veKN1cw=="],
+    "@turbo/windows-64": ["@turbo/windows-64@2.11.7", "", { "os": "win32", "cpu": "x64" }, "sha512-ZIoKT7J7KutgYl4bGxmmgeUQjG+7E0nY8BF9dxUOiMH2vdTsM4JQ2uSwTYFkTR2Llbg6ghGjSmuZ8LQtkLEYjg=="],
 
-    "@turbo/windows-arm64": ["@turbo/windows-arm64@2.10.13", "", { "os": "win32", "cpu": "arm64" }, "sha512-rM+cFO1P8iAHXdasOdMyK9nDk0UGII7VEFLIA8+jwv/+rh48pnVBbF2OSjJDBOw57pxNLIOEDA0JyKcarTBcIw=="],
+    "@turbo/windows-arm64": ["@turbo/windows-arm64@2.11.7", "", { "os": "win32", "cpu": "arm64" }, "sha512-88Xv2f7SLGVJ68lRRx8o375dKmnZYNdDtvlKcPA0kZpcF93eAQd8l96BKQ0/AMHG0bMJA0Z5QqoqtetxzNsC+g=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-F3fo1MYrRJYL3zER0OUOmkutjr1Vp23m7OsSgp7nq4SP6OqX6C/56XFIPAl5bt3zaBRjmW7SGz3u/6LwFpYcOg=="],
 
@@ -1616,7 +1616,7 @@
 
     "tsx": ["tsx@4.23.15", "", { "dependencies": { "esbuild": "~0.28.0" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "bin": { "tsx": "dist/cli.mjs" } }, "sha512-Yiex1Ovn8z2xPpOWckIiysV1SSyRMY9BkLF++q0yKiDxCqRhosKfMg3janKkiLBwZ5c/YryloKwGZcrEmtwxKw=="],
 
-    "turbo": ["turbo@2.10.13", "", { "optionalDependencies": { "@turbo/darwin-64": "2.10.13", "@turbo/darwin-arm64": "2.10.13", "@turbo/linux-64": "2.10.13", "@turbo/linux-arm64": "2.10.13", "@turbo/windows-64": "2.10.13", "@turbo/windows-arm64": "2.10.13" }, "bin": { "turbo": "bin/turbo" } }, "sha512-69MkPbjk+G8oyC7pC2DeBk0rPdbLz51wuH5eAT0Q4BVJkzq/b1XM4kUUidsARbmDjwIELSJwd1ezITULY9kWNw=="],
+    "turbo": ["turbo@2.11.7", "", { "optionalDependencies": { "@turbo/darwin-64": "2.11.7", "@turbo/darwin-arm64": "2.11.7", "@turbo/linux-64": "2.11.7", "@turbo/linux-arm64": "2.11.7", "@turbo/windows-64": "2.11.7", "@turbo/windows-arm64": "2.11.7" }, "bin": { "turbo": "bin/turbo" } }, "sha512-RhXHbqfvY6o3xt/zSHCwSNwLrZlXiqHzewi4eAj9PtZ1T1CqgMJ2yIDb7SKPTG9IikTm925mfzL6hldQVdyNWw=="],
 
     "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 

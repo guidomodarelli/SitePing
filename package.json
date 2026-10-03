@@ -16,24 +16,25 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "turbo run build",
-    "check": "turbo run check //#check:root",
+    "build": "node scripts/run-check.mjs build node node_modules/turbo/bin/turbo run build",
+    "check": "node scripts/run-check.mjs check node node_modules/turbo/bin/turbo run check //#check:root",
     "check:root": "tsc --noEmit",
     "clean": "turbo run clean",
     "test": "vitest",
-    "test:run": "vitest run",
+    "test:run": "node scripts/run-check.mjs tests node node_modules/vitest/vitest.mjs run",
     "test:e2e": "playwright test",
-    "lint": "biome check .",
+    "lint": "node scripts/run-check.mjs lint bun run --silent biome check .",
     "lint:fix": "biome check --write .",
-    "verify": "bun run build && bun run check && bun run lint && bun run test:run",
-    "pkg-checks": "node scripts/pkg-checks.mjs",
-    "check:consistency": "node scripts/check-consistency.mjs",
+    "verify": "bun run --silent build && bun run --silent check && bun run --silent lint && bun run --silent test:run && bun run --silent test:tooling",
+    "pkg-checks": "node scripts/run-check.mjs pkg-checks node scripts/pkg-checks.mjs",
+    "check:consistency": "node scripts/run-check.mjs consistency node scripts/check-consistency.mjs",
+    "test:tooling": "node scripts/run-check.mjs tooling-tests node --test scripts/run-check.test.mjs",
     "knip": "knip",
     "new:locale": "node scripts/new-locale.mjs",
     "new:adapter": "node scripts/new-adapter.mjs",
     "create-version": "beez-rp create-version",
     "cv": "beez-rp create-version",
-    "test:release": "node --test scripts/release/*.test.mjs"
+    "test:release": "node scripts/run-check.mjs release-tests node --test scripts/release/*.test.mjs"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.5",
@@ -53,7 +54,7 @@
     "react-dom": "^19.3.0",
     "terser": "^5.51.2",
     "tsup": "^8.5.1",
-    "turbo": "^2.10.13",
+    "turbo": "^2.11.7",
     "typescript": "^5.9.3",
     "vitest": "^5.0.1"
   },

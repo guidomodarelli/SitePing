@@ -9,7 +9,8 @@
 - `bun run test:run` — run tests once (includes *.test-d.ts type tests via vitest typecheck)
 - `bun run lint` — biome check (types domain enabled)
 - `bun run lint:fix` — biome auto-fix
-- `bun run verify` — build + check + lint + test:run (the full pre-PR gate)
+- `bun run verify` — build + check + lint + test:run + test:tooling (the full pre-PR gate)
+- `bun run test:tooling` — validation runner integration tests (also enforced in CI)
 - `bun run pkg-checks` — publint + attw over published packages (list discovered from Bun workspaces)
 - `bun run check:consistency` — locale counts and lists, demo locale pickers, package registration, fix-dts chains, esbuild override = widget spec, `fileURLToPath` (never a file URL's `.pathname`) in Node tooling, no `@prisma/client` import in adapter-prisma's src (optional peer), every published `workspace:` dependency points to a public workspace (runs in CI)
 - `bun run new:locale <code>` / `bun run new:adapter <name>` — scaffolds (see CONTRIBUTING)
